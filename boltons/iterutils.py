@@ -11,8 +11,12 @@ def is_scalar(obj):
 
 def split(src, sep=None, maxsplit=None):
     """
-    Splits an iterable based on a separator, see split_iter
-    docs below for more info.
+    Splits an iterable based on a separator.
+
+    >>> split(['hi', 'hello', None, None, 'sup', None, 'soap', None])
+    [['hi', 'hello'], ['sup'], ['soap']]
+
+    See split_iter docs below for more info.
     """
     return list(split_iter(src, sep, maxsplit))
 
@@ -26,12 +30,17 @@ def split_iter(src, sep=None, maxsplit=None):
     split_iter yields lists of non-separator values. A separator will
     never appear in the output.
 
-    Note that split_iter is based on str.split(), so if sep is None,
-    str.split() "groups" separators check the str.split() docs
-    for more info.
-
-    >>> list(split_iter(['hi', 'hello', None, None, 'sup', None, 'soap', None])
+    >>> list(split_iter(['hi', 'hello', None, None, 'sup', None, 'soap', None]))
     [['hi', 'hello'], ['sup'], ['soap']]
+
+    Note that split_iter is based on str.split(), so if 'sep' is None,
+    split() "groups" separators. If empty lists are desired between two
+    contiguous None values, simply use sep=[None].
+
+    >>> list(split_iter(['hi', 'hello', None, None, 'sup', None], sep=[None]))
+    [['hi', 'hello'], [], ['sup'], []]
+
+    Using a callable separator:
 
     >>> falsy_sep = lambda x: not x
     >>> list(split_iter(['hi', 'hello', None, '', 'sup', False], falsy_sep))
