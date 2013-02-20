@@ -2,7 +2,11 @@
 
 
 def is_iterable(obj):
-    return callable(getattr(obj, '__iter__', None))
+    try:
+        iter(obj)
+    except TypeError:
+        return False
+    return True
 
 
 def is_scalar(obj):
@@ -154,9 +158,48 @@ def chunked_iter(src, size, **kw):
     return
 
 
-def main():
-    return
+def bucketize(src, keyfunc=None):
+    """
+    Group values in 'src' iterable by value returned by keyfunc.
+    keyfunc defaults to bool, which will group the values by
+    truthiness; at most there will be two keys, True and False, and
+    each key will have a list with at least one item.
+
+    >>> bucketize(range(5))
+    {False: [0], True: [1, 2, 3, 4]}
+    >>> is_odd = lambda x: x % 2 == 1
+    >>> bucketize(range(5), is_odd)
+    {False: [0, 2, 4], True: [1, 3]}
+
+    Value lists are not deduplicated:
+
+    >>> bucketize([None, None, None, 'hello'])
+    {False: [None, None, None], True: ['hello']}
+    """
+    if not is_iterable(src):
+        raise TypeError('expected an iterable')
+    if keyfunc is None:
+        keyfunc = bool
+    if not callable(keyfunc):
+        raise TypeError('expected callable key function')
+
+    ret = {}
+    for val in src:
+        key = keyfunc(val)
+        ret.setdefault(key, []).append(val)
+    return ret
 
 
-if __name__ == '__main__':
-    main()
+def bucketize_bool(src, keyfunc=None):
+    """
+    Like bucketize, but for added convenience returns a tuple of
+    (truthy_values, falsy_values).
+
+    >>> import string
+    >>> is_vowel = lambda x: x.lower() in 'aeiou'
+    >>> vowels, consonants = bucketize_bool(string.letters, is_vowel)
+    >>> ''.join(vowels), ''.join(consonants)
+    ('aeiouAEIOU', 'bcdfghjklmnpqrstvwxyzBCDFGHJKLMNPQRSTVWXYZ')
+    """
+    bucketized = bucketize(src, keyfunc)
+    return bucketized.get(True, []), bucketized.get(False, [])
