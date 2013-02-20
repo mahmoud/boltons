@@ -90,6 +90,13 @@ def chunked(src, size, count=None, **kw):
     generated from iterable 'src'. If 'src' is not even divisible by
     'size', the final chunk will have fewer than 'size' elements.
     Use the 'fill' keyword argument to pad the final chunk.
+
+    >>> chunked(range(10), 3)
+    [[0, 1, 2], [3, 4, 5], [6, 7, 8], [9]]
+    >>> chunked(range(10), 3, fill=None)
+    [[0, 1, 2], [3, 4, 5], [6, 7, 8], [9, None, None]]
+    >>> chunked(range(10), 3, count=2)
+    [[0, 1, 2], [3, 4, 5]]
     """
     chunk_iter = chunked_iter(src, size, **kw)
     if count is None:
@@ -109,7 +116,12 @@ def chunked_iter(src, size, **kw):
     not even divisible by 'size' will have a final chunk that is
     smaller than 'size'.
 
-    Note that fill=None will in fact use None as a fill value.
+    Note that fill=None will in fact use None as the fill value.
+
+    >>> list(chunked_iter(range(10), 3))
+    [[0, 1, 2], [3, 4, 5], [6, 7, 8], [9]]
+    >>> list(chunked_iter(range(10), 3, fill=None))
+    [[0, 1, 2], [3, 4, 5], [6, 7, 8], [9, None, None]]
     """
     if not is_iterable(src):
         raise TypeError('expected an iterable')
@@ -143,12 +155,7 @@ def chunked_iter(src, size, **kw):
 
 
 def main():
-    vals = ['hi', 'hello', None, None, 'sup', None, 'soap', None]
-    falsy_sep = lambda x: not x
-    print list(split(vals, falsy_sep))
-    print list(split(vals, [None]))
-    print chunked(vals, 3)
-    print chunked(vals, 3, fill=None)
+    return
 
 
 if __name__ == '__main__':
