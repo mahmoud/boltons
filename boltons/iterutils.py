@@ -75,11 +75,71 @@ def split_iter(src, sep=None, maxsplit=None):
     return
 
 
+def chunked(src, size, count=None, **kw):
+    """
+    Returns a list of 'count' chunks, each with 'size' elements,
+    generated from iterable 'src'. If 'src' is not even divisible by
+    'size', the final chunk will have fewer than 'size' elements.
+    Use the 'fill' keyword argument to pad the final chunk.
+    """
+    chunk_iter = chunked_iter(src, size, **kw)
+    if count is None:
+        return list(chunk_iter)
+    ret = []
+    for chunk in chunk_iter:
+        if len(ret) >= count:
+            return ret
+        ret.append(chunk)
+    return ret
+
+
+def chunked_iter(src, size, **kw):
+    """
+    Generates 'size'-sized chunks from 'src' iterable. Unless
+    the optional 'fill' keyword argument is provided, iterables
+    not even divisible by 'size' will have a final chunk that is
+    smaller than 'size'.
+
+    Note that fill=None will in fact use None as a fill value.
+    """
+    if not is_iterable(src):
+        raise TypeError('expected an iterable')
+    size = int(size)
+    if size <= 0:
+        raise ValueError('expected a positive integer chunk size')
+    do_fill = True
+    try:
+        fill_val = kw.pop('fill')
+    except KeyError:
+        do_fill = False
+        fill_val = None
+    if kw:
+        raise ValueError('got unexpected keyword arguments: %r' % kw.keys())
+    if not src:
+        return
+    cur_chunk = []
+    i = 0
+    for item in src:
+        cur_chunk.append(item)
+        i += 1
+        if i % size == 0:
+            yield cur_chunk
+            cur_chunk = []
+    if cur_chunk:
+        if do_fill:
+            lc = len(cur_chunk)
+            cur_chunk[lc:] = [fill_val] * (size - lc)
+        yield cur_chunk
+    return
+
+
 def main():
     vals = ['hi', 'hello', None, None, 'sup', None, 'soap', None]
     falsy_sep = lambda x: not x
     print list(split(vals, falsy_sep))
     print list(split(vals, [None]))
+    print chunked(vals, 3)
+    print chunked(vals, 3, fill=None)
 
 
 if __name__ == '__main__':
