@@ -196,18 +196,18 @@ def bucketize_bool(src, keyfunc=None):
     Like bucketize, but for added convenience returns a tuple of
     (truthy_values, falsy_values).
 
-    >>> nonempty, empty = bucketize_bool([[], [], [], ['hi']])
+    >>> nonempty, empty = bucketize_bool(['', '', 'hi', '', 'bye'])
     >>> nonempty
-    ['hi']
+    ['hi', 'bye']
 
     keyfunc defaults to bool, but can be carefully overridden to
     use any function that returns either True or False.
 
     >>> import string
-    >>> is_vowel = lambda x: x.lower() in 'aeiou'
-    >>> vowels, consonants = bucketize_bool(string.letters, is_vowel)
-    >>> ''.join(vowels), ''.join(consonants)
-    ('aeiouAEIOU', 'bcdfghjklmnpqrstvwxyzBCDFGHJKLMNPQRSTVWXYZ')
+    >>> is_digit = lambda x: x in string.digits
+    >>> decimal_digits, hexletters = bucketize_bool(string.hexdigits, is_digit)
+    >>> ''.join(decimal_digits), ''.join(hexletters)
+    ('0123456789', 'abcdefABCDEF')
     """
     bucketized = bucketize(src, keyfunc)
     return bucketized.get(True, []), bucketized.get(False, [])
