@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from compat import basestring
 
 
 def is_iterable(obj):
@@ -15,7 +16,7 @@ def is_scalar(obj):
 
 def split(src, sep=None, maxsplit=None):
     """
-    Splits an iterable based on a separator.
+    Splits an iterable based on a separator. Returns a list of lists.
 
     >>> split(['hi', 'hello', None, None, 'sup', None, 'soap', None])
     [['hi', 'hello'], ['sup'], ['soap']]
@@ -160,7 +161,7 @@ def chunked_iter(src, size, **kw):
 
 def bucketize(src, keyfunc=None):
     """
-    Group values in 'src' iterable by value returned by keyfunc.
+    Group values in 'src' iterable by value returned by 'keyfunc'.
     keyfunc defaults to bool, which will group the values by
     truthiness; at most there will be two keys, True and False, and
     each key will have a list with at least one item.
@@ -194,6 +195,13 @@ def bucketize_bool(src, keyfunc=None):
     """
     Like bucketize, but for added convenience returns a tuple of
     (truthy_values, falsy_values).
+
+    >>> nonempty, empty = bucketize_bool([[], [], [], ['hi']])
+    >>> nonempty
+    ['hi']
+
+    keyfunc defaults to bool, but can be carefully overridden to
+    use any function that returns either True or False.
 
     >>> import string
     >>> is_vowel = lambda x: x.lower() in 'aeiou'
