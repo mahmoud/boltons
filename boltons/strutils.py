@@ -128,6 +128,10 @@ class DeaccenterDict(dict):
         del defaultdict
 
 
+# http://chmullig.com/2009/12/python-unicode-ascii-ifier/
+# For something more complete, investigate the unidecode
+# or isounidecode packages, which are capable of performing
+# crude transliteration.
 _BASE_DEACCENT_MAP = {
     0xc6: u"AE", # Æ LATIN CAPITAL LETTER AE
     0xd0: u"D",  # Ð LATIN CAPITAL LETTER ETH
