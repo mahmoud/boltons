@@ -3,12 +3,57 @@
 import re
 import string
 import unicodedata
+import collections
 
 from compat import str, unicode, basestring, bytes
 
 _punct_ws_str = string.punctuation + string.whitespace
 _punct_re = re.compile('[' + _punct_ws_str + ']+')
 _camel2under_re = re.compile('((?<=[a-z0-9])[A-Z]|(?!^)[A-Z](?=[a-z]))')
+
+
+def camel2under(camel_string):
+    """
+    Converts a camelcased string to underscores. Useful for
+    turning a class name into a function name.
+
+    >>> camel2under('BasicParseTest')
+    'basic_parse_test'
+    """
+    return _camel2under_re.sub(r'_\1', camel_string).lower()
+
+
+def under2camel(under_string):
+    """
+    Converts an underscored string to camelcased. Useful for
+    turning a function name into a class name.
+
+    >>> under2camel('complex_tokenizer')
+    'ComplexTokenizer'
+    """
+    return ''.join(w.capitalize() or '_' for w in under_string.split('_'))
+
+
+class StringBuffer(object):
+    def __init__(self, default_encoding=None, errors='strict'):
+        self.data = collections.deque()
+        self.default_encoding = default_encoding or 'utf-8'
+
+    def write(self, s):
+        if not isinstance(s, unicode):
+            enc = self.default_encoding
+            try:
+                s = s.decode(enc)
+            except AttributeError:
+                raise ValueError('write() expected a unicode or byte string')
+        self.data.append(s)
+
+    def truncate(self):
+        self.data = collections.deque()
+        self.write = self.data.append
+
+    def getvalue(self):
+        return unicode().join(self.data)
 
 
 def slugify(text, delim='_', lower=True, ascii=False):
@@ -46,28 +91,6 @@ def split_punct_ws(text):
     return [w for w in _punct_re.split(text) if w]
 
 
-def camel2under(camel_string):
-    """
-    Converts a camelcased string to underscores. Useful for
-    turning a class name into a function name.
-
-    >>> camel2under('BasicParseTest')
-    'basic_parse_test'
-    """
-    return _camel2under_re.sub(r'_\1', camel_string).lower()
-
-
-def under2camel(under_string):
-    """
-    Converts an underscored string to camelcased. Useful for
-    turning a function name into a class name.
-
-    >>> under2camel('complex_tokenizer')
-    'ComplexTokenizer'
-    """
-    return ''.join(w.capitalize() or '_' for w in under_string.split('_'))
-
-
 def asciify(text, ignore=False):
     """
     Converts a unicode or bytestring into a bytestring with
@@ -80,6 +103,8 @@ def asciify(text, ignore=False):
 
     >>> asciify('Beyoncé')
     'Beyonce'
+
+    TODO: Python 3 compliance.
     """
     try:
         try:
