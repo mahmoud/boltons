@@ -5,7 +5,7 @@ import string
 import unicodedata
 import collections
 
-from compat import str, unicode, basestring, bytes
+from compat import unicode, bytes
 
 _punct_ws_str = string.punctuation + string.whitespace
 _punct_re = re.compile('[' + _punct_ws_str + ']+')
@@ -35,15 +35,24 @@ def under2camel(under_string):
 
 
 class StringBuffer(object):
+    """
+    This is meant to be a better file-like string buffer.
+    Faster than StringIO, better encoding handling than cStringIO.
+
+    This one is for unicode text strings. Look for ByteBuffer if you
+    want to handle byte strings.
+    """
     def __init__(self, default_encoding=None, errors='strict'):
         self.data = collections.deque()
         self.default_encoding = default_encoding or 'utf-8'
+        self.errors = errors
 
     def write(self, s):
         if not isinstance(s, unicode):
             enc = self.default_encoding
+            errs = self.errors
             try:
-                s = s.decode(enc)
+                s = s.decode(enc, errs)
             except AttributeError:
                 raise ValueError('write() expected a unicode or byte string')
         self.data.append(s)
