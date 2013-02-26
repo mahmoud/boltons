@@ -5,56 +5,54 @@ from collections import namedtuple
 
 from pprint import pprint
 
-BaseTBItem = namedtuple('TBItem', 'filename, lineno, name, line')
-
-class TBItem(BaseTBItem):
-    def __repr__(self):
-        ret = super(TBItem, self).__repr__()
-        ret += ' <%r>' % self.frame_id
-        return ret
 
 class ExceptionCauseMixin(Exception):
     def __init__(self, *args, **kwargs):
         cause = kwargs.pop('cause', None)
         super(ExceptionCauseMixin, self).__init__(*args, **kwargs)
-        self.cause = cause
         if not cause:
             return
         if not isinstance(cause, Exception):
             return  # TODO: use current exception instead?
 
+        if isinstance(cause, ExceptionCauseMixin):
+            self.cause = cause.cause
+            self.cause_type = cause.cause_type
+            self.full_trace = cause.full_trace
+            return
+
+        self.cause = cause
+        self.cause_type = type(cause)
         try:
             exc_type, exc_value, exc_tb = sys.exc_info()
             if exc_value is cause:
-                #stack = getattr(cause, 'stack', None)
-                #if not stack:
-                stack = _extract_from_tb(exc_tb)
-                pprint(stack)
-                stack2 = _extract_from_frame(exc_tb.tb_frame)
-                pprint(stack2)
-                print
+                self._tb = _extract_from_tb(exc_tb)
+                self._stack = _extract_from_frame(exc_tb.tb_frame)
+                full_trace = self._stack[:-1] + self._tb
+                self.full_trace = full_trace
+                #pprint(self.full_trace)
         finally:
             del exc_tb
-        if isinstance(cause, ExceptionCauseMixin):
-            import pdb;pdb.set_trace()
-
-#''.join(traceback.format_exception(exc_type,
-#                                   exc_value,
-#                                   exc_tb))
-        self.stack = stack
-        self.cause_type = type(cause)
-        self.cause_str = ''.join(
-            traceback.format_exception_only(self.cause_type, self.cause))
 
     def __str__(self):
-        ret = self.__class__.__name__
-        try:
-            ret += ''.join([": ", self.cause_str, '\n', self.trace])
-        except AttributeError:
-            pass
-        super_str = super(ExceptionCauseMixin, self).__str__()
-        if super_str:
-            ret += "\n" + super_str
+        ret = []
+        if self.full_trace:
+            ret.append('Traceback (most recent call last):\n')
+            ret.extend(traceback.format_list(self.full_trace))
+        ret.append(self.__class__.__name__)
+        ret.append(' caused by ')
+        ret.extend(traceback.format_exception_only(self.cause_type,
+                                                   self.cause))
+        return ''.join(ret)
+
+
+_BaseTBItem = namedtuple('_BaseTBItem', 'filename, lineno, name, line')
+
+
+class _TBItem(_BaseTBItem):
+    def __repr__(self):
+        ret = super(_TBItem, self).__repr__()
+        ret += ' <%r>' % self.frame_id
         return ret
 
 
@@ -108,7 +106,7 @@ def _extract_from_frame(f=None, limit=None):
         lineno = f.f_lineno
         name = f.f_code.co_name
         line = _DeferredLine(filename, lineno, f.f_globals)
-        item = TBItem(filename, lineno, name, line)
+        item = _TBItem(filename, lineno, name, line)
         item.frame_id = id(f)
         ret.append(item)
         f = f.f_back
@@ -127,7 +125,7 @@ def _extract_from_tb(tb, limit=None):
         lineno = tb.tb_lineno
         name = tb.tb_frame.f_code.co_name
         line = _DeferredLine(filename, lineno, tb.tb_frame.f_globals)
-        item = TBItem(filename, lineno, name, line)
+        item = _TBItem(filename, lineno, name, line)
         item.frame_id = id(tb.tb_frame)
         ret.append(item)
         tb = tb.tb_next
@@ -140,15 +138,21 @@ class MathError(ExceptionCauseMixin):
 
 
 def whoops_math():
+    return 1/0
+
+
+def math_lol(n=0):
+    if n < 3:
+        return math_lol(n=n+1)
     try:
-        1/0
+        return whoops_math()
     except ZeroDivisionError as zde:
         exc = MathError(cause=zde)
         raise exc
 
 def main():
     try:
-        whoops_math()
+        math_lol()
     except MathError as me:
         exc = MathError(cause=me)
     print str(exc)
