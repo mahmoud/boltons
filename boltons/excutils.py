@@ -19,33 +19,35 @@ class ExceptionCauseMixin(Exception):
     This is still a work in progress, but an example use case at the
     bottom of this module.
 
-    NOTE: when inheriting, you may want to put the ExceptionCauseMixin
-    first, and call super() sooner rather than later.
+    NOTE: when inheriting, you will probably want to put the
+    ExceptionCauseMixin first. Builtin exceptions are not good about
+    calling super()
     """
-    def __init__(self, *args, **kwargs):
-        cause = kwargs.pop('cause', None)
-        super(ExceptionCauseMixin, self).__init__(*args, **kwargs)
-        if not isinstance(cause, Exception):
-            return
+    def __new__(cls, *args, **kw):
+        if not args or not isinstance(args[0], Exception):
+            return super(ExceptionCauseMixin, cls).__new__(cls, *args, **kw)
+        cause, args = args[0], args[1:]
+        ret = super(ExceptionCauseMixin, cls).__new__(cls, *args, **kw)
 
         if isinstance(cause, ExceptionCauseMixin):
-            self.cause = cause.cause
-            self.cause_type = cause.cause_type
-            self.full_trace = cause.full_trace
-            return
+            ret.cause = cause.cause
+            ret.cause_type = cause.cause_type
+            ret.full_trace = cause.full_trace
+            return ret
 
-        self.cause = cause
-        self.cause_type = type(cause)
+        ret.cause = cause
+        ret.cause_type = type(cause)
         try:
             exc_type, exc_value, exc_tb = sys.exc_info()
             if exc_value is cause:
-                self._tb = _extract_from_tb(exc_tb)
-                self._stack = _extract_from_frame(exc_tb.tb_frame)
-                full_trace = self._stack[:-1] + self._tb
-                self.full_trace = full_trace
+                ret._tb = _extract_from_tb(exc_tb)
+                ret._stack = _extract_from_frame(exc_tb.tb_frame)
+                full_trace = ret._stack[:-1] + ret._tb
+                ret.full_trace = full_trace
                 #pprint(self.full_trace)
         finally:
             del exc_tb
+        return ret
 
     def __str__(self):
         ret = []
@@ -163,14 +165,14 @@ def math_lol(n=0):
     try:
         return whoops_math()
     except ZeroDivisionError as zde:
-        exc = MathError(cause=zde)
+        exc = MathError(zde)
         raise exc
 
 def main():
     try:
         math_lol()
     except ValueError as me:
-        exc = MathError(cause=me)
+        exc = MathError(me)
     print str(exc)
     import pdb;pdb.set_trace()
 
