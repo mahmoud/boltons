@@ -18,14 +18,15 @@ class ExceptionCauseMixin(Exception):
 
     This is still a work in progress, but an example use case at the
     bottom of this module.
+
+    NOTE: when inheriting, you may want to put the ExceptionCauseMixin
+    first, and call super() sooner rather than later.
     """
     def __init__(self, *args, **kwargs):
         cause = kwargs.pop('cause', None)
         super(ExceptionCauseMixin, self).__init__(*args, **kwargs)
-        if not cause:
-            return
         if not isinstance(cause, Exception):
-            return  # TODO: use current exception instead?
+            return
 
         if isinstance(cause, ExceptionCauseMixin):
             self.cause = cause.cause
@@ -51,8 +52,11 @@ class ExceptionCauseMixin(Exception):
         if self.full_trace:
             ret.append('Traceback (most recent call last):\n')
             ret.extend(traceback.format_list(self.full_trace))
-        ret.append(self.__class__.__name__)
-        ret.append(' caused by ')
+        ret.append(self.__repr__())
+        return ''.join(ret)
+
+    def __repr__(self):
+        ret = [self.__class__.__name__, ' caused by ']
         ret.extend(traceback.format_exception_only(self.cause_type,
                                                    self.cause))
         return ''.join(ret)
@@ -145,7 +149,7 @@ def _extract_from_tb(tb, limit=None):
     return ret
 
 
-class MathError(ExceptionCauseMixin):
+class MathError(ExceptionCauseMixin, ValueError):
     pass
 
 
@@ -165,7 +169,7 @@ def math_lol(n=0):
 def main():
     try:
         math_lol()
-    except MathError as me:
+    except ValueError as me:
         exc = MathError(cause=me)
     print str(exc)
     import pdb;pdb.set_trace()
