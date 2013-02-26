@@ -211,3 +211,52 @@ def bucketize_bool(src, keyfunc=None):
     """
     bucketized = bucketize(src, keyfunc)
     return bucketized.get(True, []), bucketized.get(False, [])
+
+
+def unique_iter(iterable, key=None):
+    """
+    Yield unique elements from `iterable`, based on `key`, in the
+    order in which they first appeared in `iterable`.
+
+    `key` can either be a callable or, for convenience, a string name
+    of the attribute on which to uniqueify objects. By default, `key`
+    is the identity operator.
+
+    >>> repetitious = [1, 2, 3] * 10
+    >>> list(unique_iter(repetitious))
+    [1, 2, 3]
+
+    >>> pleasantries = ['hi', 'hello', 'ok', 'bye', 'yes']
+    >>> list(unique_iter(pleasantries, key=lambda x: len(x)))
+    ['hi', 'hello', 'bye']
+    """
+    if not is_iterable(iterable):
+        raise TypeError('expected an iterable')
+    if key is None:
+        key_func = lambda x: x
+    elif callable(key):
+        key_func = key
+    elif isinstance(key, basestring):
+        key_func = lambda x: getattr(x, key, x)
+    else:
+        raise TypeError('"key" expected a string or callable')
+    seen = set()
+    for i in iterable:
+        k = key_func(i)
+        if k not in seen:
+            seen.add(k)
+            yield i
+    return
+
+
+def unique(iterable, key=None):
+    """
+    In keeping with the emergent convention of this module, unique()
+    works exactly the same as unique_iter() (above), except that it
+    returns a list instead of a generator.
+
+    >>> ones_n_zeros = '11010110001010010101010'
+    >>> ''.join(unique(ones_n_zeros))
+    '10'
+    """
+    return list(unique_iter(iterable, key))
