@@ -7,6 +7,18 @@ from pprint import pprint
 
 
 class ExceptionCauseMixin(Exception):
+    """
+    A mixin class for wrapping an exception in another exception, or
+    otherwise indicating an exception was caused by another exception.
+
+    This is most useful in concurrent or failure-intolerant scenarios,
+    where just because one operation failed, doesn't mean the remainder
+    should be aborted, or that it's the appropriate time to raise
+    exceptions.
+
+    This is still a work in progress, but an example use case at the
+    bottom of this module.
+    """
     def __init__(self, *args, **kwargs):
         cause = kwargs.pop('cause', None)
         super(ExceptionCauseMixin, self).__init__(*args, **kwargs)
