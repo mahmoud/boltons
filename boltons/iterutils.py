@@ -218,9 +218,10 @@ def unique_iter(iterable, key=None):
     Yield unique elements from `iterable`, based on `key`, in the
     order in which they first appeared in `iterable`.
 
-    `key` can either be a callable or, for convenience, a string name
-    of the attribute on which to uniqueify objects. By default, `key`
-    is the identity operator.
+    By default, `key` is the identity operator, but `key` can either
+    be a callable or, for convenience, a string name of the attribute
+    on which to uniqueify objects, falling back on identity when the
+    attribute is not present.
 
     >>> repetitious = [1, 2, 3] * 10
     >>> list(unique_iter(repetitious))

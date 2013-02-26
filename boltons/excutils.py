@@ -23,6 +23,7 @@ class ExceptionCauseMixin(Exception):
     ExceptionCauseMixin first. Builtin exceptions are not good about
     calling super()
     """
+    cause = None
     def __new__(cls, *args, **kw):
         if not args or not isinstance(args[0], Exception):
             return super(ExceptionCauseMixin, cls).__new__(cls, *args, **kw)
@@ -30,9 +31,10 @@ class ExceptionCauseMixin(Exception):
         ret = super(ExceptionCauseMixin, cls).__new__(cls, *args, **kw)
 
         if isinstance(cause, ExceptionCauseMixin):
-            ret.cause = cause.cause
-            ret.cause_type = cause.cause_type
-            ret.full_trace = cause.full_trace
+            ret.cause = getattr(cause, 'cause', None)
+            if ret.cause is not None:
+                ret.cause_type = cause.cause_type
+                ret.full_trace = cause.full_trace
             return ret
 
         ret.cause = cause
@@ -50,6 +52,8 @@ class ExceptionCauseMixin(Exception):
         return ret
 
     def __str__(self):
+        if not self.cause:
+            return super(ExceptionCauseMixin, self).__repr__()
         ret = []
         if self.full_trace:
             ret.append('Traceback (most recent call last):\n')
@@ -58,6 +62,8 @@ class ExceptionCauseMixin(Exception):
         return ''.join(ret)
 
     def __repr__(self):
+        if not self.cause:
+            return super(ExceptionCauseMixin, self).__repr__()
         ret = [self.__class__.__name__, ' caused by ']
         ret.extend(traceback.format_exception_only(self.cause_type,
                                                    self.cause))
@@ -170,6 +176,7 @@ def math_lol(n=0):
 
 def main():
     try:
+        raise MathError('hi')
         math_lol()
     except ValueError as me:
         exc = MathError(me)
