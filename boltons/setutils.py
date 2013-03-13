@@ -1,14 +1,13 @@
 # -*- coding: utf-8 -*-
 
 from bisect import insort, bisect
-from itertools import chain
+from itertools import chain, islice
 from collections import MutableSet
 
 _MISSING = object()
+_COMPACTION_FACTOR = 10
 
-# TODO: slicing
 # TODO: better exception messages
-# TODO: clear()
 # TODO: inherit from set()
 # TODO: raise exception on non-set params?
 # TODO: technically reverse operators should probably reverse the
@@ -57,7 +56,7 @@ class IndexedSet(MutableSet):
         if not self.item_index_map:
             del self.dead_indices[:]
             del self.item_list[:]
-        elif len(ded) > 8 and len(ded) > len(items) / 10:
+        elif len(ded) > 8 and len(ded) > len(items) / _COMPACTION_FACTOR:
             self._compact()
         elif ded[-1] == len(items) - 1:  # get rid of dead right hand side
             num_dead = 1
@@ -107,6 +106,11 @@ class IndexedSet(MutableSet):
             self.remove(item)
         except KeyError:
             pass
+
+    def clear(self):
+        del self.item_list[:]
+        del self.dead_indices[:]
+        self.item_index_map.clear()
 
     def add(self, item):
         if item not in self.item_index_map:
@@ -192,12 +196,14 @@ class IndexedSet(MutableSet):
             self.discard(val)
 
     def difference_update(self, *others):
-        # if self in others: clear()
+        if self in others:
+            self.clear()
         for val in self.intersection(*others):
             self.discard(val)
 
     def symmetric_difference_update(self, other):  # note singular 'other'
-        # if self is other: clear()
+        if self is other:
+            self.clear()
         for val in other:
             if val in self:
                 self.discard(val)
@@ -220,8 +226,26 @@ class IndexedSet(MutableSet):
         self.symmetric_difference_update(*others)
         return self
 
+    def iter_slice(self, start, stop, step=None):
+        iterable = self
+        if start is not None:
+            start = start + bisect(self.dead_indices, start)
+        if stop is not None:
+            stop = stop + bisect(self.dead_indices, stop)
+        if step is not None and step < 0:
+            step = -step
+            iterable = reversed(self)
+        return islice(iterable, start, stop, step)
+
     #list operations
-    def __getitem__(self, index):  # TODO: support slicing
+    def __getitem__(self, index):
+        try:
+            start, stop, step = index.start, index.stop, index.step
+        except AttributeError:
+            pass
+        else:
+            iter_slice = self.iter_slice(start, stop, step)
+            return self.from_iterable(iter_slice)
         if index < 0:
             index += len(self)
         skip = bisect(self.dead_indices, index)
@@ -277,6 +301,7 @@ if __name__ == '__main__':
     x |= set([10])
     print zero2nine, five2nine, x, x[-1]
     print zero2nine ^ five2nine
+    print x[:3], x[2:4:-1]
 
     try:
         hundo = IndexedSet(xrange(1000))
