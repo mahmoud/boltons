@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
-from bisect import insort_left, bisect, bisect_left
-from itertools import ifilter, chain
+from bisect import insort, bisect
+from itertools import chain
 from collections import MutableSet
 
 _MISSING = object()
@@ -74,10 +74,11 @@ class IndexedSet(MutableSet):
         return item in self.item_index_map
 
     def __iter__(self):
-        return ifilter(lambda e: e is not _MISSING, iter(self.item_list))
+        return (item for item in self.item_list if item is not _MISSING)
 
     def __reversed__(self):
-        return ifilter(lambda e: e is not _MISSING, reversed(self.item_list))
+        item_list = self.item_list
+        return (item for item in reversed(item_list) if item is not _MISSING)
 
     def __repr__(self):
         return '%s(%r)' % (self.__class__.__name__, list(self))
@@ -95,7 +96,7 @@ class IndexedSet(MutableSet):
     def remove(self, item):  # O(1) + (amortized O(n) cull)
         try:
             dead_index = self.item_index_map.pop(item)
-            insort_left(self.dead_indices, dead_index)
+            insort(self.dead_indices, dead_index)
             self.item_list[dead_index] = _MISSING
             self._cull()
         except KeyError:
@@ -240,7 +241,7 @@ class IndexedSet(MutableSet):
             if index < 0:
                 index += len_self
             skip = bisect(self.dead_indices, index)
-            insort_left(self.dead_indices, index)
+            insort(self.dead_indices, index)
             real_index = index + skip
             ret = self.item_list[real_index]
             self.item_list[real_index] = _MISSING
