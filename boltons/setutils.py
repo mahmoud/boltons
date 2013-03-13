@@ -157,9 +157,9 @@ class IndexedSet(MutableSet):
         return
 
     def intersection(self, *others):
-        #if len(others) == 1:  # TODO: uncomment for optimization after testing
-        #    other = others[0]
-        #    return self.from_iterable(k for k in self if k not in other)
+        if len(others) == 1:
+            other = others[0]
+            return self.from_iterable(k for k in self if k in other)
         return self.from_iterable(self.iter_intersection(*others))
 
     def iter_difference(self, *others):
@@ -172,6 +172,9 @@ class IndexedSet(MutableSet):
         return
 
     def difference(self, *others):
+        if len(others) == 1:
+            other = others[0]
+            return self.from_iterable(k for k in self if k not in other)
         return self.from_iterable(self.iter_difference(*others))
 
     def symmetric_difference(self, *others):
@@ -254,7 +257,11 @@ class IndexedSet(MutableSet):
         skip = bisect(self.dead_indices, index)
         real_index = index + skip
         try:
-            return self.item_list[real_index]
+            ret = self.item_list[real_index]
+            while ret is _MISSING:
+                real_index += 1
+                ret = self.item_list[real_index]
+            return ret
         except IndexError:
             raise IndexError('IndexedSet index out of range')
 
