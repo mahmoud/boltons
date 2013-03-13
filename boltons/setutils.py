@@ -5,7 +5,7 @@ from itertools import chain, islice
 from collections import MutableSet
 
 _MISSING = object()
-_COMPACTION_FACTOR = 10
+_COMPACTION_FACTOR = 20
 
 # TODO: inherit from set()
 # TODO: .discard_many(), .remove_many()
@@ -268,9 +268,12 @@ class IndexedSet(MutableSet):
             if index < 0:
                 index += len_self
             skip = bisect(self.dead_indices, index)
-            insort(self.dead_indices, index)
             real_index = index + skip
             ret = self.item_list[real_index]
+            while ret is _MISSING:
+                real_index += 1
+                ret = self.item_list[real_index]
+            insort(self.dead_indices, real_index)
             self.item_list[real_index] = _MISSING
             del item_index_map[ret]
         self._cull()
@@ -331,6 +334,17 @@ if __name__ == '__main__':
         print 'exposing _MISSING:', any([thou[i] is _MISSING for i in range(len(thou))])
         #thou &= IndexedSet(range(500, 503))
         #print thou
+
+        from os import urandom
+        big_set = IndexedSet(range(100000))
+        rands = [ord(r) for r in urandom(len(big_set))]
+        while len(rands) > 10000:
+            if len(big_set) % 300 == 0:
+                print len(big_set),
+                if len(big_set) % 3000 == 0:
+                    print
+                    print len(big_set.dead_indices)
+            big_set.pop(rands.pop())
     except Exception as e:
         import pdb;pdb.post_mortem()
         raise
