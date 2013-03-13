@@ -7,8 +7,8 @@ from collections import MutableSet
 _MISSING = object()
 _COMPACTION_FACTOR = 10
 
-# TODO: better exception messages
 # TODO: inherit from set()
+# TODO: .discard_many(), .remove_many()
 # TODO: raise exception on non-set params?
 # TODO: technically reverse operators should probably reverse the
 # order of the 'other' inputs and put self last (to try and maintain
@@ -29,6 +29,9 @@ class IndexedSet(MutableSet):
     IndexedSet([2, 3, 4, 5, 6, 7])
     >>> x[-1]
     7
+    >>> fcr = IndexedSet('freecreditreport.com')
+    >>> ''.join(fcr[:fcr.index('.')])
+    'frecditpo'
     """
     def __init__(self, other=None):
         self.item_index_map = dict()
@@ -99,7 +102,7 @@ class IndexedSet(MutableSet):
             self.item_list[dead_index] = _MISSING
             self._cull()
         except KeyError:
-            raise #TODO: good message
+            raise
 
     def discard(self, item):
         try:
@@ -253,7 +256,7 @@ class IndexedSet(MutableSet):
         try:
             return self.item_list[real_index]
         except IndexError:
-            raise #TODO: message
+            raise IndexError('IndexedSet index out of range')
 
     def pop(self, index=None):  # O(1) + (amortized O(n) cull)
         item_index_map = self.item_index_map
@@ -294,6 +297,13 @@ class IndexedSet(MutableSet):
             self.item_index_map[item] = i
         del self.dead_indices[:]
 
+    def index(self, val):
+        try:
+            return self.item_index_map[val]
+        except KeyError:
+            raise ValueError('%r is not in IndexedSet' % val)
+
+
 if __name__ == '__main__':
     zero2nine = IndexedSet(range(10))
     five2nine = zero2nine & IndexedSet(range(5, 15))
@@ -304,23 +314,24 @@ if __name__ == '__main__':
     print x[:3], x[2:4:-1]
 
     try:
-        hundo = IndexedSet(xrange(1000))
-        print hundo.pop(), hundo.pop()
-        print hundo.pop(499), hundo.pop(499),
-        print [hundo[i] for i in range(500, 505)]
-        print 'hundo has', len(hundo), 'items'
-        while len(hundo) > 600:
-            dead_idx_count = len(hundo.dead_indices)
-            hundo.pop(0)
-            new_dead_idx_count = len(hundo.dead_indices)
+        thou = IndexedSet(xrange(1000))
+        print thou.pop(), thou.pop()
+        print thou.pop(499), thou.pop(499),
+        print [thou[i] for i in range(500, 505)]
+        print 'thou hath', len(thou), 'items'
+        while len(thou) > 600:
+            dead_idx_count = len(thou.dead_indices)
+            thou.pop(0)
+            new_dead_idx_count = len(thou.dead_indices)
             if new_dead_idx_count < dead_idx_count:
-                print 'culled', dead_idx_count - new_dead_idx_count, 'indexes'
-        print 'hundo has', len(hundo), 'items'
-        print 'hundo has', new_dead_idx_count, 'dead indices'
-        print 'exposing _MISSING:', any([hundo[i] is _MISSING for i in range(len(hundo))])
-        #hundo &= IndexedSet(range(500, 503))
-        #print hundo
+                print 'thou hath culled',
+                print dead_idx_count - new_dead_idx_count, 'indexes'
+        print 'thou hath', len(thou), 'items'
+        print 'thou hath', new_dead_idx_count, 'dead indices'
+        print 'exposing _MISSING:', any([thou[i] is _MISSING for i in range(len(thou))])
+        #thou &= IndexedSet(range(500, 503))
+        #print thou
     except Exception as e:
         import pdb;pdb.post_mortem()
         raise
-    import pdb;pdb.set_trace()
+    #import pdb;pdb.set_trace()
