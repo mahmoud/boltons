@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from bisect import bisect_left, insort
+from bisect import insort, bisect
 from itertools import ifilter, chain
 from collections import MutableSet
 
@@ -10,6 +10,9 @@ _MISSING = object()
 # TODO: slicing
 # TODO: in-place set operations
 # TODO: better exception messages
+# TODO: clear()
+# TODO: inherit from set()
+# TODO: raise exception on non-set params
 
 
 class IndexedSet(MutableSet):
@@ -38,15 +41,12 @@ class IndexedSet(MutableSet):
         ded = self.dead_indices
         if not ded:
             return
-        items = self.item_list
-        skip, ded_index = 1, 1
-        for i in range(ded[0], len(items) - len(ded)):
-            while i + skip == ded[ded_index]:
-                skip += 1
-                ded_index += 1
-            items[i] = items[i + skip]
+        items, index_map = self.item_list, self.item_index_map
+        for i, item in enumerate(iter(self)):
+            items[i] = item
+            index_map[item] = i
         del items[-len(ded):]
-        self.dead_indices = []
+        del ded[:]
 
     def _cull(self):
         ded = self.dead_indices
@@ -54,8 +54,8 @@ class IndexedSet(MutableSet):
             return
         items = self.item_list
         if not self.item_index_map:
-            self.dead_indices = []
-            self.item_list = []
+            del self.dead_indices[:]
+            del self.item_list[:]
         elif len(ded) > 8 and len(ded) > len(items) / 2:
             self._compact()
         elif ded[-1] == len(items) - 1:  # get rid of dead right hand side
@@ -86,6 +86,10 @@ class IndexedSet(MutableSet):
             return len(self) == len(other) and list(self) == list(other)
         return set(self) == set(other)
 
+    @classmethod
+    def from_iterable(cls, it):
+        return cls(it)
+
     #set operations
     def remove(self, item):  # O(1) + (amortized O(n) cull)
         try:
@@ -106,10 +110,6 @@ class IndexedSet(MutableSet):
         if item not in self.item_index_map:
             self.item_index_map[item] = len(self.item_list)
             self.item_list.append(item)
-
-    def update(self, other):
-        for o in other:
-            self.add(o)
 
     def isdisjoint(self, other):
         iim = self.item_index_map
@@ -136,33 +136,34 @@ class IndexedSet(MutableSet):
         return True
 
     def union(self, *others):
-        return IndexedSet(chain(self, *others))
+        return self.from_iterable(chain(self, *others))
 
-    def intersection(self, *others):
-        if len(others) == 1:
-            other = others[0]
-            return IndexedSet(k for k in self if k in other)
-        ret = IndexedSet()
+    def iter_intersection(self, *others):
         for k in self:
             for other in others:
                 if k not in other:
                     break
             else:
-                ret.add(k)
-        return ret
+                yield k
+        return
 
-    def difference(self, *others):
-        if len(others) == 1:
-            other = others[0]
-            return IndexedSet(k for k in self if k not in other)
-        ret = IndexedSet()
+    def intersection(self, *others):
+        #if len(others) == 1:  # TODO: uncomment for optimization after testing
+        #    other = others[0]
+        #    return self.from_iterable(k for k in self if k not in other)
+        return self.from_iterable(self.iter_intersection(*others))
+
+    def iter_difference(self, *others):
         for k in self:
             for other in others:
                 if k in other:
                     break
             else:
-                ret.add(k)
-        return ret
+                yield k
+        return
+
+    def difference(self, *others):
+        return self.from_iterable(self.iter_difference(*others))
 
     def symmetric_difference(self, *others):
         ret = self.union(*others)
@@ -173,11 +174,56 @@ class IndexedSet(MutableSet):
     __sub__ = difference
     __xor__ = symmetric_difference
 
+    # in-place set operations
+    def update(self, *others):
+        if not others:
+            return  # raise?
+        elif len(others) == 1:
+            other = others[0]
+        else:
+            other = chain(others)
+        for o in other:
+            self.add(o)
+
+    def intersection_update(self, *others):
+        for val in self.difference(*others):
+            self.discard(val)
+
+    def difference_update(self, *others):
+        # if self in others: clear()
+        for val in self.intersection(*others):
+            self.discard(val)
+
+    def symmetric_difference_update(self, other):  # note singular 'other'
+        # if self is other: clear()
+        for val in other:
+            if val in self:
+                self.discard(val)
+            else:
+                self.add(val)
+
+    def __ior__(self, *others):
+        self.update(*others)
+        return self
+
+    def __iand__(self, *others):
+        self.intersection_update(*others)
+        return self
+
+    def __isub__(self, *others):
+        self.difference_update(*others)
+        return self
+
+    def __ixor__(self, *others):
+        self.symmetric_difference_update(*others)
+        return self
+
     #list operations
     def __getitem__(self, index):  # TODO: support slicing
         if index < 0:
             index += len(self)
-        real_index = index + bisect_left(self.dead_indices, index)
+        skip = bisect(self.dead_indices, index)
+        real_index = index + skip
         try:
             return self.item_list[real_index]
         except IndexError:
@@ -192,10 +238,12 @@ class IndexedSet(MutableSet):
         else:
             if index < 0:
                 index += len_self
-            real_index = index + bisect_left(self.dead_indices, index)
+            skip = bisect(self.dead_indices, index)
+            real_index = index + skip
             insort(self.dead_indices, real_index)
-            del item_index_map[self.item_list[real_index]]
+            ret = self.item_list[real_index]
             self.item_list[real_index] = _MISSING
+            del item_index_map[ret]
         self._cull()
         return ret
 
@@ -203,3 +251,25 @@ class IndexedSet(MutableSet):
         if x in self.item_index_map:
             return 1
         return 0
+
+
+if __name__ == '__main__':
+    zero2nine = IndexedSet(range(10))
+    five2nine = zero2nine & IndexedSet(range(5, 15))
+    x = IndexedSet(five2nine)
+    x |= set([10])
+    print zero2nine, five2nine, x, x[-1]
+    print zero2nine ^ five2nine
+
+    try:
+        hundo = IndexedSet(xrange(1000))
+        print hundo.pop(), hundo.pop()
+        print hundo.pop(499), hundo.pop(499),
+        print [hundo[i] for i in range(500, 505)]
+        print 'hundo has', len(hundo), 'items'
+        hundo &= IndexedSet(range(500, 503))
+        print hundo
+    except Exception as e:
+        import pdb;pdb.post_mortem()
+        raise
+    import pdb;pdb.set_trace()
