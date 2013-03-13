@@ -1,18 +1,19 @@
 # -*- coding: utf-8 -*-
 
-from bisect import insort, bisect
+from bisect import insort_left, bisect, bisect_left
 from itertools import ifilter, chain
 from collections import MutableSet
 
 _MISSING = object()
 
-# TODO: .sort(), .reverse()
 # TODO: slicing
-# TODO: in-place set operations
 # TODO: better exception messages
 # TODO: clear()
 # TODO: inherit from set()
-# TODO: raise exception on non-set params
+# TODO: raise exception on non-set params?
+# TODO: technically reverse operators should probably reverse the
+# order of the 'other' inputs and put self last (to try and maintain
+# insertion order)
 
 
 class IndexedSet(MutableSet):
@@ -38,15 +39,15 @@ class IndexedSet(MutableSet):
             self.update(other)
 
     def _compact(self):
-        ded = self.dead_indices
-        if not ded:
+        dead_indices = self.dead_indices
+        if not dead_indices:
             return
         items, index_map = self.item_list, self.item_index_map
-        for i, item in enumerate(iter(self)):
+        for i, item in enumerate(self):
             items[i] = item
             index_map[item] = i
-        del items[-len(ded):]
-        del ded[:]
+        del items[-len(dead_indices):]
+        del dead_indices[:]
 
     def _cull(self):
         ded = self.dead_indices
@@ -56,7 +57,7 @@ class IndexedSet(MutableSet):
         if not self.item_index_map:
             del self.dead_indices[:]
             del self.item_list[:]
-        elif len(ded) > 8 and len(ded) > len(items) / 2:
+        elif len(ded) > 8 and len(ded) > len(items) / 10:
             self._compact()
         elif ded[-1] == len(items) - 1:  # get rid of dead right hand side
             num_dead = 1
@@ -94,7 +95,7 @@ class IndexedSet(MutableSet):
     def remove(self, item):  # O(1) + (amortized O(n) cull)
         try:
             dead_index = self.item_index_map.pop(item)
-            insort(self.dead_indices, dead_index)
+            insort_left(self.dead_indices, dead_index)
             self.item_list[dead_index] = _MISSING
             self._cull()
         except KeyError:
@@ -169,10 +170,10 @@ class IndexedSet(MutableSet):
         ret = self.union(*others)
         return ret.difference(self.intersection(*others))
 
-    __or__  = union
-    __and__ = intersection
-    __sub__ = difference
-    __xor__ = symmetric_difference
+    __or__  = __ror__  = union
+    __and__ = __rand__ = intersection
+    __sub__ = __rsub__ = difference
+    __xor__ = __rxor__ = symmetric_difference
 
     # in-place set operations
     def update(self, *others):
@@ -239,8 +240,8 @@ class IndexedSet(MutableSet):
             if index < 0:
                 index += len_self
             skip = bisect(self.dead_indices, index)
+            insort_left(self.dead_indices, index)
             real_index = index + skip
-            insort(self.dead_indices, real_index)
             ret = self.item_list[real_index]
             self.item_list[real_index] = _MISSING
             del item_index_map[ret]
@@ -252,6 +253,21 @@ class IndexedSet(MutableSet):
             return 1
         return 0
 
+    def reverse(self):
+        reversed_list = list(reversed(self))
+        self.item_list[:] = reversed_list
+        for i, item in enumerate(self.item_list):
+            self.item_index_map[item] = i
+        del self.dead_indices[:]
+
+    def sort(self):
+        sorted_list = sorted(self)
+        if sorted_list == self.item_list:
+            return
+        self.item_list[:] = sorted_list
+        for i, item in enumerate(self.item_list):
+            self.item_index_map[item] = i
+        del self.dead_indices[:]
 
 if __name__ == '__main__':
     zero2nine = IndexedSet(range(10))
@@ -267,8 +283,17 @@ if __name__ == '__main__':
         print hundo.pop(499), hundo.pop(499),
         print [hundo[i] for i in range(500, 505)]
         print 'hundo has', len(hundo), 'items'
-        hundo &= IndexedSet(range(500, 503))
-        print hundo
+        while len(hundo) > 600:
+            dead_idx_count = len(hundo.dead_indices)
+            hundo.pop(0)
+            new_dead_idx_count = len(hundo.dead_indices)
+            if new_dead_idx_count < dead_idx_count:
+                print 'culled', dead_idx_count - new_dead_idx_count, 'indexes'
+        print 'hundo has', len(hundo), 'items'
+        print 'hundo has', new_dead_idx_count, 'dead indices'
+        print 'exposing _MISSING:', any([hundo[i] is _MISSING for i in range(len(hundo))])
+        #hundo &= IndexedSet(range(500, 503))
+        #print hundo
     except Exception as e:
         import pdb;pdb.post_mortem()
         raise
