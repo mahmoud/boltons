@@ -14,3 +14,18 @@ elif IS_PY3:
     unicode, str, bytes, basestring = str, bytes, bytes, str
 else:
     raise NotImplementedError('welcome to the future, I guess. (report this)')
+
+
+def make_sentinel(name, var_name=None):
+    class Sentinel(object):
+        def __init__(self):
+            self.name = name
+            self.var_name = var_name
+        def __repr__(self):
+            if self.var_name:
+                return self.var_name
+            return '%s(%r)' % (self.__class__.__name__, self.name)
+        if var_name:
+            def __reduce__(self):
+                return self.var_name
+    return Sentinel()
