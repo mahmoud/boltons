@@ -14,7 +14,7 @@ class Tree(object):
         self.node_count = 0
 
     def insert(self, item):
-        hash(item)
+        hash(item)  # mutable items will break the tree invariant
         cur = self.root
         if not cur:
             self.root = [item, None, None, 1]
@@ -73,10 +73,8 @@ class Tree(object):
             node = stack[i]
             left, right = node[1], node[2]
             height = max(0, left and left[3], right and right[3]) + 1
-            #if height == node[3]:
-            #    # if we have not changed heights, we're done rotating
-            #    return
-            #print 'i: %s, height: %s, new height: %s' % (i, node[3], height)
+            if height == node[3]:
+                return
             node[3] = height
             while 1:
                 balance = (node[1] and node[1][3] or 0) - (node[2] and node[2][3] or 0)
@@ -86,7 +84,6 @@ class Tree(object):
                 side, other_side = (balance < 0) + 1, (balance > 0) + 1
                 child = node[side]
                 cbal = (child[1] and child[1][3] or 0) - (child[2] and child[2][3] or 0)
-                #print balance, cbal
 
                 if (rel_side * cbal) < 0:
                     grandchild = child[other_side]
@@ -96,21 +93,15 @@ class Tree(object):
                     child[3] = max(0, child[1] and child[1][3], child[2] and child[2][3]) + 1
                     child = node[side]  # we're done with the old child
 
-                #for k, v in locals().items():
-                #    try:
-                #        if v[0] == 91 and k != 'v':
-                #            import pdb;pdb.set_trace()
-                #    except (TypeError, IndexError):
-                #        pass
-
                 if i == 0:
                     self.root = child
                 else:
                     parent = stack[i - 1]
                     if parent[1] is node:
                         parent[1] = child
-                    if parent[2] is node:
+                    elif parent[2] is node:
                         parent[2] = child
+
                 node[side] = child[other_side]
                 node[3] = max(node[1] and node[1][3], node[2] and node[2][3], 0) + 1
 
@@ -156,7 +147,7 @@ def general_test():
     offset = 0
     treed_vals = None
     for i, v in enumerate(vals):
-        print i, v
+        #print i, v
         tree.insert(v)
 
         treed_vals = list(tree)
