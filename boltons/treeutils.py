@@ -89,13 +89,10 @@ class Tree(object):
                 #print balance, cbal
 
                 if (rel_side * cbal) < 0:
-                    print ['', 'left', 'right'][side]
                     grandchild = child[other_side]
                     node[side] = grandchild
                     child[other_side] = grandchild[side]
                     grandchild[side] = child
-                    #gc = grandchild
-                    #gc[3] = max(0, gc[1] and gc[1][3], gc[2] and gc[2][3]) + 1
                     child[3] = max(0, child[1] and child[1][3], child[2] and child[2][3]) + 1
                     child = node[side]  # we're done with the old child
 
@@ -115,14 +112,10 @@ class Tree(object):
                     if parent[2] is node:
                         parent[2] = child
                 node[side] = child[other_side]
-                ns = node[side]
-                if ns:
-                    ns[3] = max(ns[1] and ns[1][3], ns[2] and ns[2][3], 0) + 1
+                node[3] = max(node[1] and node[1][3], node[2] and node[2][3], 0) + 1
 
                 child[other_side] = node
-                cos = child[other_side]
-                if cos:
-                    cos[3] = max(cos[1] and cos[1][3], cos[2] and cos[2][3], 0) + 1
+                child[3] = max(child[1] and child[1][3], child[2] and child[2][3], 0) + 1
 
                 node = parent if i > 0 else self.root
                 node[3] = max(node[1] and node[1][3], node[2] and node[2][3], 0) + 1
@@ -201,7 +194,7 @@ if __name__ == '__main__':
         pdb.set_trace()
     signal.signal(signal.SIGINT, pdb_int_handler)
     try:
-        res = general_test()
+        res = drop_test()
     except:
         import pdb;pdb.post_mortem()
         raise
