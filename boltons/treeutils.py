@@ -36,20 +36,18 @@ class Tree(object):
         self._rebalance(stack)
 
     def delete(self, item):
-        if not self.root:
-            raise ValueError("item not in tree: %r" % item)
         stack = []
         cur = self.root
         while cur:
-            if item == cur[0]: #item
+            if item == cur[0]:
                 break
             stack.append(cur)
-            if item < cur[0]: #item
-                cur = cur[1] #left
+            if item < cur[0]:
+                cur = cur[1]
             else:
-                cur = cur[2] #right
+                cur = cur[2]
         if not cur:
-            raise ValueError("item not in tree: "+repr(item))
+            raise ValueError("item not in tree: %r" % item)
         if not cur[1] or not cur[2]: #no left child or no right child
             if not cur[1]: #no left child
                 replace = cur[2]
@@ -71,45 +69,43 @@ class Tree(object):
         self._rebalance(stack)
 
     def _rebalance(self, stack):
-        #update heights along stack
         for i in reversed(range(len(stack))):
             node = stack[i]
-            left = node[1]
-            right = node[2]
-            #update height
-            height = max(left and left[3] or 0, right and right[3] or 0) + 1
+            left, right = node[1], node[2]
+            height = max(0, left and left[3], right and right[3]) + 1
             if height == node[3]:
-                return #if we have not changed heights, no more rotations are necessary
+                # if we have not changed heights, we're done rotating
+                return
             node[3] = height
-            #update balance
-            balance = (left and left[3] or 0) - (right and right[3] or 0)
-            while balance < -1 or balance > 1:
+            while 1:
+                balance = (left and left[3] or 0) - (right and right[3] or 0)
+                if abs(balance) < 2:
+                    break  # we're balanced
                 if balance > 1:
-                    leftleft = left and left[1] or None
-                    leftright = left and left[2] or None
+                    leftleft, leftright = left and (left[1], left[2]) or (None, None)
                     leftbalance = (leftleft and leftleft[3] or 0) - (leftright and leftright[3] or 0)
-                    if leftbalance < 0: #left rotate left
-                        node[1] = leftright #left = leftright
-                        left[2] = leftright[1] #left.right = leftright.left
-                        leftright[1] = left #leftright.left = left
-                        left = node[1] #set left to (new) correct value for next rotation
+                    if leftbalance < 0:  # left rotate left
+                        node[1] = leftright  # left = leftright
+                        left[2] = leftright[1]  # left.right = leftright.left
+                        leftright[1] = left  # leftright.left = left
+                        left = node[1]  # set left to new value for next rotate
                     #right rotate
-                    if i > 0: #right rotate around parent
-                        parent = stack[i-1]
+                    if i > 0:  # right rotate around parent
+                        parent = stack[i - 1]
                         if parent[1] is node:
                             parent[1] = left
                         elif parent[2] is node:
                             parent[2] = left
-                    else: #right rotate around root
+                    else:  # right rotate around root
                         self.root = left
-                    node[1] = left[2] #right = leftright
-                    left[2] = node #leftright = node
+                    node[1] = left[2]  # right = leftright
+                    left[2] = node  # leftright = node
 
                     node = parent if i > 0 else self.root #set node to (new) correct value for balance
 
                 if balance < -1:
-                    rightleft = right and right[1] or None
-                    rightright = right and right[2] or None
+                    rightleft = right and right[1]
+                    rightright = right and right[2]
                     rightbalance = (rightleft and rightleft[3] or 0) - (rightright and rightright[3] or 0)
                     if rightbalance > 0: #right rotate right
                         node[2] = rightleft #right = rightleft
@@ -147,9 +143,8 @@ class Tree(object):
                                                 cur[2] and cur[2][3] or 0) + 1
                     right[3] = max(right[1] and right[1][3] or 0, right[2] and right[2][3] or 0) + 1
                 node[3] = max(left and left[3] or 0, right and right[3] or 0) + 1
-
-                #update balance
-                balance = (left and left[3] or 0) - (right and right[3] or 0)
+                # continue inner while
+            # continue outer for
 
 
     def __iter__(self):
@@ -175,10 +170,15 @@ class Tree(object):
 
 
 def test():
-    t = Tree()
-    for i in range(1024):
-        t.insert(i)
-    return t
+    import os
+    #vals = [ord(x) for x in os.urandom(2048)]
+    vals = range(2048)
+    tree = Tree()
+    for v in vals:
+        tree.insert(v)
+    sorted_vals = list(tree)
+    import pdb;pdb.set_trace()
+    return sorted(vals) == sorted_vals
 
 
 if __name__ == '__main__':
@@ -186,5 +186,8 @@ if __name__ == '__main__':
     def pdb_int_handler(sig, frame):
         pdb.set_trace()
     signal.signal(signal.SIGINT, pdb_int_handler)
-    t = test()
-    pdb.set_trace()
+    res = test()
+    if res:
+        print 'tests pass'
+    else:
+        print 'tests failed'
