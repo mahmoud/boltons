@@ -9,29 +9,34 @@ maintains insertion order on equal values by going right when equal.
 
 
 class Tree(object):
-    def __init__(self):
+    def __init__(self, **kw):
         self.root = None
         self.node_count = 0
+        self.node_size = max(1, kw.pop('node_size', 1))
+        self._lrh = (-3, -2, -1)  # left, right, height
 
-    def insert(self, item):
-        hash(item)  # mutable items will break the tree invariant
+    def insert(self, *a):
+        item = list(a)
+        hash(item[0])  # mutable items will break the tree invariant
+        item.extend([None, None, 1])
         cur = self.root
         if not cur:
-            self.root = [item, None, None, 1]
+            self.root = item
             self.node_count += 1
             return
+        L, R, _ = self._lrh
         stack = []
         while cur:
             stack.append(cur)
             if item < cur[0]:
-                cur = cur[1]
+                cur = cur[L]
             else:
-                cur = cur[2]
+                cur = cur[R]
         cur = stack[-1]
         if item < cur[0]:
-            cur[1] = [item, None, None, 1]
+            cur[L] = item
         else:
-            cur[2] = [item, None, None, 1]
+            cur[R] = item
         self.node_count += 1
         self._rebalance(stack)
 
@@ -69,62 +74,66 @@ class Tree(object):
         self._rebalance(stack)
 
     def _rebalance(self, stack):
+        L, R, H = self._lrh
         for i in reversed(range(len(stack))):
             node = stack[i]
-            left, right = node[1], node[2]
-            height = max(0, left and left[3], right and right[3]) + 1
-            if height == node[3]:
+            height = max(0, node[L] and node[L][H], node[R] and node[R][H]) + 1
+            if height == node[H]:
                 return
             node[3] = height
             while 1:
-                balance = (node[1] and node[1][3] or 0) - (node[2] and node[2][3] or 0)
+                balance = (node[L] and node[L][H] or 0) - (node[R] and node[R][H] or 0)
                 if abs(balance) < 2:
                     break  # we're balanced
                 rel_side = balance / abs(balance)  # -1: rotate left
-                side, other_side = (balance < 0) + 1, (balance > 0) + 1
+                side, other_side = -((balance > 0) + 2), -((balance < 0) + 2)
                 child = node[side]
-                cbal = (child[1] and child[1][3] or 0) - (child[2] and child[2][3] or 0)
+                cbal = (child[L] and child[L][H] or 0) - (child[R] and child[R][H] or 0)
 
                 if (rel_side * cbal) < 0:
                     grandchild = child[other_side]
                     node[side] = grandchild
                     child[other_side] = grandchild[side]
                     grandchild[side] = child
-                    child[3] = max(0, child[1] and child[1][3], child[2] and child[2][3]) + 1
+                    child[H] = max(child[L] and child[L][H],
+                                   child[R] and child[R][H], 0) + 1
                     child = node[side]  # we're done with the old child
 
                 if i == 0:
                     self.root = child
                 else:
                     parent = stack[i - 1]
-                    if parent[1] is node:
-                        parent[1] = child
-                    elif parent[2] is node:
-                        parent[2] = child
+                    if parent[L] is node:
+                        parent[L] = child
+                    elif parent[R] is node:
+                        parent[R] = child
 
                 node[side] = child[other_side]
-                node[3] = max(node[1] and node[1][3], node[2] and node[2][3], 0) + 1
-
+                node[H] = max(node[L] and node[L][H],
+                              node[R] and node[R][H], 0) + 1
                 child[other_side] = node
-                child[3] = max(child[1] and child[1][3], child[2] and child[2][3], 0) + 1
-
+                child[H] = max(child[L] and child[L][H],
+                               child[R] and child[R][H], 0) + 1
                 node = parent if i > 0 else self.root
-                node[3] = max(node[1] and node[1][3], node[2] and node[2][3], 0) + 1
-                # continue inner while
-            # continue outer for
+                node[H] = max(node[L] and node[L][H],
+                              node[R] and node[R][H], 0) + 1
         return
 
-    def __iter__(self):
+    def iternodes(self):
         cur = self.root
         stack = []
+        L, R, _ = self._lrh
         while stack or cur:
             if cur:
                 stack.append(cur)
-                cur = cur[1] #left
+                cur = cur[L]  # left
             else:
                 cur = stack.pop()
-                yield cur[0] #item
-                cur = cur[2] #right
+                yield cur
+                cur = cur[R]  # right
+
+    def __iter__(self):
+        return (node[0] for node in self.iternodes())
 
     def __contains__(self, item): pass
 
@@ -136,12 +145,7 @@ class Tree(object):
         return self.node_count
 
 
-def general_test():
-    import os
-    vals = [ord(x) for x in os.urandom(2048)]
-    #vals = range(2048)
-    #vals = sorted(range(100) * 20)
-    #vals = list(reversed(range(100)))
+def sorted_compare_test(vals):
     tree, old_tree = Tree(), Tree()
     sorted_vals = sorted(vals)
     offset = 0
@@ -152,14 +156,26 @@ def general_test():
 
         treed_vals = list(tree)
         new_offset = len(treed_vals) - (i + 1)
-        if new_offset != offset:  # sorted_vals[:i]:
+        if new_offset != offset:
             offset = new_offset
             import pdb;pdb.set_trace()
         old_tree.insert(v)
-
-    #treed_vals = list(tree)
     print len(vals), len(treed_vals)
     return sorted(vals) == sorted_vals
+
+
+def test_insert_gauntlet():
+    import os
+    range_100 = range(100)
+    value_sets = [range_100,
+                  list(reversed(range_100)),
+                  range(2048),
+                  sorted(range_100 * 20),
+                  [ord(x) for x in os.urandom(2048)]]
+    results = []
+    for val_set in value_sets:
+        results.append(sorted_compare_test(val_set))
+    return all(results)
 
 
 def drop_test():
@@ -185,7 +201,7 @@ if __name__ == '__main__':
         pdb.set_trace()
     signal.signal(signal.SIGINT, pdb_int_handler)
     try:
-        res = general_test()
+        res = test_insert_gauntlet()
     except:
         import pdb;pdb.post_mortem()
         raise
