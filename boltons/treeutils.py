@@ -76,7 +76,7 @@ class Tree(object):
             #if height == node[3]:
             #    # if we have not changed heights, we're done rotating
             #    return
-            print 'i: %s, height: %s, new height: %s' % (i, node[3], height)
+            #print 'i: %s, height: %s, new height: %s' % (i, node[3], height)
             node[3] = height
             while 1:
                 balance = (node[1] and node[1][3] or 0) - (node[2] and node[2][3] or 0)
@@ -86,15 +86,25 @@ class Tree(object):
                 side, other_side = (balance < 0) + 1, (balance > 0) + 1
                 child = node[side]
                 cbal = (child[1] and child[1][3] or 0) - (child[2] and child[2][3] or 0)
+                #print balance, cbal
 
                 if (rel_side * cbal) < 0:
+                    print ['', 'left', 'right'][side]
                     grandchild = child[other_side]
                     node[side] = grandchild
                     child[other_side] = grandchild[side]
                     grandchild[side] = child
-                    gc = grandchild
-                    gc[3] = max(0, gc[1] and gc[1][3], gc[2] and gc[2][3]) + 1
+                    #gc = grandchild
+                    #gc[3] = max(0, gc[1] and gc[1][3], gc[2] and gc[2][3]) + 1
+                    child[3] = max(0, child[1] and child[1][3], child[2] and child[2][3]) + 1
                     child = node[side]  # we're done with the old child
+
+                #for k, v in locals().items():
+                #    try:
+                #        if v[0] == 91 and k != 'v':
+                #            import pdb;pdb.set_trace()
+                #    except (TypeError, IndexError):
+                #        pass
 
                 if i == 0:
                     self.root = child
@@ -142,7 +152,7 @@ class Tree(object):
         return self.node_count
 
 
-def test():
+def general_test():
     import os
     vals = [ord(x) for x in os.urandom(2048)]
     #vals = range(2048)
@@ -167,13 +177,31 @@ def test():
     print len(vals), len(treed_vals)
     return sorted(vals) == sorted_vals
 
+
+def drop_test():
+    cur_state = [156,
+                 [45,
+                  [20, None, None, 1],
+                  [148,
+                   [91, None, None, 1], None, 2], 3],
+                 [212,
+                  [159, None, None, 1],
+                  [240, None, None, 1], 2], 4]
+    tree = Tree()
+    tree.root = cur_state
+    tree.node_count = 8
+    assert len(list(tree)) == len(tree)
+    tree.insert(136)
+    return len(list(tree)) == len(tree) == 9
+
+
 if __name__ == '__main__':
     import signal, pdb
     def pdb_int_handler(sig, frame):
         pdb.set_trace()
     signal.signal(signal.SIGINT, pdb_int_handler)
     try:
-        res = test()
+        res = drop_test()
     except:
         import pdb;pdb.post_mortem()
         raise
@@ -185,7 +213,7 @@ if __name__ == '__main__':
 
 
 """
-[156, [45, [20, None, None, 1], [148, [91, None, None, 1], None, 2], 3], [212, [159, None, None, 1], [240, None, None, 1], 2], 4]
+
 
 + 136
 

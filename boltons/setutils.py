@@ -5,7 +5,7 @@ from itertools import chain, islice
 from collections import MutableSet
 
 _MISSING = object()
-_COMPACTION_FACTOR = 20
+_COMPACTION_FACTOR = 50
 
 # TODO: inherit from set()
 # TODO: .discard_many(), .remove_many()
@@ -343,15 +343,21 @@ if __name__ == '__main__':
         #print thou
 
         from os import urandom
+        import time
         big_set = IndexedSet(range(100000))
         rands = [ord(r) for r in urandom(len(big_set))]
+        start_time, start_size = time.time(), len(big_set)
         while len(rands) > 10000:
             if len(big_set) % 300 == 0:
-                print len(big_set),
+                print len(big_set.dead_indices),
                 if len(big_set) % 3000 == 0:
                     print
-                    print len(big_set.dead_indices)
+                    print len(big_set)
             big_set.pop(rands.pop())
+        end_time, end_size = time.time(), len(big_set)
+        print
+        print 'popped %s items in %s seconds' % (start_size - end_size,
+                                                 end_time - start_time)
     except Exception as e:
         import pdb;pdb.post_mortem()
         raise
