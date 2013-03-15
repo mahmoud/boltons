@@ -201,7 +201,7 @@ if __name__ == '__main__':
         pdb.set_trace()
     signal.signal(signal.SIGINT, pdb_int_handler)
     try:
-        res = drop_test()
+        res = general_test()
     except:
         import pdb;pdb.post_mortem()
         raise
