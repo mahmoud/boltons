@@ -9,15 +9,14 @@ maintains insertion order on equal values by going right when equal.
 
 
 class Tree(object):
-    def __init__(self, **kw):
+    def __init__(self):
         self.root = None
         self.node_count = 0
-        self.node_size = max(1, kw.pop('node_size', 1))
         self._lrh = (-3, -2, -1)  # left, right, height
 
     def insert(self, *a):
-        item = list(a)
-        hash(item[0])  # mutable items will break the tree invariant
+        key, item = a[0], list(a)
+        hash(key)  # mutable items will break the tree invariant
         item.extend([None, None, 1])
         cur = self.root
         if not cur:
@@ -28,48 +27,48 @@ class Tree(object):
         stack = []
         while cur:
             stack.append(cur)
-            if item < cur[0]:
+            if key < cur[0]:
                 cur = cur[L]
             else:
                 cur = cur[R]
         cur = stack[-1]
-        if item < cur[0]:
+        if key < cur[0]:
             cur[L] = item
         else:
             cur[R] = item
         self.node_count += 1
         self._rebalance(stack)
 
-    def delete(self, item):
-        stack = []
-        cur = self.root
+    def delete(self, *a):
+        cur, stack, key = self.root, [], a[0]
+        L, R, _ = self._lrh
+        child_side = None  # search target side relative to parent
         while cur:
-            if item == cur[0]:
+            if key == cur[0]:
                 break
             stack.append(cur)
-            if item < cur[0]:
-                cur = cur[1]
+            if key < cur[0]:
+                cur, child_side = cur[L], L
             else:
-                cur = cur[2]
+                cur, child_side = cur[R], R
         if not cur:
-            raise ValueError("item not in tree: %r" % item)
-        if not cur[1] or not cur[2]: #no left child or no right child
-            if not cur[1]: #no left child
-                replace = cur[2]
-            elif not cur[2]: #no right child
-                replace = cur[1]
-            if stack[-1][1] is cur: #if left child
-                stack[-1][1] = replace #replace left child
-            elif stack[-1][2] is cur: #if right child
-                stack[-1][2] = replace #replace right child
-        else: #both children exist
+            raise KeyError("key not in tree: %r" % key)
+        parent = stack and stack[-1] or self.root
+        if cur[L] and cur[R]:
             stack.append(cur)
-            pred = cur[1] #find in-order predecessor; could also use successor is arbitrary
-            while pred[2]: #go right as long as possible
-                stack.append(pred)
-                pred = cur[2]
-            stack[-1][2] = pred[1] #remove predecessor node from tree
-            cur[0] = pred[0] #replace cur value with predecessor value
+            replace = cur[L]   # find in-order predecessor
+            while replace[R]:  # go right as long as possible
+                stack.append(replace)
+                replace = cur[R]
+            parent[R] = replace[L]     # remove predecessor node from tree
+            cur[0] = replace[0]        # replace cur key with predecessor key
+        else:
+            replace = cur[L] or cur[R]
+            if child_side:
+                parent[child_side] = replace
+            else:
+                self.root = None  # last item, unset root
+
         self.node_count -= 1
         self._rebalance(stack)
 
@@ -79,8 +78,8 @@ class Tree(object):
             node = stack[i]
             height = max(0, node[L] and node[L][H], node[R] and node[R][H]) + 1
             if height == node[H]:
-                return
-            node[3] = height
+                return  # if height unchanged, the rest of the tree is balanced
+            node[H] = height
             while 1:
                 balance = (node[L] and node[L][H] or 0) - (node[R] and node[R][H] or 0)
                 if abs(balance) < 2:
@@ -141,11 +140,13 @@ class Tree(object):
 
     def popleft(self): pass
 
+    #items
+
     def __len__(self):
         return self.node_count
 
 
-def sorted_compare_test(vals):
+def _sorted_compare_test(vals):
     tree, old_tree = Tree(), Tree()
     sorted_vals = sorted(vals)
     offset = 0
@@ -174,7 +175,7 @@ def test_insert_gauntlet():
                   [ord(x) for x in os.urandom(2048)]]
     results = []
     for val_set in value_sets:
-        results.append(sorted_compare_test(val_set))
+        results.append(_sorted_compare_test(val_set))
     return all(results)
 
 
@@ -195,13 +196,23 @@ def drop_test():
     return len(list(tree)) == len(tree) == 9
 
 
+def test_multi_node():
+    mtree = Tree()
+    rr = list(reversed(range(10000)))
+    for r1, r2 in zip(rr, rr[1:]):
+        mtree.insert(r2, r1)
+    mtree_pairs = list(tuple(x[:2]) for x in mtree.iternodes())
+    print mtree_pairs[:10]
+    return len(mtree_pairs) == (len(rr) - 1)
+
+
 if __name__ == '__main__':
     import signal, pdb
     def pdb_int_handler(sig, frame):
         pdb.set_trace()
     signal.signal(signal.SIGINT, pdb_int_handler)
     try:
-        res = test_insert_gauntlet()
+        res = test_multi_node()  # test_insert_gauntlet()
     except:
         import pdb;pdb.post_mortem()
         raise
@@ -209,13 +220,3 @@ if __name__ == '__main__':
         print 'tests pass'
     else:
         print 'tests failed'
-
-
-
-"""
-
-
-+ 136
-
-= [156, [45, [20, None, None, 1], None, 2], [212, [159, None, None, 1], [240, None, None, 1], 2], 3]
-"""
