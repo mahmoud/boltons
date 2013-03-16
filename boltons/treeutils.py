@@ -9,13 +9,22 @@ maintains insertion order on equal values by going right when equal.
 
 
 class Tree(object):
-    def __init__(self):
+    def __init__(self, **kw):
         self.root = None
         self.node_count = 0
-        self._lrh = (-3, -2, -1)  # left, right, height
+        key_index = kw.pop('key_index', 0)
+        if not getattr(key_index, 'start', key_index) == 0:
+            raise ValueError('key index must be 0, or a slice-like object'
+                             ' starting at 0, not %r' % key_index)
+        if kw:
+            raise TypeError('unexpected keyword arguments: %r' % kw)
+        ki, vs = key_index, getattr(key_index, 'end', key_index + 1)
+        self._ki_vs_lrh = (ki, vs, -3, -2, -1)
+        # ki = key index; vs = val start; left, right, height
 
     def insert(self, *a):
-        key, item = a[0], list(a)
+        KI, _, L, R, _ = self._ki_vs_lrh
+        key, item = a[KI], list(a)
         hash(key)  # mutable items will break the tree invariant
         item.extend([None, None, 1])
         cur = self.root
@@ -23,16 +32,15 @@ class Tree(object):
             self.root = item
             self.node_count += 1
             return
-        L, R, _ = self._lrh
         stack = []
         while cur:
             stack.append(cur)
-            if key < cur[0]:
+            if key < cur[KI]:
                 cur = cur[L]
             else:
                 cur = cur[R]
         cur = stack[-1]
-        if key < cur[0]:
+        if key < cur[KI]:
             cur[L] = item
         else:
             cur[R] = item
@@ -40,14 +48,14 @@ class Tree(object):
         self._rebalance(stack)
 
     def delete(self, *a):
-        cur, stack, key = self.root, [], a[0]
-        L, R, _ = self._lrh
+        KI, _, L, R, _ = self._ki_vs_lrh
+        cur, stack, key = self.root, [], a[KI]
         child_side = None  # search target side relative to parent
         while cur:
-            if key == cur[0]:
+            if key == cur[KI]:
                 break
             stack.append(cur)
-            if key < cur[0]:
+            if key < cur[KI]:
                 cur, child_side = cur[L], L
             else:
                 cur, child_side = cur[R], R
@@ -60,8 +68,8 @@ class Tree(object):
             while replace[R]:  # go right as long as possible
                 stack.append(replace)
                 replace = cur[R]
-            parent[R] = replace[L]     # remove predecessor node from tree
-            cur[0] = replace[0]        # replace cur key with predecessor key
+            parent[R] = replace[L]  # remove predecessor node from tree
+            cur[:L] = replace[:L]   # replace cur key/val with predecessor's
         else:
             replace = cur[L] or cur[R]
             if child_side:
@@ -73,7 +81,7 @@ class Tree(object):
         self._rebalance(stack)
 
     def _rebalance(self, stack):
-        L, R, H = self._lrh
+        KI, _, L, R, H = self._ki_vs_lrh
         for i in reversed(range(len(stack))):
             node = stack[i]
             height = max(0, node[L] and node[L][H], node[R] and node[R][H]) + 1
@@ -121,7 +129,7 @@ class Tree(object):
     def iternodes(self):
         cur = self.root
         stack = []
-        L, R, _ = self._lrh
+        _, _, L, R, _ = self._ki_vs_lrh
         while stack or cur:
             if cur:
                 stack.append(cur)
@@ -132,7 +140,8 @@ class Tree(object):
                 cur = cur[R]  # right
 
     def __iter__(self):
-        return (node[0] for node in self.iternodes())
+        KI, _, _, _, _ = self._ki_vs_lrh
+        return (node[KI] for node in self.iternodes())
 
     def __contains__(self, item): pass
 
@@ -211,12 +220,14 @@ if __name__ == '__main__':
     def pdb_int_handler(sig, frame):
         pdb.set_trace()
     signal.signal(signal.SIGINT, pdb_int_handler)
+    res = []
     try:
-        res = test_multi_node()  # test_insert_gauntlet()
+        res.append(test_multi_node())
+        res.append(test_insert_gauntlet())
     except:
         import pdb;pdb.post_mortem()
         raise
-    if res:
+    if all(res):
         print 'tests pass'
     else:
         print 'tests failed'
