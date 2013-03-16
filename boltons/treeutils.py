@@ -1,31 +1,52 @@
-# 0 = item
-# 1 = left
-# 2 = right
-# 3 = height
 
 """
 maintains insertion order on equal values by going right when equal.
+
+comparing tuples to tuples is faster than comparing lists to lists,
+and comparing a tuple to a list is faster than lists to lists.
 """
+import operator
+
+
+def get_indices(index):
+    try:
+        index, value_start = operator.index(index), 1
+        if not index == 0:
+            raise ValueError('integer key index must be 0')
+    except TypeError:
+        try:
+            if index.start:
+                raise ValueError('slice index start must be 0 or None')
+            if index.stop is None or index.stop <= 0:
+                raise ValueError('slice stop must be a positive integer')
+            if index.step is not None and index.step != 1:
+                raise ValueError('slice step must be 1 or None')
+            if index.stop == 1:
+                index, value_start = 0, 1
+            else:
+                index, value_start = slice(index.stop), index.stop + 1
+        except AttributeError as ae:
+            print repr(ae)
+            raise ValueError('index type must be 0 or slice')
+    return index, value_start
 
 
 class Tree(object):
     def __init__(self, **kw):
         self.root = None
         self.node_count = 0
-        key_index = kw.pop('key_index', 0)
-        if not getattr(key_index, 'start', key_index) == 0:
-            raise ValueError('key index must be 0, or a slice-like object'
-                             ' starting at 0, not %r' % key_index)
+        ki, vs = get_indices(kw.pop('key_index', 0))
+        self._ki_vs_lrh = (ki, vs, -3, -2, -1)
         if kw:
             raise TypeError('unexpected keyword arguments: %r' % kw)
-        ki, vs = key_index, getattr(key_index, 'end', key_index + 1)
-        self._ki_vs_lrh = (ki, vs, -3, -2, -1)
         # ki = key index; vs = val start; left, right, height
 
     def insert(self, *a):
-        KI, _, L, R, _ = self._ki_vs_lrh
-        key, item = a[KI], list(a)
-        hash(key)  # mutable items will break the tree invariant
+        KI, VS, L, R, _ = self._ki_vs_lrh
+        for key_item in a[:VS]:
+            hash(key_item)  # mutable items will break the tree invariant
+        item = list(a)
+        key = item[KI]
         item.extend([None, None, 1])
         cur = self.root
         if not cur:
@@ -46,6 +67,7 @@ class Tree(object):
             cur[R] = item
         self.node_count += 1
         self._rebalance(stack)
+        return
 
     def delete(self, *a):
         KI, _, L, R, _ = self._ki_vs_lrh
@@ -76,9 +98,9 @@ class Tree(object):
                 parent[child_side] = replace
             else:
                 self.root = None  # last item, unset root
-
         self.node_count -= 1
         self._rebalance(stack)
+        return
 
     def _rebalance(self, stack):
         KI, _, L, R, H = self._ki_vs_lrh
@@ -143,6 +165,8 @@ class Tree(object):
         KI, _, _, _, _ = self._ki_vs_lrh
         return (node[KI] for node in self.iternodes())
 
+    ## TODOs below
+
     def __contains__(self, item): pass
 
     def pop(self): pass
@@ -153,6 +177,9 @@ class Tree(object):
 
     def __len__(self):
         return self.node_count
+
+
+#### Testing stuff follows
 
 
 def _sorted_compare_test(vals):
@@ -205,15 +232,27 @@ def drop_test():
     return len(list(tree)) == len(tree) == 9
 
 
-def test_multi_node():
+def test_multi_value_nodes():
     mtree = Tree()
-    rr = list(reversed(range(10000)))
+    rr = list(reversed(range(10000))) * 2
     for r1, r2 in zip(rr, rr[1:]):
         mtree.insert(r2, r1)
     mtree_pairs = list(tuple(x[:2]) for x in mtree.iternodes())
     print mtree_pairs[:10]
     return len(mtree_pairs) == (len(rr) - 1)
 
+
+def test_slice_key():
+    import os
+    mtree = Tree(key_index=slice(2))
+    rr = list(reversed(range(10000))) * 2
+    rands = [ord(x) for x in os.urandom(20000)]
+    rr_triples = zip(rr, rr[1:], rands)
+    for r1, r2, r3 in rr_triples:
+        mtree.insert(r2, r1, r3)
+    mtree_triples = list(tuple(x[:3]) for x in mtree.iternodes())
+    print mtree_triples[:16]
+    return len(mtree_triples) == len(rr_triples)
 
 if __name__ == '__main__':
     import signal, pdb
@@ -222,8 +261,9 @@ if __name__ == '__main__':
     signal.signal(signal.SIGINT, pdb_int_handler)
     res = []
     try:
-        res.append(test_multi_node())
-        res.append(test_insert_gauntlet())
+        test_slice_key()
+        #res.append(test_multi_value_nodes())
+        #res.append(test_insert_gauntlet())
     except:
         import pdb;pdb.post_mortem()
         raise
