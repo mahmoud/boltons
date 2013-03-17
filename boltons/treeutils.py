@@ -118,7 +118,8 @@ class Tree(object):
             import pdb;pdb.set_trace()
 
         if cur[L] and cur[R]:
-            replace = cur[R]   # find in-order successor
+            replace = cur[R]   # find successor
+            rside, ropp_side = R, L
             stack.append(replace)
             while replace[L]:  # go left as long as possible
                 replace = replace[L]
@@ -128,12 +129,18 @@ class Tree(object):
             if len(stack) > 1 and stack[0] is stack[1]:
                 import pdb;pdb.set_trace()
             print 'A - replacing %r with %r' % (cur[:L], replace[:L])
+            #if len(self) == 8:
+            #    import pdb;pdb.set_trace()
             cur[:L] = replace[:L]  # replace cur key/val with predecessor's
-            if stack[-2] is self.root:
-                if stack[-2][L] is replace:
-                    stack[-2][L] = None   # TODO
-                else:
-                    stack[-2][R] = None
+            #if stack[-1] is self.root:
+            #    if self.root[L] is cur:
+            #        self.root[L] = None   # TODO
+            #    else:
+            #        self.root[R] = None
+            #    self.root = replace
+            #else:
+            if stack[-2] is cur:  # did not traverse left at all
+                stack[-2][R] = replace[R]
             else:
                 stack[-2][L] = replace[R]
         else:
@@ -154,9 +161,7 @@ class Tree(object):
     def _rebalance(self, stack):
         KI, _, L, R, H = self._ki_vs_lrh
         old_stack = list(stack)
-        if self.root not in stack:
-            import pdb;pdb.set_trace()
-        if stack and (stack[0] is self.root and stack[1:] and stack[1] is self.root):
+        if stack and self.root not in stack:
             import pdb;pdb.set_trace()
         if len(set([id(s) for s in stack])) != len(stack):
             import pdb;pdb.set_trace()
