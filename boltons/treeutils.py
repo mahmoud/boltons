@@ -41,7 +41,6 @@ def _get_indices(index, val_index=None):
             else:
                 index, value_start = slice(index.stop), index.stop + 1
         except AttributeError as ae:
-            print repr(ae)
             raise ValueError('index type must be 0 or slice')
     return index, value_start
 
@@ -96,8 +95,6 @@ class Tree(object):
     def delete(self, *a):
         KI, _, L, R, _ = self._ki_vs_lrh
         old_len, old_list_len = len(self), len(list(self))
-        #if old_len != old_list_len:
-        #    import pdb;pdb.set_trace()
         key, cur, stack = list(a)[KI], self.root, []
         child_side = None  # search target side relative to parent
         while cur:
@@ -113,55 +110,31 @@ class Tree(object):
                 cur, child_side = cur[R], R
         if not cur:
             raise KeyError("key not in tree: " + repr(key))
-
         if cur[L] and cur[R]:
             replace = cur[R]   # find successor
-            rside, ropp_side = R, L
             stack.append(replace)
-            while replace[L]:  # go left as long as possible
-                replace = replace[L]
-                stack.append(replace)
-            if len(stack) > 1 and stack[-1] is stack[-2]:
-                import pdb;pdb.set_trace()
-            if len(stack) > 1 and stack[0] is stack[1]:
-                import pdb;pdb.set_trace()
-            print 'A - replacing %r with %r' % (cur[:L], replace[:L])
-            #if len(self) == 8:
-            #    import pdb;pdb.set_trace()
-            cur[:L] = replace[:L]  # replace cur key/val with predecessor's
-            #if stack[-1] is self.root:
-            #    if self.root[L] is cur:
-            #        self.root[L] = None   # TODO
-            #    else:
-            #        self.root[R] = None
-            #    self.root = replace
-            #else:
-            if stack[-2] is cur:  # did not traverse left at all
+            if not replace[L]:
                 stack[-2][R] = replace[R]
             else:
+                while replace[L]:  # go left as long as possible
+                    replace = replace[L]
+                    stack.append(replace)
                 stack[-2][L] = replace[R]
+            cur[:L] = replace[:L]  # replace cur key/val with predecessor's
         else:
-            stack.pop()
             replace = cur[L] or cur[R]
-            print 'B - replacing %r with %r' % (cur[:L], replace)
             if cur is self.root:
                 self.root = replace
-            elif stack[-1][L] is cur:
-                stack[-1][L] = replace
+            elif stack[-2][L] is cur:
+                stack[-2][L] = replace
             else:
-                stack[-1][R] = replace
-
+                stack[-2][R] = replace
         self.node_count -= 1
         self._rebalance(stack)
         return
 
     def _rebalance(self, stack):
         KI, _, L, R, H = self._ki_vs_lrh
-        old_stack = list(stack)
-        if stack and self.root not in stack:
-            import pdb;pdb.set_trace()
-        if len(set([id(s) for s in stack])) != len(stack):
-            import pdb;pdb.set_trace()
         while stack:
             node = stack.pop()
             parent = stack and stack[-1] or None
@@ -205,9 +178,6 @@ class Tree(object):
                     break
                 parent[H] = max(parent[L] and parent[L][H],
                                 parent[R] and parent[R][H], 0) + 1
-        #if len(self) != len(list(self)):
-        #    print len(self), len(list(self))
-        #    import pdb;pdb.set_trace()
         return
 
     def iternodes(self):
