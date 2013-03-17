@@ -103,10 +103,9 @@ class Tree(object):
         while cur:
             stack.append(cur)
             if key == cur[KI]:
-                # TODO: remove first or last item first?
-                #while key == cur[R][KI]:
-                #    stack.append(cur[R])
-                #    replace = replace[R]
+                while cur[R] and key == cur[R][KI]:
+                    cur = cur[R]
+                    stack.append(cur)
                 break
             if key < cur[KI]:
                 cur, child_side = cur[L], L
@@ -114,8 +113,10 @@ class Tree(object):
                 cur, child_side = cur[R], R
         if not cur:
             raise KeyError("key not in tree: " + repr(key))
-        parent_stack_index = len(stack) - 2
-        #import pdb;pdb.set_trace()
+
+        if len(self) == 8:
+            import pdb;pdb.set_trace()
+
         if cur[L] and cur[R]:
             replace = cur[R]   # find in-order successor
             stack.append(replace)
@@ -126,21 +127,26 @@ class Tree(object):
                 import pdb;pdb.set_trace()
             if len(stack) > 1 and stack[0] is stack[1]:
                 import pdb;pdb.set_trace()
-            if stack[-1][L] is replace[R]:
-                import pdb;pdb.set_trace()
-            #[R] = replace[R]  # remove succesor node from tree
-            #cur[:L] = replace[:L]   # replace cur key/val with predecessor's
-            replace[L] = cur[L]
-            print 'A - replacing %r with %r' % (cur[:L], replace)
+            print 'A - replacing %r with %r' % (cur[:L], replace[:L])
+            cur[:L] = replace[:L]  # replace cur key/val with predecessor's
+            if stack[-2] is self.root:
+                if stack[-2][L] is replace:
+                    stack[-2][L] = None   # TODO
+                else:
+                    stack[-2][R] = None
+            else:
+                stack[-2][L] = replace[R]
         else:
             stack.pop()
             replace = cur[L] or cur[R]
-            print 'B - replacing with %r' % replace
-        if child_side is None:
-            self.root = replace
-            stack = stack[1:]
-        else:
-            stack[parent_stack_index][child_side] = replace
+            print 'B - replacing %r with %r' % (cur[:L], replace)
+            if cur is self.root:
+                self.root = replace
+            elif stack[-1][L] is cur:
+                stack[-1][L] = replace
+            else:
+                stack[-1][R] = replace
+
         self.node_count -= 1
         self._rebalance(stack)
         return
@@ -152,7 +158,7 @@ class Tree(object):
             import pdb;pdb.set_trace()
         if stack and (stack[0] is self.root and stack[1:] and stack[1] is self.root):
             import pdb;pdb.set_trace()
-        if (len(stack) > 1 and stack[-1] is stack[-2]):
+        if len(set([id(s) for s in stack])) != len(stack):
             import pdb;pdb.set_trace()
         while stack:
             node = stack.pop()
@@ -347,7 +353,7 @@ def test_contains():
 def test_delete_plain():
     import os
     tree, size = Tree(), 1000
-    vals = [(x % 3, x) for x in range(10)] # [ord(x) % 3 for x in os.urandom(size)]
+    vals = [(x % 9, x) for x in range(1000)] # [ord(x) % 3 for x in os.urandom(size)]
     for v in vals:
         tree.insert(*v)
     assert len(tree) == len(vals)
