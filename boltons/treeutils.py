@@ -96,8 +96,8 @@ class Tree(object):
     def delete(self, *a):
         KI, _, L, R, _ = self._ki_vs_lrh
         old_len, old_list_len = len(self), len(list(self))
-        if old_len != old_list_len:
-            import pdb;pdb.set_trace()
+        #if old_len != old_list_len:
+        #    import pdb;pdb.set_trace()
         key, cur, stack = list(a)[KI], self.root, []
         child_side = None  # search target side relative to parent
         while cur:
@@ -113,9 +113,6 @@ class Tree(object):
                 cur, child_side = cur[R], R
         if not cur:
             raise KeyError("key not in tree: " + repr(key))
-
-        if len(self) == 8:
-            import pdb;pdb.set_trace()
 
         if cur[L] and cur[R]:
             replace = cur[R]   # find successor
@@ -205,13 +202,12 @@ class Tree(object):
                 child[H] = max(child[L] and child[L][H],
                                child[R] and child[R][H], 0) + 1
                 if parent is None:
-                    print 'parent is None'
                     break
                 parent[H] = max(parent[L] and parent[L][H],
                                 parent[R] and parent[R][H], 0) + 1
-        if len(self) != len(list(self)):
-            print len(self), len(list(self))
-            import pdb;pdb.set_trace()
+        #if len(self) != len(list(self)):
+        #    print len(self), len(list(self))
+        #    import pdb;pdb.set_trace()
         return
 
     def iternodes(self):
@@ -332,8 +328,8 @@ def test_multi_value_nodes():
 def test_slice_key():
     import os
     mtree = Tree(key_index=slice(2))
-    rr = list(reversed(range(10000))) * 2
-    rands = [ord(x) for x in os.urandom(20000)]
+    rr = list(reversed(range(1000))) * 2
+    rands = [ord(x) for x in os.urandom(2000)]
     rr_triples = zip(rr, rr[1:], rands)
     for r1, r2, r3 in rr_triples:
         mtree.insert(r2, r1, r3)
@@ -374,7 +370,7 @@ if __name__ == '__main__':
         pdb.set_trace()
     signal.signal(signal.SIGINT, pdb_int_handler)
     tests = [(k, v) for k, v in globals().items()
-             if k.startswith('test_') and 'delete' in k and callable(v)]
+             if k.startswith('test_') and callable(v)]
     res = {}
     for test_name, test_func in tests:
         try:
