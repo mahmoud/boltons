@@ -23,46 +23,46 @@ TODO/ideas:
 import operator
 
 
-def _get_indices(index, val_index=None):
+def _get_indices(key_size, val_size):
     try:
-        index, value_start = operator.index(index), 0
-        if not index == 0:
-            raise ValueError('integer key index must be 0')
-    except TypeError:
-        try:
-            if index.start:
-                raise ValueError('slice index start must be 0 or None')
-            if index.stop is None or index.stop <= 0:
-                raise ValueError('slice stop must be a positive integer')
-            if index.step is not None and index.step != 1:
-                raise ValueError('slice step must be 1 or None')
-            if index.stop == 1:
-                index, value_start = 0, 0
-            else:
-                index, value_start = slice(index.stop), index.stop + 1
-        except AttributeError as ae:
-            raise ValueError('index type must be 0 or slice')
-    return index, value_start
+        key_size, val_size = operator.index(key_size), operator.index(val_size)
+    except AttributeError:
+        raise ValueError('key and value sizes must be integers')
+    if key_size < 1:
+        raise ValueError('key size must be greater than 1')
+    if val_size < 0:
+        raise ValueError('value size must be a positive integer')
+    key_index = 0
+    if key_size > 1:
+        key_index = slice(0, key_size)
+    val_index = 0
+    if val_size > 0:
+        val_index = key_size
+        if val_size > 1:
+            val_index = slice(key_size, key_size + val_size)
+    return key_index, val_index
 
 
 class Tree(object):
-    def __init__(self, **kw):
+    def __init__(self, iterable=None, **kw):
         self._dbg_nodes = []
         self.root = None
         self.node_count = 0
-        ki, vs = _get_indices(kw.pop('key_index', 0),
-                              kw.pop('val_index', None))
-        self._ki_vs_lrh = (ki, vs, -3, -2, -1)
+        key_size, val_size = kw.pop('key_size', 1), kw.pop('val_size', 0)
+        ki, vi = _get_indices(key_size, val_size)
+        self._ki_vs_vi_lrh = (ki, key_size, vi, -3, -2, -1)
         if kw:
             raise TypeError('unexpected keyword arguments: %r' % kw)
-        # ki = key index; vs = val start; left, right, height
+        # ki = key index; vi = val index; left, right, height
+        if iterable:
+            self.insert_many(iterable)
 
     def insert_many(self, iterable):
-        for it in iterable:
-            self.insert(*it)
+        for item in iterable:
+            self.insert(*item)
 
     def insert(self, *a):
-        KI, VS, L, R, _ = self._ki_vs_lrh
+        KI, VS, VI, L, R, _ = self._ki_vs_vi_lrh
         for key_item in a[:VS]:
             hash(key_item)  # mutable items will break the tree invariant
         item = list(a)
@@ -93,7 +93,7 @@ class Tree(object):
         return
 
     def delete(self, *a):
-        KI, _, L, R, _ = self._ki_vs_lrh
+        KI, _, _, L, R, _ = self._ki_vs_vi_lrh
         old_len, old_list_len = len(self), len(list(self))
         key, cur, stack = list(a)[KI], self.root, []
         child_side = None  # search target side relative to parent
@@ -134,7 +134,7 @@ class Tree(object):
         return
 
     def _rebalance(self, stack):
-        KI, _, L, R, H = self._ki_vs_lrh
+        KI, _, _, L, R, H = self._ki_vs_vi_lrh
         while stack:
             node = stack.pop()
             parent = stack and stack[-1] or None
@@ -183,7 +183,7 @@ class Tree(object):
     def iternodes(self):
         cur = self.root
         stack = []
-        _, _, L, R, _ = self._ki_vs_lrh
+        _, _, _, L, R, _ = self._ki_vs_vi_lrh
         while stack or cur:
             if cur:
                 stack.append(cur)
@@ -194,23 +194,25 @@ class Tree(object):
                 cur = cur[R]
 
     def iteritems(self):
-        KI, VS, L, _, _ = self._ki_vs_lrh
-        return ((n[KI], n[VS:L] or n[KI]) for n in self.iternodes())
+        KI, _, VI, _, _, _ = self._ki_vs_vi_lrh
+        if VI:
+            return ((n[KI],) for n in self.iternodes())
+        return ((n[KI], n[VI]) for n in self.iternodes())
 
     def iterkeys(self):
-        KI, _, _, _, _ = self._ki_vs_lrh
+        KI, _, _, _, _, _ = self._ki_vs_vi_lrh
         return (node[KI] for node in self.iternodes())
 
     __iter__ = iterkeys
 
     def itervalues(self):
-        KI, VS, L, _, _ = self._ki_vs_lrh
-        return (n[VS:L] or n[KI] for n in self.iternodes())
+        _, _, VI, _, _, _ = self._ki_vs_vi_lrh
+        return (n[VI] for n in self.iternodes())
 
     ## TODOs below
 
     def __contains__(self, *a):
-        KI, _, L, R, _ = self._ki_vs_lrh
+        KI, _, _, L, R, _ = self._ki_vs_vi_lrh
         key, cur = list(a)[KI], self.root
         while cur:
             if key == cur[KI]:
@@ -295,9 +297,9 @@ def test_multi_value_nodes():
     return len(mtree_pairs) == (len(rr) - 1)
 
 
-def test_slice_key():
+def test_wide_key():
     import os
-    mtree = Tree(key_index=slice(2))
+    mtree = Tree(key_size=2)
     rr = list(reversed(range(1000))) * 2
     rands = [ord(x) for x in os.urandom(2000)]
     rr_triples = zip(rr, rr[1:], rands)
