@@ -5,7 +5,10 @@ known to humankind. Co-authored by Kurt Rose and Mahmoud Hashemi.
 
 NOTES:
 
-maintains insertion order on equal values by going right when equal.
+maintains insertion order on equal values by going right when equal,
+but does not maintain insertion order on deletes. Imagine inserting A,
+B, C with key values 0, 0, 0, then removing one node with key 0. Upon
+traversal you will see one of [A, B], [B, C], or [A, C].
 
 TODO/ideas:
 
@@ -45,6 +48,7 @@ def _get_indices(index, val_index=None):
 
 class Tree(object):
     def __init__(self, **kw):
+        self._dbg_nodes = []
         self.root = None
         self.node_count = 0
         ki, vs = _get_indices(kw.pop('key_index', 0),
@@ -65,18 +69,21 @@ class Tree(object):
         item = list(a)
         key = item[KI]
         item.extend([None, None, 1])
+        self._dbg_nodes.append(item)
         cur = self.root
         if not cur:
             self.root = item
             self.node_count += 1
             return
-        stack = [cur]
-        while cur:
+        stack = []
+        while 1:
             stack.append(cur)
             if key < cur[KI]:
                 cur = cur[L]
             else:
                 cur = cur[R]
+            if not cur:
+                break
         cur = stack[-1]
         if key < cur[KI]:
             cur[L] = item
@@ -88,40 +95,68 @@ class Tree(object):
 
     def delete(self, *a):
         KI, _, L, R, _ = self._ki_vs_lrh
-        key, cur, stack = list(a)[KI], self.root, [self.root]
+        old_len, old_list_len = len(self), len(list(self))
+        if old_len != old_list_len:
+            import pdb;pdb.set_trace()
+        key, cur, stack = list(a)[KI], self.root, []
         child_side = None  # search target side relative to parent
         while cur:
-            if key == cur[KI]:
-                break
             stack.append(cur)
+            if key == cur[KI]:
+                # TODO: remove first or last item first?
+                #while key == cur[R][KI]:
+                #    stack.append(cur[R])
+                #    replace = replace[R]
+                break
             if key < cur[KI]:
                 cur, child_side = cur[L], L
             else:
                 cur, child_side = cur[R], R
         if not cur:
-            raise KeyError("key not in tree: %r" % key)
-        parent = stack[-1]
+            raise KeyError("key not in tree: " + repr(key))
+        parent_stack_index = len(stack) - 2
+        #import pdb;pdb.set_trace()
         if cur[L] and cur[R]:
-            stack.append(cur)
             replace = cur[R]   # find in-order successor
-            while replace[L]:  # go right as long as possible
+            stack.append(replace)
+            while replace[L]:  # go left as long as possible
+                replace = replace[L]
                 stack.append(replace)
-                replace = replace[L] or replace
-            stack[-1][L] = replace[R]  # remove succesor node from tree
-            cur[:L] = replace[:L]   # replace cur key/val with predecessor's
+            if len(stack) > 1 and stack[-1] is stack[-2]:
+                import pdb;pdb.set_trace()
+            if len(stack) > 1 and stack[0] is stack[1]:
+                import pdb;pdb.set_trace()
+            if stack[-1][L] is replace[R]:
+                import pdb;pdb.set_trace()
+            #[R] = replace[R]  # remove succesor node from tree
+            #cur[:L] = replace[:L]   # replace cur key/val with predecessor's
+            replace[L] = cur[L]
+            print 'A - replacing %r with %r' % (cur[:L], replace)
         else:
+            stack.pop()
             replace = cur[L] or cur[R]
-            if child_side is None:
-                self.root = replace  # last item, unset root
-            else:
-                parent[child_side] = replace
+            print 'B - replacing with %r' % replace
+        if child_side is None:
+            self.root = replace
+            stack = stack[1:]
+        else:
+            stack[parent_stack_index][child_side] = replace
         self.node_count -= 1
         self._rebalance(stack)
         return
 
     def _rebalance(self, stack):
         KI, _, L, R, H = self._ki_vs_lrh
-        for parent, node in reversed(zip(stack, stack[1:])):
+        old_stack = list(stack)
+        if self.root not in stack:
+            import pdb;pdb.set_trace()
+        if stack and (stack[0] is self.root and stack[1:] and stack[1] is self.root):
+            import pdb;pdb.set_trace()
+        if (len(stack) > 1 and stack[-1] is stack[-2]):
+            import pdb;pdb.set_trace()
+        while stack:
+            node = stack.pop()
+            parent = stack and stack[-1] or None
             height = max(0, node[L] and node[L][H], node[R] and node[R][H]) + 1
             #if height == node[H]:
             #    return  # if height unchanged, the rest of the tree is balanced
@@ -158,9 +193,14 @@ class Tree(object):
                 child[other_side] = node
                 child[H] = max(child[L] and child[L][H],
                                child[R] and child[R][H], 0) + 1
-                node = parent
-                node[H] = max(node[L] and node[L][H],
-                              node[R] and node[R][H], 0) + 1
+                if parent is None:
+                    print 'parent is None'
+                    break
+                parent[H] = max(parent[L] and parent[L][H],
+                                parent[R] and parent[R][H], 0) + 1
+        if len(self) != len(list(self)):
+            print len(self), len(list(self))
+            import pdb;pdb.set_trace()
         return
 
     def iternodes(self):
@@ -306,13 +346,13 @@ def test_contains():
 
 def test_delete_plain():
     import os
-    tree, size = Tree(), 10000
-    vals = [ord(x) for x in os.urandom(size)]
+    tree, size = Tree(), 1000
+    vals = [(x % 3, x) for x in range(10)] # [ord(x) % 3 for x in os.urandom(size)]
     for v in vals:
-        tree.insert(v)
-    assert len(tree) == size
+        tree.insert(*v)
+    assert len(tree) == len(vals)
     for v in vals:
-        tree.delete(v)
+        tree.delete(v[0])
     assert len(tree) == 0
     return tree.root is None
 
