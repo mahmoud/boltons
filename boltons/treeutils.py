@@ -200,13 +200,13 @@ class Tree(object):
         return ((n[KI], n[VI]) for n in self.iternodes())
 
     def iterkeys(self):
-        KI, _, _, _, _, _ = self._ki_vs_vi_lrh
+        KI = self._ki_vs_vi_lrh[0]
         return (node[KI] for node in self.iternodes())
 
     __iter__ = iterkeys
 
     def itervalues(self):
-        _, _, VI, _, _, _ = self._ki_vs_vi_lrh
+        VI = self._ki_vs_vi_lrh[2]
         return (n[VI] for n in self.iternodes())
 
     ## TODOs below
