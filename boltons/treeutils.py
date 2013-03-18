@@ -37,8 +37,20 @@ class Tree(object):
             self.insert_many(iterable)
 
     def insert_many(self, iterable):
-        for item in iterable:
-            self.insert(*item)
+        if not iterable:
+            return
+        items = iter(iterable)
+        try:
+            iter(next(items))
+        except StopIteration:
+            return
+        except TypeError:
+            for item in iterable:
+                self.insert(item)
+        else:
+            for item in iterable:
+                self.insert(*item)
+
 
     def insert(self, *a):
         KI, VS, VI, L, R, _ = self._ki_vs_vi_lrh
@@ -159,8 +171,7 @@ class Tree(object):
         return
 
     def _iternodes(self):
-        cur = self.root
-        stack = []
+        cur, stack = self.root, []
         _, _, _, L, R, _ = self._ki_vs_vi_lrh
         while stack or cur:
             if cur:
@@ -174,7 +185,8 @@ class Tree(object):
     @classmethod
     def _get_indices(cls, key_size, val_size):
         try:
-            key_size, val_size = operator.index(key_size), operator.index(val_size)
+            key_size, val_size = (operator.index(key_size),
+                                  operator.index(val_size))
         except AttributeError:
             raise ValueError('key and value sizes must be integers')
         if key_size < 1:
@@ -236,6 +248,7 @@ class Tree(object):
 
 
 #### Testing stuff follows
+_DEFAULT_SIZE = 100
 
 
 def _sorted_compare_test(vals, key_size=None, val_size=None):
@@ -249,7 +262,7 @@ def _sorted_compare_test(vals, key_size=None, val_size=None):
     return sorted(vals) == sorted_vals
 
 
-def test_insert_gauntlet(size=100):
+def test_insert_gauntlet(size=_DEFAULT_SIZE):
     import os
     range_vals = range(size)
     rev_range = list(reversed(range_vals))
@@ -263,7 +276,7 @@ def test_insert_gauntlet(size=100):
     return all(results)
 
 
-def test_value_nodes(size=100):
+def test_value_nodes(size=_DEFAULT_SIZE):
     mtree = Tree()
     rev_range = list(reversed(range(size))) * 2
     for ntuple in zip(rev_range, rev_range[1:]):
@@ -273,7 +286,7 @@ def test_value_nodes(size=100):
     return len(mtree_vals) == (len(rev_range) - 1)
 
 
-def test_wide_key():
+def test_wide_key(size=_DEFAULT_SIZE):
     import os
     mtree = Tree(key_size=2)
     rr = list(reversed(range(1000))) * 2
@@ -282,27 +295,21 @@ def test_wide_key():
     for triple in rr_triples:
         mtree.insert(*triple)
     mtree_triples = [x for x in mtree.iterkeys()]
-    print mtree_triples[:16]
     return len(mtree_triples) == len(rr_triples)
 
 
-def test_contains():
+def test_contains(size=_DEFAULT_SIZE):
     import os
-    tree = Tree()
-    vals = range(1000)
-    for v in vals:
-        tree.insert(v)
-    assert len(tree) == 1000
-    contains_rands = [ord(x) in tree for x in os.urandom(1000)]
-    not_contains_rands = [((1000 + ord(x)) not in tree)
-                          for x in os.urandom(1000)]
+    vals = range(256)
+    tree = Tree(vals)
+    contains_rands = [ord(x) in tree for x in os.urandom(size)]
+    not_contains_rands = [(256 + x not in tree) for x in range(size)]
     return all(not_contains_rands + contains_rands)
 
 
-def test_delete_plain():
-    import os
-    tree, size = Tree(), 1000
-    vals = [(x % 9, x) for x in range(1000)]
+def test_delete(size=_DEFAULT_SIZE):
+    tree, size = Tree(), size
+    vals = [(x % 9, x) for x in range(size)]
     for v in vals:
         tree.insert(*v)
     assert len(tree) == len(vals)
