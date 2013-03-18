@@ -23,33 +23,12 @@ TODO/ideas:
 import operator
 
 
-def _get_indices(key_size, val_size):
-    try:
-        key_size, val_size = operator.index(key_size), operator.index(val_size)
-    except AttributeError:
-        raise ValueError('key and value sizes must be integers')
-    if key_size < 1:
-        raise ValueError('key size must be greater than 1')
-    if val_size < 0:
-        raise ValueError('value size must be a positive integer')
-    key_index = 0
-    if key_size > 1:
-        key_index = slice(0, key_size)
-    val_index = 0
-    if val_size > 0:
-        val_index = key_size
-        if val_size > 1:
-            val_index = slice(key_size, key_size + val_size)
-    return key_index, val_index
-
-
 class Tree(object):
     def __init__(self, iterable=None, **kw):
-        self._dbg_nodes = []
         self.root = None
         self.node_count = 0
         key_size, val_size = kw.pop('key_size', 1), kw.pop('val_size', 0)
-        ki, vi = _get_indices(key_size, val_size)
+        ki, vi = self._get_indices(key_size, val_size)
         self._ki_vs_vi_lrh = (ki, key_size, vi, -3, -2, -1)
         if kw:
             raise TypeError('unexpected keyword arguments: %r' % kw)
@@ -68,7 +47,6 @@ class Tree(object):
         item = list(a)
         key = item[KI]
         item.extend([None, None, 1])
-        self._dbg_nodes.append(item)
         cur = self.root
         if not cur:
             self.root = item
@@ -180,7 +158,7 @@ class Tree(object):
                                 parent[R] and parent[R][H], 0) + 1
         return
 
-    def iternodes(self):
+    def _iternodes(self):
         cur = self.root
         stack = []
         _, _, _, L, R, _ = self._ki_vs_vi_lrh
@@ -193,23 +171,45 @@ class Tree(object):
                 yield cur
                 cur = cur[R]
 
+    @classmethod
+    def _get_indices(cls, key_size, val_size):
+        try:
+            key_size, val_size = operator.index(key_size), operator.index(val_size)
+        except AttributeError:
+            raise ValueError('key and value sizes must be integers')
+        if key_size < 1:
+            raise ValueError('key size must be greater than 1')
+        if val_size < 0:
+            raise ValueError('value size must be a positive integer')
+        key_index = 0
+        if key_size > 1:
+            key_index = slice(0, key_size)
+        val_index = 0
+        if val_size > 0:
+            val_index = key_size
+            if val_size > 1:
+                val_index = slice(key_size, key_size + val_size)
+        return key_index, val_index
+
+    ########
+    # Pythonic wrappers below
+    ########
+
     def iteritems(self):
         KI, _, VI, _, _, _ = self._ki_vs_vi_lrh
         if VI:
-            return ((n[KI],) for n in self.iternodes())
-        return ((n[KI], n[VI]) for n in self.iternodes())
+            return ((n[KI],) for n in self._iternodes())
+        return ((n[KI], n[VI]) for n in self._iternodes())
 
     def iterkeys(self):
         KI = self._ki_vs_vi_lrh[0]
-        return (node[KI] for node in self.iternodes())
+        return (node[KI] for node in self._iternodes())
 
     __iter__ = iterkeys
 
     def itervalues(self):
         VI = self._ki_vs_vi_lrh[2]
-        return (n[VI] for n in self.iternodes())
-
-    ## TODOs below
+        return (n[VI] for n in self._iternodes())
 
     def __contains__(self, *a):
         KI, _, _, L, R, _ = self._ki_vs_vi_lrh
@@ -225,6 +225,7 @@ class Tree(object):
             return True
         return False
 
+    ## TODOs below
 
     def pop(self): pass
 
@@ -237,64 +238,39 @@ class Tree(object):
 #### Testing stuff follows
 
 
-def _sorted_compare_test(vals):
+def _sorted_compare_test(vals, key_size=None, val_size=None):
     tree = Tree()
     sorted_vals = sorted(vals)
-    #offset, old_tree = 0, Tree()
     treed_vals = None
     for i, v in enumerate(vals):
-        #print i, v
         tree.insert(v)
-        #treed_vals = list(tree)
-        #new_offset = len(treed_vals) - (i + 1)
-        #if new_offset != offset:
-        #    offset = new_offset
-        #    import pdb;pdb.set_trace()
-        #old_tree.insert(v)
     treed_vals = list(tree)
     print len(vals), len(treed_vals)
     return sorted(vals) == sorted_vals
 
 
-def test_insert_gauntlet():
+def test_insert_gauntlet(size=100):
     import os
-    range_100 = range(100)
-    value_sets = [range_100,
-                  list(reversed(range_100)),
-                  range(2048),
-                  sorted(range_100 * 20),
-                  [ord(x) for x in os.urandom(2048)]]
+    range_vals = range(size)
+    rev_range = list(reversed(range_vals))
+    sorted_range_dups = sorted((range_vals * 2)[:size])
+    many_dups = [x % 6 for x in range(size)]
+    randoms = [ord(x) for x in os.urandom(2048)]
+    value_sets = [range_vals, rev_range, sorted_range_dups, many_dups, randoms]
     results = []
     for val_set in value_sets:
         results.append(_sorted_compare_test(val_set))
     return all(results)
 
 
-def test_drop():
-    cur_state = [156,
-                 [45,
-                  [20, None, None, 1],
-                  [148,
-                   [91, None, None, 1], None, 2], 3],
-                 [212,
-                  [159, None, None, 1],
-                  [240, None, None, 1], 2], 4]
-    tree = Tree()
-    tree.root = cur_state
-    tree.node_count = 8
-    assert len(list(tree)) == len(tree)
-    tree.insert(136)
-    return len(list(tree)) == len(tree) == 9
-
-
-def test_multi_value_nodes():
+def test_value_nodes(size=100):
     mtree = Tree()
-    rr = list(reversed(range(10000))) * 2
-    for r1, r2 in zip(rr, rr[1:]):
-        mtree.insert(r2, r1)
-    mtree_pairs = list(tuple(x[:2]) for x in mtree.iternodes())
-    print mtree_pairs[:10]
-    return len(mtree_pairs) == (len(rr) - 1)
+    rev_range = list(reversed(range(size))) * 2
+    for ntuple in zip(rev_range, rev_range[1:]):
+        mtree.insert(ntuple[0], *ntuple)
+    mtree_vals = [x for x in mtree.itervalues()]
+    print mtree_vals[:10]
+    return len(mtree_vals) == (len(rev_range) - 1)
 
 
 def test_wide_key():
@@ -303,9 +279,9 @@ def test_wide_key():
     rr = list(reversed(range(1000))) * 2
     rands = [ord(x) for x in os.urandom(2000)]
     rr_triples = zip(rr, rr[1:], rands)
-    for r1, r2, r3 in rr_triples:
-        mtree.insert(r2, r1, r3)
-    mtree_triples = list(tuple(x[:3]) for x in mtree.iternodes())
+    for triple in rr_triples:
+        mtree.insert(*triple)
+    mtree_triples = [x for x in mtree.iterkeys()]
     print mtree_triples[:16]
     return len(mtree_triples) == len(rr_triples)
 
@@ -326,7 +302,7 @@ def test_contains():
 def test_delete_plain():
     import os
     tree, size = Tree(), 1000
-    vals = [(x % 9, x) for x in range(1000)] # [ord(x) % 3 for x in os.urandom(size)]
+    vals = [(x % 9, x) for x in range(1000)]
     for v in vals:
         tree.insert(*v)
     assert len(tree) == len(vals)
