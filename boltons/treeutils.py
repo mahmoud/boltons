@@ -3,22 +3,12 @@
 Below you will find the best damn pure-Python AVL tree implementation
 known to humankind. Co-authored by Kurt Rose and Mahmoud Hashemi.
 
-NOTES:
+maintains insertion order on equal values (sort "stability"), by going
+right when equal.
 
-maintains insertion order on equal values by going right when equal,
-but does not maintain insertion order on deletes. Imagine inserting A,
-B, C with key values 0, 0, 0, then removing one node with key 0. Upon
-traversal you will see one of [A, B], [B, C], or [A, C].
-
-TODO/ideas:
-
-- key_index is a thing, what about val_index? currently values (when
-  present) are always returned as lists (from slicing)
-- limit individual node size
-- more perf tests
+TODO:
 - .keys(), .values(), .items()
-- counter for identical nodes?
-- tunable balance factor (AVL is by default 1)
+- .pop(), .popleft()
 """
 import operator
 
@@ -94,7 +84,7 @@ class Tree(object):
             else:
                 cur = cur[R]
         if not cur:
-            raise KeyError("key not in tree: %r" (key,))
+            raise KeyError("key not in tree: %r" % (key,))
         if cur[L] and cur[R]:
             replace = cur[R]   # find successor
             stack.append(replace)
@@ -123,10 +113,8 @@ class Tree(object):
         while stack:
             node = stack.pop()
             parent = stack and stack[-1] or None
-            height = max(0, node[L] and node[L][H], node[R] and node[R][H]) + 1
-            #if height == node[H]:
-            #    return # if height unchanged, the rest of the tree is balanced
-            node[H] = height
+            node[H] = max(node[L] and node[L][H],
+                          node[R] and node[R][H], 0) + 1
             while 1:
                 balance = (node[L] and node[L][H] or 0) - (node[R] and node[R][H] or 0)
                 if abs(balance) < 2:
