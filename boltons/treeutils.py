@@ -51,7 +51,6 @@ class Tree(object):
             for item in iterable:
                 self.insert(*item)
 
-
     def insert(self, *a):
         KI, VS, VI, L, R, _ = self._ki_vs_vi_lrh
         for key_item in a[:VS]:
@@ -65,14 +64,12 @@ class Tree(object):
             self.node_count += 1
             return
         stack = []
-        while 1:
+        while cur:
             stack.append(cur)
             if key < cur[KI]:
                 cur = cur[L]
             else:
                 cur = cur[R]
-            if not cur:
-                break
         cur = stack[-1]
         if key < cur[KI]:
             cur[L] = item
@@ -84,9 +81,7 @@ class Tree(object):
 
     def delete(self, *a):
         KI, _, _, L, R, _ = self._ki_vs_vi_lrh
-        old_len, old_list_len = len(self), len(list(self))
         key, cur, stack = list(a)[KI], self.root, []
-        child_side = None  # search target side relative to parent
         while cur:
             stack.append(cur)
             if key == cur[KI]:
@@ -95,11 +90,11 @@ class Tree(object):
                     stack.append(cur)
                 break
             if key < cur[KI]:
-                cur, child_side = cur[L], L
+                cur = cur[L]
             else:
-                cur, child_side = cur[R], R
+                cur = cur[R]
         if not cur:
-            raise KeyError("key not in tree: " + repr(key))
+            raise KeyError("key not in tree: %r" (key,))
         if cur[L] and cur[R]:
             replace = cur[R]   # find successor
             stack.append(replace)
@@ -130,7 +125,7 @@ class Tree(object):
             parent = stack and stack[-1] or None
             height = max(0, node[L] and node[L][H], node[R] and node[R][H]) + 1
             #if height == node[H]:
-            #    return  # if height unchanged, the rest of the tree is balanced
+            #    return # if height unchanged, the rest of the tree is balanced
             node[H] = height
             while 1:
                 balance = (node[L] and node[L][H] or 0) - (node[R] and node[R][H] or 0)
@@ -237,28 +232,25 @@ class Tree(object):
             return True
         return False
 
+    def __len__(self):
+        return self.node_count
+
     ## TODOs below
 
     def pop(self): pass
 
     def popleft(self): pass
 
-    def __len__(self):
-        return self.node_count
-
 
 #### Testing stuff follows
-_DEFAULT_SIZE = 100
+_DEFAULT_SIZE = 10000
 
 
 def _sorted_compare_test(vals, key_size=None, val_size=None):
     tree = Tree()
     sorted_vals = sorted(vals)
-    treed_vals = None
     for i, v in enumerate(vals):
         tree.insert(v)
-    treed_vals = list(tree)
-    print len(vals), len(treed_vals)
     return sorted(vals) == sorted_vals
 
 
@@ -282,15 +274,14 @@ def test_value_nodes(size=_DEFAULT_SIZE):
     for ntuple in zip(rev_range, rev_range[1:]):
         mtree.insert(ntuple[0], *ntuple)
     mtree_vals = [x for x in mtree.itervalues()]
-    print mtree_vals[:10]
     return len(mtree_vals) == (len(rev_range) - 1)
 
 
 def test_wide_key(size=_DEFAULT_SIZE):
     import os
     mtree = Tree(key_size=2)
-    rr = list(reversed(range(1000))) * 2
-    rands = [ord(x) for x in os.urandom(2000)]
+    rr = list(reversed(range(size))) * 2
+    rands = [ord(x) for x in os.urandom(size * 2)]
     rr_triples = zip(rr, rr[1:], rands)
     for triple in rr_triples:
         mtree.insert(*triple)
@@ -308,6 +299,7 @@ def test_contains(size=_DEFAULT_SIZE):
 
 
 def test_delete(size=_DEFAULT_SIZE):
+    import os
     tree, size = Tree(), size
     vals = [(x % 9, x) for x in range(size)]
     for v in vals:
@@ -315,6 +307,11 @@ def test_delete(size=_DEFAULT_SIZE):
     assert len(tree) == len(vals)
     for v in vals:
         tree.delete(v[0])
+    assert len(tree) == 0
+    rands = [(ord(x), i) for i, x in enumerate(os.urandom(size))]
+    tree.insert_many(rands)
+    for r, _ in rands:
+        tree.delete(r)
     assert len(tree) == 0
     return tree.root is None
 
@@ -329,6 +326,7 @@ if __name__ == '__main__':
     res = {}
     for test_name, test_func in tests:
         try:
+            print test_name
             res[test_name] = test_func()
         except:
             import pdb;pdb.post_mortem()
