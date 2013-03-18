@@ -143,19 +143,22 @@ def chunked_iter(src, size, **kw):
         raise ValueError('got unexpected keyword arguments: %r' % kw.keys())
     if not src:
         return
+    postprocess = lambda chk: chk
+    if isinstance(src, basestring):
+        postprocess = lambda chk, _sep=type(src)(): _sep.join(chk)
     cur_chunk = []
     i = 0
     for item in src:
         cur_chunk.append(item)
         i += 1
         if i % size == 0:
-            yield cur_chunk
+            yield postprocess(cur_chunk)
             cur_chunk = []
     if cur_chunk:
         if do_fill:
             lc = len(cur_chunk)
             cur_chunk[lc:] = [fill_val] * (size - lc)
-        yield cur_chunk
+        yield postprocess(cur_chunk)
     return
 
 
