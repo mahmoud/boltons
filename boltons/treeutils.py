@@ -14,12 +14,16 @@ import operator
 from bisect import insort, bisect
 
 
+__all__ = ['Tree']
+
+
 class BisectTree(object):
     def __init__(self, iterable=None, **kw):
         self.keys = []
         self.val_map = None
         self._node_count = 0
-        key_size, value_size = kw.pop('key_size', 1), kw.pop('val_size', 1)
+        key_size = kw.pop('key_size', 1)
+        value_size = kw.pop('val_size', 1)
         ki, vi = self._get_indices(key_size, value_size)
         self._ki_vs_vi = ki, key_size, vi
         if value_size > 0:
@@ -121,6 +125,19 @@ class BisectTree(object):
 
     def __len__(self):
         return self._node_count
+
+    def pop(self, index=None):
+        val_size = self._ki_vs_vi[1]
+        if index is None:
+            key = self.keys.pop()
+        else:
+            key = self.keys.pop(index)
+        if self.val_map is None:
+            return (key, val)
+        return key
+
+    def popleft(self):
+        return self.pop(0)
 
 
 class AVLTree(object):
@@ -335,12 +352,21 @@ class AVLTree(object):
 
     ## TODOs below
 
-    def pop(self): pass
+    def pop(self): raise NotImplementedError()
 
-    def popleft(self): pass
+    def popleft(self): raise NotImplementedError()
 
 
-
+try:
+    import sys
+    if hasattr(sys, 'pypy_version_info'):
+        Tree = AVLTree
+    else:
+        Tree = BisectTree
+except:
+    Tree = BisectTree
+finally:
+    del sys
 
 
 #### Testing stuff follows
