@@ -11,9 +11,119 @@ TODO:
 - .pop(), .popleft()
 """
 import operator
+from bisect import insort, bisect
 
 
-class Tree(object):
+class BisectTree(object):
+    def __init__(self, iterable=None, **kw):
+        self.keys = []
+        self.val_map = None
+        self._node_count = 0
+        key_size, value_size = kw.pop('key_size', 1), kw.pop('val_size', 1)
+        ki, vi = self._get_indices(key_size, value_size)
+        self._ki_vs_vi = ki, key_size, vi
+        if value_size > 0:
+            self.val_map = {}
+        if kw:
+            raise TypeError('unexpected keyword arguments: %r' % kw)
+        if iterable:
+            self.insert_many(iterable)
+
+    @property
+    def root(self):
+        return self.keys and self.keys[0] or None
+
+    def insert_many(self, iterable):
+        if not iterable:
+            return
+        items = iter(iterable)
+        try:
+            iter(next(items))
+        except StopIteration:
+            return
+        except TypeError:
+            for item in iterable:
+                self.insert(item)
+        else:
+            for item in iterable:
+                self.insert(*item)
+
+    def insert(self, *a):
+        KI, VS, VI = self._ki_vs_vi
+        for key_item in a[:VS]:
+            hash(key_item)  # mutable items will break the tree invariant
+        key = a[KI]
+        if self.val_map is not None:
+            self.val_map.setdefault(key, []).append(a[VI])
+        insort(self.keys, key)
+        self._node_count += 1
+
+    def delete(self, *a):
+        key = a[self._ki_vs_vi[0]]
+        if self.val_map is not None:
+            val_list = self.val_map[key]
+            val_list.pop()
+            if not val_list:
+                self.val_map.pop(key)
+            idx = bisect(self.keys, key) - 1
+        else:
+            idx = bisect(self.keys, key) - 1
+            if idx >= 0 or self.keys[idx] != key:
+                raise KeyError('tree does not contain %r' % (key,))
+        self.keys.pop(idx)
+        self._node_count -= 1
+
+    @classmethod
+    def _get_indices(cls, key_size, val_size):
+        try:
+            key_size, val_size = (operator.index(key_size),
+                                  operator.index(val_size))
+        except AttributeError:
+            raise ValueError('key and value sizes must be integers')
+        if key_size < 1:
+            raise ValueError('key size must be greater than 1')
+        if val_size < 0:
+            raise ValueError('value size must be a positive integer')
+        key_index = 0
+        if key_size > 1:
+            key_index = slice(0, key_size)
+        val_index = 0
+        if val_size > 0:
+            val_index = key_size
+            if val_size > 1:
+                val_index = slice(key_size, key_size + val_size)
+        return key_index, val_index
+
+    def iterkeys(self):
+        return iter(self.keys)
+
+    def itervalues(self):
+        return (v for (k, v) in self.iteritems())
+
+    __iter__ = iterkeys
+
+    def iteritems(self):
+        if self.val_map is not None:
+            for k in self.keys:
+                for v in self.val_map[k]:
+                    yield (k, v)
+        else:
+            for k in self.keys:
+                yield k
+
+    def __contains__(self, key):
+        if not self.keys:
+            return False
+        if self.val_map is not None:
+            return key in self.val_map
+        idx = bisect(self.keys, key)
+        return self.keys[idx - 1] == key
+
+    def __len__(self):
+        return self._node_count
+
+
+class AVLTree(object):
     def __init__(self, iterable=None, **kw):
         self.root = None
         self.node_count = 0
@@ -230,19 +340,20 @@ class Tree(object):
     def popleft(self): pass
 
 
+
+
+
 #### Testing stuff follows
 _DEFAULT_SIZE = 10000
 
 
-def _sorted_compare_test(vals, key_size=None, val_size=None):
-    tree = Tree()
+def _sorted_compare_test(tree_type, vals):
+    tree = tree_type(vals, val_size=0)
     sorted_vals = sorted(vals)
-    for i, v in enumerate(vals):
-        tree.insert(v)
-    return sorted(vals) == sorted_vals
+    return sorted(list(tree)) == sorted_vals
 
 
-def test_insert_gauntlet(size=_DEFAULT_SIZE):
+def test_insert_gauntlet(tree_type, size=_DEFAULT_SIZE):
     import os
     range_vals = range(size)
     rev_range = list(reversed(range_vals))
@@ -252,22 +363,23 @@ def test_insert_gauntlet(size=_DEFAULT_SIZE):
     value_sets = [range_vals, rev_range, sorted_range_dups, many_dups, randoms]
     results = []
     for val_set in value_sets:
-        results.append(_sorted_compare_test(val_set))
+        results.append(_sorted_compare_test(tree_type, val_set))
     return all(results)
 
 
-def test_value_nodes(size=_DEFAULT_SIZE):
-    mtree = Tree()
+def test_value_nodes(tree_type, size=_DEFAULT_SIZE):
+    mtree = tree_type(val_size=2)
     rev_range = list(reversed(range(size))) * 2
-    for ntuple in zip(rev_range, rev_range[1:]):
-        mtree.insert(ntuple[0], *ntuple)
+    rev_pairs = zip(rev_range, rev_range[1:])
+    for i, pair in enumerate(rev_pairs):
+        mtree.insert(i, *pair)
     mtree_vals = [x for x in mtree.itervalues()]
     return len(mtree_vals) == (len(rev_range) - 1)
 
 
-def test_wide_key(size=_DEFAULT_SIZE):
+def test_wide_key(tree_type, size=_DEFAULT_SIZE):
     import os
-    mtree = Tree(key_size=2)
+    mtree = tree_type(key_size=2)
     rr = list(reversed(range(size))) * 2
     rands = [ord(x) for x in os.urandom(size * 2)]
     rr_triples = zip(rr, rr[1:], rands)
@@ -277,18 +389,18 @@ def test_wide_key(size=_DEFAULT_SIZE):
     return len(mtree_triples) == len(rr_triples)
 
 
-def test_contains(size=_DEFAULT_SIZE):
+def test_contains(tree_type, size=_DEFAULT_SIZE):
     import os
     vals = range(256)
-    tree = Tree(vals)
+    tree = tree_type(vals, val_size=0)
     contains_rands = [ord(x) in tree for x in os.urandom(size)]
     not_contains_rands = [(256 + x not in tree) for x in range(size)]
     return all(not_contains_rands + contains_rands)
 
 
-def test_delete(size=_DEFAULT_SIZE):
+def test_delete(tree_type, size=_DEFAULT_SIZE):
     import os
-    tree, size = Tree(), size
+    tree = tree_type()
     vals = [(x % 9, x) for x in range(size)]
     for v in vals:
         tree.insert(*v)
@@ -305,21 +417,27 @@ def test_delete(size=_DEFAULT_SIZE):
 
 
 if __name__ == '__main__':
-    import signal, pdb
+    import signal, pdb, time, pprint
     def pdb_int_handler(sig, frame):
         pdb.set_trace()
     signal.signal(signal.SIGINT, pdb_int_handler)
     tests = [(k, v) for k, v in globals().items()
              if k.startswith('test_') and callable(v)]
     res = {}
-    for test_name, test_func in tests:
-        try:
-            print test_name
-            res[test_name] = test_func()
-        except:
-            import pdb;pdb.post_mortem()
-            raise
+    for tree_type in (BisectTree, AVLTree):
+        type_name = tree_type.__name__
+        for test_name, test_func in tests:
+            start_time = time.time()
+            try:
+                print type_name, test_name
+                t_ret = test_func(tree_type)
+            except:
+                import pdb;pdb.post_mortem()
+                raise
+            end_time = time.time() - start_time
+            res[type_name, test_name] = t_ret and (round(end_time, 3) or 0.001)
     if all(res.values()):
-        print 'tests pass'
+        print '\nTimings:'
+        pprint.pprint(res)
     else:
         print 'tests failed: %r' % [k for k, v in res.items() if not v]
