@@ -11,10 +11,15 @@ TODO:
 - .pop(), .popleft()
 """
 import operator
-from bisect import insort, bisect
-
+from bisect import insort, bisect, bisect_left
 
 __all__ = ['Tree']
+
+try:
+    from compat import make_sentinel
+    _MISSING = make_sentinel(var_name='_MISSING')
+except ImportError:
+    _MISSING = object()
 
 
 class BisectTree(object):
@@ -57,24 +62,31 @@ class BisectTree(object):
         for key_item in a[:VS]:
             hash(key_item)  # mutable items will break the tree invariant
         key = a[KI]
-        if self.val_map is not None:
-            self.val_map.setdefault(key, []).append(a[VI])
-        insort(self.keys, key)
+        if self.val_map is None:
+            insort(self.keys, key)
+        else:
+            val = a[VI]
+            if key in self.val_map:
+                self.val_map[key].append(val)
+            else:
+                insort(self.keys, key)
+                self.val_map[key] = [val]
         self._node_count += 1
 
     def delete(self, *a):
         key = a[self._ki_vs_vi[0]]
-        if self.val_map is not None:
-            val_list = self.val_map[key]
-            val_list.pop()
-            if not val_list:
-                self.val_map.pop(key)
-            idx = bisect(self.keys, key) - 1
-        else:
+        if self.val_map is None:
             idx = bisect(self.keys, key) - 1
             if idx >= 0 or self.keys[idx] != key:
                 raise KeyError('tree does not contain %r' % (key,))
-        self.keys.pop(idx)
+            self.keys.pop(idx)
+        else:
+            val_list = self.val_map[key]
+            val_list.pop()
+            if not val_list:
+                idx = bisect(self.keys, key) - 1
+                self.keys.pop(idx)
+                del self.val_map[key]
         self._node_count -= 1
 
     @classmethod
@@ -99,10 +111,14 @@ class BisectTree(object):
         return key_index, val_index
 
     def iterkeys(self):
-        return iter(self.keys)
+        if self.val_map is None:
+            return (k for k in self.iteritems())
+        return (k for (k, _) in self.iteritems())
 
     def itervalues(self):
-        return (v for (k, v) in self.iteritems())
+        if self.val_map is None:
+            return (k for k in self.iteritems())
+        return (v for (_, v) in self.iteritems())
 
     __iter__ = iterkeys
 
@@ -121,23 +137,73 @@ class BisectTree(object):
         if self.val_map is not None:
             return key in self.val_map
         idx = bisect(self.keys, key)
-        return self.keys[idx - 1] == key
+        if idx:
+            return self.keys[idx - 1] == key
+        return False
 
     def __len__(self):
         return self._node_count
 
     def pop(self, index=None):
-        val_size = self._ki_vs_vi[1]
+        # TODO: after the dup-handling switch, this now pops the whole val list
         if index is None:
-            key = self.keys.pop()
-        else:
-            key = self.keys.pop(index)
-        if self.val_map is None:
+            index = -1
+        key = self.keys.pop(index)
+        if self.val_map is not None:
+            val = self.val_map[key].pop()
+            if not self.val_map[key]:
+                del self.val_map[key]
             return (key, val)
         return key
 
     def popleft(self):
         return self.pop(0)
+
+    def get(self, key, default=_MISSING):
+        if self.val_map is None:
+            raise KeyError('tree not configured for values')
+        try:
+            return self.val_map[key][0]
+        except KeyError:
+            if default is _MISSING:
+                raise
+            return default
+
+    def get_list(self, key):
+        if self.val_map is None:
+            raise KeyError('tree not configured for values')
+        return list(self.val_map[key])
+
+    def get_index(self, index, default=_MISSING):
+        key = self.keys[index]
+        if self.val_map is None:
+            return key
+        return key, self.val_map[key]
+
+    def get_adjacent(self, key):
+        key_list, val_map = self.keys, self.val_map
+        if not key_list:
+            return None, None
+        idx_left, idx_right = bisect_left(key_list, key), bisect(key_list, key)
+        if idx_left != idx_right:
+            idx_left = idx_left - 1
+        if idx_left <= 0:
+            item_left = None
+        else:
+            key_left = self.keys[idx_left]
+            if self.val_map is None:
+                item_left = key_left
+            else:
+                item_left = (key_left, self.val_map[key_left][-1])
+        try:
+            key_right = self.keys[idx_right]
+            if self.val_map is None:
+                item_right = key_right
+            else:
+                item_right = (key_right, self.val_map[key_right][-1])
+        except IndexError:
+            item_right = None
+        return item_left, item_right
 
 
 class AVLTree(object):
