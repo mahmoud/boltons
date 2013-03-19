@@ -159,14 +159,12 @@ class BisectTree(object):
     def popleft(self):
         return self.pop(0)
 
-    def get(self, key, default=_MISSING):
+    def get(self, key, default=None):
         if self.val_map is None:
             raise KeyError('tree not configured for values')
         try:
             return self.val_map[key][0]
         except KeyError:
-            if default is _MISSING:
-                raise
             return default
 
     def get_list(self, key):
