@@ -16,7 +16,7 @@ else:
     raise NotImplementedError('welcome to the future, I guess. (report this)')
 
 
-def make_sentinel(name, var_name=None):
+def make_sentinel(name='_MISSING', var_name=None):
     class Sentinel(object):
         def __init__(self):
             self.name = name
@@ -28,4 +28,6 @@ def make_sentinel(name, var_name=None):
         if var_name:
             def __reduce__(self):
                 return self.var_name
+        def __nonzero__(self):
+            return False
     return Sentinel()
