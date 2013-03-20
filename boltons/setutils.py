@@ -355,7 +355,7 @@ class IndexedSet(MutableSet):
             raise ValueError('%r is not in IndexedSet' % val)
 
 
-# Tests of a manner of speaking
+# Tests of a manner
 
 if __name__ == '__main__':
     zero2nine = IndexedSet(range(10))
