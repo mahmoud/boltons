@@ -13,7 +13,7 @@ except ImportError:
     _MISSING = object()
 
 
-# TODO: del, sort, index, slicing
+# TODO: del, sort, index
 # TODO: sorted version
 # TODO: inherit from list
 
@@ -95,11 +95,34 @@ class BarrelList(object):
     def count(self, item):
         return sum([cur.count(item) for cur in self.lists])
 
+    def iter_slice(self, start, stop, step=None):
+        iterable = self  # TODO: optimization opportunities abound
+        # start_list_idx, stop_list_idx = 0, len(self.lists)
+        if start is None:
+            start = 0
+        if stop is None:
+            stop = len(self)
+        if step is not None and step < 0:
+            step = -step
+            start, stop = -start, -stop - 1
+            iterable = reversed(self)
+        if start < 0:
+            start += len(self)
+            # start_list_idx, start_rel_idx = self._translate_index(start)
+        if stop < 0:
+            stop += len(self)
+            # stop_list_idx, stop_rel_idx = self._translate_index(stop)
+        return islice(iterable, start, stop, step)
+
+    @classmethod
+    def from_iterable(cls, it):
+        return cls(it)
+
     def __iter__(self):
         return chain(*self.lists)
 
     def __reversed__(self):
-        return reversed(chain.from_iterable(reversed(l) for l in self.lists))
+        return chain.from_iterable(reversed(l) for l in reversed(self.lists))
 
     def __len__(self):
         return sum([len(l) for l in self.lists])
@@ -111,6 +134,13 @@ class BarrelList(object):
         return False
 
     def __getitem__(self, index):
+        try:
+            start, stop, step = index.start, index.stop, index.step
+        except AttributeError:
+            index = operator.index(index)
+        else:
+            iter_slice = self.iter_slice(start, stop, step)
+            return self.from_iterable(iter_slice)
         list_idx, rel_idx = self._translate_index(index)
         if list_idx is None:
             raise IndexError()
@@ -129,6 +159,7 @@ def main():
     bl.extend(range(100000))
     bl._balance_list(0)
     bl.pop(50000)
+    print bl[:-10:-1]
     import pdb;pdb.set_trace()
 
 if __name__ == '__main__':
