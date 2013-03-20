@@ -38,6 +38,18 @@ class IndexedSet(MutableSet):
     >>> fcr = IndexedSet('freecreditreport.com')
     >>> ''.join(fcr[:fcr.index('.')])
     'frecditpo'
+
+    For the curious, the reason why IndexedSet does not support
+    __setitem__() (i.e, setting items based on index), and is not a
+    UniqueList, consider the following:
+
+    my_indexed_set = [A, B, C, D]
+    my_indexed_set[2] = A
+
+    At this point, a set requires only one A, but a list would
+    overwrite C. Overwriting C would change the length of the list,
+    meaning that my_indexed_set[2] would not be A, as expected with a
+    list, but rather D. So, no __setitem__().
     """
     def __init__(self, other=None):
         self.item_index_map = dict()
