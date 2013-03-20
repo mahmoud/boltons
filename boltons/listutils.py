@@ -1,0 +1,139 @@
+# -*- coding: utf-8 -*-
+
+from bisect import bisect_left
+from itertools import chain, islice
+from collections import MutableSet
+import operator
+import math
+
+try:
+    from compat import make_sentinel
+    _MISSING = make_sentinel(var_name='_MISSING')
+except ImportError:
+    _MISSING = object()
+
+
+# TODO: del, sort, index, slicing
+# TODO: sorted version
+# TODO: inherit from list
+
+
+class BarrelList(object):
+    def __init__(self, iterable=None):
+        self.lists = [[]]
+        if iterable:
+            self.extend(iterable)
+
+    @property
+    def _cur_size_limit(self):
+        len_self = len(self)
+        try:
+            return max(512, int(round(len_self / math.log(len_self, 2)) / 2))
+        except:
+            return 512
+
+    def _translate_index(self, index):
+        if index < 0:
+            index += len(self)
+        rel_idx, lists = index, self.lists
+        for list_idx in range(len(lists)):
+            len_list = len(lists[list_idx])
+            if rel_idx < len_list:
+                break
+            rel_idx -= len_list
+        if rel_idx < 0:
+            return None, None
+        return list_idx, rel_idx
+
+    def _balance_list(self, list_idx):
+        if list_idx < 0:
+            list_idx += len(self.lists)
+        cur_list, len_self = self.lists[list_idx], len(self)
+        size_limit = self._cur_size_limit
+        if len(cur_list) > size_limit:
+            half_limit = size_limit / 2
+            while len(cur_list) > half_limit:
+                next_list_idx = list_idx + 1
+                self.lists.insert(next_list_idx, cur_list[-half_limit:])
+                del cur_list[-half_limit:]
+        return
+
+    def insert(self, index, item):
+        if len(self.lists) == 1:
+            self.lists[0].insert(index, item)
+            self._balance_list(0)
+        list_idx, rel_idx = self._translate_index(index)
+        if list_idx is None:
+            raise IndexError()
+        self.lists[list_idx].insert(rel_idx, item)
+        self._balance_list(list_idx)
+        return
+
+    def append(self, item):
+        self.lists[-1].append(item)
+
+    def extend(self, iterable):
+        self.lists[-1].extend(iterable)
+
+    def pop(self, *a):
+        lists = self.lists
+        if len(lists) == 1 and not a:
+            return self.lists[0].pop()
+        index = a and a[0]
+        if index == () or index is None or index == -1:
+            ret = lists[-1].pop()
+            if len(lists) > 1 and not lists[-1]:
+                lists.pop()
+        else:
+            list_idx, rel_idx = self._translate_index(index)
+            if list_idx is None:
+                raise IndexError()
+            ret = lists[list_idx].pop(rel_idx)
+            self._balance_list(list_idx)
+        return ret
+
+    def count(self, item):
+        return sum([cur.count(item) for cur in self.lists])
+
+    def __iter__(self):
+        return chain(*self.lists)
+
+    def __reversed__(self):
+        return reversed(chain.from_iterable(reversed(l) for l in self.lists))
+
+    def __len__(self):
+        return sum([len(l) for l in self.lists])
+
+    def __contains__(self, item):
+        for cur in self.lists:
+            if item in cur:
+                return True
+        return False
+
+    def __getitem__(self, index):
+        list_idx, rel_idx = self._translate_index(index)
+        if list_idx is None:
+            raise IndexError()
+        return self.lists[list_idx][rel_idx]
+
+    def __repr__(self):
+        return '%s(%r)' % (self.__class__.__name__, list(self))
+
+# Tests
+
+def main():
+    bl = BarrelList()
+    bl.insert(0, 0)
+    bl.insert(1, 1)
+    bl.insert(0, -1)
+    bl.extend(range(100000))
+    bl._balance_list(0)
+    bl.pop(50000)
+    import pdb;pdb.set_trace()
+
+if __name__ == '__main__':
+    try:
+        main()
+    except Exception as e:
+        import pdb;pdb.post_mortem()
+        raise
