@@ -1,11 +1,17 @@
 # -*- coding: utf-8 -*-
 
-from bisect import insort, bisect
+from bisect import bisect_left
 from itertools import chain, islice
 from collections import MutableSet
+import operator
 
-_MISSING = object()
-_COMPACTION_FACTOR = 50
+try:
+    from compat import make_sentinel
+    _MISSING = make_sentinel(var_name='_MISSING')
+except ImportError:
+    _MISSING = object()
+
+_COMPACTION_FACTOR = 8
 
 # TODO: inherit from set()
 # TODO: .discard_many(), .remove_many()
@@ -37,38 +43,83 @@ class IndexedSet(MutableSet):
         self.item_index_map = dict()
         self.item_list = []
         self.dead_indices = []
+        self._compactions = 0
+        self._c_max_size = 0
         if other:
             self.update(other)
 
+    # internal functions
+    @property
+    def _dead_index_count(self):
+        return len(self.item_list) - len(self.item_index_map)
+
     def _compact(self):
-        dead_indices = self.dead_indices
-        if not dead_indices:
+        if not self.dead_indices:
             return
+        self._compactions += 1
+        dead_index_count = self._dead_index_count
         items, index_map = self.item_list, self.item_index_map
+        self._c_max_size = max(self._c_max_size, len(items))
         for i, item in enumerate(self):
             items[i] = item
             index_map[item] = i
-        del items[-len(dead_indices):]
-        del dead_indices[:]
+        del items[-dead_index_count:]
+        del self.dead_indices[:]
 
     def _cull(self):
         ded = self.dead_indices
         if not ded:
             return
-        items = self.item_list
-        if not self.item_index_map:
-            del self.dead_indices[:]
-            del self.item_list[:]
-        elif len(ded) > 8 and len(ded) > len(items) / _COMPACTION_FACTOR:
+        items, ii_map = self.item_list, self.item_index_map
+        if not ii_map:
+            del items[:]
+            del ded[:]
+        elif len(ded) > 384:
             self._compact()
-        elif ded[-1] == len(items) - 1:  # get rid of dead right hand side
+        elif self._dead_index_count > (len(items) / _COMPACTION_FACTOR):
+            self._compact()
+        elif items[-1] is _MISSING:  # get rid of dead right hand side
             num_dead = 1
-            while ded[-num_dead] == ded[-(num_dead + 1)] - 1:
+            while items[-(num_dead + 1)] is _MISSING:
                 num_dead += 1
-            del ded[-num_dead:]
+            if ded and ded[-1][1] == len(items):
+                del ded[-1]
             del items[-num_dead:]
 
-    #common operations
+    def _get_real_index(self, index):
+        if index < 0:
+            index += len(self)
+        if not self.dead_indices:
+            return index
+        real_index = index
+        for d_start, d_stop in self.dead_indices:
+            if real_index < d_start:
+                break
+            real_index += d_stop - d_start
+        return real_index
+
+    def _add_dead(self, start, stop=None):
+        # TODO: does not handle when the new interval subsumes
+        # multiple existing intervals
+        dints = self.dead_indices
+        if stop is None:
+            stop = start + 1
+        cand_int = [start, stop]
+        if not dints:
+            dints.append(cand_int)
+            return
+        int_idx = bisect_left(dints, cand_int)
+        dint = dints[int_idx - 1]
+        d_start, d_stop = dint
+        if start <= d_start <= stop:
+            dint[0] = start
+        elif start <= d_stop <= stop:
+            dint[1] = stop
+        else:
+            dints.insert(int_idx, cand_int)
+        return
+
+    # common operations (shared by set and list)
     def __len__(self):
         return len(self.item_index_map)
 
@@ -94,15 +145,20 @@ class IndexedSet(MutableSet):
     def from_iterable(cls, it):
         return cls(it)
 
-    #set operations
-    def remove(self, item):  # O(1) + (amortized O(n) cull)
+    # set operations
+    def add(self, item):
+        if item not in self.item_index_map:
+            self.item_index_map[item] = len(self.item_list)
+            self.item_list.append(item)
+
+    def remove(self, item):
         try:
-            dead_index = self.item_index_map.pop(item)
-            insort(self.dead_indices, dead_index)
-            self.item_list[dead_index] = _MISSING
-            self._cull()
+            didx = self.item_index_map.pop(item)
         except KeyError:
-            raise
+            raise KeyError(item)
+        self.item_list[didx] = _MISSING
+        self._add_dead(didx)
+        self._cull()
 
     def discard(self, item):
         try:
@@ -114,11 +170,6 @@ class IndexedSet(MutableSet):
         del self.item_list[:]
         del self.dead_indices[:]
         self.item_index_map.clear()
-
-    def add(self, item):
-        if item not in self.item_index_map:
-            self.item_index_map[item] = len(self.item_list)
-            self.item_list.append(item)
 
     def isdisjoint(self, other):
         iim = self.item_index_map
@@ -235,54 +286,44 @@ class IndexedSet(MutableSet):
     def iter_slice(self, start, stop, step=None):
         iterable = self
         if start is not None:
-            start = start + bisect(self.dead_indices, start)
+            start = self._get_real_index(start)
         if stop is not None:
-            stop = stop + bisect(self.dead_indices, stop)
+            stop = self._get_real_index(stop)
         if step is not None and step < 0:
             step = -step
             iterable = reversed(self)
         return islice(iterable, start, stop, step)
 
-    #list operations
+    # list operations
     def __getitem__(self, index):
         try:
             start, stop, step = index.start, index.stop, index.step
         except AttributeError:
-            pass
+            index = operator.index(index)
         else:
             iter_slice = self.iter_slice(start, stop, step)
             return self.from_iterable(iter_slice)
         if index < 0:
             index += len(self)
-        skip = bisect(self.dead_indices, index)
-        real_index = index + skip
+        real_index = self._get_real_index(index)
         try:
             ret = self.item_list[real_index]
-            while ret is _MISSING:
-                real_index += 1
-                ret = self.item_list[real_index]
-            return ret
         except IndexError:
             raise IndexError('IndexedSet index out of range')
+        return ret
 
-    def pop(self, index=None):  # O(1) + (amortized O(n) cull)
+    def pop(self, index=None):
         item_index_map = self.item_index_map
         len_self = len(item_index_map)
-        if index is None or index == -1 or index == len_self:
+        if index is None or index == -1 or index == len_self - 1:
             ret = self.item_list.pop()
             del item_index_map[ret]
         else:
-            if index < 0:
-                index += len_self
-            skip = bisect(self.dead_indices, index)
-            real_index = index + skip
+            real_index = self._get_real_index(index)
             ret = self.item_list[real_index]
-            while ret is _MISSING:
-                real_index += 1
-                ret = self.item_list[real_index]
-            insort(self.dead_indices, real_index)
             self.item_list[real_index] = _MISSING
             del item_index_map[ret]
+            self._add_dead(real_index)
         self._cull()
         return ret
 
@@ -314,6 +355,8 @@ class IndexedSet(MutableSet):
             raise ValueError('%r is not in IndexedSet' % val)
 
 
+# Tests of a manner of speaking
+
 if __name__ == '__main__':
     zero2nine = IndexedSet(range(10))
     five2nine = zero2nine & IndexedSet(range(5, 15))
@@ -324,36 +367,36 @@ if __name__ == '__main__':
     print x[:3], x[2:4:-1]
 
     try:
-        thou = IndexedSet(xrange(1000))
+        thou = IndexedSet(range(1000))
         print thou.pop(), thou.pop()
         print thou.pop(499), thou.pop(499),
-        print [thou[i] for i in range(500, 505)]
+        print [thou[i] for i in range(495, 505)]
         print 'thou hath', len(thou), 'items'
         while len(thou) > 600:
-            dead_idx_count = len(thou.dead_indices)
+            dead_idx_len = len(thou.dead_indices)
+            dead_idx_count = thou._dead_index_count
             thou.pop(0)
-            new_dead_idx_count = len(thou.dead_indices)
-            if new_dead_idx_count < dead_idx_count:
+            new_dead_idx_len = len(thou.dead_indices)
+            if new_dead_idx_len < dead_idx_len:
                 print 'thou hath culled',
-                print dead_idx_count - new_dead_idx_count, 'indexes'
+                print dead_idx_count, 'indices'
         print 'thou hath', len(thou), 'items'
-        print 'thou hath', new_dead_idx_count, 'dead indices'
+        print 'thou hath', thou._dead_index_count, 'dead indices'
         print 'exposing _MISSING:', any([thou[i] is _MISSING for i in range(len(thou))])
-        #thou &= IndexedSet(range(500, 503))
-        #print thou
+        thou &= IndexedSet(range(500, 503))
+        print thou
 
         from os import urandom
         import time
         big_set = IndexedSet(range(100000))
         rands = [ord(r) for r in urandom(len(big_set))]
         start_time, start_size = time.time(), len(big_set)
-        while len(rands) > 10000:
-            if len(big_set) % 300 == 0:
-                print len(big_set.dead_indices),
-                if len(big_set) % 3000 == 0:
-                    print
-                    print len(big_set)
-            big_set.pop(rands.pop())
+        while len(big_set) > 10000:
+            if len(big_set) % 10000 == 0:
+                print len(big_set) / 10000
+            rand = rands.pop()
+            big_set.pop(rand)
+            big_set.pop(-rand)
         end_time, end_size = time.time(), len(big_set)
         print
         print 'popped %s items in %s seconds' % (start_size - end_size,
@@ -361,4 +404,3 @@ if __name__ == '__main__':
     except Exception as e:
         import pdb;pdb.post_mortem()
         raise
-    #import pdb;pdb.set_trace()
