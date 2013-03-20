@@ -56,7 +56,8 @@ class BarrelList(object):
                 next_list_idx = list_idx + 1
                 self.lists.insert(next_list_idx, cur_list[-half_limit:])
                 del cur_list[-half_limit:]
-        return
+            return True
+        return False
 
     def insert(self, index, item):
         if len(self.lists) == 1:
@@ -149,9 +150,21 @@ class BarrelList(object):
     def __repr__(self):
         return '%s(%r)' % (self.__class__.__name__, list(self))
 
+    def sort(self):
+        # poor pythonist's mergesort, it's faster than sorted(self)
+        # when the lists average larger than 512 items
+        if len(self.lists) == 1:
+            self.lists[0] = sorted(self.lists[0])
+        else:
+            self.lists[0] = sorted(chain(*[sorted(l) for l in self.lists]))
+            self._balance_list(0)
+
+
 # Tests
 
 def main():
+    import os
+
     bl = BarrelList()
     bl.insert(0, 0)
     bl.insert(1, 1)
@@ -159,6 +172,10 @@ def main():
     bl.extend(range(100000))
     bl._balance_list(0)
     bl.pop(50000)
+
+    rands = [ord(i) * x for i, x in zip(os.urandom(1024), range(1024))]
+    bl = BarrelList(rands)
+    bl.sort()
     print bl[:-10:-1]
     import pdb;pdb.set_trace()
 
