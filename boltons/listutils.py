@@ -12,7 +12,7 @@ except ImportError:
     _MISSING = object()
 
 
-# TODO: __delitem__, __setitem__, index
+# TODO: index
 # TODO: sorted version
 # TODO: inherit from list
 
@@ -90,9 +90,6 @@ class BarrelList(object):
             self._balance_list(list_idx)
         return ret
 
-    def count(self, item):
-        return sum([cur.count(item) for cur in self.lists])
-
     def iter_slice(self, start, stop, step=None):
         iterable = self  # TODO: optimization opportunities abound
         # start_list_idx, stop_list_idx = 0, len(self.lists)
@@ -117,7 +114,7 @@ class BarrelList(object):
             new_list = chain(self.iter_slice(0, start, step),
                              self.iter_slice(stop, None, step))
             self.lists[0][:] = new_list
-            self._rebalance_list(0)
+            self._balance_list(0)
             return
         if start is None:
             start = 0
@@ -185,27 +182,40 @@ class BarrelList(object):
             raise IndexError()
         del [list_idx][rel_idx]
 
-
     def __setitem__(self, index, item):
         try:
             start, stop, step = index.start, index.stop, index.step
         except AttributeError:
             index = operator.index(index)
         else:
-            iter_slice = self.iter_slice(start, stop, step)
-            return self.from_iterable(iter_slice)
+            if len(self.lists) == 1:
+                self.lists[0][index] = item
+            else:
+                tmp = list(self)
+                tmp[index] = item
+                self.lists[0] = tmp
+            self._balance_list(0)
+            return
+        list_idx, rel_idx = self._translate_index(index)
+        if list_idx is None:
+            raise IndexError()
+        self.lists[list_idx][rel_idx] = item
 
     def __repr__(self):
         return '%s(%r)' % (self.__class__.__name__, list(self))
 
     def sort(self):
         # poor pythonist's mergesort, it's faster than sorted(self)
-        # when the lists average larger than 512 items
+        # when the lists' average length is greater than 512.
         if len(self.lists) == 1:
             self.lists[0].sort()
         else:
             self.lists[0] = sorted(chain(*[sorted(l) for l in self.lists]))
             self._balance_list(0)
+
+    def count(self, item):
+        return sum([cur.count(item) for cur in self.lists])
+
 
 
 class SortedBarrelList(object):
@@ -233,9 +243,9 @@ def main():
     for i in range(10000):
         bl3.insert(0, bl3.pop(len(bl3) / 2))
 
-    del bl3[10:1000]
+    del bl3[10:5000]
     import pdb;pdb.set_trace()
-    del bl3[:5000]
+    bl3[:20:2] = range(0, -10, -1)
     import pdb;pdb.set_trace()
 
 from collections import defaultdict
