@@ -2,9 +2,8 @@
 
 from bisect import bisect_left
 from itertools import chain, islice
-from collections import MutableSet
 import operator
-import math
+from math import log as math_log
 
 try:
     from compat import make_sentinel
@@ -13,24 +12,22 @@ except ImportError:
     _MISSING = object()
 
 
-# TODO: del, sort, index
+# TODO: __delitem__, __setitem__, index
 # TODO: sorted version
 # TODO: inherit from list
 
 
 class BarrelList(object):
-    def __init__(self, iterable=None):
+    def __init__(self, iterable=None, **kw):
         self.lists = [[]]
+        self._size_factor = kw.pop('size_factor', 1520)
         if iterable:
             self.extend(iterable)
 
     @property
     def _cur_size_limit(self):
-        len_self = len(self)
-        try:
-            return max(512, int(round(len_self / math.log(len_self, 2)) / 2))
-        except:
-            return 512
+        len_self, size_factor = len(self), self._size_factor
+        return int(round(size_factor * math_log(len_self + 2, 2)))
 
     def _translate_index(self, index):
         if index < 0:
@@ -174,14 +171,44 @@ def main():
     bl.pop(50000)
 
     rands = [ord(i) * x for i, x in zip(os.urandom(1024), range(1024))]
-    bl = BarrelList(rands)
-    bl.sort()
-    print bl[:-10:-1]
+    bl2 = BarrelList(rands)
+    bl2.sort()
+    print bl2[:-10:-1]
+
+    bl3 = BarrelList(range(int(1e5)))
+    for i in range(10000):
+        bl3.insert(0, bl3.pop(len(bl3) / 2))
     import pdb;pdb.set_trace()
+
+from collections import defaultdict
+import gc
+
+def tune():
+    from timeit import timeit
+    old_size_factor = size_factor = 512
+    all_times = defaultdict(list)
+    min_times = {}
+    step = 512
+    while abs(step) > 4:
+        gc.collect()
+        for x in range(3):
+            tottime = timeit('bl.insert(0, bl.pop(len(bl)/2))',
+                             "from listutils import BarrelList; bl = BarrelList(range(int(1e5)), size_factor=%s)" % size_factor,
+                             number=10000)
+            all_times[size_factor].append(tottime)
+        min_time = round(min(all_times[size_factor]), 3)
+        min_times[size_factor] = min_time
+        print size_factor, min_time, step
+        if min_time > (min_times[old_size_factor] + 0.005):
+            step = -(step)/2
+        old_size_factor = size_factor
+        size_factor += step
+    print tottime
+
 
 if __name__ == '__main__':
     try:
-        main()
+        main() #tune()
     except Exception as e:
         import pdb;pdb.post_mortem()
         raise
