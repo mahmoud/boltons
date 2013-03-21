@@ -151,11 +151,14 @@ class BarrelList(object):
         # poor pythonist's mergesort, it's faster than sorted(self)
         # when the lists average larger than 512 items
         if len(self.lists) == 1:
-            self.lists[0] = sorted(self.lists[0])
+            self.lists[0].sort()
         else:
             self.lists[0] = sorted(chain(*[sorted(l) for l in self.lists]))
             self._balance_list(0)
 
+
+class SortedBarrelList(object):
+    pass
 
 # Tests
 
