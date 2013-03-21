@@ -213,6 +213,11 @@ class BarrelList(object):
             self.lists[0] = sorted(chain(*[sorted(l) for l in self.lists]))
             self._balance_list(0)
 
+    def reverse(self):
+        for cur in self.lists:
+            cur.reverse()
+        self.lists.reverse()
+
     def count(self, item):
         return sum([cur.count(item) for cur in self.lists])
 
