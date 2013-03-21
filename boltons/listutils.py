@@ -216,6 +216,17 @@ class BarrelList(object):
     def count(self, item):
         return sum([cur.count(item) for cur in self.lists])
 
+    def index(self, item):
+        len_accum = 0
+        for cur in self.lists:
+            try:
+                rel_idx = cur.index(item)
+                return len_accum + rel_idx
+            except ValueError:
+                len_accum += len(cur)
+        else:
+            raise ValueError('%r is not in list' % (item,))
+
 
 
 class SortedBarrelList(object):
