@@ -12,15 +12,15 @@ except ImportError:
     _MISSING = object()
 
 
-# TODO: index
 # TODO: sorted version
 # TODO: inherit from list
 
 
-class BarrelList(object):
+class BarrelList(list):
+    _size_factor = 1520
+
     def __init__(self, iterable=None, **kw):
         self.lists = [[]]
-        self._size_factor = kw.pop('size_factor', 1520)
         if iterable:
             self.extend(iterable)
 
@@ -229,8 +229,7 @@ class BarrelList(object):
                 return len_accum + rel_idx
             except ValueError:
                 len_accum += len(cur)
-        else:
-            raise ValueError('%r is not in list' % (item,))
+        raise ValueError('%r is not in list' % (item,))
 
 
 
@@ -238,6 +237,7 @@ class SortedBarrelList(object):
     pass
 
 # Tests
+
 
 def main():
     import os
@@ -260,15 +260,24 @@ def main():
         bl3.insert(0, bl3.pop(len(bl3) / 2))
 
     del bl3[10:5000]
-    import pdb;pdb.set_trace()
     bl3[:20:2] = range(0, -10, -1)
     import pdb;pdb.set_trace()
 
 from collections import defaultdict
 import gc
 
+_TUNE_SETUP = """\
+
+from listutils import BarrelList
+bl = BarrelList()
+bl._size_factor = %s
+bl.extend(range(int(%s)))
+"""
+
+
 def tune():
     from timeit import timeit
+    data_size = 1e5
     old_size_factor = size_factor = 512
     all_times = defaultdict(list)
     min_times = {}
@@ -277,14 +286,14 @@ def tune():
         gc.collect()
         for x in range(3):
             tottime = timeit('bl.insert(0, bl.pop(len(bl)/2))',
-                             "from listutils import BarrelList; bl = BarrelList(range(int(1e5)), size_factor=%s)" % size_factor,
+                             _TUNE_SETUP % (size_factor, data_size),
                              number=10000)
             all_times[size_factor].append(tottime)
         min_time = round(min(all_times[size_factor]), 3)
         min_times[size_factor] = min_time
         print size_factor, min_time, step
         if min_time > (min_times[old_size_factor] + 0.005):
-            step = -(step)/2
+            step = -step / 2
         old_size_factor = size_factor
         size_factor += step
     print tottime
@@ -292,7 +301,7 @@ def tune():
 
 if __name__ == '__main__':
     try:
-        main() #tune()
+        main()
     except Exception as e:
         import pdb;pdb.post_mortem()
         raise
