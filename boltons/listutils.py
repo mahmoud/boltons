@@ -112,6 +112,34 @@ class BarrelList(object):
             # stop_list_idx, stop_rel_idx = self._translate_index(stop)
         return islice(iterable, start, stop, step)
 
+    def del_slice(self, start, stop, step=None):
+        if step is not None and abs(step) > 1:  # punt
+            new_list = chain(self.iter_slice(0, start, step),
+                             self.iter_slice(stop, None, step))
+            self.lists[0][:] = new_list
+            self._rebalance_list(0)
+            return
+        if start is None:
+            start = 0
+        if stop is None:
+            stop = len(self)
+        start_list_idx, start_rel_idx = self._translate_index(start)
+        stop_list_idx, stop_rel_idx = self._translate_index(stop)
+        if start_list_idx is None:
+            raise IndexError()
+        if stop_list_idx is None:
+            raise IndexError()
+
+        if start_list_idx == stop_list_idx:
+            del self.lists[start_list_idx][start_rel_idx:stop_rel_idx]
+        elif start_list_idx < stop_list_idx:
+            del self.lists[start_list_idx + 1:stop_list_idx]
+            del self.lists[start_list_idx][start_rel_idx:]
+            del self.lists[stop_list_idx][:stop_rel_idx]
+        else:
+            assert False, ('start list index should never translate to'
+                           ' greater than stop list index')
+
     @classmethod
     def from_iterable(cls, it):
         return cls(it)
@@ -143,6 +171,29 @@ class BarrelList(object):
         if list_idx is None:
             raise IndexError()
         return self.lists[list_idx][rel_idx]
+
+    def __delitem__(self, index):
+        try:
+            start, stop, step = index.start, index.stop, index.step
+        except AttributeError:
+            index = operator.index(index)
+        else:
+            self.del_slice(start, stop, step)
+            return
+        list_idx, rel_idx = self._translate_index(index)
+        if list_idx is None:
+            raise IndexError()
+        del [list_idx][rel_idx]
+
+
+    def __setitem__(self, index, item):
+        try:
+            start, stop, step = index.start, index.stop, index.step
+        except AttributeError:
+            index = operator.index(index)
+        else:
+            iter_slice = self.iter_slice(start, stop, step)
+            return self.from_iterable(iter_slice)
 
     def __repr__(self):
         return '%s(%r)' % (self.__class__.__name__, list(self))
@@ -181,6 +232,10 @@ def main():
     bl3 = BarrelList(range(int(1e5)))
     for i in range(10000):
         bl3.insert(0, bl3.pop(len(bl3) / 2))
+
+    del bl3[10:1000]
+    import pdb;pdb.set_trace()
+    del bl3[:5000]
     import pdb;pdb.set_trace()
 
 from collections import defaultdict
