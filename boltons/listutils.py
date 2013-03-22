@@ -12,10 +12,6 @@ except ImportError:
     _MISSING = object()
 
 
-# TODO: sorted version
-# TODO: inherit from list
-
-
 class BarrelList(list):
     _size_factor = 1520
 
@@ -263,8 +259,6 @@ def main():
     bl3[:20:2] = range(0, -10, -1)
     import pdb;pdb.set_trace()
 
-from collections import defaultdict
-import gc
 
 _TUNE_SETUP = """\
 
@@ -276,6 +270,8 @@ bl.extend(range(int(%s)))
 
 
 def tune():
+    from collections import defaultdict
+    import gc
     from timeit import timeit
     data_size = 1e5
     old_size_factor = size_factor = 512
