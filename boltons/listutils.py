@@ -146,6 +146,8 @@ class BarrelList(list):
             assert False, ('start list index should never translate to'
                            ' greater than stop list index')
 
+    __delslice__ = del_slice
+
     @classmethod
     def from_iterable(cls, it):
         return cls(it)
@@ -172,7 +174,8 @@ class BarrelList(list):
             index = operator.index(index)
         else:
             iter_slice = self.iter_slice(start, stop, step)
-            return self.from_iterable(iter_slice)
+            ret = self.from_iterable(iter_slice)
+            return ret
         list_idx, rel_idx = self._translate_index(index)
         if list_idx is None:
             raise IndexError()
@@ -189,7 +192,7 @@ class BarrelList(list):
         list_idx, rel_idx = self._translate_index(index)
         if list_idx is None:
             raise IndexError()
-        del [list_idx][rel_idx]
+        del self.lists[list_idx][rel_idx]
 
     def __setitem__(self, index, item):
         try:
@@ -202,13 +205,27 @@ class BarrelList(list):
             else:
                 tmp = list(self)
                 tmp[index] = item
-                self.lists[0] = tmp
+                self.lists[:] = [tmp]
             self._balance_list(0)
             return
         list_idx, rel_idx = self._translate_index(index)
         if list_idx is None:
             raise IndexError()
         self.lists[list_idx][rel_idx] = item
+
+    def __getslice__(self, start, stop):
+        iter_slice = self.iter_slice(start, stop, 1)
+        return self.from_iterable(iter_slice)
+
+    def __setslice__(self, start, stop, sequence):
+        if len(self.lists) == 1:
+            self.lists[0][start:stop] = sequence
+        else:
+            tmp = list(self)
+            tmp[start:stop] = sequence
+            self.lists[:] = [tmp]
+        self._balance_list(0)
+        return
 
     def __repr__(self):
         return '%s(%r)' % (self.__class__.__name__, list(self))
@@ -264,6 +281,7 @@ def main():
     rands = [ord(i) * x for i, x in zip(os.urandom(1024), range(1024))]
     bl2 = BarrelList(rands)
     bl2.sort()
+    print bl2[:10]
     print bl2[:-10:-1]
 
     bl3 = BarrelList(range(int(1e5)))
