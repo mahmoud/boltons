@@ -12,7 +12,20 @@ except ImportError:
     _MISSING = object()
 
 
+__all__ = ['BList']
+
+
 class BarrelList(list):
+    """\
+    A list-like container backed by many lists, to provide better
+    scaling and random insertion/deletion characteristics. If an
+    application requirements call for something more performant,
+    consider the blist module available on PyPI.
+
+    The name comes from Kurt Rose, who said it reminded him of barrel
+    shifters, of hardware fame.
+    """
+
     _size_factor = 1520
 
     def __init__(self, iterable=None, **kw):
@@ -206,7 +219,11 @@ class BarrelList(list):
         if len(self.lists) == 1:
             self.lists[0].sort()
         else:
-            self.lists[0] = sorted(chain(*[sorted(l) for l in self.lists]))
+            for li in self.lists:
+                li.sort()
+            tmp_sorted = sorted(chain.from_iterable(self.lists))
+            del self.lists[:]
+            self.lists[0] = tmp_sorted
             self._balance_list(0)
 
     def reverse(self):
@@ -228,9 +245,7 @@ class BarrelList(list):
         raise ValueError('%r is not in list' % (item,))
 
 
-
-class SortedBarrelList(object):
-    pass
+BList = BarrelList
 
 # Tests
 
