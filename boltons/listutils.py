@@ -14,6 +14,8 @@ except ImportError:
 
 __all__ = ['BList']
 
+# TODO: keep track of list lengths and bisect to the right list for
+# faster getitem (and slightly slower setitem and delitem ops)
 
 class BarrelList(list):
     """\
@@ -69,11 +71,12 @@ class BarrelList(list):
         if len(self.lists) == 1:
             self.lists[0].insert(index, item)
             self._balance_list(0)
-        list_idx, rel_idx = self._translate_index(index)
-        if list_idx is None:
-            raise IndexError()
-        self.lists[list_idx].insert(rel_idx, item)
-        self._balance_list(list_idx)
+        else:
+            list_idx, rel_idx = self._translate_index(index)
+            if list_idx is None:
+                raise IndexError()
+            self.lists[list_idx].insert(rel_idx, item)
+            self._balance_list(list_idx)
         return
 
     def append(self, item):
