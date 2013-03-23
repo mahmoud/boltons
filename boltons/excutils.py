@@ -3,12 +3,13 @@ import traceback
 import linecache
 from collections import namedtuple
 
-from pprint import pprint
-
 # TODO: last arg or first arg?  (last arg makes it harder to *args
 #       into, but makes it more readable in the default exception
 #       __repr__ output)
 # TODO: Multiexception wrapper
+
+
+__all__ = ['ExceptionCauseMixin']
 
 
 class ExceptionCauseMixin(Exception):

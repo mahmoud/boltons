@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 
-from bisect import bisect_left
 from itertools import chain, islice
 import operator
 from math import log as math_log
@@ -13,6 +12,7 @@ except ImportError:
 
 
 __all__ = ['BList']
+
 
 # TODO: keep track of list lengths and bisect to the right list for
 # faster getitem (and slightly slower setitem and delitem ops)

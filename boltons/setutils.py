@@ -11,6 +11,10 @@ try:
 except ImportError:
     _MISSING = object()
 
+
+__all__ = ['IndexedSet']
+
+
 _COMPACTION_FACTOR = 8
 
 # TODO: inherit from set()

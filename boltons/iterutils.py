@@ -2,6 +2,11 @@
 from compat import basestring
 
 
+__all__ = ['is_iterable', 'is_scalar', 'split', 'split_iter',
+           'chunked', 'chunked_iter', 'bucketize', 'partition',
+           'unique_iter', 'unique']
+
+
 def is_iterable(obj):
     try:
         iter(obj)
@@ -194,12 +199,12 @@ def bucketize(src, keyfunc=None):
     return ret
 
 
-def bucketize_bool(src, keyfunc=None):
+def partition(src, keyfunc=None):
     """
     Like bucketize, but for added convenience returns a tuple of
     (truthy_values, falsy_values).
 
-    >>> nonempty, empty = bucketize_bool(['', '', 'hi', '', 'bye'])
+    >>> nonempty, empty = partition(['', '', 'hi', '', 'bye'])
     >>> nonempty
     ['hi', 'bye']
 
@@ -208,7 +213,7 @@ def bucketize_bool(src, keyfunc=None):
 
     >>> import string
     >>> is_digit = lambda x: x in string.digits
-    >>> decimal_digits, hexletters = bucketize_bool(string.hexdigits, is_digit)
+    >>> decimal_digits, hexletters = partition(string.hexdigits, is_digit)
     >>> ''.join(decimal_digits), ''.join(hexletters)
     ('0123456789', 'abcdefABCDEF')
     """

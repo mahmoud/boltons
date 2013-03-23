@@ -2,7 +2,14 @@
 
 from collections import OrderedDict
 
-_MISSING = object()
+try:
+    from compat import make_sentinel
+    _MISSING = make_sentinel(var_name='_MISSING')
+except ImportError:
+    _MISSING = object()
+
+
+__all__ = ['MultiDict', 'OrderedMultiDict']
 
 
 class OrderedMultiDict(OrderedDict):

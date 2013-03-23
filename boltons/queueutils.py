@@ -117,6 +117,7 @@ PriorityQueue = SortedPriorityQueue
 
 # tests
 
+
 def main():
     pq = PriorityQueue()
     func = lambda x: x

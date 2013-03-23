@@ -1,7 +1,9 @@
-from functools import partial
+import functools
 from types import MethodType
-
 from itertools import chain
+
+
+__all__ = ['partial', 'CachedInstancePartial', 'InstancePartial']
 
 
 def mro_items(obj_type):
@@ -18,12 +20,12 @@ def dir_dict(obj):
     return ret
 
 
-class InstancePartial(partial):
+class InstancePartial(functools.partial):
     def __get__(self, obj, obj_type):
         return MethodType(self, obj, obj_type)
 
 
-class CachedInstancePartial(partial):
+class CachedInstancePartial(functools.partial):
     def __init__(self, func, *a, **kw):
         self.__name__ = None
         self.__doc__ = func.__doc__
@@ -45,6 +47,9 @@ class CachedInstancePartial(partial):
             obj.__dict__[name] = ret = MethodType(self, obj, obj_type)
             return ret
 
+partial = CachedInstancePartial
+
+# tests
 
 class Greeter(object):
     def __init__(self, greeting):
