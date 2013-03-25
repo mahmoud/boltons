@@ -105,6 +105,100 @@ def split_punct_ws(text):
     return [w for w in _punct_re.split(text) if w]
 
 
+def cardinalize(unit_noun, count):
+    """\
+
+    Conditionally pluralizes a singular word ``unit`` if ``count`` is
+    not one, preserving case when possible.
+
+    >>> vowels = 'aeiou'
+    >>> print len(vowels), cardinalize('vowel', len(vowels))
+    5 vowels
+    >>> print 3, cardinalize('Wish', 3)
+    3 Wishes
+    """
+    if count == 1:
+        return unit_noun
+    return pluralize(unit_noun)
+
+
+def singularize(word):
+    orig_word, word = word, word.strip().lower()
+    if not word or word in _IRR_S2P:
+        return orig_word
+
+    irr_singular = _IRR_P2S.get(word)
+    if irr_singular:
+        singular = irr_singular
+    elif not word.endswith('s'):
+        return orig_word
+    elif len(word) == 2:
+        singular = word[:-1]  # or just return word?
+    elif word.endswith('ies') and word[-5:-4] not in 'aeiou':
+        singular = word[:-3] + 'y'
+    elif word.endswith('es'):
+        singular = word[:-2]
+    else:
+        singular = word[:-1]
+    # not singular enough?
+    return _match_case(orig_word, singular)
+
+
+def pluralize(word):
+    orig_word, word = word, word.strip().lower()
+    if not word or word in _IRR_P2S:
+        return orig_word
+    irr_plural = _IRR_S2P.get(word)
+    if irr_plural:
+        plural = irr_plural
+    elif word.endswith('y') and word[-2:-1] not in 'aeiou':
+        plural = word[:-1] + 'ies'
+    elif word[-1] == 's' or word.endswith('ch') or word.endswith('sh'):
+        plural = word if word.endswith('es') else word + 'es'
+    else:
+        plural = word + 's'
+    return _match_case(orig_word, plural)
+
+
+def _match_case(master, disciple):
+    if not master.strip():
+        return disciple
+    if master.lower() == master:
+        return disciple.lower()
+    elif master.upper() == master:
+        return disciple.upper()
+    elif master.capitalize() == master:
+        return disciple.capitalize()
+    return disciple
+
+
+# Singular to plural map of irregular pluralizations
+_IRR_S2P = {'alumnus': 'alumni', 'analysis': 'analyses', 'antenna': 'antennae',
+            'appendix': 'appendices', 'axis': 'axes', 'bacterium': 'bacteria',
+            'basis': 'bases', 'beau': 'beaux', 'bureau': 'bureaus',
+            'cactus': 'cacti', 'child': 'children', 'corpus': 'corpora',
+            'crisis': 'crises', 'criterion': 'criteria',
+            'curriculum': 'curricula', 'datum': 'data', 'deer': 'deer',
+            'diagnosis': 'diagnoses', 'ellipsis': 'ellipses', 'fish': 'fish',
+            'focus': 'foci', 'foot': 'feet', 'formula': 'formulae',
+            'fungus': 'fungi', 'genus': 'genera', 'goose': 'geese',
+            'hypothesis': 'hypotheses', 'index': 'indeces', 'louse': 'lice',
+            'man': 'men', 'matrix': 'matrices', 'means': 'means',
+            'medium': 'media', 'memorandum': 'memoranda', 'mouse': 'mice',
+            'nebula': 'nebulae', 'nucleus': 'nuclei', 'oasis': 'oases',
+            'offspring': 'offspring', 'ox': 'oxen', 'paralysis': 'paralyses',
+            'parenthesis': 'parentheses', 'phenomenon': 'phenomena',
+            'radius': 'radii', 'series': 'series', 'sheep': 'sheep',
+            'species': 'species', 'stimulus': 'stimuli', 'stratum': 'strata',
+            'synopsis': 'synopses', 'synthesis': 'syntheses',
+            'tableau': 'tableaux', 'thesis': 'theses', 'tooth': 'teeth',
+            'vertebra': 'vertebrae', 'vita': 'vitae', 'woman': 'women'}
+
+
+# Reverse index of the above
+_IRR_P2S = dict([(v, k) for k, v in _IRR_S2P.items()])
+
+
 def asciify(text, ignore=False):
     """
     Converts a unicode or bytestring into a bytestring with
