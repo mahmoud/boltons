@@ -9,7 +9,8 @@ from compat import unicode, bytes
 
 
 __all__ = ['camel2under', 'under2camel', 'StringBuffer',
-           'slugify', 'split_punct_ws', 'asciify']
+           'slugify', 'split_punct_ws', 'asciify', 'pluralize',
+           'singularize', 'cardinalize']
 
 
 _punct_ws_str = string.punctuation + string.whitespace
@@ -37,37 +38,6 @@ def under2camel(under_string):
     'ComplexTokenizer'
     """
     return ''.join(w.capitalize() or '_' for w in under_string.split('_'))
-
-
-class StringBuffer(object):
-    """
-    This is meant to be a better file-like string buffer.
-    Faster than StringIO, better encoding handling than cStringIO.
-
-    This one is for unicode text strings. Look for ByteBuffer if you
-    want to handle byte strings.
-    """
-    def __init__(self, default_encoding=None, errors='strict'):
-        self.data = collections.deque()
-        self.default_encoding = default_encoding or 'utf-8'
-        self.errors = errors
-
-    def write(self, s):
-        if not isinstance(s, unicode):
-            enc = self.default_encoding
-            errs = self.errors
-            try:
-                s = s.decode(enc, errs)
-            except AttributeError:
-                raise ValueError('write() expected a unicode or byte string')
-        self.data.append(s)
-
-    def truncate(self):
-        self.data = collections.deque()
-        self.write = self.data.append
-
-    def getvalue(self):
-        return unicode().join(self.data)
 
 
 def slugify(text, delim='_', lower=True, ascii=False):
@@ -105,16 +75,34 @@ def split_punct_ws(text):
     return [w for w in _punct_re.split(text) if w]
 
 
-def cardinalize(unit_noun, count):
-    """\
+def unit_len(sized_iterable, unit_noun='item'):
+    """
+    Returns a plain-English description of an iterable's len(),
+    conditionally pluralized with cardinalize() (below).
 
-    Conditionally pluralizes a singular word ``unit`` if ``count`` is
-    not one, preserving case when possible.
+    >>> print unit_len(range(10), 'number')
+    10 numbers
+    >>> print unit_len('aeiou', 'vowel')
+    5 vowels
+    >>> print unit_len([], 'worry')
+    No worries
+    """
+    count = len(sized_iterable)
+    units = cardinalize(count, unit_noun)
+    if count:
+        return u'%s %s' % (count, units)
+    return u'No %s' % (units,)
+
+
+def cardinalize(count, unit_noun):
+    """\
+    Conditionally pluralizes a singular word ``unit_noun`` if
+    ``count`` is not one, preserving case when possible.
 
     >>> vowels = 'aeiou'
-    >>> print len(vowels), cardinalize('vowel', len(vowels))
+    >>> print len(vowels), cardinalize(len(vowels), 'vowel')
     5 vowels
-    >>> print 3, cardinalize('Wish', 3)
+    >>> print 3, cardinalize(3, 'Wish')
     3 Wishes
     """
     if count == 1:
@@ -140,7 +128,6 @@ def singularize(word):
         singular = word[:-2]
     else:
         singular = word[:-1]
-    # not singular enough?
     return _match_case(orig_word, singular)
 
 
@@ -197,6 +184,37 @@ _IRR_S2P = {'alumnus': 'alumni', 'analysis': 'analyses', 'antenna': 'antennae',
 
 # Reverse index of the above
 _IRR_P2S = dict([(v, k) for k, v in _IRR_S2P.items()])
+
+
+class StringBuffer(object):
+    """
+    This is meant to be a better file-like string buffer.
+    Faster than StringIO, better encoding handling than cStringIO.
+
+    This one is for unicode text strings. Look for ByteBuffer if you
+    want to handle byte strings.
+    """
+    def __init__(self, default_encoding=None, errors='strict'):
+        self.data = collections.deque()
+        self.default_encoding = default_encoding or 'utf-8'
+        self.errors = errors
+
+    def write(self, s):
+        if not isinstance(s, unicode):
+            enc = self.default_encoding
+            errs = self.errors
+            try:
+                s = s.decode(enc, errs)
+            except AttributeError:
+                raise ValueError('write() expected a unicode or byte string')
+        self.data.append(s)
+
+    def truncate(self):
+        self.data = collections.deque()
+        self.write = self.data.append
+
+    def getvalue(self):
+        return unicode().join(self.data)
 
 
 def asciify(text, ignore=False):
