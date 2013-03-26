@@ -35,11 +35,23 @@ http://en.wikipedia.org/wiki/Moment_(mathematics)
 Keep in mind that while these moments can give a bit more insight into
 the shape and distribution of data, they do not guarantee a complete
 picture. Wildly different datasets can have the same values for all
-four moments, so generalize wisely. (And read up on robust statistics)
+four moments, so generalize wisely. (And read up on robust statistics
+and scipy.stats)
 """
 
 
 def mean(vals):
+    """
+    The arithmetic mean, or "average". Sum of the values divided by
+    the number of values.
+
+    >>> mean([1, 2, 3])
+    2.0
+    >>> mean(range(97))
+    48.0
+    >>> mean(range(96) + [1066])  # 1066 is an arbitrary outlier
+    58.0
+    """
     if vals:
         return sum(vals, 0.0) / len(vals)
     else:
@@ -47,6 +59,18 @@ def mean(vals):
 
 
 def median(vals):
+    """
+    The median is either the middle value or the average of the two
+    middle values of a sample. Compared to the mean, it's generally
+    more resilient to the presence of outliers in the sample.
+
+    >>> median([1, 2, 3])
+    2
+    >>> median(range(97))
+    48
+    >>> median(range(96) + [1066])  # 1066 is an arbitrary outlier
+    48
+    """
     if not vals:
         return 0.0
     sorted_vals, size = sorted(vals), len(vals)
@@ -58,10 +82,23 @@ def median(vals):
 
 
 def variance(vals):
+    """\
+    Variance is the average of the squares of the difference between
+    each value and the mean.
+
+    >>> variance(range(97))
+    784.0
+    """
     return mean(_pow_diff(vals, 2))
 
 
 def std_dev(vals):
+    """\
+    Standard deviation. Square root of the variance.
+
+    >>> std_dev(range(97))
+    28.0
+    """
     return variance(vals) ** 0.5
 
 
@@ -69,9 +106,12 @@ def median_abs_dev(vals):
     """\
     Median Absolute Deviation is a robust measure of statistical
     dispersion: http://en.wikipedia.org/wiki/Median_absolute_deviation
+
+    >>> median_abs_dev(range(97))
+    24.0
     """
     sorted_vals = sorted(vals)
-    x = median(sorted_vals)
+    x = float(median(sorted_vals))
     return median([abs(x - v) for v in sorted_vals])
 
 
@@ -80,9 +120,12 @@ def rel_std_dev(vals):
     Standard deviation divided by the absolute value of the average.
 
     http://en.wikipedia.org/wiki/Relative_standard_deviation
+
+    >>> round(rel_std_dev(range(97)), 3)
+    0.583
     """
     abs_mean = abs(mean(vals))
-    if val_mean:
+    if abs_mean:
         return std_dev(vals) / abs_mean
     else:
         return 0.0
@@ -90,13 +133,19 @@ def rel_std_dev(vals):
 
 def skewness(vals):
     """\
-
     Indicates the asymmetry of a curve. Positive values mean the bulk
     of the values are on the left side of the average and vice versa.
 
     http://en.wikipedia.org/wiki/Skewness
 
     See the module docstring for more about statistical moments.
+
+    >>> skewness(range(97))  # symmetrical around 48.0
+    0.0
+    >>> left_skewed = skewness(range(97) + range(10))
+    >>> right_skewed = skewness(range(97) + range(87, 97))
+    >>> round(left_skewed, 3), round(right_skewed, 3)
+    (0.114, -0.114)
     """
     s_dev = std_dev(vals)
     if len(vals) > 1 and s_dev > 0:
@@ -107,6 +156,21 @@ def skewness(vals):
 
 
 def kurtosis(vals):
+    """\
+    Indicates how much data is in the tails of the distribution. The
+    result is always positive, with the normal "bell-curve"
+    distribution having a kurtosis of 3.
+
+    http://en.wikipedia.org/wiki/Kurtosis
+
+    See the module docstring for more about statistical moments.
+
+    >>> kurtosis(range(9))
+    1.99125
+
+    With a kurtosis of 1.99125, [0, 1, 2, 3, 4, 5, 6, 7, 8] is more
+    centrally distributed than the normal curve.
+    """
     s_dev = std_dev(vals)
     if len(vals) > 1 and s_dev > 0:
         return (sum(_pow_diff(vals, 4)) /
@@ -116,6 +180,14 @@ def kurtosis(vals):
 
 
 def trim(vals, trim=0.25):
+    """
+    trim() can be used to cut a proportion of values off each end of a
+    list, which, when sorted, has the effect of limiting the effect of
+    outliers.
+
+    >>> trim(range(12), 0.25)
+    [3, 4, 5, 6, 7, 8]
+    """
     if trim > 0.0:
         trim = float(trim)
         size = len(vals)
@@ -125,5 +197,8 @@ def trim(vals, trim=0.25):
 
 
 def _pow_diff(vals, power):
+    """
+    A utility function used for calculating statistical moments.
+    """
     m = mean(vals)
     return [(v - m) ** power for v in vals]
