@@ -40,7 +40,7 @@ and scipy.stats)
 """
 
 __all__ = ['mean', 'median', 'variance', 'std_dev', 'rel_std_dev',
-           'median_abs_dev', 'skewness', 'kurtosis', 'trim']
+           'median_abs_dev', 'skewness', 'kurtosis', 'trim_sample']
 
 
 def mean(vals):
@@ -182,13 +182,13 @@ def kurtosis(vals):
         return 0.0
 
 
-def trim(vals, trim=0.25):
+def trim_sample(vals, trim=0.25):
     """
-    trim() can be used to cut a proportion of values off each end of a
-    list, which, when sorted, has the effect of limiting the effect of
-    outliers.
+    A utility function used to cut a proportion of values off each end
+    of a list of values. When sorted, this has the effect of limiting
+    the effect of outliers.
 
-    >>> trim(range(12), 0.25)
+    >>> trim_sample(range(12), 0.25)
     [3, 4, 5, 6, 7, 8]
     """
     if trim > 0.0:
