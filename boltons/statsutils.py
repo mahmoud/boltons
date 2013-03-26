@@ -39,6 +39,9 @@ four moments, so generalize wisely. (And read up on robust statistics
 and scipy.stats)
 """
 
+__all__ = ['mean', 'median', 'variance', 'std_dev', 'rel_std_dev',
+           'median_abs_dev', 'skewness', 'kurtosis', 'trim']
+
 
 def mean(vals):
     """
