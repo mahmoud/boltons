@@ -75,7 +75,7 @@ def split_punct_ws(text):
     return [w for w in _punct_re.split(text) if w]
 
 
-def unit_len(sized_iterable, unit_noun='item'):
+def unit_len(sized_iterable, unit_noun='item'):  # TODO: len_units()/unitize()?
     """
     Returns a plain-English description of an iterable's len(),
     conditionally pluralized with cardinalize() (below).
@@ -92,6 +92,33 @@ def unit_len(sized_iterable, unit_noun='item'):
     if count:
         return u'%s %s' % (count, units)
     return u'No %s' % (units,)
+
+
+_ORDINAL_MAP = {'1': 'st',
+                '2': 'nd',
+                '3': 'rd'}  # 'th' is the default
+
+
+def ordinalize(number, ext_only=False):
+    """\
+    Turns a number into 1st, 2nd, 3rd, 4th, etc. If the last character
+    isn't a digit, it returns the string value unchanged.
+
+    >>> ordinalize(1)
+    '1st'
+    >>> ordinalize(3694839230)
+    '3694839230th'
+    """
+    numstr = str(number)
+    ldig, ext = numstr[-1:], ''
+    if not ldig:
+        return ''
+    if ldig in string.digits:
+        ext = _ORDINAL_MAP.get(ldig, 'th')
+    if ext_only:
+        return ext
+    else:
+        return numstr + ext
 
 
 def cardinalize(count, unit_noun):

@@ -10,7 +10,7 @@ timeutils
 strutils
 --------
 
-- ordinalize (1st, 2nd, 3rd, etc.)
+- TBD
 
 misc?
 -----
