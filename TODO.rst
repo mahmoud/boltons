@@ -1,10 +1,27 @@
 TODO
 ====
 
+timeutils
+---------
+
+- parse an ISO8601 timestamp
+- super basic timezones (like the ones in the docs)
+
 strutils
 --------
 
-- inflection stuff
+- ordinalize (1st, 2nd, 3rd, etc.)
 
-  - singularize/pluralize/cardinalize (autoinflect)
-  - ordinalize (1st, 2nd, 3rd, etc.)
+misc?
+-----
+
+- disable/restore signal context manager
+- disable/restore gc context manager
+- progress bar
+
+statsutils
+----------
+
+- accummulators
+- percentiles
+- geometric mean (2 ** sum(log(a, b, ...)
