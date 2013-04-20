@@ -324,7 +324,7 @@ def tune():
         min_time = round(min(all_times[size_factor]), 3)
         min_times[size_factor] = min_time
         print size_factor, min_time, step
-        if min_time > (min_times[old_size_factor] + 0.005):
+        if min_time > (min_times[old_size_factor] + 0.002):
             step = -step / 2
         old_size_factor = size_factor
         size_factor += step
@@ -333,7 +333,7 @@ def tune():
 
 if __name__ == '__main__':
     try:
-        main()
+        tune()  # main()
     except Exception as e:
         import pdb;pdb.post_mortem()
         raise
