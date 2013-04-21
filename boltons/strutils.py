@@ -243,6 +243,44 @@ class StringBuffer(object):
     def getvalue(self):
         return unicode().join(self.data)
 
+ANSI_ESCAPE_BEGIN = '\x1b['
+ANSI_TERMINATORS = ('H', 'f', 'A', 'B', 'C', 'D', 'R', 's', 'u', 'J',
+                    'K', 'h', 'l', 'p', 'm')
+
+
+def strip_ansi(text):
+    """\
+    Strips (doesn't interpret) ANSI escape codes from ``text``. Useful
+    for the occasional time when a log or redirected output
+    accidentally captures console color codes and the like.
+
+    >>> strip_ansi('\x1b[0m\x1b[1;36mart\x1b[46;34m\xdc')
+    'art'
+
+    (The test above is an excerpt from ANSI art on
+    http://sixteencolors.net. Sadly, this function does not interpret
+    or render ANSI art, but you can do so with
+    http://www.bedroomlan.org/projects/ansi2img or
+    https://github.com/atdt/escapes.js)
+
+    TODO: move to cliutils.py
+    """
+    nansi, keep, i, text_len = [], True, 0, len(text)
+    while i < text_len:
+        if not keep and text[i] in ANSI_TERMINATORS:
+            keep = True
+        elif keep:
+            keep_end_i = text.find(ANSI_ESCAPE_BEGIN, i)
+            if keep_end_i < 0:
+                break
+            else:
+                nansi.append(text[i:keep_end_i])
+                i, keep = keep_end_i, False
+        i += 1
+    if not nansi:
+        return text
+    return type(text)().join(nansi)  # attempted unicode + str support
+
 
 def asciify(text, ignore=False):
     """
