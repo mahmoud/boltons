@@ -18,6 +18,7 @@ misc?
 - disable/restore signal context manager
 - disable/restore gc context manager
 - progress bar
+- strip ansi codes
 
 statsutils
 ----------
