@@ -29,7 +29,7 @@ tbutils
 - traceback parser
 - fold repeated frames (recursive calls)
 - handle wrapped exceptions?
-
+- fix linecache for realz.
 
 statsutils
 ----------
