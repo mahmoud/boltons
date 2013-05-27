@@ -141,3 +141,12 @@ class BasicCache(dict):
                 return self.__missing__(key)
     else:
         del defaultdict
+
+
+def test_cache():
+    import string
+    bc = BasicCache(10, lambda k: k.upper())
+    for char in string.letters:
+        x = bc[char]
+        assert x == char.upper()
+    assert len(bc) == 10
