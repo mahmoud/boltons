@@ -281,6 +281,17 @@ class SplayList(list):
 
 # Tests
 
+def test_splay():
+    splay = SplayList(xrange(10))
+    splay.swap(0, 9)
+    assert splay[0] == 9
+    assert splay[-1] == 0
+
+    splay.shift(-2)
+    assert splay[0] == 8
+    assert splay[-1] == 0
+    assert len(splay) == 10
+
 
 def main():
     import os
