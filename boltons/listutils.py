@@ -267,6 +267,18 @@ class BarrelList(list):
 
 BList = BarrelList
 
+
+class SplayList(list):
+    def shift(self, item_index, dest_index=0):
+        if item_index == dest_index:
+            return
+        item = self.pop(item_index)
+        self.insert(dest_index, item)
+
+    def swap(self, item_index, dest_index):
+        self[dest_index], self[item_index] = self[item_index], self[dest_index]
+
+
 # Tests
 
 
