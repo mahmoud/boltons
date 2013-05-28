@@ -41,11 +41,11 @@ class OrderedMultiDict(OrderedDict):
 
     def __init__(self, *args, **kwargs):
         super(OrderedMultiDict, self).__init__(*args, **kwargs)
-        self.__maphistory = {}
+        self._maphistory = {}
 
     def __delitem__(self, key):
         PREV, NEXT = 0, 1
-        history = self.__maphistory.pop(key, _MISSING)
+        history = self._maphistory.pop(key, _MISSING)
         super(OrderedMultiDict, self).__delitem__(key)
         if history is _MISSING:
             return
@@ -67,11 +67,11 @@ class OrderedMultiDict(OrderedDict):
         root = self._OrderedDict__root
         last = root[PREV]
         cell = [last, root, key]
-        if not self.__maphistory.get(key):
+        if not self._maphistory.get(key):
             prev_cell = self._OrderedDict__map.get(key)
-            self.__maphistory[key] = [prev_cell]
+            self._maphistory[key] = [prev_cell]
         last[NEXT] = root[PREV] = self._OrderedDict__map[key] = cell
-        self.__maphistory[key].append(cell)
+        self._maphistory[key].append(cell)
         super(OrderedDict, self).setdefault(key, []).append(value)
 
     def getlist(self, key):
@@ -96,14 +96,14 @@ class OrderedMultiDict(OrderedDict):
                 raise KeyError(key)
             else:
                 return default
-        previous_mapping = self.__maphistory.get(key)
-        if previous_mapping[-1][PREV] is root:
+        prev_mapping = self._maphistory.get(key)
+        if prev_mapping[-1][PREV] is root:
             return self.pop(key)
 
         link_prev, link_next, key = self._OrderedDict__map.pop(key)
         link_prev[NEXT] = link_next
         link_next[PREV] = link_prev
-        self._OrderedDict__map[key] = previous_mapping.pop()
+        self._OrderedDict__map[key] = prev_mapping.pop()
         return self.getlist(key).pop()
 
 
