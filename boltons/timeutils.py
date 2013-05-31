@@ -3,7 +3,23 @@
 import datetime
 
 
-def relative_datetime(d, other=None):
+def total_seconds(td):
+    """\
+    A pure-Python implementation of Python 2.7's timedelta.total_seconds().
+
+    Accepts a timedelta object, returns number of total seconds.
+
+    >>> td = datetime.timedelta(days=4, seconds=33)
+    >>> total_seconds(td)
+    345633.0
+    """
+    a_milli = 1000000.0
+    td_ds = td.seconds + (td.days * 86400)  # 24 * 60 * 60
+    td_micro = td.microseconds + (td_ds * a_milli)
+    return td_micro / a_milli
+
+
+def relative_time(d, other=None):
     # TODO: add decimal rounding factor (default 0)
     if other is None:
         other = datetime.datetime.utcnow()
