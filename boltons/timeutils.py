@@ -51,7 +51,7 @@ def decimal_relative_time(d, other=None, ndigits=0):
     bbound, bunit, bname = _BOUNDS[b_idx]
     float_diff = diff_seconds / total_seconds(bunit)
     rounded_diff = round(float_diff, ndigits)
-    return rounded_diff, cardinalize(rounded_diff, bname)
+    return rounded_diff, cardinalize(bname, rounded_diff)
 
 
 def relative_time(d, other=None):

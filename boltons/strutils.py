@@ -88,7 +88,7 @@ def unit_len(sized_iterable, unit_noun='item'):  # TODO: len_units()/unitize()?
     No worries
     """
     count = len(sized_iterable)
-    units = cardinalize(count, unit_noun)
+    units = cardinalize(unit_noun, count)
     if count:
         return u'%s %s' % (count, units)
     return u'No %s' % (units,)
@@ -121,15 +121,15 @@ def ordinalize(number, ext_only=False):
         return numstr + ext
 
 
-def cardinalize(count, unit_noun):
+def cardinalize(unit_noun, count):
     """\
     Conditionally pluralizes a singular word ``unit_noun`` if
     ``count`` is not one, preserving case when possible.
 
     >>> vowels = 'aeiou'
-    >>> print len(vowels), cardinalize(len(vowels), 'vowel')
+    >>> print len(vowels), cardinalize('vowel', len(vowels))
     5 vowels
-    >>> print 3, cardinalize(3, 'Wish')
+    >>> print 3, cardinalize('Wish', 3)
     3 Wishes
     """
     if count == 1:
