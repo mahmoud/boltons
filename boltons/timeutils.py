@@ -41,45 +41,34 @@ def decimal_relative_time(d, other=None, ndigits=0):
     (1.0, 'day')
     >>> decimal_relative_time(now - timedelta(seconds=0.002), now, ndigits=5)
     (0.002, 'seconds')
+    >>> '%g %s' % _
+    '0.002 seconds'
     """
     if other is None:
         other = datetime.datetime.utcnow()
     diff = other - d
     diff_seconds = total_seconds(diff)
     abs_diff = abs(diff)
-    b_idx = bisect.bisect_left(_BOUND_DELTAS, abs_diff) - 1
+    b_idx = bisect.bisect(_BOUND_DELTAS, abs_diff) - 1
     bbound, bunit, bname = _BOUNDS[b_idx]
-    float_diff = diff_seconds / total_seconds(bunit)
-    rounded_diff = round(float_diff, ndigits)
-    return rounded_diff, cardinalize(bname, rounded_diff)
+    #f_diff, f_mod = divmod(diff_seconds, total_seconds(bunit))
+    f_diff = diff_seconds / total_seconds(bunit)
+    rounded_diff = round(f_diff, ndigits)
+    return rounded_diff, cardinalize(bname, abs(rounded_diff))
 
 
-def relative_time(d, other=None):
-    # TODO: add decimal rounding factor (default 0)
-    if other is None:
-        other = datetime.datetime.utcnow()
-    diff = other - d
-    s, days = diff.seconds, diff.days
-    if days > 7 or days < 0:
-        return d.strftime('%d %b %y')
-    elif days == 1:
-        return '1 day ago'
-    elif days > 1:
-        return '{0} days ago'.format(diff.days)
-    elif s < 5:
-        return 'just now'
-    elif s < 60:
-        return '{0} seconds ago'.format(s)
-    elif s < 120:
-        return '1 minute ago'
-    elif s < 3600:
-        return '{0} minutes ago'.format(s / 60)
-    elif s < 7200:
-        return '1 hour ago'
-    else:
-        return '{0} hours ago'.format(s / 3600)
-
-
-if __name__ == '__main__':
-    print decimal_relative_time(datetime.datetime.utcnow(), ndigits=5)
-    print decimal_relative_time(datetime.datetime.utcnow() - timedelta(days=1, seconds=3600))
+def relative_time(d, other=None, ndigits=0):
+    """\
+    >>> now = datetime.datetime.utcnow()
+    >>> relative_time(now, ndigits=1)
+    '0 seconds ago'
+    >>> relative_time(now - timedelta(days=1, seconds=36000), ndigits=1)
+    '1.4 days ago'
+    >>> relative_time(now + timedelta(days=7), now, ndigits=1)
+    '1 week from now'
+    """
+    drt, unit = decimal_relative_time(d, other, ndigits)
+    phrase = 'ago'
+    if drt < 0:
+        phrase = 'from now'
+    return '%g %s %s' % (abs(drt), unit, phrase)
