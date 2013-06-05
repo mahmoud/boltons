@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+import bisect
 import datetime
 from datetime import timedelta
 from strutils import cardinalize
@@ -20,8 +21,6 @@ def total_seconds(td):
     td_micro = td.microseconds + (td_ds * a_milli)
     return td_micro / a_milli
 
-
-import bisect
 
 _BOUNDS = [(0, timedelta(seconds=1), 'second'),
            (1, timedelta(seconds=60), 'minute'),
