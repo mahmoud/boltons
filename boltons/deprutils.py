@@ -23,7 +23,7 @@ class DeprecatableModule(ModuleType):
         ret = get_attribute(name)
         message = depros.get(name)
         if message is not None:
-            warn(message, DeprecationWarning)
+            warn(message, DeprecationWarning, stacklevel=2)
         return ret
 
 
