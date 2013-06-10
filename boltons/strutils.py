@@ -402,6 +402,30 @@ _BASE_DEACCENT_MAP = {
 DEACCENT_MAP = DeaccenterDict(_BASE_DEACCENT_MAP)
 
 
+_SIZE_SYMBOLS = ('B', 'K', 'M', 'G', 'T', 'P', 'E', 'Z', 'Y')
+_SIZE_BOUNDS = [(1024 ** i, sym) for i, sym in enumerate(_SIZE_SYMBOLS)]
+_SIZE_RANGES = zip(_SIZE_BOUNDS, _SIZE_BOUNDS[1:])
+
+
+def bytes2human(nbytes, ndigits=0):
+    """
+    >>> bytes2human(128991)
+    '126K'
+    >>> bytes2human(100001221)
+    '95M'
+    >>> bytes2human(0, 2)
+    '0.00B'
+    """
+    abs_bytes = abs(nbytes)
+    for (size, symbol), (next_size, next_symbol) in _SIZE_RANGES:
+        if abs_bytes <= next_size:
+            break
+    hnbytes = float(nbytes) / size
+    return '{hnbytes:.{ndigits}f}{symbol}'.format(hnbytes=hnbytes,
+                                                  ndigits=ndigits,
+                                                  symbol=symbol)
+
+
 if __name__ == '__main__':
     b = asciify(u'Beyoncé')
     print ord(b[-1])
