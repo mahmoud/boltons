@@ -77,10 +77,10 @@ def median(vals):
     if not vals:
         return 0.0
     sorted_vals, size = sorted(vals), len(vals)
+    mid = size // 2  # aka floor division
     if size % 2 == 1:
-        return sorted_vals[(size - 1) / 2]
+        return sorted_vals[mid]
     else:
-        mid = size / 2
         return (sorted_vals[mid - 1] + sorted_vals[mid]) / 2.0
 
 
