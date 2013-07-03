@@ -431,3 +431,37 @@ if __name__ == '__main__':
     print ord(b[-1])
     print b
     print DEACCENT_MAP
+
+
+_pos_farg_re = re.compile('({{)|'         # escaped open-brace
+                          '(}})|'         # escaped close-brace
+                          '({[:!.\[}])')  # anon positional format arg
+
+
+def infer_positional_format_args(fstr):
+    """
+    Infers positional arguments from a format string, for Python 2.6
+    backwards compatibility and also fixing/mixing explicit and
+    implicit positional arguments in newer Pythons.
+
+    >>> infer_positional_format_args('{} {} {}')
+    '{0} {1} {2}'
+    >>> infer_positional_format_args('{:d} {!s} {1} {[hi]} {{joek}}')
+    '{0:d} {1!s} {1} {2[hi]} {{joek}}'
+    """
+    # TODO: memoize
+    ret, max_anon = '', 0
+    # look for {: or {! or {. or {[ or {}
+    start, end, prev_end = 0, 0, 0
+    for match in _pos_farg_re.finditer(fstr):
+        start, end, group = match.start(), match.end(), match.group()
+        if prev_end < start:
+            ret += fstr[prev_end:start]
+        prev_end = end
+        if group == '{{' or group == '}}':
+            ret += group
+            continue
+        ret += '{%s%s' % (max_anon, group[1:])
+        max_anon += 1
+    ret += fstr[prev_end:]
+    return ret
