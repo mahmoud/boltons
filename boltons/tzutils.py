@@ -45,7 +45,8 @@ class LocalTZInfo(tzinfo):
         _dst_offset = timedelta(seconds=-time.altzone)
 
     def is_dst(self, dt):
-        dt_t = dt.timetuple()[:-2] + (0, -1)
+        dt_t = (dt.year, dt.month, dt.day, dt.hour, dt.minute,
+                dt.second, dt.weekday(), 0, -1)
         local_t = time.localtime(time.mktime(dt_t))
         return local_t.tm_isdst > 0
 
