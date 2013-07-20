@@ -12,7 +12,7 @@ ZERO = timedelta(0)
 HOUR = timedelta(hours=1)
 
 
-class ConstantTZ(tzinfo):
+class ConstantTZInfo(tzinfo):
     def __init__(self, name="ConstantTZ", offset=ZERO):
         self.name = name
         self.offset = offset
@@ -35,10 +35,10 @@ class ConstantTZ(tzinfo):
         return '%s(name=%r, offset=%r)' % (cn, self.name, self.offset)
 
 
-UTC = ConstantTZ('UTC')
+UTC = ConstantTZInfo('UTC')
 
 
-class LocalTZ(tzinfo):
+class LocalTZInfo(tzinfo):
     _std_offset = timedelta(seconds=-time.timezone)
     _dst_offset = _std_offset
     if time.daylight:
@@ -61,6 +61,9 @@ class LocalTZ(tzinfo):
 
     def tzname(self, dt):
         return time.tzname[self.is_dst(dt)]
+
+
+LocalTZ = LocalTZInfo()
 
 
 def _first_sunday_on_or_after(dt):
