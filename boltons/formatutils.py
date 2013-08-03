@@ -34,7 +34,7 @@ def split_format_str(fstr):
 
 
 def infer_positional_format_args(fstr):
-    # TODO: memoize?
+    # TODO: memoize
     ret, max_anon = '', 0
     # look for {: or {! or {. or {[ or {}
     start, end, prev_end = 0, 0, 0
@@ -92,31 +92,10 @@ def get_format_args(fstr):
     return fargs, fkwargs
 
 
-def get_format_field_list(fstr):
+def tokenize_format_str(fstr, resolve_pos=True):
     ret = []
-    formatter = Formatter()
-    for lit, fname, fspec, conv in formatter.parse(fstr):
-        if fname is None:
-            ret.append((lit, None))
-            continue
-        field_str = construct_format_field_str(fname, fspec, conv)
-        path_list = re.split('[.[]', fname)  # TODO
-        base_name = path_list[0]
-        subpath = path_list[1:]
-        subfields = []
-        for sublit, subfname, _, _ in formatter.parse(fspec):
-            if subfname is not None:
-                subfields.append(subfname)
-        subfields = tuple(subfields)
-        type_char = fspec[-1:]
-        type_func = _TYPE_MAP.get(type_char, str)  # TODO: unicode
-        ret.append(FormatBaseField(fname, base_name, type_func,
-                                   subpath, subfields, field_str))
-    return ret
-
-
-def tokenize_format_str(fstr):
-    ret = []
+    if resolve_pos:
+        fstr = infer_positional_format_args(fstr)
     formatter = Formatter()
     for lit, fname, fspec, conv in formatter.parse(fstr):
         if lit:
@@ -127,11 +106,6 @@ def tokenize_format_str(fstr):
     return ret
 
 
-FormatBaseField = namedtuple("FormatBaseField",
-                             "name base_name type_func"
-                             " subpath subfields field_str")
-
-
 class BaseFormatField(object):
     def __init__(self, fname, fspec='', conv=None):
         self.fname = fname
@@ -140,6 +114,8 @@ class BaseFormatField(object):
 
         self.path_list = re.split('[.[]', fname)  # TODO
         self.base_name = self.path_list[0]
+        self.is_positional = not self.base_name or self.base_name.isdigit()
+
         self.subpath = self.path_list[1:]
         self.subfields = []
         for sublit, subfname, _, _ in fspec._formatter_parser():
@@ -210,15 +186,6 @@ def test_split_fstr():
     return results
 
 
-def test_field_list():
-    results = []
-    for t in _TEST_TMPLS:
-        res = get_format_field_list(t)
-        #print res
-        results.append(res)
-    return results
-
-
 def test_tokenize_format_str():
     results = []
     for t in _TEST_TMPLS:
@@ -233,4 +200,3 @@ if __name__ == '__main__':
     test_split_fstr()
     test_pos_infer()
     test_get_fstr_args()
-    test_field_list()
