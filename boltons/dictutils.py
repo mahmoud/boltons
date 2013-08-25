@@ -15,6 +15,11 @@ PREV, NEXT, KEY = 0, 1, 2
 
 __all__ = ['MultiDict', 'OrderedMultiDict']
 
+try:
+    profile
+except NameError:
+    profile = lambda x: x
+
 
 class OrderedMultiDict(dict):
     """\
@@ -82,17 +87,24 @@ class OrderedMultiDict(dict):
         self._map.clear()
         self.root[:] = [self.root, self.root, None]
 
+    @profile
     def _insert(self, k):
+        root = self.root
         cells = self._map.setdefault(k, [])
-        last = self.root[PREV]
-        cell = [last, self.root, k]
-        last[NEXT] = self.root[PREV] = cell
+        last = root[PREV]
+        cell = [last, root, k]
+        last[NEXT] = root[PREV] = cell
         cells.append(cell)
 
+    @profile
     def add(self, k, v, multi=False):
-        vs = v if multi else [v]
-        for v in vs:
-            self._insert(k)
+        self_insert = self._insert
+        if multi:
+            for v in vs:
+                self_insert(k)
+            super(OrderedMultiDict, self).setdefault(k, []).extend(v)
+        else:
+            self_insert(k)
             super(OrderedMultiDict, self).setdefault(k, []).append(v)
 
     def getlist(self, k):
@@ -136,22 +148,24 @@ class OrderedMultiDict(dict):
         # E and F are throwback names to the dict() __doc__
         if E is self:
             return
-        elif isinstance(E, OrderedMultiDict):
+        self_add = self.add
+        if isinstance(E, OrderedMultiDict):
             for k in E:
                 if k in self:
                     del self[k]
             for k, v in E.iteritems(multi=True):
-                self.add(k, v)
+                self_add(k, v)
         elif hasattr(E, 'keys'):
             for k in E.keys():
                 self[k] = E[k]
         else:
             seen = set()
+            seen_add = seen_add
             for k, v in E:
                 if k not in seen and k in self:
                     del self[k]
-                    seen.add(k)
-                self.add(k, v)
+                    seen_add(k)
+                self_add(k, v)
         for k in F:
             self[k] = F[k]
         return
@@ -166,8 +180,9 @@ class OrderedMultiDict(dict):
         else:
             iterator = E
 
+        self_add = self.add
         for k, v in iterator:
-            self.add(k, v)
+            self_add(k, v)
 
     def __setitem__(self, k, v):
         if super(OrderedMultiDict, self).__contains__(k):
@@ -238,7 +253,8 @@ class OrderedMultiDict(dict):
         if multi:
             indices = {}
             for k in self.iterkeys(multi=True):
-                yield k, self.getlist(k)[indices.setdefault(k, 0)]
+                idx = indices.setdefault(k, 0)
+                yield k, self.getlist(k)[idx]
                 indices[k] += 1
         else:
             for k in self:

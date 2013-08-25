@@ -17,7 +17,7 @@ log = lithoxyl.logger.BaseLogger('bench_stats', sinks=[q_sink])
 try:
     profile
 except NameError:
-    times = 100
+    times = 10
     size = 5000
     redun = 10
 else:
