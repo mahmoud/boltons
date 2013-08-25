@@ -19,7 +19,7 @@ try:
 except NameError:
     times = 10
     size = 5000
-    redun = 10
+    redun = 1
 else:
     times = 1
     size = 10000
@@ -29,14 +29,14 @@ _rng = range(size / redun) * redun
 _pairs = zip(_rng, _rng)
 
 
-for impl in (OMD, WOMD):
+for impl in (OMD, WOMD, MultiDict, dict):
     q_sink = lithoxyl.sinks.QuantileSink()
     log = lithoxyl.logger.BaseLogger('bench_stats', sinks=[q_sink])
     print
     print '+ %s.%s' % (impl.__module__, impl.__name__)
     for i in range(times):
         with log.info('bench_omd') as r:
-            OMD(_pairs)
+            impl(_pairs)
 
     best_msecs = q_sink.min * 1000
     median_msecs = q_sink.median * 1000
