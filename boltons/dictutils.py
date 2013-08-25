@@ -16,6 +16,9 @@ PREV, NEXT, KEY = 0, 1, 2
 __all__ = ['MultiDict', 'OrderedMultiDict']
 
 
+from abc import ABCMeta
+
+
 class OrderedMultiDict(dict):
     """\
     A MultiDict that remembers original insertion order. A MultiDict
@@ -42,6 +45,9 @@ class OrderedMultiDict(dict):
     better than other OMDs out there. Mad props to Mark Williams for
     all his help.
     """
+
+    __metaclass__ = ABCMeta
+
     def __init__(self, *args, **kwargs):
         name = self.__class__.__name__
         if len(args) > 1:
@@ -107,6 +113,9 @@ class OrderedMultiDict(dict):
 
     def copy(self):
         return self.__class__(self.items(multi=True))
+
+    def get_flattened(self, ordered=False):
+        return dict([(k, self[k]) for k in self])
 
     @classmethod
     def fromkeys(cls, keys, default=None):
@@ -360,3 +369,24 @@ def test_clear():
         assert not omd
         omd.clear()
         assert not omd
+        omd['a'] = 22
+        assert omd
+        omd.clear()
+        assert not omd
+
+
+def test_types():
+    import collections
+    omd = OMD()
+    assert isinstance(omd, dict)
+    assert isinstance(omd, collections.MutableMapping)
+
+
+def test_flattened():
+    for itemset in _ITEMSETS:
+        omd = OMD(itemset)
+        d = dict(itemset)
+
+        flat = omd.get_flattened()
+        print flat
+        assert flat == d
