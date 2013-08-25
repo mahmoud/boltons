@@ -16,9 +16,6 @@ PREV, NEXT, KEY = 0, 1, 2
 __all__ = ['MultiDict', 'OrderedMultiDict']
 
 
-from abc import ABCMeta
-
-
 class OrderedMultiDict(dict):
     """\
     A MultiDict that remembers original insertion order. A MultiDict
@@ -30,6 +27,12 @@ class OrderedMultiDict(dict):
     >>> omd['a'] = 1
     >>> omd['b'] = 2
     >>> omd.add('a', 3)
+    >>> omd['a']
+    3
+
+    Note that unlike some other MultiDicts, this OMD gives precedence
+    to the last value added. ``omd['a']`` refers to ``3``, not ``1``.
+
     >>> omd
     OrderedMultiDict([('a', 1), ('b', 2), ('a', 3)])
     >>> omd.poplast('a')
@@ -41,13 +44,21 @@ class OrderedMultiDict(dict):
     >>> omd
     OrderedMultiDict([('b', 2)])
 
+    Note that dict()-ifying the OMD results in a dict of keys to
+    _lists_ of values:
+
+    >>> dict(OrderedMultiDict([('a', 1), ('b', 2), ('a', 3)]))
+    {'a': [1, 3], 'b': [2]}
+
+    If you want a flat dictionary, use ``get_flattened()``.
+
+    >>> OrderedMultiDict([('a', 1), ('b', 2), ('a', 3)]).get_flattened()
+    {'a': 3, 'b': 2}
+
     The implementation could be more optimal, but overall it's far
     better than other OMDs out there. Mad props to Mark Williams for
     all his help.
     """
-
-    __metaclass__ = ABCMeta
-
     def __init__(self, *args, **kwargs):
         name = self.__class__.__name__
         if len(args) > 1:
@@ -319,7 +330,10 @@ def test_to_dict():
 
     d = dict(omd)
     assert len(d) == 1
-    assert d['A'] == 'One'
+    assert d['A'] == ['One', 'One', 'One']
+
+    flat = omd.get_flattened()
+    assert flat['A'] == 'One'
 
 
 def test_eq():
@@ -388,5 +402,4 @@ def test_flattened():
         d = dict(itemset)
 
         flat = omd.get_flattened()
-        print flat
         assert flat == d
