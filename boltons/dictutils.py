@@ -56,8 +56,13 @@ class OrderedMultiDict(dict):
             self.update(kwargs)
 
     def _clear_ll(self):
-        self._map = {}
-        self.root = []
+        # TODO: always reset objects? (i.e., no else block below)
+        try:
+            _map = self._map
+        except AttributeError:
+            self._map = {}
+            self.root = []
+        self._map.clear()
         self.root[:] = [self.root, self.root, None]
 
     def _insert(self, k):
@@ -78,7 +83,7 @@ class OrderedMultiDict(dict):
 
     def popnth(self, k, idx):  # pop_single?
         self._remove(k, idx)
-        values = self.getlist(k)
+        values = super(OrderedMultiDict, self).__getitem__(k)
         v = values.pop(idx)
         if not values:
             super(OrderedMultiDict, self).__delitem__(k)
@@ -92,8 +97,8 @@ class OrderedMultiDict(dict):
         self._clear_ll()
 
     def get(self, k, default=[None], multi=False):
-        l = super(OrderedMultiDict, self).get(k, default)
-        return list(l) if multi else l[-1]
+        ret = super(OrderedMultiDict, self).get(k, default)
+        return ret[:] if multi else ret[-1]
 
     def setdefault(self, k, default=_MISSING):
         if not super(OrderedMultiDict, self).__contains__(k):
@@ -111,8 +116,7 @@ class OrderedMultiDict(dict):
         # E and F are throwback names to the dict() __doc__
         if E is self:
             return
-
-        if isinstance(E, OrderedMultiDict):
+        elif isinstance(E, OrderedMultiDict):
             for k in E:
                 if k in self:
                     del self[k]
@@ -128,11 +132,11 @@ class OrderedMultiDict(dict):
                     del self[k]
                     seen.add(k)
                 self.add(k, v)
-
         for k in F:
             self[k] = F[k]
+        return
 
-    def update_extend(self, E, **F):  # upsert
+    def update_extend(self, E, **F):  # upsert?
         if E is self:
             iterator = iter(E.items())
         elif isinstance(E, OrderedMultiDict):
@@ -346,3 +350,13 @@ def test_update():
     omd2_c = omd2.copy()
     omd2_c.pop('a')
     assert omd2 != omd2_c
+
+
+def test_clear():
+    for itemset in _ITEMSETS:
+        omd = OMD(itemset)
+        omd.clear()
+        assert len(omd) == 0
+        assert not omd
+        omd.clear()
+        assert not omd
