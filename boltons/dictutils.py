@@ -29,7 +29,7 @@ class OrderedMultiDict(dict):
     >>> omd.add('a', 3)
     >>> omd
     OrderedMultiDict([('a', 1), ('b', 2), ('a', 3)])
-    >>> omd.popitem('a')
+    >>> omd.poplast('a')
     3
     >>> omd
     OrderedMultiDict([('a', 1), ('b', 2)])
@@ -50,8 +50,10 @@ class OrderedMultiDict(dict):
         super(OrderedMultiDict, self).__init__()
 
         self._clear_ll()
-        self.update_extend(args[0])
-        self.update(kwargs)
+        if args:
+            self.update_extend(args[0])
+        if kwargs:
+            self.update(kwargs)
 
     def _clear_ll(self):
         self._map = {}
@@ -103,9 +105,10 @@ class OrderedMultiDict(dict):
 
     @classmethod
     def fromkeys(cls, keys, default=None):
-        return cls((k, default) for k in keys)
+        return cls([(k, default) for k in keys])
 
     def update(self, E, **F):
+        # E and F are throwback names to the dict() __doc__
         if E is self:
             return
 
@@ -168,6 +171,7 @@ class OrderedMultiDict(dict):
                     return False
             if not(next(selfi, _MISSING) is _MISSING
                    and next(otheri, _MISSING) is _MISSING):
+                # leftovers  (TODO: watch for StopIteration?)
                 return False
             return True
         elif hasattr(other, 'keys'):
@@ -252,20 +256,20 @@ class OrderedMultiDict(dict):
             curr = curr[PREV]
 
     def __repr__(self):
-        name = self.__class__.__name__
-        kvs = ', '.join(repr((k, v)) for k, v in self.iteritems(multi=True))
-        return '%s([%s])' % (name, kvs)
+        cn = self.__class__.__name__
+        kvs = ', '.join([repr((k, v)) for k, v in self.iteritems(multi=True)])
+        return '%s([%s])' % (cn, kvs)
 
     def viewkeys(self):
-        "od.viewkeys() -> a set-like object providing a view on od's keys"
+        "OMD.viewkeys() -> a set-like object providing a view on OMD's keys"
         return KeysView(self)
 
     def viewvalues(self):
-        "od.viewvalues() -> an object providing a view on od's values"
+        "OMD.viewvalues() -> an object providing a view on OMD's values"
         return ValuesView(self)
 
     def viewitems(self):
-        "od.viewitems() -> a set-like object providing a view on od's items"
+        "OMD.viewitems() -> a set-like object providing a view on OMD's items"
         return ItemsView(self)
 
 
