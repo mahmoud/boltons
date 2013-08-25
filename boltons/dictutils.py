@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
-from collections import OrderedDict
+from collections import KeysView, ValuesView, ItemsView
+from itertools import izip
 
 try:
     from compat import make_sentinel
@@ -9,10 +10,13 @@ except ImportError:
     _MISSING = object()
 
 
+PREV, NEXT, KEY = 0, 1, 2
+
+
 __all__ = ['MultiDict', 'OrderedMultiDict']
 
 
-class OrderedMultiDict(OrderedDict):
+class OrderedMultiDict(dict):
     """\
     A MultiDict that remembers original insertion order. A MultiDict
     is a dictionary that can have multiple values per key, most
@@ -35,76 +39,234 @@ class OrderedMultiDict(OrderedDict):
     OrderedMultiDict([('b', 2)])
 
     The implementation could be more optimal, but overall it's far
-    better than other OMDs out there. Mad thanks to Mark Williams for
-    getting it this far.
+    better than other OMDs out there. Mad props to Mark Williams for
+    all his help.
     """
-
     def __init__(self, *args, **kwargs):
-        super(OrderedMultiDict, self).__init__(*args, **kwargs)
-        self._maphistory = {}
+        name = self.__class__.__name__
+        if len(args) > 1:
+            raise TypeError('%s expected at most 1 argument, got %s'
+                            % (name, len(args)))
+        super(OrderedMultiDict, self).__init__()
 
-    def __delitem__(self, key):
-        PREV, NEXT = 0, 1
-        history = self._maphistory.pop(key, _MISSING)
-        super(OrderedMultiDict, self).__delitem__(key)
-        if history is _MISSING:
+        self._clear_ll()
+        self.update_extend(args[0])
+        self.update(kwargs)
+
+    def _clear_ll(self):
+        self._map = {}
+        self.root = []
+        self.root[:] = [self.root, self.root, None]
+
+    def _insert(self, k):
+        cells = self._map.setdefault(k, [])
+        last = self.root[PREV]
+        cell = [last, self.root, k]
+        last[NEXT] = self.root[PREV] = cell
+        cells.append(cell)
+
+    def add(self, k, v, multi=False):
+        vs = v if multi else [v]
+        for v in vs:
+            self._insert(k)
+            super(OrderedMultiDict, self).setdefault(k, []).append(v)
+
+    def getlist(self, k):
+        return super(OrderedMultiDict, self).__getitem__(k)[:]
+
+    def popnth(self, k, idx):  # pop_single?
+        self._remove(k, idx)
+        values = self.getlist(k)
+        v = values.pop(idx)
+        if not values:
+            super(OrderedMultiDict, self).__delitem__(k)
+        return v
+
+    def poplast(self, k):  # could default pop_single to -1
+        return self.popnth(k, idx=-1)
+
+    def clear(self):
+        super(OrderedMultiDict, self).clear()
+        self._clear_ll()
+
+    def get(self, k, default=[None], multi=False):
+        l = super(OrderedMultiDict, self).get(k, default)
+        return l if multi else l[-1]
+
+    def setdefault(self, k, default=_MISSING):
+        if not super(OrderedMultiDict, self).__contains__(k):
+            self[k] = [] if default is _MISSING else [default]
+        return default
+
+    def copy(self):
+        return self.__class__(self.items(multi=True))
+
+    @classmethod
+    def fromkeys(cls, keys, default=None):
+        return cls((k, default) for k in keys)
+
+    def update(self, E, **F):
+        if E is self:
             return
-        for h in history:
-            link_prev, link_next, key = h
-            link_prev[NEXT] = link_next
-            link_next[PREV] = link_prev
 
-    def __getitem__(self, key):
-        if not key in self:
-            raise KeyError(key)
-        return super(OrderedMultiDict, self).__getitem__(key)[0]
+        if isinstance(E, OrderedMultiDict):
+            for k in E:
+                if k in self:
+                    del self[k]
+            for k, v in E.iteritems(multi=True):
+                self.add(k, v)
+        elif hasattr(E, 'keys'):
+            for k in E.keys():
+                self[k] = E[k]
+        else:
+            seen = set()
+            for k, v in E:
+                if k not in seen and k in self:
+                    del self[k]
+                    seen.add(k)
+                self.add(k, v)
 
-    def __setitem__(self, key, value):
-        super(OrderedMultiDict, self).__setitem__(key, [value])
+        for k in F:
+            self[k] = F[k]
 
-    def add(self, key, value):
-        PREV, NEXT = 0, 1
-        root = self._OrderedDict__root
-        last = root[PREV]
-        cell = [last, root, key]
-        if not self._maphistory.get(key):
-            prev_cell = self._OrderedDict__map.get(key)
-            self._maphistory[key] = [prev_cell]
-        last[NEXT] = root[PREV] = self._OrderedDict__map[key] = cell
-        self._maphistory[key].append(cell)
-        super(OrderedDict, self).setdefault(key, []).append(value)
+    def update_extend(self, E, **F):  # upsert
+        if E is self:
+            iterator = iter(E.items())
+        elif isinstance(E, OrderedMultiDict):
+            iterator = E.iteritems(multi=True)
+        elif hasattr(E, 'keys'):
+            iterator = ((k, E[k]) for k in E.keys())
+        else:
+            iterator = E
 
-    def getlist(self, key):
-        return super(OrderedMultiDict, self).__getitem__(key)
+        for k, v in iterator:
+            self.add(k, v)
 
-    def iteritems(self):
-        walkers = {}
-        for key in self:
-            iterator = walkers.setdefault(key, iter(self.getlist(key)))
-            yield (key, next(iterator))
+    def __setitem__(self, k, v):
+        if super(OrderedMultiDict, self).__contains__(k):
+            self._remove_all(k)
+        self._insert(k)
+        super(OrderedMultiDict, self).__setitem__(k, [v])
 
-    def items(self):
-        return list(self.iteritems())
+    def __getitem__(self, k):
+        return super(OrderedMultiDict, self).__getitem__(k)[-1]
 
-    def popitem(self, key, default=_MISSING):
-        # we want __delitem__'s list manipulation without actually
-        # deleting the item...
-        PREV, NEXT = 0, 1
-        root = self._OrderedDict__root
-        if not key in self:
-            if default is _MISSING:
-                raise KeyError(key)
-            else:
-                return default
-        prev_mapping = self._maphistory.get(key)
-        if prev_mapping[-1][PREV] is root:
-            return self.pop(key)
+    def __delitem__(self, k):
+        super(OrderedMultiDict, self).__delitem__(k)
+        self._remove_all(k)
 
-        link_prev, link_next, key = self._OrderedDict__map.pop(key)
-        link_prev[NEXT] = link_next
-        link_next[PREV] = link_prev
-        self._OrderedDict__map[key] = prev_mapping.pop()
-        return self.getlist(key).pop()
+    def __eq__(self, other):
+        if self is other:
+            return True
+        elif len(other) != len(self):
+            return False
+        elif isinstance(other, OrderedMultiDict):
+            selfi = self.iteritems(multi=True)
+            otheri = other.iteritems(multi=True)
+            for (selfk, selfv), (otherk, otherv) in izip(selfi, otheri):
+                if selfk != otherk or selfv != otherv:
+                    return False
+            if not(next(selfi, _MISSING) is _MISSING
+                   and next(otheri, _MISSING) is _MISSING):
+                return False
+            return True
+        elif hasattr(other, 'keys'):
+            for selfk in self:
+                try:
+                    other[selfk] == self[selfk]
+                except KeyError:
+                    return False
+            return True
+        return False
+
+    def __ne__(self, other):
+        return not (self == other)
+
+    def popall(self, k, default=_MISSING):
+        if super(OrderedMultiDict, self).__contains__(k):
+            self._remove_all(k)
+        if default is _MISSING:
+            return super(OrderedMultiDict, self).pop(k)
+        return super(OrderedMultiDict, self).pop(k, default)
+
+    def pop(self, k, default=_MISSING):
+        return self.popall(k, default)[-1]
+
+    def _remove(self, k, idx):
+        values = self._map[k]
+        cell = values.pop(idx)
+        cell[PREV][NEXT], cell[NEXT][PREV] = cell[NEXT], cell[PREV]
+        if not len(values):
+            del self._map[k]
+
+    def _remove_all(self, k):
+        values = self._map[k]
+        while values:
+            cell = values.pop()
+            cell[PREV][NEXT], cell[NEXT][PREV] = cell[NEXT], cell[PREV]
+        del self._map[k]
+
+    def iteritems(self, multi=False):
+        if multi:
+            indices = {}
+            for k in self.iterkeys(multi=True):
+                yield k, self.getlist(k)[indices.setdefault(k, 0)]
+                indices[k] += 1
+        else:
+            for k in self:
+                yield k, self[k]
+
+    def items(self, multi=False):
+        return list(self.iteritems(multi))
+
+    def iterkeys(self, multi=False):
+        if multi:
+            curr = self.root[NEXT]
+            while curr is not self.root:
+                yield curr[KEY]
+                curr = curr[NEXT]
+        else:
+            yielded = set()
+            for k in self.iterkeys(multi=True):
+                if k not in yielded:
+                    yielded.add(k)
+                    yield k
+
+    def itervalues(self, multi=False):
+        for k in self.iterkeys(multi):
+            yield self[k]
+
+    def keys(self, multi=False):
+        return list(self.iterkey(multi))
+
+    def values(self, multi=False):
+        return list(self.itervalues(multi))
+
+    def __iter__(self):
+        return iter(self.iterkeys())
+
+    def __reversed__(self):
+        curr = self.root[PREV]
+        while curr is not self.root:
+            yield curr[KEY]
+            curr = curr[PREV]
+
+    def __repr__(self):
+        name = self.__class__.__name__
+        kvs = ', '.join(repr((k, v)) for k, v in self.iteritems(multi=True))
+        return '%s([%s])' % (name, kvs)
+
+    def viewkeys(self):
+        "od.viewkeys() -> a set-like object providing a view on od's keys"
+        return KeysView(self)
+
+    def viewvalues(self):
+        "od.viewvalues() -> an object providing a view on od's values"
+        return ValuesView(self)
+
+    def viewitems(self):
+        "od.viewitems() -> a set-like object providing a view on od's items"
+        return ItemsView(self)
 
 
 MultiDict = OrderedMultiDict
@@ -121,22 +283,22 @@ _ITEMSETS = [[],
 
 
 def test_dict_init():
-    x = dict(_ITEMSETS[1])
-    y = OMD(x)
+    d = dict(_ITEMSETS[1])
+    omd = OMD(d)
 
-    assert x['a'] == 1
-    assert x['b'] == 2
-    assert x['c'] == 3
+    assert omd['a'] == 1
+    assert omd['b'] == 2
+    assert omd['c'] == 3
 
-    assert len(x) == 3
-    assert x.get_list('a') == ['a']
-    assert x == y
+    assert len(omd) == 3
+    assert omd.getlist('a') == [1]
+    assert omd == d
 
 
 def test_to_dict():
     omd = OMD(_ITEMSETS[2])
     assert len(omd) == 1
-    assert d['A'] == 'One'
+    assert omd['A'] == 'One'
 
     d = dict(omd)
     assert len(d) == 1
@@ -177,5 +339,6 @@ def test_update():
     assert omd['a'] == 10
     assert omd.getlist('a') == [10]
 
+    omd2_c = omd2.copy()
     omd2_c.pop('a')
     assert omd2 != omd2_c
