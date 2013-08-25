@@ -93,7 +93,7 @@ class OrderedMultiDict(dict):
 
     def get(self, k, default=[None], multi=False):
         l = super(OrderedMultiDict, self).get(k, default)
-        return l if multi else l[-1]
+        return list(l) if multi else l[-1]
 
     def setdefault(self, k, default=_MISSING):
         if not super(OrderedMultiDict, self).__contains__(k):
