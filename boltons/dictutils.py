@@ -108,3 +108,74 @@ class OrderedMultiDict(OrderedDict):
 
 
 MultiDict = OrderedMultiDict
+
+
+# Tests follow
+
+OMD = OrderedMultiDict
+
+_ITEMSETS = [[],
+             [('a', 1), ('b', 2), ('c', 3)],
+             [('A', 'One'), ('A', 'One'), ('A', 'One')],
+             [('Z', -1), ('Y', -2), ('Y', -2)]]
+
+
+def test_dict_init():
+    x = dict(_ITEMSETS[1])
+    y = OMD(x)
+
+    assert x['a'] == 1
+    assert x['b'] == 2
+    assert x['c'] == 3
+
+    assert len(x) == 3
+    assert x.get_list('a') == ['a']
+    assert x == y
+
+
+def test_to_dict():
+    omd = OMD(_ITEMSETS[2])
+    assert len(omd) == 1
+    assert d['A'] == 'One'
+
+    d = dict(omd)
+    assert len(d) == 1
+    assert d['A'] == 'One'
+
+
+def test_eq():
+    omd = OMD(_ITEMSETS[3])
+    assert omd == omd
+    assert not (omd != omd)
+
+    omd2 = OMD(_ITEMSETS[3])
+    assert omd == omd2
+    assert omd2 == omd
+    assert not (omd != omd2)
+
+    d = dict(_ITEMSETS[3])
+    assert d == omd
+    omd3 = OMD(d)
+    assert omd != omd3
+
+
+def test_copy():
+    for itemset in _ITEMSETS:
+        omd = OMD(itemset)
+        omd_c = omd.copy()
+        assert omd == omd_c
+        if omd_c:
+            omd_c.pop(itemset[0][0])
+            assert omd != omd_c
+    return
+
+
+def test_update():
+    omd = OMD(_ITEMSETS[1])
+    omd2 = OMD({'a': 10})
+    omd.update(omd2)
+    assert omd['a'] == 10
+    assert omd.getlist('a') == [10]
+
+    omd2_c.pop('a')
+    assert omd2 != omd2_c
