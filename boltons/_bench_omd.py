@@ -18,7 +18,7 @@ try:
     profile
 except NameError:
     times = 100
-    size = 1000
+    size = 5000
     redun = 10
 else:
     times = 1
@@ -28,12 +28,16 @@ else:
 _rng = range(size / redun) * redun
 _pairs = zip(_rng, _rng)
 
-for i in range(times):
-    with log.info('bench_omd') as r:
-        OMD(_pairs)
 
-#from pprint import pprint
-#pprint(q_sink.get_histogram())
-best_msecs = q_sink.min * 1000
-median_msecs = q_sink.median * 1000
-print 'ran %d loops of %d items each, best time: %g ms, median time: %g ms' % (times, size, best_msecs, median_msecs)
+for impl in (OMD, WOMD):
+    q_sink = lithoxyl.sinks.QuantileSink()
+    log = lithoxyl.logger.BaseLogger('bench_stats', sinks=[q_sink])
+    print
+    print '+ %s.%s' % (impl.__module__, impl.__name__)
+    for i in range(times):
+        with log.info('bench_omd') as r:
+            OMD(_pairs)
+
+    best_msecs = q_sink.min * 1000
+    median_msecs = q_sink.median * 1000
+    print ' > ran %d loops of %d items each, best time: %g ms, median time: %g ms' % (times, size, best_msecs, median_msecs)
