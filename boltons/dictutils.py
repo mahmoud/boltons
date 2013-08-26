@@ -254,19 +254,20 @@ class OrderedMultiDict(dict):
             indices = {}
             for k in self.iterkeys(multi=True):
                 idx = indices.setdefault(k, 0)
-                yield k, self.getlist(k)[idx]
+                yield k, super(OrderedMultiDict, self).__getitem__(k)[idx]
                 indices[k] += 1
         else:
-            for k in self:
-                yield k, self[k]
+            for k in self.iterkeys():
+                yield k, super(OrderedMultiDict, self).__getitem__(k)[-1]
 
     def items(self, multi=False):
         return list(self.iteritems(multi))
 
     def iterkeys(self, multi=False):
         if multi:
-            curr = self.root[NEXT]
-            while curr is not self.root:
+            root = self.root
+            curr = root[NEXT]
+            while curr is not root:
                 yield curr[KEY]
                 curr = curr[NEXT]
         else:
@@ -287,11 +288,12 @@ class OrderedMultiDict(dict):
         return list(self.itervalues(multi))
 
     def __iter__(self):
-        return iter(self.iterkeys())
+        return self.iterkeys()
 
     def __reversed__(self):
-        curr = self.root[PREV]
-        while curr is not self.root:
+        root = self.root
+        curr = root[PREV]
+        while curr is not root:
             yield curr[KEY]
             curr = curr[PREV]
 
