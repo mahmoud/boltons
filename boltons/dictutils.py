@@ -438,9 +438,11 @@ def test_multi_correctness():
     _pairs = zip(_rng_redun, _rng)
 
     omd = OMD(_pairs)
-    vals = [x[1] for x in omd.iteritems()]
-    strictly_ascending = all([x < y for x, y in zip(vals, vals[1:])])
-    assert strictly_ascending
+    for multi in (True, False):
+        vals = [x[1] for x in omd.iteritems(multi=multi)]
+        strictly_ascending = all([x < y for x, y in zip(vals, vals[1:])])
+        assert strictly_ascending
+    return
 
 
 def test_kv_consistency():
@@ -454,3 +456,4 @@ def test_kv_consistency():
 
             assert keys == [x[0] for x in items]
             assert values == [x[1] for x in items]
+    return
