@@ -281,10 +281,8 @@ class OrderedMultiDict(dict):
                     yield k
 
     def itervalues(self, multi=False):
-        # TODO: this seems like it's wrong. in multi mode it will
-        # return the same value again and again
-        for k in self.iterkeys(multi):
-            yield self[k]
+        for k, v in self.iteritems(multi):
+            yield v
 
     def keys(self, multi=False):
         return list(self.iterkeys(multi))
