@@ -101,7 +101,7 @@ class OrderedMultiDict(dict):
         self_insert = self._insert
         values = super(OrderedMultiDict, self).setdefault(k, [])
         if multi:
-            for v in vs:
+            for _ in v:
                 self_insert(k)
             values.extend(v)
         else:
