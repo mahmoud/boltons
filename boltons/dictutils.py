@@ -330,7 +330,8 @@ OMD = OrderedMultiDict
 _ITEMSETS = [[],
              [('a', 1), ('b', 2), ('c', 3)],
              [('A', 'One'), ('A', 'One'), ('A', 'One')],
-             [('Z', -1), ('Y', -2), ('Y', -2)]]
+             [('Z', -1), ('Y', -2), ('Y', -2)],
+             [('a', 1), ('b', 2), ('a', 3), ('c', 4)]]
 
 
 def test_dict_init():
@@ -426,3 +427,17 @@ def test_flattened():
 
         flat = omd.get_flattened()
         assert flat == d
+
+
+def test_multi_correctness():
+    size = 100
+    redun = 5
+
+    _rng = range(size)
+    _rng_redun = range(size/redun) * redun
+    _pairs = zip(_rng_redun, _rng)
+
+    omd = OMD(_pairs)
+    vals = [x[1] for x in omd.iteritems()]
+    strictly_ascending = all([x < y for x, y in zip(vals, vals[1:])])
+    assert strictly_ascending
