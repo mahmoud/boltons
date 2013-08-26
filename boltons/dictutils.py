@@ -284,7 +284,7 @@ class OrderedMultiDict(dict):
             yield self[k]
 
     def keys(self, multi=False):
-        return list(self.iterkey(multi))
+        return list(self.iterkeys(multi))
 
     def values(self, multi=False):
         return list(self.itervalues(multi))
