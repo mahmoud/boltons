@@ -441,3 +441,16 @@ def test_multi_correctness():
     vals = [x[1] for x in omd.iteritems()]
     strictly_ascending = all([x < y for x, y in zip(vals, vals[1:])])
     assert strictly_ascending
+
+
+def test_kv_consistency():
+    for itemset in _ITEMSETS:
+        omd = OMD(itemset)
+
+        for multi in (True, False):
+            items = omd.items(multi=multi)
+            keys = omd.keys(multi=multi)
+            values = omd.values(multi=multi)
+
+            assert keys == [x[0] for x in items]
+            assert values == [x[1] for x in items]
