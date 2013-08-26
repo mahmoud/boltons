@@ -250,15 +250,16 @@ class OrderedMultiDict(dict):
         del self._map[k]
 
     def iteritems(self, multi=False):
+        get_values = super(OrderedMultiDict, self).__getitem__
         if multi:
             indices = {}
             for k in self.iterkeys(multi=True):
                 idx = indices.setdefault(k, 0)
-                yield k, super(OrderedMultiDict, self).__getitem__(k)[idx]
+                yield k, get_values(k)[idx]
                 indices[k] += 1
         else:
             for k in self.iterkeys():
-                yield k, super(OrderedMultiDict, self).__getitem__(k)[-1]
+                yield k, get_values(k)[-1]
 
     def items(self, multi=False):
         return list(self.iteritems(multi))
@@ -272,9 +273,10 @@ class OrderedMultiDict(dict):
                 curr = curr[NEXT]
         else:
             yielded = set()
+            yielded_add = yielded.add
             for k in self.iterkeys(multi=True):
                 if k not in yielded:
-                    yielded.add(k)
+                    yielded_add(k)
                     yield k
 
     def itervalues(self, multi=False):
