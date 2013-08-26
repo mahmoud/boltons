@@ -99,13 +99,14 @@ class OrderedMultiDict(dict):
     @profile
     def add(self, k, v, multi=False):
         self_insert = self._insert
+        values = super(OrderedMultiDict, self).setdefault(k, [])
         if multi:
             for v in vs:
                 self_insert(k)
-            super(OrderedMultiDict, self).setdefault(k, []).extend(v)
+            values.extend(v)
         else:
             self_insert(k)
-            super(OrderedMultiDict, self).setdefault(k, []).append(v)
+            values.append(v)
 
     def getlist(self, k):
         return super(OrderedMultiDict, self).__getitem__(k)[:]
@@ -160,7 +161,7 @@ class OrderedMultiDict(dict):
                 self[k] = E[k]
         else:
             seen = set()
-            seen_add = seen_add
+            seen_add = seen.add
             for k, v in E:
                 if k not in seen and k in self:
                     del self[k]
@@ -239,7 +240,7 @@ class OrderedMultiDict(dict):
         values = self._map[k]
         cell = values.pop(idx)
         cell[PREV][NEXT], cell[NEXT][PREV] = cell[NEXT], cell[PREV]
-        if not len(values):
+        if not values:
             del self._map[k]
 
     def _remove_all(self, k):
@@ -253,9 +254,9 @@ class OrderedMultiDict(dict):
         get_values = super(OrderedMultiDict, self).__getitem__
         if multi:
             indices = {}
+            indices_sd = indices.setdefault
             for k in self.iterkeys(multi=True):
-                idx = indices.setdefault(k, 0)
-                yield k, get_values(k)[idx]
+                yield k, get_values(k)[indices_sd(k, 0)]
                 indices[k] += 1
         else:
             for k in self.iterkeys():
@@ -280,6 +281,8 @@ class OrderedMultiDict(dict):
                     yield k
 
     def itervalues(self, multi=False):
+        # TODO: this seems like it's wrong. in multi mode it will
+        # return the same value again and again
         for k in self.iterkeys(multi):
             yield self[k]
 
