@@ -82,9 +82,9 @@ class OrderedMultiDict(dict):
         try:
             _map = self._map
         except AttributeError:
-            self._map = {}
+            _map = self._map = {}
             self.root = []
-        self._map.clear()
+        _map.clear()
         self.root[:] = [self.root, self.root, None]
 
     @profile
@@ -389,18 +389,6 @@ def test_copy():
     return
 
 
-def test_update():
-    omd = OMD(_ITEMSETS[1])
-    omd2 = OMD({'a': 10})
-    omd.update(omd2)
-    assert omd['a'] == 10
-    assert omd.getlist('a') == [10]
-
-    omd2_c = omd2.copy()
-    omd2_c.pop('a')
-    assert omd2 != omd2_c
-
-
 def test_clear():
     for itemset in _ITEMSETS:
         omd = OMD(itemset)
@@ -459,3 +447,47 @@ def test_kv_consistency():
             assert keys == [x[0] for x in items]
             assert values == [x[1] for x in items]
     return
+
+
+def test_update_basic():
+    omd = OMD(_ITEMSETS[1])
+    omd2 = OMD({'a': 10})
+    omd.update(omd2)
+    assert omd['a'] == 10
+    assert omd.getlist('a') == [10]
+
+    omd2_c = omd2.copy()
+    omd2_c.pop('a')
+    assert omd2 != omd2_c
+
+
+def test_update():
+    for first, second in zip(_ITEMSETS, _ITEMSETS[1:]):
+        omd1 = OMD(first)
+        omd2 = OMD(second)
+        ref1 = dict(first)
+        ref2 = dict(second)
+
+        omd1.update(omd2)
+        ref1.update(ref2)
+        assert omd1.get_flattened() == ref1
+
+        omd1_repr = repr(omd1)
+        omd1.update(omd1)
+        assert omd1_repr == repr(omd1)
+
+
+def test_update_extend():
+    for first, second in zip(_ITEMSETS, _ITEMSETS[1:] + [[]]):
+        omd1 = OMD(first)
+        omd2 = OMD(second)
+        ref = dict(first)
+        orig_keys = set(omd1)
+
+        ref.update(second)
+        omd1.update_extend(omd2)
+        for k in omd2:
+            assert len(omd1.getlist(k)) >= len(omd2.getlist(k))
+
+        assert omd1.get_flattened() == ref
+        assert orig_keys <= set(omd1)
