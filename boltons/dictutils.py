@@ -275,10 +275,14 @@ class OrderedMultiDict(dict):
         else:
             yielded = set()
             yielded_add = yielded.add
-            for k in self.iterkeys(multi=True):
+            root = self.root
+            curr = root[NEXT]
+            while curr is not root:
+                k = curr[KEY]
                 if k not in yielded:
                     yielded_add(k)
                     yield k
+                curr = curr[NEXT]
 
     def itervalues(self, multi=False):
         for k, v in self.iteritems(multi):
