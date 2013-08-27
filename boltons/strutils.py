@@ -213,6 +213,23 @@ _IRR_S2P = {'alumnus': 'alumni', 'analysis': 'analyses', 'antenna': 'antennae',
 _IRR_P2S = dict([(v, k) for k, v in _IRR_S2P.items()])
 
 
+def a10n(string):
+    """
+    That thing where 'internationalization' becomes 'i18n', what's it
+    called? Abbreviation? Oh wait, no: a10n.
+
+    >>> a10n('abbreviation')
+    'a10n'
+    >>> a10n('internationalization')
+    'i18n'
+    >>> a10n('')
+    ''
+    """
+    if len(string) < 3:
+        return string
+    return '%s%s%s' % (string[0], len(string[1:-1]), string[-1])
+
+
 class StringBuffer(object):
     """
     This is meant to be a better file-like string buffer.
