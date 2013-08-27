@@ -17,8 +17,8 @@ log = lithoxyl.logger.BaseLogger('bench_stats', sinks=[q_sink])
 try:
     profile
 except NameError:
-    times = 5
-    size = 6000
+    times = 10
+    size = 10000
     redun = 2
 else:
     times = 1
@@ -30,42 +30,62 @@ _unique_keys = set(_rng)
 _bad_rng = range(size, size + size)
 _pairs = zip(_rng, _rng)
 
+_actions = ('iteritems', 'iterkeys', 'getitem', 'keyerror', 'pop')
+_all_actions = ('init',) + _actions
+
 
 def bench():
     for impl in (OMD, WOMD, MultiDict, OD, dict):
         q_sink = lithoxyl.sinks.QuantileSink()
-        log = lithoxyl.logger.BaseLogger('bench_stats', sinks=[q_sink])
+        impl_name = '.'.join([impl.__module__, impl.__name__])
+        log = lithoxyl.logger.BaseLogger(impl_name, sinks=[q_sink])
         print
-        print '+ %s.%s' % (impl.__module__, impl.__name__)
-        for i in range(times):
-            with log.info('bench_omd') as r:
-                # initialization
-                d = impl(_pairs)
-                # just iteration
-                for j in range(times):
-                    [_ for _ in d.iteritems()]
-
-                # access existent keys
-                for j in range(times):
-                    for k in _rng:
-                        d[k]
-                # access non-existent keys
-                for k in _bad_rng:
-                    try:
-                        d[k]
-                    except KeyError:
-                        pass
-                # pop
-                for k in _unique_keys:
-                    d.pop(k)
-                assert not d
-
-        best_msecs = q_sink.min * 1000
-        median_msecs = q_sink.median * 1000
+        print '+ %s' % impl_name
+        for _ in range(times):
+            with log.info('total') as r:
+                for _ in range(times):
+                    with log.info('init'):
+                        target_dict = impl(_pairs)
+                    for action in _actions:
+                        action_func = globals()['_do_' + action]
+                        with log.info(action):
+                            action_func(target_dict)
+        for action in _actions:
+            best_msecs = q_sink.qas[impl_name][action].min * 1000
+            print '   - %s - %g ms' % (action, best_msecs)
+        best_msecs = q_sink.qas[impl_name]['total'].min * 1000
+        median_msecs = q_sink.qas[impl_name]['total'].median * 1000
         print ' > ran %d loops of %d items each, best time: %g ms, median time: %g ms' % (times, size, best_msecs, median_msecs)
 
     print
     return
+
+
+def _do_iteritems(target_dict):
+    [_ for _ in target_dict.iteritems()]
+
+
+def _do_iterkeys(target_dict):
+    [_ for _ in target_dict.iterkeys()]
+
+
+def _do_getitem(target_dict):
+    for k in _rng:
+        target_dict[k]
+
+
+def _do_keyerror(target_dict):
+    for k in _bad_rng:
+        try:
+            target_dict[k]
+        except KeyError:
+            pass
+
+
+def _do_pop(target_dict):
+    for k in _unique_keys:
+        target_dict.pop(k)
+    assert not target_dict
 
 
 if __name__ == '__main__':
