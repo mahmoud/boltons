@@ -132,16 +132,13 @@ class OrderedMultiDict(dict):
     def getlist(self, k):
         return super(OrderedMultiDict, self).__getitem__(k)[:]
 
-    def popnth(self, k, idx):  # pop_single?
-        self._remove(k, idx)
+    def poplast(self, k):
+        self._remove(k)
         values = super(OrderedMultiDict, self).__getitem__(k)
-        v = values.pop(idx)
+        v = values.pop()
         if not values:
             super(OrderedMultiDict, self).__delitem__(k)
         return v
-
-    def poplast(self, k):  # could default pop_single to -1
-        return self.popnth(k, idx=-1)
 
     def clear(self):
         super(OrderedMultiDict, self).clear()
@@ -257,24 +254,31 @@ class OrderedMultiDict(dict):
     def pop(self, k, default=_MISSING):
         return self.popall(k, default)[-1]
 
-    def _remove(self, k, idx=-1):
+    def _remove(self, k):
         cells = self._map[k]
-        cell = cells.pop(idx)
+        cell = cells.pop()
         if not cells:
             del self._map[k]
+            cell[PREV][SNEXT] = cell[SNEXT]
 
-        if idx == 0:
-            cells[0][SPREV][SNEXT] = cells[0]
         if cell[PREV][SPREV][SNEXT] is cell:
             cell[PREV][SPREV][SNEXT] = cell[NEXT]
-        else:
+        elif cell[SNEXT] is cell[NEXT]:
             cell[SPREV][SNEXT], cell[SNEXT][SPREV] = cell[SNEXT], cell[SPREV]
 
         cell[PREV][NEXT], cell[NEXT][PREV] = cell[NEXT], cell[PREV]
 
     def _remove_all(self, k):
-        while self._map.get(k):
-            self._remove(k)
+        cells = self._map.pop(k)
+        while cells:
+            cell = cells.pop()
+            if cell[PREV][SPREV][SNEXT] is cell:
+                cell[PREV][SPREV][SNEXT] = cell[NEXT]
+            elif cell[SNEXT] is cell[NEXT]:
+                cell[SPREV][SNEXT], cell[SNEXT][SPREV] = cell[SNEXT], cell[SPREV]
+
+            cell[PREV][NEXT], cell[NEXT][PREV] = cell[NEXT], cell[PREV]
+        cell[PREV][SNEXT] = cell[SNEXT]
 
     def iteritems(self, multi=False):
         next_link = NEXT if multi else SNEXT
