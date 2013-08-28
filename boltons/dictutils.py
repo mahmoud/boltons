@@ -10,7 +10,7 @@ except ImportError:
     _MISSING = object()
 
 
-PREV, NEXT, SPREV, SNEXT, KEY = range(5)
+PREV, NEXT, SPREV, SNEXT, KEY, VALUE = range(6)
 
 
 __all__ = ['MultiDict', 'OrderedMultiDict']
@@ -87,10 +87,10 @@ class OrderedMultiDict(dict):
         _map.clear()
         self.root[:] = [self.root, self.root,
                         self.root, self.root,
-                        None]
+                        None, None]
 
     @profile
-    def _insert(self, k):
+    def _insert(self, k, v):
         root = self.root
         empty = []
         cells = self._map.setdefault(k, empty)
@@ -99,7 +99,7 @@ class OrderedMultiDict(dict):
         if cells is empty:
             cell = [last, root,
                     last, root,
-                    k]
+                    k, v]
             # was the last one skipped?
             if last[SPREV][SNEXT] is root:
                 last[SPREV][SNEXT] = cell
@@ -111,7 +111,7 @@ class OrderedMultiDict(dict):
             sprev = last[SPREV] if not (last[SPREV][SNEXT] is last) else last
             cell = [last, root,
                     sprev, root,
-                    k]
+                    k, v]
             # skip me
             last[SNEXT] = root
             last[NEXT] = root[PREV] = root[SPREV] = cell
@@ -122,11 +122,11 @@ class OrderedMultiDict(dict):
         self_insert = self._insert
         values = super(OrderedMultiDict, self).setdefault(k, [])
         if multi:
-            for _ in v:
-                self_insert(k)
+            for subv in v:
+                self_insert(k, subv)
             values.extend(v)
         else:
-            self_insert(k)
+            self_insert(k, v)
             values.append(v)
 
     def getlist(self, k):
@@ -209,7 +209,7 @@ class OrderedMultiDict(dict):
     def __setitem__(self, k, v):
         if super(OrderedMultiDict, self).__contains__(k):
             self._remove_all(k)
-        self._insert(k)
+        self._insert(k, v)
         super(OrderedMultiDict, self).__setitem__(k, [v])
 
     def __getitem__(self, k):
@@ -277,16 +277,12 @@ class OrderedMultiDict(dict):
             self._remove(k)
 
     def iteritems(self, multi=False):
-        get_values = super(OrderedMultiDict, self).__getitem__
-        if multi:
-            indices = {}
-            indices_sd = indices.setdefault
-            for k in self.iterkeys(multi=True):
-                yield k, get_values(k)[indices_sd(k, 0)]
-                indices[k] += 1
-        else:
-            for k in self.iterkeys():
-                yield k, get_values(k)[-1]
+        next_link = NEXT if multi else SNEXT
+        root = self.root
+        curr = root[next_link]
+        while curr is not root:
+            yield curr[KEY], curr[VALUE]
+            curr = curr[next_link]
 
     def items(self, multi=False):
         return list(self.iteritems(multi))
