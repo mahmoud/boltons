@@ -312,6 +312,10 @@ class OrderedMultiDict(dict):
         root = self.root
         curr = root[PREV]
         while curr is not root:
+            if curr[SPREV][SNEXT] is not curr:
+                curr = curr[SPREV]
+                if curr is root:
+                    break
             yield curr[KEY]
             curr = curr[PREV]
 
