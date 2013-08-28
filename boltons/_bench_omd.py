@@ -7,7 +7,7 @@ import time
 import lithoxyl
 from lithoxyl import sinks, logger
 
-from dictutils import OMD
+from dictutils import OMD, FastIterOrderedMultiDict
 from werkzeug.datastructures import MultiDict, OrderedMultiDict as WOMD
 from collections import OrderedDict as OD
 
@@ -35,7 +35,7 @@ _all_actions = ('init',) + _actions
 
 
 def bench():
-    for impl in (OMD, WOMD, MultiDict, OD, dict):
+    for impl in (FastIterOrderedMultiDict, OMD, WOMD, MultiDict, OD, dict):
         q_sink = lithoxyl.sinks.QuantileSink()
         impl_name = '.'.join([impl.__module__, impl.__name__])
         log = lithoxyl.logger.BaseLogger(impl_name, sinks=[q_sink])

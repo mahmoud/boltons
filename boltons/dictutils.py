@@ -10,7 +10,27 @@ except ImportError:
     _MISSING = object()
 
 
-PREV, NEXT, SPREV, SNEXT, KEY, VALUE = range(6)
+PREV, NEXT, KEY, SPREV, SNEXT, VALUE = range(6)
+
+
+__all__ = ['MultiDict', 'OrderedMultiDict']
+
+try:
+    profile
+except NameError:
+    profile = lambda x: x
+
+
+# -*- coding: utf-8 -*-
+
+try:
+    from compat import make_sentinel
+    _MISSING = make_sentinel(var_name='_MISSING')
+except ImportError:
+    _MISSING = object()
+
+
+PREV, NEXT, KEY = 0, 1, 2
 
 
 __all__ = ['MultiDict', 'OrderedMultiDict']
@@ -85,48 +105,27 @@ class OrderedMultiDict(dict):
             _map = self._map = {}
             self.root = []
         _map.clear()
-        self.root[:] = [self.root, self.root,
-                        self.root, self.root,
-                        None, None]
+        self.root[:] = [self.root, self.root, None]
 
     @profile
-    def _insert(self, k, v):
+    def _insert(self, k):
         root = self.root
-        empty = []
-        cells = self._map.setdefault(k, empty)
+        cells = self._map.setdefault(k, [])
         last = root[PREV]
-
-        if cells is empty:
-            cell = [last, root,
-                    last, root,
-                    k, v]
-            # was the last one skipped?
-            if last[SPREV][SNEXT] is root:
-                last[SPREV][SNEXT] = cell
-            last[NEXT] = last[SNEXT] = root[PREV] = root[SPREV] = cell
-            cells.append(cell)
-        else:
-            # if the previous was skipped, go back to the cell that
-            # skipped it
-            sprev = last[SPREV] if not (last[SPREV][SNEXT] is last) else last
-            cell = [last, root,
-                    sprev, root,
-                    k, v]
-            # skip me
-            last[SNEXT] = root
-            last[NEXT] = root[PREV] = root[SPREV] = cell
-            cells.append(cell)
+        cell = [last, root, k]
+        last[NEXT] = root[PREV] = cell
+        cells.append(cell)
 
     @profile
     def add(self, k, v, multi=False):
         self_insert = self._insert
         values = super(OrderedMultiDict, self).setdefault(k, [])
         if multi:
-            for subv in v:
-                self_insert(k, subv)
+            for _ in v:
+                self_insert(k)
             values.extend(v)
         else:
-            self_insert(k, v)
+            self_insert(k)
             values.append(v)
 
     def getlist(self, k):
@@ -206,7 +205,7 @@ class OrderedMultiDict(dict):
     def __setitem__(self, k, v):
         if super(OrderedMultiDict, self).__contains__(k):
             self._remove_all(k)
-        self._insert(k, v)
+        self._insert(k)
         super(OrderedMultiDict, self).__setitem__(k, [v])
 
     def __getitem__(self, k):
@@ -255,6 +254,155 @@ class OrderedMultiDict(dict):
         return self.popall(k, default)[-1]
 
     def _remove(self, k):
+        values = self._map[k]
+        cell = values.pop()
+        cell[PREV][NEXT], cell[NEXT][PREV] = cell[NEXT], cell[PREV]
+        if not values:
+            del self._map[k]
+
+    def _remove_all(self, k):
+        values = self._map[k]
+        while values:
+            cell = values.pop()
+            cell[PREV][NEXT], cell[NEXT][PREV] = cell[NEXT], cell[PREV]
+        del self._map[k]
+
+    def iteritems(self, multi=False):
+        get_values = super(OrderedMultiDict, self).__getitem__
+        if multi:
+            indices = {}
+            indices_sd = indices.setdefault
+            for k in self.iterkeys(multi=True):
+                yield k, get_values(k)[indices_sd(k, 0)]
+                indices[k] += 1
+        else:
+            for k in self.iterkeys():
+                yield k, get_values(k)[-1]
+
+    def items(self, multi=False):
+        return list(self.iteritems(multi))
+
+    def iterkeys(self, multi=False):
+        if multi:
+            root = self.root
+            curr = root[NEXT]
+            while curr is not root:
+                yield curr[KEY]
+                curr = curr[NEXT]
+        else:
+            yielded = set()
+            yielded_add = yielded.add
+            root = self.root
+            curr = root[NEXT]
+            while curr is not root:
+                k = curr[KEY]
+                if k not in yielded:
+                    yielded_add(k)
+                    yield k
+                curr = curr[NEXT]
+
+    def itervalues(self, multi=False):
+        for k, v in self.iteritems(multi):
+            yield v
+
+    def keys(self, multi=False):
+        return list(self.iterkeys(multi))
+
+    def values(self, multi=False):
+        return list(self.itervalues(multi))
+
+    def __iter__(self):
+        return self.iterkeys()
+
+    def __reversed__(self):
+        root = self.root
+        curr = root[PREV]
+        while curr is not root:
+            yield curr[KEY]
+            curr = curr[PREV]
+
+    def __repr__(self):
+        cn = self.__class__.__name__
+        kvs = ', '.join([repr((k, v)) for k, v in self.iteritems(multi=True)])
+        return '%s([%s])' % (cn, kvs)
+
+    def viewkeys(self):
+        "OMD.viewkeys() -> a set-like object providing a view on OMD's keys"
+        return KeysView(self)
+
+    def viewvalues(self):
+        "OMD.viewvalues() -> an object providing a view on OMD's values"
+        return ValuesView(self)
+
+    def viewitems(self):
+        "OMD.viewitems() -> a set-like object providing a view on OMD's items"
+        return ItemsView(self)
+
+
+MultiDict = OrderedMultiDict
+
+
+class FastIterOrderedMultiDict(OrderedMultiDict):
+    """\
+    A subclass of OrderedMultiDict which uses a skip list to provide
+    constant memory iteration
+    """
+    def _clear_ll(self):
+        # TODO: always reset objects? (i.e., no else block below)
+        try:
+            _map = self._map
+        except AttributeError:
+            _map = self._map = {}
+            self.root = []
+        _map.clear()
+        self.root[:] = [self.root, self.root,
+                        None,
+                        self.root, self.root,
+                        None]
+
+    @profile
+    def _insert(self, k, v):
+        root = self.root
+        empty = []
+        cells = self._map.setdefault(k, empty)
+        last = root[PREV]
+
+        if cells is empty:
+            cell = [last, root,
+                    k,
+                    last, root,
+                    v]
+            # was the last one skipped?
+            if last[SPREV][SNEXT] is root:
+                last[SPREV][SNEXT] = cell
+            last[NEXT] = last[SNEXT] = root[PREV] = root[SPREV] = cell
+            cells.append(cell)
+        else:
+            # if the previous was skipped, go back to the cell that
+            # skipped it
+            sprev = last[SPREV] if not (last[SPREV][SNEXT] is last) else last
+            cell = [last, root,
+                    k,
+                    sprev, root,
+                    v]
+            # skip me
+            last[SNEXT] = root
+            last[NEXT] = root[PREV] = root[SPREV] = cell
+            cells.append(cell)
+
+    @profile
+    def add(self, k, v, multi=False):
+        self_insert = self._insert
+        values = super(OrderedMultiDict, self).setdefault(k, [])
+        if multi:
+            for subv in v:
+                self_insert(k, subv)
+            values.extend(v)
+        else:
+            self_insert(k, v)
+            values.append(v)
+
+    def _remove(self, k):
         cells = self._map[k]
         cell = cells.pop()
         if not cells:
@@ -288,9 +436,6 @@ class OrderedMultiDict(dict):
             yield curr[KEY], curr[VALUE]
             curr = curr[next_link]
 
-    def items(self, multi=False):
-        return list(self.iteritems(multi))
-
     def iterkeys(self, multi=False):
         next_link = NEXT if multi else SNEXT
         root = self.root
@@ -299,18 +444,11 @@ class OrderedMultiDict(dict):
             yield curr[KEY]
             curr = curr[next_link]
 
-    def itervalues(self, multi=False):
-        for k, v in self.iteritems(multi):
-            yield v
-
-    def keys(self, multi=False):
-        return list(self.iterkeys(multi))
-
-    def values(self, multi=False):
-        return list(self.itervalues(multi))
-
-    def __iter__(self):
-        return self.iterkeys()
+    def __setitem__(self, k, v):
+        if super(OrderedMultiDict, self).__contains__(k):
+            self._remove_all(k)
+        self._insert(k, v)
+        super(OrderedMultiDict, self).__setitem__(k, [v])
 
     def __reversed__(self):
         root = self.root
@@ -322,26 +460,6 @@ class OrderedMultiDict(dict):
                     break
             yield curr[KEY]
             curr = curr[PREV]
-
-    def __repr__(self):
-        cn = self.__class__.__name__
-        kvs = ', '.join([repr((k, v)) for k, v in self.iteritems(multi=True)])
-        return '%s([%s])' % (cn, kvs)
-
-    def viewkeys(self):
-        "OMD.viewkeys() -> a set-like object providing a view on OMD's keys"
-        return KeysView(self)
-
-    def viewvalues(self):
-        "OMD.viewvalues() -> an object providing a view on OMD's values"
-        return ValuesView(self)
-
-    def viewitems(self):
-        "OMD.viewitems() -> a set-like object providing a view on OMD's items"
-        return ItemsView(self)
-
-
-MultiDict = OrderedMultiDict
 
 
 # Tests follow
