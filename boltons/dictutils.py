@@ -393,7 +393,7 @@ class FastIterOrderedMultiDict(OrderedMultiDict):
     @profile
     def add(self, k, v, multi=False):
         self_insert = self._insert
-        values = super(FastIterOrderedMultiDict, self).setdefault(k, [])
+        values = super(OrderedMultiDict, self).setdefault(k, [])
         if multi:
             for subv in v:
                 self_insert(k, subv)
@@ -445,10 +445,10 @@ class FastIterOrderedMultiDict(OrderedMultiDict):
             curr = curr[next_link]
 
     def __setitem__(self, k, v):
-        if super(FastIterOrderedMultiDict, self).__contains__(k):
+        if super(OrderedMultiDict, self).__contains__(k):
             self._remove_all(k)
         self._insert(k, v)
-        super(FastIterOrderedMultiDict, self).__setitem__(k, [v])
+        super(OrderedMultiDict, self).__setitem__(k, [v])
 
     def __reversed__(self):
         root = self.root
