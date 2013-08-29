@@ -288,6 +288,9 @@ class OrderedMultiDict(dict):
         for k, v in self.iteritems(multi):
             yield v
 
+    def get_inverted(self):
+        return self.__class__((v, k) for k, v in self.iteritems())
+
     def keys(self, multi=False):
         return list(self.iterkeys(multi))
 
@@ -491,3 +494,14 @@ def test_update_extend():
 
         assert omd1.get_flattened() == ref
         assert orig_keys <= set(omd1)
+
+
+def test_invert():
+    for items in _ITEMSETS:
+        omd = OMD(items)
+        iomd = omd.get_inverted()
+        assert len(omd) == len(iomd)
+        assert len(omd.items()) == len(iomd.items())
+
+        for val in omd.values():
+            assert val in iomd
