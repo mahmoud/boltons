@@ -50,7 +50,7 @@ def bench():
                         action_func = globals()['_do_' + action]
                         with log.info(action):
                             action_func(target_dict)
-        for action in _actions:
+        for action in _all_actions:
             best_msecs = q_sink.qas[impl_name][action].min * 1000
             print '   - %s - %g ms' % (action, best_msecs)
         best_msecs = q_sink.qas[impl_name]['total'].min * 1000
