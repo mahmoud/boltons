@@ -288,8 +288,13 @@ class OrderedMultiDict(dict):
         for k, v in self.iteritems(multi):
             yield v
 
+
     def get_inverted(self):
         return self.__class__((v, k) for k, v in self.iteritems())
+
+    def get_counts(self):
+        super_getitem = super(OrderedMultiDict, self).__getitem__
+        return self.__class__((k, len(super_getitem(k))) for k in self)
 
     def keys(self, multi=False):
         return list(self.iterkeys(multi))
