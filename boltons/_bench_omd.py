@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-
+import string
 import sys
 sys.path.append('/home/mahmoud/projects/lithoxyl/')
 
@@ -7,7 +7,7 @@ import time
 import lithoxyl
 from lithoxyl import sinks, logger
 
-from dictutils import OMD
+from dictutils import OMD, FastIterOrderedMultiDict
 from werkzeug.datastructures import MultiDict, OrderedMultiDict as WOMD
 from collections import OrderedDict as OD
 
@@ -30,19 +30,19 @@ _unique_keys = set(_rng)
 _bad_rng = range(size, size + size)
 _pairs = zip(_rng, _rng)
 
-_actions = ('iteritems', 'iterkeys', 'getitem', 'keyerror', 'pop')
+_actions = ('setitem', 'iteritems', 'iterkeys', 'getitem', 'keyerror', 'pop')
 _all_actions = ('init',) + _actions
 
 
 def bench():
-    for impl in (OMD, WOMD, MultiDict, OD, dict):
+    for impl in (FastIterOrderedMultiDict, OMD, WOMD, MultiDict, OD, dict):
         q_sink = lithoxyl.sinks.QuantileSink()
         impl_name = '.'.join([impl.__module__, impl.__name__])
         log = lithoxyl.logger.BaseLogger(impl_name, sinks=[q_sink])
         print
         print '+ %s' % impl_name
         for _ in range(times):
-            with log.info('total') as r:
+            with log.info('total'):
                 for _ in range(times):
                     with log.info('init'):
                         target_dict = impl(_pairs)
@@ -59,6 +59,11 @@ def bench():
 
     print
     return
+
+
+def _do_setitem(target_dict):
+    for k, i in enumerate(string.lowercase):
+        target_dict[k] = i
 
 
 def _do_iteritems(target_dict):
