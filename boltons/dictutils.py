@@ -10,6 +10,26 @@ except ImportError:
     _MISSING = object()
 
 
+PREV, NEXT, KEY, SPREV, SNEXT, VALUE = range(6)
+
+
+__all__ = ['MultiDict', 'OrderedMultiDict']
+
+try:
+    profile
+except NameError:
+    profile = lambda x: x
+
+
+# -*- coding: utf-8 -*-
+
+try:
+    from compat import make_sentinel
+    _MISSING = make_sentinel(var_name='_MISSING')
+except ImportError:
+    _MISSING = object()
+
+
 PREV, NEXT, KEY = 0, 1, 2
 
 
@@ -111,16 +131,13 @@ class OrderedMultiDict(dict):
     def getlist(self, k):
         return super(OrderedMultiDict, self).__getitem__(k)[:]
 
-    def popnth(self, k, idx):  # pop_single?
-        self._remove(k, idx)
+    def poplast(self, k):
+        self._remove(k)
         values = super(OrderedMultiDict, self).__getitem__(k)
-        v = values.pop(idx)
+        v = values.pop()
         if not values:
             super(OrderedMultiDict, self).__delitem__(k)
         return v
-
-    def poplast(self, k):  # could default pop_single to -1
-        return self.popnth(k, idx=-1)
 
     def clear(self):
         super(OrderedMultiDict, self).clear()
@@ -236,9 +253,9 @@ class OrderedMultiDict(dict):
     def pop(self, k, default=_MISSING):
         return self.popall(k, default)[-1]
 
-    def _remove(self, k, idx):
+    def _remove(self, k):
         values = self._map[k]
-        cell = values.pop(idx)
+        cell = values.pop()
         cell[PREV][NEXT], cell[NEXT][PREV] = cell[NEXT], cell[PREV]
         if not values:
             del self._map[k]
@@ -330,6 +347,126 @@ class OrderedMultiDict(dict):
 
 
 MultiDict = OrderedMultiDict
+
+
+class FastIterOrderedMultiDict(OrderedMultiDict):
+    """\ An OrderedMultiDict backed by a skip list.  Iteration over keys
+    is faster and uses constant memory but adding duplicate key-value
+    pairs is slower.
+    """
+    def _clear_ll(self):
+        # TODO: always reset objects? (i.e., no else block below)
+        try:
+            _map = self._map
+        except AttributeError:
+            _map = self._map = {}
+            self.root = []
+        _map.clear()
+        self.root[:] = [self.root, self.root,
+                        None,
+                        self.root, self.root,
+                        None]
+
+    @profile
+    def _insert(self, k, v):
+        root = self.root
+        empty = []
+        cells = self._map.setdefault(k, empty)
+        last = root[PREV]
+
+        if cells is empty:
+            cell = [last, root,
+                    k,
+                    last, root,
+                    v]
+            # was the last one skipped?
+            if last[SPREV][SNEXT] is root:
+                last[SPREV][SNEXT] = cell
+            last[NEXT] = last[SNEXT] = root[PREV] = root[SPREV] = cell
+            cells.append(cell)
+        else:
+            # if the previous was skipped, go back to the cell that
+            # skipped it
+            sprev = last[SPREV] if not (last[SPREV][SNEXT] is last) else last
+            cell = [last, root,
+                    k,
+                    sprev, root,
+                    v]
+            # skip me
+            last[SNEXT] = root
+            last[NEXT] = root[PREV] = root[SPREV] = cell
+            cells.append(cell)
+
+    @profile
+    def add(self, k, v, multi=False):
+        self_insert = self._insert
+        values = super(OrderedMultiDict, self).setdefault(k, [])
+        if multi:
+            for subv in v:
+                self_insert(k, subv)
+            values.extend(v)
+        else:
+            self_insert(k, v)
+            values.append(v)
+
+    def _remove(self, k):
+        cells = self._map[k]
+        cell = cells.pop()
+        if not cells:
+            del self._map[k]
+            cell[PREV][SNEXT] = cell[SNEXT]
+
+        if cell[PREV][SPREV][SNEXT] is cell:
+            cell[PREV][SPREV][SNEXT] = cell[NEXT]
+        elif cell[SNEXT] is cell[NEXT]:
+            cell[SPREV][SNEXT], cell[SNEXT][SPREV] = cell[SNEXT], cell[SPREV]
+
+        cell[PREV][NEXT], cell[NEXT][PREV] = cell[NEXT], cell[PREV]
+
+    def _remove_all(self, k):
+        cells = self._map.pop(k)
+        while cells:
+            cell = cells.pop()
+            if cell[PREV][SPREV][SNEXT] is cell:
+                cell[PREV][SPREV][SNEXT] = cell[NEXT]
+            elif cell[SNEXT] is cell[NEXT]:
+                cell[SPREV][SNEXT], cell[SNEXT][SPREV] = cell[SNEXT], cell[SPREV]
+
+            cell[PREV][NEXT], cell[NEXT][PREV] = cell[NEXT], cell[PREV]
+        cell[PREV][SNEXT] = cell[SNEXT]
+
+    def iteritems(self, multi=False):
+        next_link = NEXT if multi else SNEXT
+        root = self.root
+        curr = root[next_link]
+        while curr is not root:
+            yield curr[KEY], curr[VALUE]
+            curr = curr[next_link]
+
+    def iterkeys(self, multi=False):
+        next_link = NEXT if multi else SNEXT
+        root = self.root
+        curr = root[next_link]
+        while curr is not root:
+            yield curr[KEY]
+            curr = curr[next_link]
+
+    def __setitem__(self, k, v):
+        if super(OrderedMultiDict, self).__contains__(k):
+            self._remove_all(k)
+        self._insert(k, v)
+        super(OrderedMultiDict, self).__setitem__(k, [v])
+
+    def __reversed__(self):
+        root = self.root
+        curr = root[PREV]
+        while curr is not root:
+            if curr[SPREV][SNEXT] is not curr:
+                curr = curr[SPREV]
+                if curr is root:
+                    break
+            yield curr[KEY]
+            curr = curr[PREV]
 
 
 # Tests follow
