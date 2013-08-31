@@ -55,9 +55,9 @@ class OrderedMultiDict(dict):
     >>> dict(OrderedMultiDict([('a', 1), ('b', 2), ('a', 3)]))
     {'a': [1, 3], 'b': [2]}
 
-    If you want a flat dictionary, use ``get_flattened()``.
+    If you want a flat dictionary, use ``todict()``.
 
-    >>> OrderedMultiDict([('a', 1), ('b', 2), ('a', 3)]).get_flattened()
+    >>> OrderedMultiDict([('a', 1), ('b', 2), ('a', 3)]).todict()
     {'a': 3, 'b': 2}
 
     The implementation could be more optimal, but overall it's far
@@ -137,9 +137,6 @@ class OrderedMultiDict(dict):
 
     def copy(self):
         return self.__class__(self.items(multi=True))
-
-    def get_flattened(self, ordered=False):
-        return dict([(k, self[k]) for k in self])
 
     @classmethod
     def fromkeys(cls, keys, default=None):
@@ -288,10 +285,17 @@ class OrderedMultiDict(dict):
         for k, v in self.iteritems(multi):
             yield v
 
-    def get_inverted(self):
+    def todict(self, ordered=False):
+        return dict([(k, self[k]) for k in self])
+
+    def inverted(self):
         return self.__class__((v, k) for k, v in self.iteritems())
 
-    def get_counts(self):
+    def counts(self):
+        """
+        Returns an OMD because Counter/OrderedDict may not be
+        available, and neither Counter nor dict maintain order.
+        """
         super_getitem = super(OrderedMultiDict, self).__getitem__
         return self.__class__((k, len(super_getitem(k))) for k in self)
 
@@ -356,7 +360,7 @@ def test_dict_init():
     assert omd == d
 
 
-def test_to_dict():
+def test_todict():
     omd = OMD(_ITEMSETS[2])
     assert len(omd) == 1
     assert omd['A'] == 'One'
@@ -365,8 +369,15 @@ def test_to_dict():
     assert len(d) == 1
     assert d['A'] == ['One', 'One', 'One']
 
-    flat = omd.get_flattened()
+    flat = omd.todict()
     assert flat['A'] == 'One'
+
+    for itemset in _ITEMSETS:
+        omd = OMD(itemset)
+        d = dict(itemset)
+
+        flat = omd.todict()
+        assert flat == d
 
 
 def test_eq():
@@ -415,15 +426,6 @@ def test_types():
     omd = OMD()
     assert isinstance(omd, dict)
     assert isinstance(omd, collections.MutableMapping)
-
-
-def test_flattened():
-    for itemset in _ITEMSETS:
-        omd = OMD(itemset)
-        d = dict(itemset)
-
-        flat = omd.get_flattened()
-        assert flat == d
 
 
 def test_multi_correctness():
@@ -477,7 +479,7 @@ def test_update():
 
         omd1.update(omd2)
         ref1.update(ref2)
-        assert omd1.get_flattened() == ref1
+        assert omd1.todict() == ref1
 
         omd1_repr = repr(omd1)
         omd1.update(omd1)
@@ -496,14 +498,14 @@ def test_update_extend():
         for k in omd2:
             assert len(omd1.getlist(k)) >= len(omd2.getlist(k))
 
-        assert omd1.get_flattened() == ref
+        assert omd1.todict() == ref
         assert orig_keys <= set(omd1)
 
 
 def test_invert():
     for items in _ITEMSETS:
         omd = OMD(items)
-        iomd = omd.get_inverted()
+        iomd = omd.inverted()
         assert len(omd) == len(iomd)
         assert len(omd.items()) == len(iomd.items())
 
