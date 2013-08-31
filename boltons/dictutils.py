@@ -131,7 +131,12 @@ class OrderedMultiDict(dict):
     def getlist(self, k):
         return super(OrderedMultiDict, self).__getitem__(k)[:]
 
-    def poplast(self, k):
+    def poplast(self, k=_MISSING):
+        if k is _MISSING:
+            if self:
+                k = self.root[PREV][KEY]
+            else:
+                raise KeyError()  # TODO
         self._remove(k)
         values = super(OrderedMultiDict, self).__getitem__(k)
         v = values.pop()
@@ -650,3 +655,9 @@ def test_invert():
 
         for val in omd.values():
             assert val in iomd
+
+
+def test_poplast():
+    for items in _ITEMSETS[1:]:
+        omd = OMD(items)
+        assert omd.poplast() == items[-1][-1]
