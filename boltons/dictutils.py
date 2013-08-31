@@ -282,6 +282,19 @@ class OrderedMultiDict(dict):
     def items(self, multi=False):
         return list(self.iteritems(multi))
 
+    def _uniquekeys(self, direction=NEXT):
+        yielded = set()
+        yielded_add = yielded.add
+        root = self.root
+        curr = root[direction]
+        while curr is not root:
+            k = curr[KEY]
+            if k not in yielded:
+                yielded_add(k)
+                yield k
+            curr = curr[direction]
+
+
     def iterkeys(self, multi=False):
         if multi:
             root = self.root
@@ -290,16 +303,8 @@ class OrderedMultiDict(dict):
                 yield curr[KEY]
                 curr = curr[NEXT]
         else:
-            yielded = set()
-            yielded_add = yielded.add
-            root = self.root
-            curr = root[NEXT]
-            while curr is not root:
-                k = curr[KEY]
-                if k not in yielded:
-                    yielded_add(k)
-                    yield k
-                curr = curr[NEXT]
+            for k in self._uniquekeys():
+                yield k
 
     def itervalues(self, multi=False):
         for k, v in self.iteritems(multi):
@@ -322,11 +327,8 @@ class OrderedMultiDict(dict):
         return self.iterkeys()
 
     def __reversed__(self):
-        root = self.root
-        curr = root[PREV]
-        while curr is not root:
-            yield curr[KEY]
-            curr = curr[PREV]
+        for k in self._uniquekeys(PREV):
+            yield k
 
     def __repr__(self):
         cn = self.__class__.__name__
