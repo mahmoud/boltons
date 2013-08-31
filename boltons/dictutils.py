@@ -131,19 +131,6 @@ class OrderedMultiDict(dict):
     def getlist(self, k):
         return super(OrderedMultiDict, self).__getitem__(k)[:]
 
-    def poplast(self, k=_MISSING):
-        if k is _MISSING:
-            if self:
-                k = self.root[PREV][KEY]
-            else:
-                raise KeyError()  # TODO
-        self._remove(k)
-        values = super(OrderedMultiDict, self).__getitem__(k)
-        v = values.pop()
-        if not values:
-            super(OrderedMultiDict, self).__delitem__(k)
-        return v
-
     def clear(self):
         super(OrderedMultiDict, self).clear()
         self._clear_ll()
@@ -245,6 +232,9 @@ class OrderedMultiDict(dict):
     def __ne__(self, other):
         return not (self == other)
 
+    def pop(self, k, default=_MISSING):
+        return self.popall(k, default)[-1]
+
     def popall(self, k, default=_MISSING):
         if super(OrderedMultiDict, self).__contains__(k):
             self._remove_all(k)
@@ -252,8 +242,23 @@ class OrderedMultiDict(dict):
             return super(OrderedMultiDict, self).pop(k)
         return super(OrderedMultiDict, self).pop(k, default)
 
-    def pop(self, k, default=_MISSING):
-        return self.popall(k, default)[-1]
+    def poplast(self, k=_MISSING, default=_MISSING):
+        if k is _MISSING:
+            if self:
+                k = self.root[PREV][KEY]
+            else:
+                raise KeyError()  # TODO
+        try:
+            self._remove(k)
+        except KeyError:
+            if default is _MISSING:
+                raise KeyError(k)
+            return default
+        values = super(OrderedMultiDict, self).__getitem__(k)
+        v = values.pop()
+        if not values:
+            super(OrderedMultiDict, self).__delitem__(k)
+        return v
 
     def _remove(self, k):
         values = self._map[k]
@@ -281,9 +286,6 @@ class OrderedMultiDict(dict):
             for k in self.iterkeys():
                 yield k, get_values(k)[-1]
 
-    def items(self, multi=False):
-        return list(self.iteritems(multi))
-
     def _uniquekeys(self, direction=NEXT):
         yielded = set()
         yielded_add = yielded.add
@@ -295,7 +297,6 @@ class OrderedMultiDict(dict):
                 yielded_add(k)
                 yield k
             curr = curr[direction]
-
 
     def iterkeys(self, multi=False):
         if multi:
@@ -331,6 +332,9 @@ class OrderedMultiDict(dict):
 
     def values(self, multi=False):
         return list(self.itervalues(multi))
+
+    def items(self, multi=False):
+        return list(self.iteritems(multi))
 
     def __iter__(self):
         return self.iterkeys()
