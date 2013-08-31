@@ -350,9 +350,9 @@ MultiDict = OrderedMultiDict
 
 
 class FastIterOrderedMultiDict(OrderedMultiDict):
-    """\
-    A subclass of OrderedMultiDict which uses a skip list to provide
-    constant memory iteration
+    """\ An OrderedMultiDict backed by a skip list.  Iteration over keys
+    is faster and uses constant memory but adding duplicate key-value
+    pairs is slower.
     """
     def _clear_ll(self):
         # TODO: always reset objects? (i.e., no else block below)
