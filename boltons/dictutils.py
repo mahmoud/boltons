@@ -288,7 +288,6 @@ class OrderedMultiDict(dict):
         for k, v in self.iteritems(multi):
             yield v
 
-
     def get_inverted(self):
         return self.__class__((v, k) for k, v in self.iteritems())
 
