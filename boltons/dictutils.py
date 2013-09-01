@@ -78,7 +78,6 @@ class OrderedMultiDict(dict):
             self.update(kwargs)
 
     def _clear_ll(self):
-        # TODO: always reset objects? (i.e., no else block below)
         try:
             _map = self._map
         except AttributeError:

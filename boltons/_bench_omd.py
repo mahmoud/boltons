@@ -30,12 +30,16 @@ _unique_keys = set(_rng)
 _bad_rng = range(size, size + size)
 _pairs = zip(_rng, _rng)
 
-_actions = ('setitem', 'iteritems', 'iterkeys', 'getitem', 'keyerror', 'pop')
-_all_actions = ('init',) + _actions
+_shared_actions = ('setitem', 'iteritems', 'iterkeys', 'getitem', 'keyerror', 'pop')
+_multi_actions = ('multi_iteritems',)
+_all_actions = ('init',) + _multi_actions + _shared_actions
+
+MULTI_IMPLS = (FastIterOrderedMultiDict, OMD, WOMD, MultiDict)
+ALL_IMPLS = MULTI_IMPLS + (OD, dict)
 
 
 def bench():
-    for impl in (FastIterOrderedMultiDict, OMD, WOMD, MultiDict, OD, dict):
+    for impl in ALL_IMPLS:
         q_sink = lithoxyl.sinks.QuantileSink()
         impl_name = '.'.join([impl.__module__, impl.__name__])
         log = lithoxyl.logger.BaseLogger(impl_name, sinks=[q_sink])
@@ -46,13 +50,20 @@ def bench():
                 for _ in range(times):
                     with log.info('init'):
                         target_dict = impl(_pairs)
+                    if impl in MULTI_IMPLS:
+                        _actions = _multi_actions + _shared_actions
+                    else:
+                        _actions = _shared_actions
                     for action in _actions:
                         action_func = globals()['_do_' + action]
                         with log.info(action):
                             action_func(target_dict)
         for action in _all_actions:
-            best_msecs = q_sink.qas[impl_name][action].min * 1000
-            print '   - %s - %g ms' % (action, best_msecs)
+            try:
+                best_msecs = q_sink.qas[impl_name][action].min * 1000
+                print '   - %s - %g ms' % (action, best_msecs)
+            except KeyError:
+                pass
         best_msecs = q_sink.qas[impl_name]['total'].min * 1000
         median_msecs = q_sink.qas[impl_name]['total'].median * 1000
         print ' > ran %d loops of %d items each, best time: %g ms, median time: %g ms' % (times, size, best_msecs, median_msecs)
@@ -72,6 +83,14 @@ def _do_iteritems(target_dict):
 
 def _do_iterkeys(target_dict):
     [_ for _ in target_dict.iterkeys()]
+
+
+def _do_multi_iteritems(target_dict):
+    [_ for _ in target_dict.iteritems(multi=True)]
+
+
+def _do_multi_iterkeys(target_dict):
+    [_ for _ in target_dict.iterkeys(multi=True)]
 
 
 def _do_getitem(target_dict):
