@@ -286,18 +286,6 @@ class OrderedMultiDict(dict):
             for k in self.iterkeys():
                 yield k, get_values(k)[-1]
 
-    def _uniquekeys(self, direction=NEXT):
-        yielded = set()
-        yielded_add = yielded.add
-        root = self.root
-        curr = root[direction]
-        while curr is not root:
-            k = curr[KEY]
-            if k not in yielded:
-                yielded_add(k)
-                yield k
-            curr = curr[direction]
-
     def iterkeys(self, multi=False):
         if multi:
             root = self.root
@@ -306,8 +294,16 @@ class OrderedMultiDict(dict):
                 yield curr[KEY]
                 curr = curr[NEXT]
         else:
-            for k in self._uniquekeys():
-                yield k
+            yielded = set()
+            yielded_add = yielded.add
+            root = self.root
+            curr = root[NEXT]
+            while curr is not root:
+                k = curr[KEY]
+                if k not in yielded:
+                    yielded_add(k)
+                    yield k
+                curr = curr[NEXT]
 
     def itervalues(self, multi=False):
         for k, v in self.iteritems(multi):
@@ -340,8 +336,18 @@ class OrderedMultiDict(dict):
         return self.iterkeys()
 
     def __reversed__(self):
-        for k in self._uniquekeys(PREV):
-            yield k
+        root = self.root
+        curr = root[PREV]
+        lengths = {}
+        lengths_sd = lengths.setdefault
+        get_values = super(OrderedMultiDict, self).__getitem__
+        while curr is not root:
+            k = curr[KEY]
+            vals = get_values(k)
+            if lengths_sd(k, 1) == len(vals):
+                yield k
+            lengths[k] += 1
+            curr = curr[PREV]
 
     def __repr__(self):
         cn = self.__class__.__name__
@@ -665,3 +671,19 @@ def test_poplast():
     for items in _ITEMSETS[1:]:
         omd = OMD(items)
         assert omd.poplast() == items[-1][-1]
+
+
+def test_reversed():
+    from collections import OrderedDict
+    for items in _ITEMSETS:
+        omd = OMD(items)
+        od = OrderedDict(items)
+        for ik, ok in zip(reversed(od), reversed(omd)):
+            assert ik == ok
+
+    r100 = range(100)
+    omd = OMD(zip(r100, r100))
+    for i in r100:
+        omd.add(i, i)
+    r100.reverse()
+    assert list(reversed(omd)) == r100
