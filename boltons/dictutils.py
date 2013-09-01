@@ -447,12 +447,6 @@ class FastIterOrderedMultiDict(OrderedMultiDict):
             yield curr[KEY]
             curr = curr[next_link]
 
-    def __setitem__(self, k, v):
-        if super(OrderedMultiDict, self).__contains__(k):
-            self._remove_all(k)
-        self._insert(k, v)
-        super(OrderedMultiDict, self).__setitem__(k, [v])
-
     def __reversed__(self):
         root = self.root
         curr = root[PREV]
