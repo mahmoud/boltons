@@ -21,26 +21,6 @@ except NameError:
     profile = lambda x: x
 
 
-# -*- coding: utf-8 -*-
-
-try:
-    from compat import make_sentinel
-    _MISSING = make_sentinel(var_name='_MISSING')
-except ImportError:
-    _MISSING = object()
-
-
-PREV, NEXT, KEY = 0, 1, 2
-
-
-__all__ = ['MultiDict', 'OrderedMultiDict']
-
-try:
-    profile
-except NameError:
-    profile = lambda x: x
-
-
 class OrderedMultiDict(dict):
     """\
     A MultiDict that remembers original insertion order. A MultiDict
