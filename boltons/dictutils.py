@@ -10,7 +10,7 @@ except ImportError:
     _MISSING = object()
 
 
-PREV, NEXT, KEY, SPREV, SNEXT, VALUE = range(6)
+PREV, NEXT, KEY, VALUE, SPREV, SNEXT = range(6)
 
 
 __all__ = ['MultiDict', 'OrderedMultiDict']
@@ -87,11 +87,11 @@ class OrderedMultiDict(dict):
         self.root[:] = [self.root, self.root, None]
 
     @profile
-    def _insert(self, k):
+    def _insert(self, k, v):
         root = self.root
         cells = self._map.setdefault(k, [])
         last = root[PREV]
-        cell = [last, root, k]
+        cell = [last, root, k, v]
         last[NEXT] = root[PREV] = cell
         cells.append(cell)
 
@@ -101,10 +101,10 @@ class OrderedMultiDict(dict):
         values = super(OrderedMultiDict, self).setdefault(k, [])
         if multi:
             for _ in v:
-                self_insert(k)
+                self_insert(k, v)
             values.extend(v)
         else:
-            self_insert(k)
+            self_insert(k, v)
             values.append(v)
 
     def getlist(self, k):
@@ -173,7 +173,7 @@ class OrderedMultiDict(dict):
     def __setitem__(self, k, v):
         if super(OrderedMultiDict, self).__contains__(k):
             self._remove_all(k)
-        self._insert(k)
+        self._insert(k, v)
         super(OrderedMultiDict, self).__setitem__(k, [v])
 
     def __getitem__(self, k):
@@ -254,29 +254,32 @@ class OrderedMultiDict(dict):
         del self._map[k]
 
     def iteritems(self, multi=False):
-        get_values = super(OrderedMultiDict, self).__getitem__
+        root = self.root
+        curr = root[NEXT]
         if multi:
-            indices = {}
-            indices_sd = indices.setdefault
-            for k in self.iterkeys(multi=True):
-                yield k, get_values(k)[indices_sd(k, 0)]
-                indices[k] += 1
+            while curr is not root:
+                yield curr[KEY], curr[VALUE]
+                curr = curr[NEXT]
         else:
-            for k in self.iterkeys():
-                yield k, get_values(k)[-1]
+            yielded = set()
+            yielded_add = yielded.add
+            while curr is not root:
+                k = curr[KEY]
+                if k not in yielded:
+                    yielded_add(k)
+                    yield k, curr[VALUE]
+                curr = curr[NEXT]
 
     def iterkeys(self, multi=False):
+        root = self.root
+        curr = root[NEXT]
         if multi:
-            root = self.root
-            curr = root[NEXT]
             while curr is not root:
                 yield curr[KEY]
                 curr = curr[NEXT]
         else:
             yielded = set()
             yielded_add = yielded.add
-            root = self.root
-            curr = root[NEXT]
             while curr is not root:
                 k = curr[KEY]
                 if k not in yielded:
@@ -363,9 +366,8 @@ class FastIterOrderedMultiDict(OrderedMultiDict):
             self.root = []
         _map.clear()
         self.root[:] = [self.root, self.root,
-                        None,
-                        self.root, self.root,
-                        None]
+                        None, None,
+                        self.root, self.root]
 
     @profile
     def _insert(self, k, v):
@@ -376,9 +378,8 @@ class FastIterOrderedMultiDict(OrderedMultiDict):
 
         if cells is empty:
             cell = [last, root,
-                    k,
-                    last, root,
-                    v]
+                    k, v,
+                    last, root]
             # was the last one skipped?
             if last[SPREV][SNEXT] is root:
                 last[SPREV][SNEXT] = cell
@@ -389,9 +390,8 @@ class FastIterOrderedMultiDict(OrderedMultiDict):
             # skipped it
             sprev = last[SPREV] if not (last[SPREV][SNEXT] is last) else last
             cell = [last, root,
-                    k,
-                    sprev, root,
-                    v]
+                    k, v,
+                    sprev, root]
             # skip me
             last[SNEXT] = root
             last[NEXT] = root[PREV] = root[SPREV] = cell
