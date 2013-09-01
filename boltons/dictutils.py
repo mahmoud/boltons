@@ -86,7 +86,6 @@ class OrderedMultiDict(dict):
         _map.clear()
         self.root[:] = [self.root, self.root, None]
 
-    @profile
     def _insert(self, k, v):
         root = self.root
         cells = self._map.setdefault(k, [])
@@ -95,7 +94,6 @@ class OrderedMultiDict(dict):
         last[NEXT] = root[PREV] = cell
         cells.append(cell)
 
-    @profile
     def add(self, k, v, multi=False):
         self_insert = self._insert
         values = super(OrderedMultiDict, self).setdefault(k, [])
@@ -369,7 +367,6 @@ class FastIterOrderedMultiDict(OrderedMultiDict):
                         None, None,
                         self.root, self.root]
 
-    @profile
     def _insert(self, k, v):
         root = self.root
         empty = []
@@ -397,7 +394,6 @@ class FastIterOrderedMultiDict(OrderedMultiDict):
             last[NEXT] = root[PREV] = root[SPREV] = cell
             cells.append(cell)
 
-    @profile
     def add(self, k, v, multi=False):
         self_insert = self._insert
         values = super(OrderedMultiDict, self).setdefault(k, [])
