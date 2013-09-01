@@ -98,8 +98,8 @@ class OrderedMultiDict(dict):
         self_insert = self._insert
         values = super(OrderedMultiDict, self).setdefault(k, [])
         if multi:
-            for _ in v:
-                self_insert(k, v)
+            for subv in v:
+                self_insert(k, subv)
             values.extend(v)
         else:
             self_insert(k, v)
@@ -393,17 +393,6 @@ class FastIterOrderedMultiDict(OrderedMultiDict):
             last[SNEXT] = root
             last[NEXT] = root[PREV] = root[SPREV] = cell
             cells.append(cell)
-
-    def add(self, k, v, multi=False):
-        self_insert = self._insert
-        values = super(OrderedMultiDict, self).setdefault(k, [])
-        if multi:
-            for subv in v:
-                self_insert(k, subv)
-            values.extend(v)
-        else:
-            self_insert(k, v)
-            values.append(v)
 
     def _remove(self, k):
         cells = self._map[k]
