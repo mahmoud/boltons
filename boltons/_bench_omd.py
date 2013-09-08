@@ -8,7 +8,6 @@ import lithoxyl
 from lithoxyl import sinks, logger
 
 from dictutils import OMD, FastIterOrderedMultiDict
-from werkzeug.datastructures import MultiDict, OrderedMultiDict as WOMD
 from collections import OrderedDict as OD
 
 q_sink = lithoxyl.sinks.QuantileSink()
@@ -30,11 +29,17 @@ _unique_keys = set(_rng)
 _bad_rng = range(size, size + size)
 _pairs = zip(_rng, _rng)
 
+# order matters because 'pop' mutates
 _shared_actions = ('setitem', 'iteritems', 'iterkeys', 'getitem', 'keyerror', 'pop')
 _multi_actions = ('multi_iteritems',)
 _all_actions = ('init',) + _multi_actions + _shared_actions
 
-MULTI_IMPLS = (FastIterOrderedMultiDict, OMD, WOMD, MultiDict)
+MULTI_IMPLS = (FastIterOrderedMultiDict, OMD)
+try:
+    from werkzeug.datastructures import MultiDict, OrderedMultiDict as WOMD
+    MULTI_IMPLS += (WOMD, MultiDict)
+except ImportError:
+    print '(installing werkzeug is recommended for full comparison)'
 ALL_IMPLS = MULTI_IMPLS + (OD, dict)
 
 
