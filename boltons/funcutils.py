@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import functools
 from types import MethodType
 from itertools import chain

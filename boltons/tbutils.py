@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 """Extract, format and print information about Python stack traces."""
 from __future__ import print_function
 
