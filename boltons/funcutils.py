@@ -22,6 +22,20 @@ def dir_dict(obj):
     return ret
 
 
+_func_type = type(lambda: None)
+
+
+def copy_function(orig, copy_dict=True):
+    ret = _func_type(orig.func_code,
+                     orig.func_globals,
+                     name=orig.func_name,
+                     argdefs=orig.func_defaults,
+                     closure=orig.func_closure)
+    if copy_dict:
+        ret.__dict__.update(orig.__dict__)
+    return ret
+
+
 class InstancePartial(functools.partial):
     def __get__(self, obj, obj_type):
         return MethodType(self, obj, obj_type)
@@ -51,7 +65,10 @@ class CachedInstancePartial(functools.partial):
 
 partial = CachedInstancePartial
 
+
+
 # tests
+
 
 def _main():
     class Greeter(object):
@@ -76,6 +93,12 @@ def _main():
     print g.partial_greet()
     print g.cached_partial_greet()
     print CachedInstancePartial(g.greet, excitement='s')()
+
+    def callee():
+        return 1
+    callee_copy = copy_function(callee)
+    assert callee is not callee_copy
+    assert callee() == callee_copy()
     import pdb;pdb.set_trace()
 
 
