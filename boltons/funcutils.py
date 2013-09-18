@@ -53,25 +53,23 @@ partial = CachedInstancePartial
 
 # tests
 
-class Greeter(object):
-    def __init__(self, greeting):
-        self.greeting = greeting
+def _main():
+    class Greeter(object):
+        def __init__(self, greeting):
+            self.greeting = greeting
 
-    def greet(self, excitement='.'):
-        return self.greeting.capitalize() + excitement
+        def greet(self, excitement='.'):
+            return self.greeting.capitalize() + excitement
 
-    partial_greet = InstancePartial(greet, excitement='!')
-    cached_partial_greet = CachedInstancePartial(greet, excitement='...')
+        partial_greet = InstancePartial(greet, excitement='!')
+        cached_partial_greet = CachedInstancePartial(greet, excitement='...')
 
-    def native_greet(self):
-        return self.greet(';')
+        def native_greet(self):
+            return self.greet(';')
 
+    class SubGreeter(Greeter):
+        pass
 
-class SubGreeter(Greeter):
-    pass
-
-
-def main():
     g = SubGreeter('hello')
     print g.greet()
     print g.native_greet()
@@ -82,4 +80,4 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    _main()
