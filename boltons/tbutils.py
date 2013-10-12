@@ -3,13 +3,13 @@
 """Extract, format and print information about Python stack traces."""
 from __future__ import print_function
 
-from collections import namedtuple
 import linecache
 import sys
 
 # TODO: cross compatibility (jython, etc.)
 # TODO: parser
 # TODO: chaining primitives?  what are real use cases where these help?
+# TODO: intelligently truncating repr
 
 # TODO: print_* for backwards compatability
 # __all__ = ['extract_stack', 'extract_tb', 'format_exception',
@@ -18,17 +18,59 @@ import sys
 #            'print_last', 'print_stack', 'print_tb']
 
 
-class FrameInfo(namedtuple('FrameInfo', 'filename, lineno, name, line')):
-    # TODO: intelligently truncating repr
+class Callpoint(object):
+    __slots__ = ('func_name', 'lineno', 'module_name', 'module_path', 'lasti',
+                 'line')  # line is for the actual single-line code content
 
-    def __str__(self):
-        header = '  File "{0}", line {1}, in {2}\n'.format(self.filename,
-                                                           self.lineno,
-                                                           self.name)
-        ret = header
+    def __init__(self, module_name, module_path, func_name,
+                 lineno, lasti, line=None):
+        self.func_name = func_name
+        self.lineno = lineno
+        self.module_name = module_name
+        self.module_path = module_path
+        self.lasti = lasti
+        self.line = line
+
+    @classmethod
+    def from_frame(cls, frame):
+        func_name = frame.f_code.co_name
+        lineno = frame.f_lineno
+        module_name = frame.f_globals.get('__name__', '')
+        module_path = frame.f_code.co_filename
+        lasti = frame.f_lasti
+        line = _DeferredLine(module_path, lineno, frame.f_globals)
+        return cls(module_name, module_path, func_name,
+                   lineno, lasti, line=line)
+
+    @classmethod
+    def from_tb(cls, tb):
+        # main difference with from_frame is that lineno and lasti
+        # come from the traceback, which is to say the line that
+        # failed in the try block, not the line currently being
+        # executed (in the except block)
+        func_name = tb.tb_frame.f_code.co_name
+        lineno = tb.tb_lineno
+        lasti = tb.tb_lasti
+        module_name = tb.tb_frame.f_globals.get('__name__', '')
+        module_path = tb.tb_frame.f_code.co_filename
+        line = _DeferredLine(module_path, lineno, tb.tb_frame.f_globals)
+        return cls(module_name, module_path, func_name,
+                   lineno, lasti, line=line)
+
+    def __repr__(self):
+        cn = self.__class__.__name__
+        args = [getattr(self, s, None) for s in self.__slots__]
+        if not any(args):
+            return super(Callpoint, self).__repr__()
+        else:
+            return '%s(%s)' % (cn, ', '.join([repr(a) for a in args]))
+
+    def tb_frame_str(self):
+        ret = '  File "{0}", line {1}, in {2}\n'.format(self.module_path,
+                                                        self.lineno,
+                                                        self.func_name)
         if self.line:
             ret += '    {0}\n'.format(str(self.line))
-
         return ret
 
 
@@ -72,7 +114,6 @@ class _DeferredLine(object):
 # TODO: dedup frames, look at __eq__ on _DeferredLine
 # TODO: StackInfo/TracebackInfo split, latter stores exc
 class TracebackInfo(object):
-
     def __init__(self, frames):
         self.frames = frames
 
@@ -85,11 +126,7 @@ class TracebackInfo(object):
             limit = getattr(sys, 'tracebacklimit', 1000)
         n = 0
         while frame is not None and n < limit:
-            filename = frame.f_code.co_filename
-            lineno = frame.f_lineno
-            name = frame.f_code.co_name
-            line = _DeferredLine(filename, lineno, frame.f_globals)
-            item = FrameInfo(filename, lineno, name, line)
+            item = Callpoint.from_frame(frame)
             ret.append(item)
             frame = frame.f_back
             n += 1
@@ -103,11 +140,7 @@ class TracebackInfo(object):
             limit = getattr(sys, 'tracebacklimit', 1000)
         n = 0
         while tb is not None and n < limit:
-            filename = tb.tb_frame.f_code.co_filename
-            lineno = tb.tb_lineno
-            name = tb.tb_frame.f_code.co_name
-            line = _DeferredLine(filename, lineno, tb.tb_frame.f_globals)
-            item = FrameInfo(filename, lineno, name, line)
+            item = Callpoint.from_tb(tb)
             ret.append(item)
             tb = tb.tb_next
         n += 1
@@ -147,7 +180,7 @@ class TracebackInfo(object):
 
     def __str__(self):
         header = 'Traceback (most recent call last):\n'
-        return header + ''.join(str(f) for f in self)
+        return header + ''.join([f.tb_frame_str() for f in self.frames])
 
 
 # TODO: clean up & reimplement -- specifically for syntax errors
@@ -261,6 +294,6 @@ if __name__ == '__main__':
         _, _, exc_traceback = sys.exc_info()
         tbi = TracebackInfo.from_traceback(exc_traceback)
         print(repr(tbi))
-        print(tbi.frames[-1]._asdict())
+        print(tbi.frames[-1].tb_frame_str())
 
     test()
