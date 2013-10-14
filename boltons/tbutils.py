@@ -143,7 +143,7 @@ class TracebackInfo(object):
             item = Callpoint.from_tb(tb)
             ret.append(item)
             tb = tb.tb_next
-        n += 1
+            n += 1
         return cls(ret)
 
     @classmethod
@@ -283,10 +283,11 @@ def fix_print_exception():
 
 
 if __name__ == '__main__':
+    old_exc_hook = sys.excepthook
     fix_print_exception()
 
     def test():
-        raise ValueError
+        raise ValueError('yay fun')
 
     try:
         test()
@@ -296,4 +297,10 @@ if __name__ == '__main__':
         print(repr(tbi))
         print(tbi.frames[-1].tb_frame_str())
 
-    test()
+    try:
+        test()
+    except:
+        old_exc_hook(*sys.exc_info())
+        print()
+        print()
+        raise
