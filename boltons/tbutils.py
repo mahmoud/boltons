@@ -179,8 +179,9 @@ class TracebackInfo(object):
                         frame_part=frame_part))
 
     def __str__(self):
-        header = 'Traceback (most recent call last):\n'
-        return header + ''.join([f.tb_frame_str() for f in self.frames])
+        ret = 'Traceback (most recent call last):\n'
+        ret += ''.join([f.tb_frame_str() for f in self.frames])
+        return ret
 
 
 # TODO: clean up & reimplement -- specifically for syntax errors
@@ -283,24 +284,40 @@ def fix_print_exception():
 
 
 if __name__ == '__main__':
-    old_exc_hook = sys.excepthook
+    import cStringIO
+
+    builtin_exc_hook = sys.excepthook
     fix_print_exception()
+    tbi_str = ''
 
     def test():
         raise ValueError('yay fun')
+
+    fake_stderr1 = cStringIO.StringIO()
+    fake_stderr2 = cStringIO.StringIO()
+    sys.stderr = fake_stderr1
 
     try:
         test()
     except:
         _, _, exc_traceback = sys.exc_info()
         tbi = TracebackInfo.from_traceback(exc_traceback)
-        print(repr(tbi))
-        print(tbi.frames[-1].tb_frame_str())
+        tbi_str = str(tbi)
+        print_exception(*sys.exc_info(), file=fake_stderr2)
+        new_exc_hook_res = fake_stderr2.getvalue()
+        builtin_exc_hook(*sys.exc_info())
+        builtin_exc_hook_res = fake_stderr1.getvalue()
+    finally:
+        sys.stderr = sys.__stderr__
 
-    try:
-        test()
-    except:
-        old_exc_hook(*sys.exc_info())
-        print()
-        print()
-        raise
+    print()
+    print('# Single frame:\n')
+    print(tbi.frames[-1].tb_frame_str())
+
+    print('# Traceback info:\n')
+    print(tbi_str)
+
+    print('# Full except hook output:\n')
+    print(new_exc_hook_res)
+
+    assert new_exc_hook_res == builtin_exc_hook_res
