@@ -311,6 +311,11 @@ class ParsedTB(object):
                 'exc_msg': self.exc_msg,
                 'frames': self.frames}
 
+    def __repr__(self):
+        cn = self.__class__.__name__
+        return ('%s(%r, %r, frames=%r)'
+                % (cn, self.exc_type, self.exc_msg, self.frames))
+
     @classmethod
     def from_string(cls, tb_str):
         if not isinstance(tb_str, unicode):
