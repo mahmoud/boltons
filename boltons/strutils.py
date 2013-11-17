@@ -216,7 +216,8 @@ _IRR_P2S = dict([(v, k) for k, v in _IRR_S2P.items()])
 def a10n(string):
     """
     That thing where 'internationalization' becomes 'i18n', what's it
-    called? Abbreviation? Oh wait, no: a10n.
+    called? Abbreviation? Oh wait, no: a10n. (It's actually a form of numeronym:
+    http://en.wikipedia.org/wiki/Numeronym )
 
     >>> a10n('abbreviation')
     'a10n'
