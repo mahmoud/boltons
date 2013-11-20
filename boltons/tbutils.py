@@ -118,6 +118,24 @@ class _DeferredLine(object):
         return len(str(self))
 
 
+class ExceptionInfo(object):
+    def __init__(self, exc_type, exc_msg, tb_info):
+        # TODO: additional fields for SyntaxErrors
+        self.exc_type = exc_type
+        self.exc_msg = exc_msg
+        self.tb_info = tb_info
+
+    @classmethod
+    def from_exc_info(cls, exc_type, exc_value, traceback):
+        type_str = exc_type.__name__
+        type_mod = exc_type.__module__
+        if type_mod not in ("__main__", "__builtin__", "exceptions"):
+            type_str = '%s.%s' % (type_mod, type_str)
+        val_str = _some_str(exc_value)
+        tb_info = TracebackInfo.from_traceback(traceback)
+        return cls(type_str, val_str, tb_info)
+
+
 # TODO: dedup frames, look at __eq__ on _DeferredLine
 # TODO: StackInfo/TracebackInfo split, latter stores exc
 class TracebackInfo(object):
