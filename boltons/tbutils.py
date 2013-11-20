@@ -34,6 +34,11 @@ class Callpoint(object):
         self.line = line
 
     @classmethod
+    def from_current(cls, depth=1):
+        frame = sys._getframe(max(depth, 1))
+        return cls.from_frame(frame)
+
+    @classmethod
     def from_frame(cls, frame):
         func_name = frame.f_code.co_name
         lineno = frame.f_lineno
@@ -356,6 +361,7 @@ class ParsedTB(object):
 
         return cls(exc_type, exc_msg, frames)
 
+
 if __name__ == '__main__':
     import cStringIO
 
@@ -403,3 +409,14 @@ NameError: name 'plarp' is not defined
 """
     parsed_tb = ParsedTB.from_string(FAKE_TB_STR)
     print(parsed_tb)
+
+    def func1():
+        return func2()
+    def func2():
+        return func3()
+    def func3():
+        return Callpoint.from_current(depth=2)
+
+    callpoint = func1()
+    print(repr(callpoint))
+    assert 'func2' in repr(callpoint)
