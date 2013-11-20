@@ -34,8 +34,8 @@ class Callpoint(object):
         self.line = line
 
     @classmethod
-    def from_current(cls, depth=1):
-        frame = sys._getframe(max(depth, 1))
+    def from_current(cls, level=1):
+        frame = sys._getframe(level)
         return cls.from_frame(frame)
 
     @classmethod
@@ -433,7 +433,7 @@ NameError: name 'plarp' is not defined
     def func2():
         return func3()
     def func3():
-        return Callpoint.from_current(depth=2)
+        return Callpoint.from_current(level=2)
 
     callpoint = func1()
     print(repr(callpoint))
