@@ -112,8 +112,8 @@ class OrderedMultiDict(dict):
         super(OrderedMultiDict, self).clear()
         self._clear_ll()
 
-    def get(self, k, default=[None], multi=False):
-        ret = super(OrderedMultiDict, self).get(k, default)
+    def get(self, k, default=None, multi=False):
+        ret = super(OrderedMultiDict, self).get(k, [default])
         return ret[:] if multi else ret[-1]
 
     def setdefault(self, k, default=_MISSING):
