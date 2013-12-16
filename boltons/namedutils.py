@@ -39,8 +39,8 @@ class {typename}(tuple):
         'Make a new {typename} object from a sequence or iterable'
         result = new(cls, iterable)
         if len(result) != {num_fields:d}:
-            raise TypeError('Expected {num_fields:d} arguments,'
-                            ' got %d' % len(result))
+            raise TypeError('Expected {num_fields:d}'
+                            ' arguments, got %d' % len(result))
         return result
 
     def __repr__(self):
@@ -191,9 +191,11 @@ class {typename}(list):
         return _list.__init__(self, ({arg_list}))
 
     @classmethod
-    def _make(cls, iterable, new=_list.__new__, len=len):
+    def _make(cls, iterable, new=_list, len=len):
         'Make a new {typename} object from a sequence or iterable'
-        result = new(cls, iterable)
+        # why did this function exist? why not just star the
+        # iterable like below?
+        result = cls(*iterable)
         if len(result) != {num_fields:d}:
             raise TypeError('Expected {num_fields:d} arguments,'
                             ' got %d' % len(result))
