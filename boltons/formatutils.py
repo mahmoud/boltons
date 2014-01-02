@@ -108,23 +108,38 @@ def tokenize_format_str(fstr, resolve_pos=True):
 
 class BaseFormatField(object):
     def __init__(self, fname, fspec='', conv=None):
-        self.fname = fname
-        self.fspec = fspec
-        self.fstr = construct_format_field_str(fname, fspec, conv)
+        self.set_fname(fname)
+        self.set_fspec(fspec)
+        self.set_conv(conv)
 
-        self.path_list = re.split('[.[]', fname)  # TODO
-        self.base_name = self.path_list[0]
+    def set_fname(self, fname):
+        path_list = re.split('[.[]', fname)  # TODO
+
+        self.base_name = path_list[0]
+        self.fname = fname
+        self.subpath = path_list[1:]
         self.is_positional = not self.base_name or self.base_name.isdigit()
 
-        self.subpath = self.path_list[1:]
-        self.subfields = []
+    def set_fspec(self, fspec):
+        fspec = fspec or ''
+        subfields = []
         for sublit, subfname, _, _ in fspec._formatter_parser():
             if subfname is not None:
-                self.subfields.append(subfname)
+                subfields.append(subfname)
+        self.subfields = subfields
+        self.fspec = fspec
         self.type_char = fspec[-1:]
         self.type_func = _TYPE_MAP.get(self.type_char, str)
+
+    def set_conv(self, conv):
+        "!s and !r, etc."
+        # TODO
         self.conv = conv
         self.conv_func = None  # TODO
+
+    @property
+    def fstr(self):
+        return construct_format_field_str(self.fname, self.fspec, self.conv)
 
     def __repr__(self):
         cn = self.__class__.__name__
@@ -138,7 +153,6 @@ class BaseFormatField(object):
 
     def __str__(self):
         return self.fstr
-
 
 
 # tests follow
