@@ -2,6 +2,8 @@
 
 import re
 
+# TODO: consider more than the lower 9 bits
+
 
 class FilePerms(object):
     VALID = re.compile('^[rwx]*$')
@@ -18,8 +20,7 @@ class FilePerms(object):
             curr = getattr(fp_obj, self.attribute)
             if curr != value:
                 if not FilePerms.VALID.match(value):
-                    raise ValueError('unknown specification: '
-                                     '{0}'.format(value))
+                    raise ValueError('unknown specification: %r' % value)
                 setattr(fp_obj, self.attribute, value)
                 fp_obj._update_integer()
 
@@ -32,7 +33,6 @@ class FilePerms(object):
 
     @classmethod
     def fromint(cls, i):
-        # TODO: consider more than the lower 9 bits
         i &= 0777
         key = ('', 'x', 'w', 'xw', 'r', 'rx', 'rw', 'rwx')
         parts = []
@@ -62,8 +62,6 @@ class FilePerms(object):
     other = _fp_field('_other')
 
     def __repr__(self):
-        cls = self.__class__.__name__
-        return '{0!r}(user={1!r}, group={2!r}, other={3!r})'.format(cls,
-                                                                    self.user,
-                                                                    self.group,
-                                                                    self.other)
+        cn = self.__class__.__name__
+        return ('%s(user=%r, group=%r, other=%r)'
+                % (cn, self.user, self.group, self.other))
