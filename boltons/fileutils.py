@@ -5,8 +5,8 @@
 VALID_CHARS = 'rwx'
 
 
-class UnixPerms(object):
-    class _UnixPermProperty(object):
+class FilePerms(object):
+    class _FilePermProperty(object):
         def __init__(self, attribute):
             self.attribute = attribute
 
@@ -65,9 +65,9 @@ class UnixPerms(object):
     def __int__(self):
         return self._integer
 
-    user = _UnixPermProperty('_user')
-    group = _UnixPermProperty('_group')
-    other = _UnixPermProperty('_other')
+    user = _FilePermProperty('_user')
+    group = _FilePermProperty('_group')
+    other = _FilePermProperty('_other')
 
     def __repr__(self):
         cn = self.__class__.__name__
@@ -78,7 +78,7 @@ class UnixPerms(object):
 if __name__ == '__main__':
 
     def _main():
-        up = UnixPerms()
+        up = FilePerms()
         up.other = ''
         up.user = 'xrw'
         up.group = 'rrrwx'
