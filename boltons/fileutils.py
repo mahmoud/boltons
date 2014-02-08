@@ -7,18 +7,15 @@ VALID_CHARS = 'rwx'
 
 class FilePerms(object):
     class _FilePermProperty(object):
-        def __init__(self, attribute):
+        def __init__(self, attribute, offset):
             self.attribute = attribute
+            self.offset = offset
 
         def __get__(self, fp_obj, type_=None):
             return getattr(fp_obj, self.attribute)
 
         def __set__(self, fp_obj, value):
-            try:
-                cur = getattr(fp_obj, self.attribute)
-            except AttributeError:
-                cur = ''
-                setattr(fp_obj, self.attribute, cur)  # not actually necessary
+            cur = getattr(fp_obj, self.attribute)
             if cur == value:
                 return
             try:
@@ -30,10 +27,20 @@ class FilePerms(object):
                                  ' specification %r, expected empty string'
                                  ' or one or more of %r'
                                  % (invalid_chars, value, VALID_CHARS))
-            setattr(fp_obj, self.attribute, ''.join(set(value)))
-            fp_obj._update_integer()
+            unique_chars = ''.join(set(value))
+            setattr(fp_obj, self.attribute, unique_chars)
+            self._update_integer(fp_obj, unique_chars)
+
+        def _update_integer(self, fp_obj, value):
+            mode = 0
+            key = 'xwr'
+            for symbol in value:
+                bit = 2 ** key.index(symbol)
+                mode |= (bit << (self.offset * 3))
+            fp_obj._integer |= mode
 
     def __init__(self, user='', group='', other=''):
+        self._user, self._group, self._other = '', '', ''
         self._integer = 0
         self.user = user
         self.group = group
@@ -50,24 +57,12 @@ class FilePerms(object):
         parts.reverse()
         return cls(*parts)
 
-    def _update_integer(self):
-        specs = self._other, self._group, self._user
-        mode = 0
-        key = 'xwr'
-
-        for field, spec in enumerate(specs):
-            for symbol in spec:
-                bit = key.index(symbol) * 2 or 1
-                mode |= (bit << (field * len(specs)))
-
-        self._integer = mode
-
     def __int__(self):
         return self._integer
 
-    user = _FilePermProperty('_user')
-    group = _FilePermProperty('_group')
-    other = _FilePermProperty('_other')
+    user = _FilePermProperty('_user', 2)
+    group = _FilePermProperty('_group', 1)
+    other = _FilePermProperty('_other', 0)
 
     def __repr__(self):
         cn = self.__class__.__name__
@@ -87,5 +82,7 @@ if __name__ == '__main__':
         except ValueError:
             pass
         print up
+        print 'user:' , up.user
         print oct(int(up))
+        print oct(int(FilePerms()))
     _main()
