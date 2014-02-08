@@ -1,15 +1,12 @@
 # -*- coding: utf-8 -*-
 
-import re
-
 # TODO: consider more than the lower 9 bits
 
+VALID_CHARS = 'rwx'
 
-class FilePerms(object):
-    VALID = re.compile('^[rwx]*$')
 
-    class _fp_field(object):
-
+class UnixPerms(object):
+    class _UnixPermProperty(object):
         def __init__(self, attribute):
             self.attribute = attribute
 
@@ -17,22 +14,33 @@ class FilePerms(object):
             return getattr(fp_obj, self.attribute)
 
         def __set__(self, fp_obj, value):
-            curr = getattr(fp_obj, self.attribute)
-            if curr != value:
-                if not FilePerms.VALID.match(value):
-                    raise ValueError('unknown specification: %r' % value)
-                setattr(fp_obj, self.attribute, value)
-                fp_obj._update_integer()
+            try:
+                cur = getattr(fp_obj, self.attribute)
+            except AttributeError:
+                cur = ''
+                setattr(fp_obj, self.attribute, cur)  # not actually necessary
+            if cur == value:
+                return
+            try:
+                invalid_chars = str(value).translate(None, VALID_CHARS)
+            except (TypeError, UnicodeEncodeError):
+                raise TypeError('expected string, not %r' % value)
+            if invalid_chars:
+                raise ValueError('got invalid chars %r in permission'
+                                 ' specification %r, expected empty string'
+                                 ' or one or more of %r'
+                                 % (invalid_chars, value, VALID_CHARS))
+            setattr(fp_obj, self.attribute, ''.join(set(value)))
+            fp_obj._update_integer()
 
     def __init__(self, user='', group='', other=''):
-        self._user, self._group, self._other = '', '', ''
         self._integer = 0
         self.user = user
         self.group = group
         self.other = other
 
     @classmethod
-    def fromint(cls, i):
+    def from_int(cls, i):
         i &= 0777
         key = ('', 'x', 'w', 'xw', 'r', 'rx', 'rw', 'rwx')
         parts = []
@@ -57,11 +65,27 @@ class FilePerms(object):
     def __int__(self):
         return self._integer
 
-    user = _fp_field('_user')
-    group = _fp_field('_group')
-    other = _fp_field('_other')
+    user = _UnixPermProperty('_user')
+    group = _UnixPermProperty('_group')
+    other = _UnixPermProperty('_other')
 
     def __repr__(self):
         cn = self.__class__.__name__
         return ('%s(user=%r, group=%r, other=%r)'
                 % (cn, self.user, self.group, self.other))
+
+
+if __name__ == '__main__':
+
+    def _main():
+        up = UnixPerms()
+        up.other = ''
+        up.user = 'xrw'
+        up.group = 'rrrwx'
+        try:
+            up.other = 'nope'
+        except ValueError:
+            pass
+        print up
+        print oct(int(up))
+    _main()
