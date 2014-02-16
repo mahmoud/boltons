@@ -68,7 +68,7 @@ class Table(object):
     def from_dict(cls, data, headers=_MISSING):
         if headers is _MISSING:
             try:
-                headers, data = data.keys(), data.values()
+                headers, data = data.keys(), [data.values()]
             except (TypeError, AttributeError):
                 raise TypeError('expected dict or Mapping, not %r'
                                 % type(data))
@@ -89,6 +89,9 @@ class Table(object):
         data = ([ci.get(h, None) for h in headers] for ci in data)
         return cls(data=data, headers=headers)
 
+    def __len__(self):
+        return len(self._data)
+
     def __repr__(self):
         cn = self.__class__.__name__
         if self.headers:
@@ -96,23 +99,46 @@ class Table(object):
         else:
             return '%s(%r)' % (cn, self._data)
 
-    def to_html(self, wrapped=True, with_headers=True):
-        # wrapped, with_headers, recursive, orientation, whitespace
+    def to_html(self, orientation=None, wrapped=True,
+                with_headers=True, with_newlines=True):
         lines = []
         if wrapped:
             lines.append('<table>')
+        orientation = orientation or 'auto'
+        ol = orientation[0].lower()
+        if ol == 'a':
+            ol = 'h' if len(self) > 1 else 'v'
+        if ol == 'h':
+            self._add_horizontal_html_lines(lines, with_headers=with_headers)
+        elif ol == 'v':
+            self._add_vertical_html_lines(lines, with_headers=with_headers)
+        else:
+            raise ValueError("expected one of 'auto', 'vertical', or"
+                             " 'horizontal', not %r" % orientation)
+        if wrapped:
+            lines.append('</table>')
+        sep = '\n' if with_newlines else ''
+        return sep.join(lines)
+
+    def _add_horizontal_html_lines(self, lines, with_headers):
         if with_headers:
             lines.append('<tr><th>' +
                          '</th><th>'.join([unicode(h) for h in self.headers]) +
-                         '</tr></th>')
+                         '</th></tr>')
         for row in self._data:
             line = ''.join(['<tr><td>',
                             '</td><td>'.join([unicode(c) for c in row]),
                             '</td></tr>'])
             lines.append(line)
-        if wrapped:
-            lines.append('</table>')
-        return '\n'.join(lines)
+
+    def _add_vertical_html_lines(self, lines, with_headers):
+        for i in range(self._width):
+            line_parts = ['<tr>']
+            if with_headers:
+                line_parts.extend(['<th>', self.headers[i], '</th>'])
+            _fill = '</td><td>'.join([unicode(row[i]) for row in self._data])
+            line_parts.extend(['<td>', _fill, '</td>', '</tr>'])
+            lines.append(''.join(line_parts))
 
 
 def main():
@@ -126,6 +152,7 @@ def main():
     t3 = Table.from_dicts(data_dicts)
     print t1
     print t2
+    print t2.to_html()
     print t3
     print t3.to_html()
     import pdb;pdb.set_trace()
