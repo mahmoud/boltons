@@ -37,13 +37,15 @@ class Table(object):
         if headers is _MISSING and data:
             headers, data = list(data[0]), islice(data, 1, None)
         self.headers = headers or []
-        self._width = len(headers)
         self._data = []
+        self._width = 0
         self.extend(data)
 
-    def _fill(self, data):
+    def _fill(self):
         width, filler = self._width, [None]
-        for d in data:
+        if not width:
+            return
+        for d in self._data:
             rem = width - len(d)
             if rem > 0:
                 d.extend(filler * rem)
@@ -63,6 +65,8 @@ class Table(object):
         if not data:
             return
         self._data.extend(data)
+        self._set_width()
+        self._fill()
 
     @classmethod
     def from_dict(cls, data, headers=_MISSING):
@@ -91,6 +95,9 @@ class Table(object):
 
     def __len__(self):
         return len(self._data)
+
+    def __getitem__(self, idx):
+        return self._data[idx]
 
     def __repr__(self):
         cn = self.__class__.__name__
@@ -140,6 +147,23 @@ class Table(object):
             line_parts.extend(['<td>', _fill, '</td>', '</tr>'])
             lines.append(''.join(line_parts))
 
+    def to_text(self, with_headers=True):
+        lines = []
+        widths = []
+        for idx in range(self._width):
+            cur_widths = [len(unicode(cur[idx])) for cur in self._data]
+            if with_headers:
+                cur_widths.append(len(self.headers[idx]))
+            widths.append(max(cur_widths))
+        header_line = ' | '.join([h.center(widths[i]) for i, h in enumerate(self.headers)])
+        lines.append(header_line)
+        sep_line = '-+-'.join(['-' * w for w in widths])
+        lines.append(sep_line)
+        for row in self._data:
+            lines.append(' | '.join([unicode(col).center(widths[j])
+                                     for j, col in enumerate(row)]))
+        return '\n'.join(lines)
+
 
 def main():
     data_dicts = [{'id': 1, 'name': 'John Doe'},
@@ -150,11 +174,13 @@ def main():
     t1 = Table(data_lists)
     t2 = Table.from_dict(data_dicts[0])
     t3 = Table.from_dicts(data_dicts)
+    t3.extend([[3, 'Kurt Rose'], [4]])
     print t1
     print t2
     print t2.to_html()
     print t3
     print t3.to_html()
+    print t3.to_text()
     import pdb;pdb.set_trace()
 
 
