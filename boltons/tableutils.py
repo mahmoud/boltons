@@ -69,8 +69,9 @@ class Table(object):
         if headers is _MISSING:
             try:
                 headers, data = data.keys(), data.values()
-            except AttributeError:
-                raise TypeError('expected Mapping, not %r' % type(obj))
+            except (TypeError, AttributeError):
+                raise TypeError('expected dict or Mapping, not %r'
+                                % type(data))
         elif headers:
             data = [data.get(h, None) for h in headers]
         return cls(data=data, headers=headers)
@@ -95,6 +96,23 @@ class Table(object):
         else:
             return '%s(%r)' % (cn, self._data)
 
+    def to_html(self, wrapped=True, with_headers=True):
+        # wrapped, with_headers, recursive, orientation, whitespace
+        lines = []
+        if wrapped:
+            lines.append('<table>')
+        if with_headers:
+            lines.append('<tr><th>' +
+                         '</th><th>'.join([unicode(h) for h in self.headers]) +
+                         '</tr></th>')
+        for row in self._data:
+            line = ''.join(['<tr><td>',
+                            '</td><td>'.join([unicode(c) for c in row]),
+                            '</td></tr>'])
+            lines.append(line)
+        if wrapped:
+            lines.append('</table>')
+        return '\n'.join(lines)
 
 
 def main():
@@ -109,6 +127,7 @@ def main():
     print t1
     print t2
     print t3
+    print t3.to_html()
     import pdb;pdb.set_trace()
 
 
