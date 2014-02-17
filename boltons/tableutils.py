@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-
+import cgi
 from itertools import islice
 
 
@@ -29,6 +29,11 @@ def _guess_headers(data):
             raise TypeError('could not infer headers from data')
     return headers, data
 """
+
+
+def escape_html(text):
+    text = unicode(text)
+    return cgi.escape(text, True)
 
 
 class Table(object):
@@ -128,22 +133,24 @@ class Table(object):
         return sep.join(lines)
 
     def _add_horizontal_html_lines(self, lines, with_headers):
+        esc = escape_html
         if with_headers:
             lines.append('<tr><th>' +
-                         '</th><th>'.join([unicode(h) for h in self.headers]) +
+                         '</th><th>'.join([esc(h) for h in self.headers]) +
                          '</th></tr>')
         for row in self._data:
             line = ''.join(['<tr><td>',
-                            '</td><td>'.join([unicode(c) for c in row]),
+                            '</td><td>'.join([esc(c) for c in row]),
                             '</td></tr>'])
             lines.append(line)
 
     def _add_vertical_html_lines(self, lines, with_headers):
+        esc = escape_html
         for i in range(self._width):
             line_parts = ['<tr>']
             if with_headers:
-                line_parts.extend(['<th>', self.headers[i], '</th>'])
-            _fill = '</td><td>'.join([unicode(row[i]) for row in self._data])
+                line_parts.extend(['<th>', esc(self.headers[i]), '</th>'])
+            _fill = '</td><td>'.join([esc(row[i]) for row in self._data])
             line_parts.extend(['<td>', _fill, '</td>', '</tr>'])
             lines.append(''.join(line_parts))
 
