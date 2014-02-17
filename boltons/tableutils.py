@@ -30,6 +30,15 @@ def _guess_headers(data):
     return headers, data
 """
 
+# from list of lists
+# from list of dicts
+# from single dict
+# from list of namedtuples
+# from single namedtuple
+# from list of objects
+# from single object
+
+# to csv
 
 def escape_html(text):
     text = unicode(text)
@@ -98,6 +107,26 @@ class Table(object):
         data = ([ci.get(h, None) for h in headers] for ci in data)
         return cls(data=data, headers=headers)
 
+    @classmethod
+    def from_object(cls, obj, headers=_MISSING):
+        values = []
+        if headers is _MISSING:
+            headers = []
+            for attr in dir(obj):
+                # non-strings could be in an object's __dict__ but meh
+                val = getattr(obj, attr)
+                if callable(val):
+                    continue
+                headers.append(attr)
+                values.append(val)
+        else:
+            for h in headers:
+                try:
+                    values.append(getattr(obj, h))
+                except:
+                    values.append(None)
+        return cls([values], headers=headers)
+
     def __len__(self):
         return len(self._data)
 
@@ -155,6 +184,7 @@ class Table(object):
             lines.append(''.join(line_parts))
 
     def to_text(self, with_headers=True):
+        # TODO: verify this works for markdown
         lines = []
         widths = []
         for idx in range(self._width):
@@ -188,6 +218,10 @@ def main():
     print t3
     print t3.to_html()
     print t3.to_text()
+
+    import re
+    t4 = Table.from_object(re.compile(''))
+    print t4.to_text()
     import pdb;pdb.set_trace()
 
 
