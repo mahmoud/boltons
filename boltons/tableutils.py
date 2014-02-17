@@ -7,38 +7,37 @@ from itertools import islice
 _MISSING = object()
 
 """
+General description of headers behavior:
+
+Headers describe the columns, but are not part of the data, however,
+if the `headers` argument is omitted, Table tries to infer header
+names from the data. It is possible to have a table with no headers,
+just pass in `headers=None`.
+
+Supported inputs:
+
+* list of lists
+* dict (list/single)
+* object (list/single)  (list TODO)
+* TODO: namedtuple (list/single)
+* TODO: sqlite return value
+* TODO: json
+
+Supported outputs:
+
+* HTML
+* Pretty text
+* TODO: CSV
+
+An abstract thought:
+
 class Backend(object):
     row_type = list
 
     def _guess_headers(self):
         pass
-
-
-def _guess_headers(data):
-    if not data:
-        return [], data
-    try:
-        headers = data[0].keys()
-        # assuming all dicts have the same keys would enable a faster version
-        data = ([ci.get(ch, None) for ch in headers] for ci in data)
-    except:
-        try:
-            headers = data[0][0]
-            data = islice(data, 1, None)
-        except:
-            raise TypeError('could not infer headers from data')
-    return headers, data
 """
 
-# from list of lists
-# from list of dicts
-# from single dict
-# from list of namedtuples
-# from single namedtuple
-# from list of objects
-# from single object
-
-# to csv
 
 def escape_html(text):
     text = unicode(text)
@@ -113,7 +112,7 @@ class Table(object):
         if headers is _MISSING:
             headers = []
             for attr in dir(obj):
-                # non-strings could be in an object's __dict__ but meh
+                # an object's __dict__ could have non-string keys but meh
                 val = getattr(obj, attr)
                 if callable(val):
                     continue
@@ -187,15 +186,16 @@ class Table(object):
         # TODO: verify this works for markdown
         lines = []
         widths = []
+        headers = self.headers
         for idx in range(self._width):
             cur_widths = [len(unicode(cur[idx])) for cur in self._data]
             if with_headers:
-                cur_widths.append(len(self.headers[idx]))
+                cur_widths.append(len(headers[idx]))
             widths.append(max(cur_widths))
-        header_line = ' | '.join([h.center(widths[i]) for i, h in enumerate(self.headers)])
-        lines.append(header_line)
-        sep_line = '-+-'.join(['-' * w for w in widths])
-        lines.append(sep_line)
+        if with_headers:
+            lines.append(' | '.join([h.center(widths[i])
+                                     for i, h in enumerate(headers)]))
+            lines.append('-+-'.join(['-' * w for w in widths]))
         for row in self._data:
             lines.append(' | '.join([unicode(col).center(widths[j])
                                      for j, col in enumerate(row)]))
