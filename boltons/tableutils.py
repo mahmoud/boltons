@@ -7,6 +7,14 @@ from itertools import islice
 _MISSING = object()
 
 """
+This Table class is meant to be simple, fast, and low-overhead. As
+such, it stores data in list-of-lists format, and _does not_ copy
+lists passed in. It also reserves the right to modify those lists in a
+"filling" process, whereby short lists are extended to the width of
+the table (usually determined by number of headers). This greatly
+reduces overhead and processing/validation that would have to occur
+otherwise.
+
 General description of headers behavior:
 
 Headers describe the columns, but are not part of the data, however,
@@ -26,7 +34,7 @@ Supported inputs:
 Supported outputs:
 
 * HTML
-* Pretty text
+* Pretty text (also usable as GF Markdown)
 * TODO: CSV
 
 An abstract thought:
@@ -36,6 +44,10 @@ class Backend(object):
 
     def _guess_headers(self):
         pass
+
+Some idle thoughts:
+
+* shift around column order without rearranging data
 """
 
 
