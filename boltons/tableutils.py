@@ -55,6 +55,8 @@ Some idle thoughts:
 * shift around column order without rearranging data
 * gotta make it so you can add additional items, not just initialize with
 * maybe a shortcut would be to allow adding of Tables to other Tables
+* what's the perf of preallocating lists and overwriting items versus
+  starting from empty?
 """
 
 
@@ -102,7 +104,7 @@ _DictType = InputType('dict', _is_dict, _guess_dict_headers,
 
 
 def _is_object(obj):
-    return True
+    return hasattr(obj, '__class__')
 
 
 def _guess_obj_headers(obj):
@@ -166,20 +168,22 @@ class Table(object):
         if is_seq:
             if not data:
                 return cls(headers=headers)
+            to_check = data[0]
         else:
             if type(data) in _DNR:
                 # hmm, got scalar data.
                 # raise an exception or make an exception, nahmsayn?
                 return Table([[data]], headers=headers)
+            to_check = data
         for it in _INPUT_TYPES:
-            if it.check_type(data):
+            if it.check_type(to_check):
                 data_type = it
                 print data_type
                 break
         else:
             raise TypeError('unsupported data type %r' % type(data))
         if headers is _MISSING:
-            headers = data_type.guess_headers(data)
+            headers = data_type.guess_headers(to_check)
         if is_seq:
             entries = data_type.get_entry_seq(data, headers)
         else:
@@ -195,7 +199,6 @@ class Table(object):
             entries = rec_entries
         return cls(entries, headers=headers)
 
-    # list-backed style
     def __init__(self, data=None, headers=_MISSING):
         if headers is _MISSING and data:
             headers, data = list(data[0]), islice(data, 1, None)
@@ -296,7 +299,8 @@ class Table(object):
             return '%s(%r)' % (cn, self._data)
 
     def to_html(self, orientation=None, wrapped=True,
-                with_headers=True, with_newlines=True):
+                with_headers=True, with_newlines=True, max_depth=1):
+        print self
         lines = []
         if wrapped:
             lines.append('<table>')
@@ -305,9 +309,11 @@ class Table(object):
         if ol == 'a':
             ol = 'h' if len(self) > 1 else 'v'
         if ol == 'h':
-            self._add_horizontal_html_lines(lines, with_headers=with_headers)
+            self._add_horizontal_html_lines(lines, with_headers=with_headers,
+                                            max_depth=max_depth)
         elif ol == 'v':
-            self._add_vertical_html_lines(lines, with_headers=with_headers)
+            self._add_vertical_html_lines(lines, with_headers=with_headers,
+                                          max_depth=max_depth)
         else:
             raise ValueError("expected one of 'auto', 'vertical', or"
                              " 'horizontal', not %r" % orientation)
@@ -316,26 +322,49 @@ class Table(object):
         sep = '\n' if with_newlines else ''
         return sep.join(lines)
 
-    def _add_horizontal_html_lines(self, lines, with_headers):
+    def _add_horizontal_html_lines(self, lines, with_headers, max_depth):
         esc = escape_html
+        new_depth = max_depth - 1 if max_depth > 1 else max_depth
+        if max_depth > 1:
+            new_depth = max_depth - 1
         if with_headers:
             lines.append('<tr><th>' +
                          '</th><th>'.join([esc(h) for h in self.headers]) +
                          '</th></tr>')
         for row in self._data:
-            line = ''.join(['<tr><td>',
-                            '</td><td>'.join([esc(c) for c in row]),
-                            '</td></tr>'])
-            lines.append(line)
+            if max_depth > 1:
+                _fill_parts = []
+                for cell in row:
+                    if isinstance(cell, Table):
+                        _fill_parts.append(cell.to_html(max_depth=new_depth))
+                    else:
+                        _fill_parts.append(esc(cell))
+            else:
+                _fill_parts = [esc(c) for c in row]
+            lines.append(''.join(['<tr><td>',
+                                  '</td><td>'.join(_fill_parts),
+                                  '</td></tr>']))
 
-    def _add_vertical_html_lines(self, lines, with_headers):
+    def _add_vertical_html_lines(self, lines, with_headers, max_depth):
         esc = escape_html
+        new_depth = max_depth - 1 if max_depth > 1 else max_depth
         for i in range(self._width):
             line_parts = ['<tr>']
             if with_headers:
                 line_parts.extend(['<th>', esc(self.headers[i]), '</th>'])
-            _fill = '</td><td>'.join([esc(row[i]) for row in self._data])
-            line_parts.extend(['<td>', _fill, '</td>', '</tr>'])
+            if max_depth > 1:
+                new_depth = max_depth - 1
+                _fill_parts = []
+                for row in self._data:
+                    cell = row[i]
+                    if isinstance(cell, Table):
+                        _fill_parts.append(cell.to_html(max_depth=new_depth))
+                    else:
+                        _fill_parts.append(esc(row[i]))
+            else:
+                _fill_parts = [esc(row[i]) for row in self._data]
+            _fill = '</td><td>'.join(_fill_parts)
+            line_parts.extend(['<td>', _fill, '</td></tr>'])
             lines.append(''.join(line_parts))
 
     def to_text(self, with_headers=True):
