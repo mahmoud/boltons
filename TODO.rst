@@ -1,6 +1,11 @@
 TODO
 ====
 
+iterutils
+---------
+
+- range() for floats
+
 timeutils
 ---------
 

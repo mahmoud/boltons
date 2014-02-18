@@ -73,90 +73,69 @@ _DNR = set([types.NoneType, types.BooleanType, types.IntType, types.LongType,
 
 
 class InputType(object):
-    def __init__(self, suffix, check_type, guess_headers, get_entry,
-                 get_entry_seq=None, headers_consume=None):
-        self.suffix = suffix
-        self.check_type = check_type
-        self.guess_headers = guess_headers
-        self.get_entry = get_entry
-        self.get_entry_seq = get_entry_seq or self._default_get_entry_seq
+    def __init__(self, *a, **kw):
+        pass
 
-    def _default_get_entry_seq(self, data_seq, headers):
+    def get_entry_seq(self, data_seq, headers):
         return (self.get_entry(entry, headers) for entry in data_seq)
 
 
-def _is_dict(obj):
-    return isinstance(obj, Mapping)
+class DictInputType(InputType):
+    def check_type(self, obj):
+        return isinstance(obj, Mapping)
+
+    def guess_headers(self, obj):
+        return obj.keys()
+
+    def get_entry(self, obj, headers):
+        return [obj.get(h) for h in headers]
+
+    def get_entry_seq(self, obj, headers):
+        return ([ci.get(h) for h in headers] for ci in obj)
 
 
-def _guess_dict_headers(obj):
-    return obj.keys()
+class ObjectInputType(InputType):
+    def check_type(self, obj):
+        return hasattr(obj, '__class__')
 
+    def guess_headers(self, obj):
+        headers = []
+        for attr in dir(obj):
+            # an object's __dict__ could have non-string keys but meh
+            val = getattr(obj, attr)
+            if callable(val):
+                continue
+            headers.append(attr)
+        return headers
 
-def _get_dict_entry(obj, headers):
-    return [obj.get(h) for h in headers]
-
-
-def _get_dict_entry_seq(obj, headers):
-    return ([ci.get(h) for h in headers] for ci in obj)
-
-
-_DictType = InputType('dict', _is_dict, _guess_dict_headers,
-                      _get_dict_entry, _get_dict_entry_seq)
-
-
-def _is_object(obj):
-    return hasattr(obj, '__class__')
-
-
-def _guess_obj_headers(obj):
-    headers = []
-    for attr in dir(obj):
-        # an object's __dict__ could have non-string keys but meh
-        val = getattr(obj, attr)
-        if callable(val):
-            continue
-        headers.append(attr)
-    return headers
-
-
-def _get_obj_entry(obj, headers):
-    values = []
-    for h in headers:
-        try:
-            values.append(getattr(obj, h))
-        except:
-            values.append(None)
-    return values
-
-
-_ObjectType = InputType('object', _is_object, _guess_obj_headers,
-                        _get_obj_entry)
-
-
-def _is_list(obj):
-    return isinstance(obj, MutableSequence)
-
-
-def _guess_list_headers(obj):
-    return None
-
-
-def _get_list_entry(obj, headers):
-    return obj  # obj[0] ?
-
-
-def _get_list_entry_seq(obj_seq, headers):
-    return obj_seq
+    def get_entry(self, obj, headers):
+        values = []
+        for h in headers:
+            try:
+                values.append(getattr(obj, h))
+            except:
+                values.append(None)
+        return values
 
 
 # might be better to hardcode list support since it's so close to the core
-_ListType = InputType('list', _is_list, _guess_list_headers,
-                      _get_list_entry, _get_list_entry_seq)
+class ListInputType(InputType):
+    def check_type(self, obj):
+        return isinstance(obj, MutableSequence)
+
+    def guess_headers(self, obj):
+        return None
+
+    def get_entry(self, obj, headers):
+        return obj  # obj[0] ?
+
+    def get_entry_seq(self, obj_seq, headers):
+        return obj_seq
 
 
 class Table(object):
-    _input_types = [_DictType, _ListType, _ObjectType]
+    # order definitely matters here
+    _input_types = [DictInputType(), ListInputType(), ObjectInputType()]
 
     def __init__(self, data=None, headers=_MISSING):
         if headers is _MISSING and data:
@@ -196,17 +175,17 @@ class Table(object):
     @classmethod
     def from_dict(cls, data, headers=_MISSING, max_depth=1):
         return cls.from_data(data=data, headers=headers,
-                             max_depth=max_depth, _data_type=_DictType)
+                             max_depth=max_depth, _data_type=DictInputType())
 
     @classmethod
     def from_list(cls, data, headers=_MISSING, max_depth=1):
         return cls.from_data(data=data, headers=headers,
-                             max_depth=max_depth, _data_type=_ListType)
+                             max_depth=max_depth, _data_type=ListInputType())
 
     @classmethod
     def from_object(cls, data, headers=_MISSING, max_depth=1):
         return cls.from_data(data=data, headers=headers,
-                             max_depth=max_depth, _data_type=_ObjectType)
+                             max_depth=max_depth, _data_type=ObjectInputType())
 
     @classmethod
     def from_data(cls, data, headers=_MISSING, max_depth=1, _data_type=None):
@@ -227,7 +206,7 @@ class Table(object):
                 return Table([[data]], headers=headers)
             to_check = data
         if not _data_type:
-            for it in cls._INPUT_TYPES:
+            for it in cls._input_types:
                 if it.check_type(to_check):
                     _data_type = it
                     break

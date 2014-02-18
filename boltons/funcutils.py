@@ -65,12 +65,20 @@ class CachedInstancePartial(functools.partial):
 
 partial = CachedInstancePartial
 
-
+'''
+class FunctionDef(object):
+    """
+    general blocker: accept a bunch of fine-grained arguments, or just
+    accept a whole ArgSpec? or a whole signature?
+    """
+    def __init__(self, name, code, doc=None):
+        pass
+'''
 
 # tests
 
 
-def _main():
+def _partial_main():
     class Greeter(object):
         def __init__(self, greeting):
             self.greeting = greeting
@@ -103,4 +111,4 @@ def _main():
 
 
 if __name__ == '__main__':
-    _main()
+    _partial_main()
