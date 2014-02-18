@@ -140,9 +140,8 @@ class Table(object):
     _html_tr, _html_tr_close = '<tr>', '</tr>'
     _html_th, _html_th_close = '<th>', '</th>'
     _html_td, _html_td_close = '<td>', '</td>'
-    _html_thead, _html_thead_close = '<thead>', '</thead>'
-    _html_tfoot, _html_tfoot_close = '<tfoot>', '</tfoot>'
-
+    #_html_thead, _html_thead_close = '<thead>', '</thead>'
+    #_html_tfoot, _html_tfoot_close = '<tfoot>', '</tfoot>'
     _html_table_tag, _html_table_tag_close = '<table>', '</table>'
 
     def __init__(self, data=None, headers=_MISSING):
@@ -252,10 +251,9 @@ class Table(object):
 
     def to_html(self, orientation=None, wrapped=True,
                 with_headers=True, with_newlines=True, max_depth=1):
-        print self
         lines = []
         if wrapped:
-            lines.append('<table>')
+            lines.append(self._html_table_tag)
         orientation = orientation or 'auto'
         ol = orientation[0].lower()
         if ol == 'a':
@@ -270,7 +268,7 @@ class Table(object):
             raise ValueError("expected one of 'auto', 'vertical', or"
                              " 'horizontal', not %r" % orientation)
         if wrapped:
-            lines.append('</table>')
+            lines.append(self._html_table_tag_close)
         sep = '\n' if with_newlines else ''
         return sep.join(lines)
 
@@ -297,17 +295,18 @@ class Table(object):
                         _fill_parts.append(esc(cell))
             else:
                 _fill_parts = [esc(c) for c in row]
-            lines.append(''.join([trtd,
-                                  _tdtd.join(_fill_parts),
-                                  _td_tr]))
+            lines.append(''.join([trtd, _tdtd.join(_fill_parts), _td_tr]))
 
     def _add_vertical_html_lines(self, lines, with_headers, max_depth):
         esc = escape_html
         new_depth = max_depth - 1 if max_depth > 1 else max_depth
+        tr, th, _th = self._html_tr, self._html_th, self._html_th_close
+        td, _tdtd = self._html_td, self._html_td_close + self._html_td
+        _td_tr = self._html_td_close + self._html_tr_close
         for i in range(self._width):
-            line_parts = ['<tr>']
+            line_parts = [tr]
             if with_headers:
-                line_parts.extend(['<th>', esc(self.headers[i]), '</th>'])
+                line_parts.extend([th, esc(self.headers[i]), _th])
             if max_depth > 1:
                 new_depth = max_depth - 1
                 _fill_parts = []
@@ -319,8 +318,7 @@ class Table(object):
                         _fill_parts.append(esc(row[i]))
             else:
                 _fill_parts = [esc(row[i]) for row in self._data]
-            _fill = '</td><td>'.join(_fill_parts)
-            line_parts.extend(['<td>', _fill, '</td></tr>'])
+            line_parts.extend([td, _tdtd.join(_fill_parts), _td_tr])
             lines.append(''.join(line_parts))
 
     def to_text(self, with_headers=True):
@@ -344,6 +342,7 @@ class Table(object):
 
 
 def main():
+    global t3
     data_dicts = [{'id': 1, 'name': 'John Doe'},
                   {'id': 2, 'name': 'Dale Simmons'}]
     data_lists = [['id', 'name'],
