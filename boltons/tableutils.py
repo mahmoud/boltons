@@ -137,6 +137,14 @@ class Table(object):
     # order definitely matters here
     _input_types = [DictInputType(), ListInputType(), ObjectInputType()]
 
+    _html_tr, _html_tr_close = '<tr>', '</tr>'
+    _html_th, _html_th_close = '<th>', '</th>'
+    _html_td, _html_td_close = '<td>', '</td>'
+    _html_thead, _html_thead_close = '<thead>', '</thead>'
+    _html_tfoot, _html_tfoot_close = '<tfoot>', '</tfoot>'
+
+    _html_table_tag, _html_table_tag_close = '<table>', '</table>'
+
     def __init__(self, data=None, headers=_MISSING):
         if headers is _MISSING and data:
             headers, data = list(data[0]), islice(data, 1, None)
@@ -272,9 +280,13 @@ class Table(object):
         if max_depth > 1:
             new_depth = max_depth - 1
         if with_headers:
-            lines.append('<tr><th>' +
-                         '</th><th>'.join([esc(h) for h in self.headers]) +
-                         '</th></tr>')
+            _thth = self._html_th_close + self._html_th
+            lines.append(self._html_tr + self._html_th +
+                         _thth.join([esc(h) for h in self.headers]) +
+                         self._html_th_close + self._html_tr_close)
+        trtd, _tdtd, _td_tr = (self._html_tr + self._html_td,
+                               self._html_td_close + self._html_td,
+                               self._html_td_close + self._html_tr_close)
         for row in self._data:
             if max_depth > 1:
                 _fill_parts = []
@@ -285,9 +297,9 @@ class Table(object):
                         _fill_parts.append(esc(cell))
             else:
                 _fill_parts = [esc(c) for c in row]
-            lines.append(''.join(['<tr><td>',
-                                  '</td><td>'.join(_fill_parts),
-                                  '</td></tr>']))
+            lines.append(''.join([trtd,
+                                  _tdtd.join(_fill_parts),
+                                  _td_tr]))
 
     def _add_vertical_html_lines(self, lines, with_headers, max_depth):
         esc = escape_html
