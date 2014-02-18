@@ -156,7 +156,6 @@ _ListType = InputType('list', _is_list, _guess_list_headers,
 
 
 class Table(object):
-
     _input_types = [_DictType, _ListType, _ObjectType]
 
     def __init__(self, data=None, headers=_MISSING):
@@ -193,6 +192,21 @@ class Table(object):
             if rem > 0:
                 d.extend(filler * rem)
         return
+
+    @classmethod
+    def from_dict(cls, data, headers=_MISSING, max_depth=1):
+        return cls.from_data(data=data, headers=headers,
+                             max_depth=max_depth, _data_type=_DictType)
+
+    @classmethod
+    def from_list(cls, data, headers=_MISSING, max_depth=1):
+        return cls.from_data(data=data, headers=headers,
+                             max_depth=max_depth, _data_type=_ListType)
+
+    @classmethod
+    def from_object(cls, data, headers=_MISSING, max_depth=1):
+        return cls.from_data(data=data, headers=headers,
+                             max_depth=max_depth, _data_type=_ObjectType)
 
     @classmethod
     def from_data(cls, data, headers=_MISSING, max_depth=1, _data_type=None):
@@ -235,56 +249,6 @@ class Table(object):
                                   for cell in entry]
             entries = rec_entries
         return cls(entries, headers=headers)
-
-    @classmethod
-    def from_dict(cls, data, headers=_MISSING):
-        # TODO: remove
-        if headers is _MISSING:
-            try:
-                headers, data = data.keys(), [data.values()]
-            except (TypeError, AttributeError):
-                raise TypeError('expected dict or Mapping, not %r'
-                                % type(data))
-        elif headers:
-            data = [[data.get(h, None) for h in headers]]
-        return cls(data=data, headers=headers)
-
-    @classmethod
-    def from_dicts(cls, data, headers=_MISSING):
-        # TODO: remove
-        from collections import Sequence  # TODO/tmp
-        if not isinstance(data, Sequence):
-            data = [data]
-        if headers is _MISSING:
-            try:
-                headers = data[0].keys()
-            # TODO: support iterators?
-            except IndexError:
-                return cls()
-            except (AttributeError, TypeError):
-                raise TypeError('expected iterable of dicts')
-        data = ([ci.get(h, None) for h in headers] for ci in data)
-        return cls(data=data, headers=headers)
-
-    @classmethod
-    def from_object(cls, obj, headers=_MISSING):
-        values = []
-        if headers is _MISSING:
-            headers = []
-            for attr in dir(obj):
-                # an object's __dict__ could have non-string keys but meh
-                val = getattr(obj, attr)
-                if callable(val):
-                    continue
-                headers.append(attr)
-                values.append(val)
-        else:
-            for h in headers:
-                try:
-                    values.append(getattr(obj, h))
-                except:
-                    values.append(None)
-        return cls([values], headers=headers)
 
     def __len__(self):
         return len(self._data)
@@ -396,7 +360,7 @@ def main():
                   [2, 'Dale Simmons']]
     t1 = Table(data_lists)
     t2 = Table.from_dict(data_dicts[0])
-    t3 = Table.from_dicts(data_dicts)
+    t3 = Table.from_dict(data_dicts)
     t3.extend([[3, 'Kurt Rose'], [4]])
     print t1
     print t2
