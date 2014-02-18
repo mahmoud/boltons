@@ -192,8 +192,8 @@ class Table(object):
         # TODO: seen/cycle detection/reuse ?
         # maxdepth follows the same behavior as find command
         # i.e., it doesn't work if max_depth=0 is passed in
-        if not max_depth:
-            return cls(headers=headers)
+        if max_depth < 1:
+            return cls(headers=headers)  # return data instead?
         is_seq = isinstance(data, Sequence)
         if is_seq:
             if not data:
