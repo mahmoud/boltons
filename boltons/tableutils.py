@@ -41,6 +41,8 @@ Supported outputs:
 * HTML
 * Pretty text (also usable as GF Markdown)
 * TODO: CSV
+* TODO: json
+* TODO: json lines
 
 An abstract thought:
 
@@ -152,16 +154,51 @@ def _get_list_entry_seq(obj_seq, headers):
 _ListType = InputType('list', _is_list, _guess_list_headers,
                       _get_list_entry, _get_list_entry_seq)
 
-_INPUT_TYPES = [_DictType, _ListType, _ObjectType]
-
 
 class Table(object):
+
+    _input_types = [_DictType, _ListType, _ObjectType]
+
+    def __init__(self, data=None, headers=_MISSING):
+        if headers is _MISSING and data:
+            headers, data = list(data[0]), islice(data, 1, None)
+        self.headers = headers or []
+        self._data = []
+        self._width = 0
+        self.extend(data)
+
+    def extend(self, data):
+        if not data:
+            return
+        self._data.extend(data)
+        self._set_width()
+        self._fill()
+
+    def _set_width(self, reset=False):
+        if reset:
+            self._width = 0
+        if self._width:
+            return
+        if self.headers:
+            self._width = len(self.headers)
+            return
+        self._width = max([len(d) for d in self._data])
+
+    def _fill(self):
+        width, filler = self._width, [None]
+        if not width:
+            return
+        for d in self._data:
+            rem = width - len(d)
+            if rem > 0:
+                d.extend(filler * rem)
+        return
+
     @classmethod
-    def from_data(cls, data, headers=_MISSING, max_depth=1):
-        # todo: seen ?
+    def from_data(cls, data, headers=_MISSING, max_depth=1, _data_type=None):
+        # TODO: seen/cycle detection/reuse ?
         # maxdepth follows the same behavior as find command
         # i.e., it doesn't work if max_depth=0 is passed in
-        # TODO: cycle detection
         if not max_depth:
             return cls(headers=headers)
         is_seq = isinstance(data, Sequence)
@@ -175,19 +212,19 @@ class Table(object):
                 # raise an exception or make an exception, nahmsayn?
                 return Table([[data]], headers=headers)
             to_check = data
-        for it in _INPUT_TYPES:
-            if it.check_type(to_check):
-                data_type = it
-                print data_type
-                break
-        else:
-            raise TypeError('unsupported data type %r' % type(data))
+        if not _data_type:
+            for it in cls._INPUT_TYPES:
+                if it.check_type(to_check):
+                    _data_type = it
+                    break
+                else:
+                    raise TypeError('unsupported data type %r' % type(data))
         if headers is _MISSING:
-            headers = data_type.guess_headers(to_check)
+            headers = _data_type.guess_headers(to_check)
         if is_seq:
-            entries = data_type.get_entry_seq(data, headers)
+            entries = _data_type.get_entry_seq(data, headers)
         else:
-            entries = [data_type.get_entry(data, headers)]
+            entries = [_data_type.get_entry(data, headers)]
         if max_depth > 1:
             rec_entries = [None] * len(entries)
             new_max_depth = max_depth - 1
@@ -198,41 +235,6 @@ class Table(object):
                                   for cell in entry]
             entries = rec_entries
         return cls(entries, headers=headers)
-
-    def __init__(self, data=None, headers=_MISSING):
-        if headers is _MISSING and data:
-            headers, data = list(data[0]), islice(data, 1, None)
-        self.headers = headers or []
-        self._data = []
-        self._width = 0
-        self.extend(data)
-
-    def _fill(self):
-        width, filler = self._width, [None]
-        if not width:
-            return
-        for d in self._data:
-            rem = width - len(d)
-            if rem > 0:
-                d.extend(filler * rem)
-        return
-
-    def _set_width(self, reset=False):
-        if reset:
-            self._width = 0
-        if self._width:
-            return
-        if self.headers:
-            self._width = len(self.headers)
-            return
-        self._width = max([len(d) for d in self._data])
-
-    def extend(self, data):
-        if not data:
-            return
-        self._data.extend(data)
-        self._set_width()
-        self._fill()
 
     @classmethod
     def from_dict(cls, data, headers=_MISSING):
@@ -283,7 +285,6 @@ class Table(object):
                 except:
                     values.append(None)
         return cls([values], headers=headers)
-
 
     def __len__(self):
         return len(self._data)
