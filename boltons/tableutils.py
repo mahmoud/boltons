@@ -1,14 +1,19 @@
 # -*- coding: utf-8 -*-
 
 import cgi
+import types
 from itertools import islice
+from collections import Sequence, Mapping, MutableSequence
 
 
 _MISSING = object()
 
 """
-This Table class is meant to be simple, fast, and low-overhead. As
-such, it stores data in list-of-lists format, and _does not_ copy
+This Table class is meant to be simple, low-overhead, and extensible. Its
+most common use would be for translation between in-memory data
+structures and serialization formats, such as HTML and console-ready text.
+
+As such, it stores data in list-of-lists format, and _does not_ copy
 lists passed in. It also reserves the right to modify those lists in a
 "filling" process, whereby short lists are extended to the width of
 the table (usually determined by number of headers). This greatly
@@ -48,6 +53,8 @@ class Backend(object):
 Some idle thoughts:
 
 * shift around column order without rearranging data
+* gotta make it so you can add additional items, not just initialize with
+* maybe a shortcut would be to allow adding of Tables to other Tables
 """
 
 
@@ -56,7 +63,138 @@ def escape_html(text):
     return cgi.escape(text, True)
 
 
+_DNR = set([types.NoneType, types.BooleanType, types.IntType, types.LongType,
+            types.ComplexType, types.StringType, types.UnicodeType,
+            types.NotImplementedType, types.SliceType])  # function/method
+
+
+class InputType(object):
+    def __init__(self, suffix, check_type, guess_headers, get_entry,
+                 get_entry_seq=None, headers_consume=None):
+        self.suffix = suffix
+        self.check_type = check_type
+        self.guess_headers = guess_headers
+        self.get_entry = get_entry
+        self.get_entry_seq = get_entry_seq or self._default_get_entry_seq
+
+    def _default_get_entry_seq(self, data_seq, headers):
+        return (self.get_entry(entry, headers) for entry in data_seq)
+
+
+def _is_dict(obj):
+    return isinstance(obj, Mapping)
+
+
+def _guess_dict_headers(obj):
+    return obj.keys()
+
+
+def _get_dict_entry(obj, headers):
+    return [obj.get(h) for h in headers]
+
+
+def _get_dict_entry_seq(obj, headers):
+    return ([ci.get(h) for h in headers] for ci in obj)
+
+
+_DictType = InputType('dict', _is_dict, _guess_dict_headers,
+                      _get_dict_entry, _get_dict_entry_seq)
+
+
+def _is_object(obj):
+    return True
+
+
+def _guess_obj_headers(obj):
+    headers = []
+    for attr in dir(obj):
+        # an object's __dict__ could have non-string keys but meh
+        val = getattr(obj, attr)
+        if callable(val):
+            continue
+        headers.append(attr)
+    return headers
+
+
+def _get_obj_entry(obj, headers):
+    values = []
+    for h in headers:
+        try:
+            values.append(getattr(obj, h))
+        except:
+            values.append(None)
+    return values
+
+
+_ObjectType = InputType('object', _is_object, _guess_obj_headers,
+                        _get_obj_entry)
+
+
+def _is_list(obj):
+    return isinstance(obj, MutableSequence)
+
+
+def _guess_list_headers(obj):
+    return None
+
+
+def _get_list_entry(obj, headers):
+    return obj  # obj[0] ?
+
+
+def _get_list_entry_seq(obj_seq, headers):
+    return obj_seq
+
+
+# might be better to hardcode list support since it's so close to the core
+_ListType = InputType('list', _is_list, _guess_list_headers,
+                      _get_list_entry, _get_list_entry_seq)
+
+_INPUT_TYPES = [_DictType, _ListType, _ObjectType]
+
+
 class Table(object):
+    @classmethod
+    def from_data(cls, data, headers=_MISSING, max_depth=1):
+        # todo: seen ?
+        # maxdepth follows the same behavior as find command
+        # i.e., it doesn't work if max_depth=0 is passed in
+        # TODO: cycle detection
+        if not max_depth:
+            return cls(headers=headers)
+        is_seq = isinstance(data, Sequence)
+        if is_seq:
+            if not data:
+                return cls(headers=headers)
+        else:
+            if type(data) in _DNR:
+                # hmm, got scalar data.
+                # raise an exception or make an exception, nahmsayn?
+                return Table([[data]], headers=headers)
+        for it in _INPUT_TYPES:
+            if it.check_type(data):
+                data_type = it
+                print data_type
+                break
+        else:
+            raise TypeError('unsupported data type %r' % type(data))
+        if headers is _MISSING:
+            headers = data_type.guess_headers(data)
+        if is_seq:
+            entries = data_type.get_entry_seq(data, headers)
+        else:
+            entries = [data_type.get_entry(data, headers)]
+        if max_depth > 1:
+            rec_entries = [None] * len(entries)
+            new_max_depth = max_depth - 1
+            for i, entry in enumerate(entries):
+                rec_entries[i] = [cls.from_data(cell,
+                                                max_depth=new_max_depth)
+                                  if type(cell) not in _DNR else cell
+                                  for cell in entry]
+            entries = rec_entries
+        return cls(entries, headers=headers)
+
     # list-backed style
     def __init__(self, data=None, headers=_MISSING):
         if headers is _MISSING and data:
@@ -84,7 +222,7 @@ class Table(object):
         if self.headers:
             self._width = len(self.headers)
             return
-        self._width = max([len(d) for d in self.data])
+        self._width = max([len(d) for d in self._data])
 
     def extend(self, data):
         if not data:
@@ -95,6 +233,7 @@ class Table(object):
 
     @classmethod
     def from_dict(cls, data, headers=_MISSING):
+        # TODO: remove
         if headers is _MISSING:
             try:
                 headers, data = data.keys(), [data.values()]
@@ -102,11 +241,15 @@ class Table(object):
                 raise TypeError('expected dict or Mapping, not %r'
                                 % type(data))
         elif headers:
-            data = [data.get(h, None) for h in headers]
+            data = [[data.get(h, None) for h in headers]]
         return cls(data=data, headers=headers)
 
     @classmethod
     def from_dicts(cls, data, headers=_MISSING):
+        # TODO: remove
+        from collections import Sequence  # TODO/tmp
+        if not isinstance(data, Sequence):
+            data = [data]
         if headers is _MISSING:
             try:
                 headers = data[0].keys()
@@ -137,6 +280,7 @@ class Table(object):
                 except:
                     values.append(None)
         return cls([values], headers=headers)
+
 
     def __len__(self):
         return len(self._data)
