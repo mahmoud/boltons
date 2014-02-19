@@ -71,8 +71,13 @@ def escape_html(text):
 
 
 _DNR = set([types.NoneType, types.BooleanType, types.IntType, types.LongType,
-            types.ComplexType, types.StringType, types.UnicodeType,
-            types.NotImplementedType, types.SliceType])  # function/method
+            types.ComplexType, types.FloatType, types.StringType,
+            types.UnicodeType, types.NotImplementedType, types.SliceType])
+# + function/method?
+
+
+class UnsupportedData(TypeError):
+    pass
 
 
 class InputType(object):
@@ -94,12 +99,12 @@ class DictInputType(InputType):
         return [obj.get(h) for h in headers]
 
     def get_entry_seq(self, obj, headers):
-        return ([ci.get(h) for h in headers] for ci in obj)
+        return [[ci.get(h) for h in headers] for ci in obj]
 
 
 class ObjectInputType(InputType):
     def check_type(self, obj):
-        return hasattr(obj, '__class__')
+        return type(obj) not in _DNR and hasattr(obj, '__class__')
 
     def guess_headers(self, obj):
         headers = []
@@ -220,8 +225,9 @@ class Table(object):
                 if it.check_type(to_check):
                     _data_type = it
                     break
-                else:
-                    raise TypeError('unsupported data type %r' % type(data))
+            else:
+                raise UnsupportedData('unsupported data type %r'
+                                      % type(data))
         if headers is _MISSING:
             headers = _data_type.guess_headers(to_check)
         if is_seq:
@@ -229,14 +235,17 @@ class Table(object):
         else:
             entries = [_data_type.get_entry(data, headers)]
         if max_depth > 1:
-            rec_entries = [None] * len(entries)
             new_max_depth = max_depth - 1
             for i, entry in enumerate(entries):
-                rec_entries[i] = [cls.from_data(cell,
-                                                max_depth=new_max_depth)
-                                  if type(cell) not in _DNR else cell
-                                  for cell in entry]
-            entries = rec_entries
+                for j, cell in enumerate(entry):
+                    if type(cell) in _DNR:
+                        # optimization to avoid function overhead
+                        continue
+                    try:
+                        entries[i][j] = cls.from_data(cell,
+                                                      max_depth=new_max_depth)
+                    except UnsupportedData:
+                        continue
         return cls(entries, headers=headers)
 
     def __len__(self):
