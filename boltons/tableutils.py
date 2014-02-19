@@ -59,6 +59,9 @@ Some idle thoughts:
 * maybe a shortcut would be to allow adding of Tables to other Tables
 * what's the perf of preallocating lists and overwriting items versus
   starting from empty?
+
+* is it possible to effectively tell the difference between when a
+  Table is from_data()'d with a single row (list) or with a list of lists?
 """
 
 
