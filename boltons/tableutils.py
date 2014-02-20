@@ -153,8 +153,10 @@ class Table(object):
     _html_table_tag, _html_table_tag_close = '<table>', '</table>'
 
     def __init__(self, data=None, headers=_MISSING):
-        if headers is _MISSING and data:
-            headers, data = list(data[0]), islice(data, 1, None)
+        if headers is _MISSING:
+            headers = []
+            if data:
+                headers, data = list(data[0]), islice(data, 1, None)
         self.headers = headers or []
         self._data = []
         self._width = 0
@@ -264,6 +266,10 @@ class Table(object):
     def to_html(self, orientation=None, wrapped=True,
                 with_headers=True, with_newlines=True, max_depth=1):
         lines = []
+        headers = []
+        if with_headers and self.headers:
+            headers.extend(self.headers)
+            headers.extend([None] * (self._width - len(self.headers)))
         if wrapped:
             lines.append(self._html_table_tag)
         orientation = orientation or 'auto'
@@ -271,10 +277,10 @@ class Table(object):
         if ol == 'a':
             ol = 'h' if len(self) > 1 else 'v'
         if ol == 'h':
-            self._add_horizontal_html_lines(lines, with_headers=with_headers,
+            self._add_horizontal_html_lines(lines, headers=headers,
                                             max_depth=max_depth)
         elif ol == 'v':
-            self._add_vertical_html_lines(lines, with_headers=with_headers,
+            self._add_vertical_html_lines(lines, headers=headers,
                                           max_depth=max_depth)
         else:
             raise ValueError("expected one of 'auto', 'vertical', or"
@@ -284,15 +290,15 @@ class Table(object):
         sep = '\n' if with_newlines else ''
         return sep.join(lines)
 
-    def _add_horizontal_html_lines(self, lines, with_headers, max_depth):
+    def _add_horizontal_html_lines(self, lines, headers, max_depth):
         esc = escape_html
         new_depth = max_depth - 1 if max_depth > 1 else max_depth
         if max_depth > 1:
             new_depth = max_depth - 1
-        if with_headers:
+        if headers:
             _thth = self._html_th_close + self._html_th
             lines.append(self._html_tr + self._html_th +
-                         _thth.join([esc(h) for h in self.headers]) +
+                         _thth.join([esc(h) for h in headers]) +
                          self._html_th_close + self._html_tr_close)
         trtd, _tdtd, _td_tr = (self._html_tr + self._html_td,
                                self._html_td_close + self._html_td,
@@ -309,7 +315,7 @@ class Table(object):
                 _fill_parts = [esc(c) for c in row]
             lines.append(''.join([trtd, _tdtd.join(_fill_parts), _td_tr]))
 
-    def _add_vertical_html_lines(self, lines, with_headers, max_depth):
+    def _add_vertical_html_lines(self, lines, headers, max_depth):
         esc = escape_html
         new_depth = max_depth - 1 if max_depth > 1 else max_depth
         tr, th, _th = self._html_tr, self._html_th, self._html_th_close
@@ -317,8 +323,8 @@ class Table(object):
         _td_tr = self._html_td_close + self._html_tr_close
         for i in range(self._width):
             line_parts = [tr]
-            if with_headers:
-                line_parts.extend([th, esc(self.headers[i]), _th])
+            if headers:
+                line_parts.extend([th, esc(headers[i]), _th])
             if max_depth > 1:
                 new_depth = max_depth - 1
                 _fill_parts = []
