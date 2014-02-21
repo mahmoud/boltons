@@ -31,8 +31,8 @@ Supported inputs:
 
 * list of lists
 * dict (list/single)
-* object (list/single)  (list TODO)
-* TODO: namedtuple (list/single)
+* object (list/single)
+* namedtuple (list/single)
 * TODO: sqlite return value
 * TODO: json
 
@@ -44,14 +44,6 @@ Supported outputs:
 * TODO: json
 * TODO: json lines
 
-An abstract thought:
-
-class Backend(object):
-    row_type = list
-
-    def _guess_headers(self):
-        pass
-
 Some idle thoughts:
 
 * shift around column order without rearranging data
@@ -59,9 +51,12 @@ Some idle thoughts:
 * maybe a shortcut would be to allow adding of Tables to other Tables
 * what's the perf of preallocating lists and overwriting items versus
   starting from empty?
-
 * is it possible to effectively tell the difference between when a
   Table is from_data()'d with a single row (list) or with a list of lists?
+* CSS: white-space pre-line or pre-wrap maybe?
+* Would be nice to support different backends (currently uses lists
+  exclusively). Sometimes large datasets come in list-of-dicts and
+  list-of-tuples format and it's desirable to cut down processing overhead.
 """
 
 
@@ -85,7 +80,7 @@ class InputType(object):
         pass
 
     def get_entry_seq(self, data_seq, headers):
-        return (self.get_entry(entry, headers) for entry in data_seq)
+        return [self.get_entry(entry, headers) for entry in data_seq]
 
 
 class DictInputType(InputType):
@@ -126,7 +121,9 @@ class ObjectInputType(InputType):
         return values
 
 
-# might be better to hardcode list support since it's so close to the core
+# might be better to hardcode list support since it's so close to the
+#  core or might be better to make this the copy-style from_* importer
+#  and have the non-copy style be hardcoded in __init__
 class ListInputType(InputType):
     def check_type(self, obj):
         return isinstance(obj, MutableSequence)
@@ -135,10 +132,24 @@ class ListInputType(InputType):
         return None
 
     def get_entry(self, obj, headers):
-        return obj  # obj[0] ?
+        return obj
 
     def get_entry_seq(self, obj_seq, headers):
         return obj_seq
+
+
+class NamedTupleType(InputType):
+    def check_type(self, obj):
+        return hasattr(obj, '_fields') and isinstance(obj, tuple)
+
+    def guess_headers(self, obj):
+        return list(obj._fields)
+
+    def get_entry(self, obj, headers):
+        return [getattr(obj, h, None) for h in headers]
+
+    def get_entry_seq(self, obj_seq, headers):
+        return [[getattr(obj, h, None) for h in headers] for obj in obj_seq]
 
 
 class Table(object):
