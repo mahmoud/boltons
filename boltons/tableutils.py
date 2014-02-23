@@ -60,15 +60,27 @@ Some idle thoughts:
 """
 
 
-def escape_html(text):
-    text = unicode(text)
-    return cgi.escape(text, True)
+def to_text(obj):
+    try:
+        text = unicode(obj)
+    except:
+        try:
+            text = unicode(repr(obj))
+        except:
+            text = unicode(object.__repr__(obj))
+    return text
+
+
+def escape_html(obj):
+    text = to_text(obj)
+    return cgi.escape(text, quote=True)
 
 
 _DNR = set([types.NoneType, types.BooleanType, types.IntType, types.LongType,
             types.ComplexType, types.FloatType, types.StringType,
-            types.UnicodeType, types.NotImplementedType, types.SliceType])
-# + function/method?
+            types.UnicodeType, types.NotImplementedType, types.SliceType,
+            types.FunctionType, types.MethodType, types.BuiltinFunctionType,
+            types.GeneratorType])
 
 
 class UnsupportedData(TypeError):
@@ -138,7 +150,21 @@ class ListInputType(InputType):
         return obj_seq
 
 
-class NamedTupleType(InputType):
+class TupleInputType(InputType):
+    def check_type(self, obj):
+        return isinstance(obj, tuple)
+
+    def guess_headers(self, obj):
+        return None
+
+    def get_entry(self, obj, headers):
+        return list(obj)
+
+    def get_entry_seq(self, obj_seq, headers):
+        return [list(t) for t in obj_seq]
+
+
+class NamedTupleInputType(InputType):
     def check_type(self, obj):
         return hasattr(obj, '_fields') and isinstance(obj, tuple)
 
@@ -154,7 +180,9 @@ class NamedTupleType(InputType):
 
 class Table(object):
     # order definitely matters here
-    _input_types = [DictInputType(), ListInputType(), ObjectInputType()]
+    _input_types = [DictInputType(), ListInputType(),
+                    NamedTupleInputType(), TupleInputType(),
+                    ObjectInputType()]
 
     _html_tr, _html_tr_close = '<tr>', '</tr>'
     _html_th, _html_th_close = '<th>', '</th>'
@@ -227,6 +255,15 @@ class Table(object):
             if not data:
                 return cls(headers=headers)
             to_check = data[0]
+            if not _data_type:
+                for it in cls._input_types:
+                    if it.check_type(to_check):
+                        _data_type = it
+                        break
+                else:
+                    # not particularly happy about this rewind-y approach
+                    is_seq = False
+                    to_check = data
         else:
             if type(data) in _DNR:
                 # hmm, got scalar data.
