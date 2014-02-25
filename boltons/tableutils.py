@@ -117,7 +117,12 @@ class ObjectInputType(InputType):
         headers = []
         for attr in dir(obj):
             # an object's __dict__ could have non-string keys but meh
-            val = getattr(obj, attr)
+            try:
+                val = getattr(obj, attr)
+            except:
+                # seen on greenlet: `run` shows in dir() but raises
+                # AttributeError. Also properties misbehave.
+                continue
             if callable(val):
                 continue
             headers.append(attr)
