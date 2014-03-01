@@ -60,7 +60,7 @@ Some idle thoughts:
 """
 
 
-def to_text(obj):
+def to_text(obj, maxlen=None):
     try:
         text = unicode(obj)
     except:
@@ -68,11 +68,14 @@ def to_text(obj):
             text = unicode(repr(obj))
         except:
             text = unicode(object.__repr__(obj))
+    if maxlen and len(text) > maxlen:
+        text = text[:maxlen - 3] + '...'
+        # TODO: inverse of ljust/rjust/center
     return text
 
 
-def escape_html(obj):
-    text = to_text(obj)
+def escape_html(obj, maxlen=None):
+    text = to_text(obj, maxlen=maxlen)
     return cgi.escape(text, quote=True)
 
 
@@ -392,23 +395,25 @@ class Table(object):
             line_parts.extend([td, _tdtd.join(_fill_parts), _td_tr])
             lines.append(''.join(line_parts))
 
-    def to_text(self, with_headers=True):
+    def to_text(self, with_headers=True, maxlen=None):
         # TODO: verify this works for markdown
         lines = []
         widths = []
         headers = self.headers
+        text_data = [[to_text(cell, maxlen=maxlen) for cell in row]
+                     for row in self._data]
         for idx in range(self._width):
-            cur_widths = [len(unicode(cur[idx])) for cur in self._data]
+            cur_widths = [len(cur) for cur in text_data]
             if with_headers:
-                cur_widths.append(len(headers[idx]))
+                cur_widths.append(len(to_text(headers[idx], maxlen=maxlen)))
             widths.append(max(cur_widths))
         if with_headers:
             lines.append(' | '.join([h.center(widths[i])
                                      for i, h in enumerate(headers)]))
             lines.append('-+-'.join(['-' * w for w in widths]))
-        for row in self._data:
-            lines.append(' | '.join([unicode(col).center(widths[j])
-                                     for j, col in enumerate(row)]))
+        for row in text_data:
+            lines.append(' | '.join([cell.center(widths[j])
+                                     for j, cell in enumerate(row)]))
         return '\n'.join(lines)
 
 
