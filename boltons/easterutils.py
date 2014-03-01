@@ -8,7 +8,7 @@ def gobs_program():
     https://www.youtube.com/watch?v=JbnjusltDHk
     """
     while True:
-        print "PENUS",
+        print "Penus",
 
 
 if __name__ == '__main__':
