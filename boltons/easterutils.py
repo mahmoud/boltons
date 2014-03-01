@@ -3,7 +3,7 @@
 
 def gobs_program():
     """
-    A pure-Python implementation of Gob's Algorithm (2013). A brief
+    A pure-Python implementation of Gob's Algorithm (2006). A brief
     explanation can be found here:
     https://www.youtube.com/watch?v=JbnjusltDHk
     """
