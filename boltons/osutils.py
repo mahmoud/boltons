@@ -2,6 +2,7 @@
 
 import os
 import re
+import errno
 import fnmatch
 
 
@@ -25,4 +26,14 @@ def iter_find_files(directory, patterns):
             if pats_re.match(basename):
                 filename = os.path.join(root, basename)
                 yield filename
+    return
+
+
+def mkdir_p(path):
+    try:
+        os.makedirs(path)
+    except OSError as exc:
+        if exc.errno == errno.EEXIST and os.path.isdir(path):
+            return
+        raise
     return
