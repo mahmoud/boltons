@@ -224,7 +224,7 @@ class OrderedMultiDict(dict):
             if self:
                 k = self.root[PREV][KEY]
             else:
-                raise KeyError()  # TODO
+                raise KeyError('empty %r' % type(self))
         try:
             self._remove(k)
         except KeyError:
