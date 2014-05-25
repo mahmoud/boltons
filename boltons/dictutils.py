@@ -60,15 +60,19 @@ class OrderedMultiDict(dict):
     >>> OrderedMultiDict([('a', 1), ('b', 2), ('a', 3)]).todict()
     {'a': 3, 'b': 2}
 
-    The implementation could be more optimal, but overall it's far
-    better than other OMDs out there. Mad props to Mark Williams for
-    all his help.
+    With ``multi=False``, items appear with the keys according to
+    original/earliest insertion order, but with the most recently
+    inserted value.
+    >>> OrderedMultiDict([('a', 1), ('b', 2), ('a', 3)]).items(multi=False)
+    [('a', 3), ('b', 2)]
+
+    Mad props to Mark Williams for all his help.
+
     """
     def __init__(self, *args, **kwargs):
-        name = self.__class__.__name__
         if len(args) > 1:
             raise TypeError('%s expected at most 1 argument, got %s'
-                            % (name, len(args)))
+                            % (self.__class__.__name__, len(args)))
         super(OrderedMultiDict, self).__init__()
 
         self._clear_ll()
@@ -259,14 +263,8 @@ class OrderedMultiDict(dict):
                 yield curr[KEY], curr[VALUE]
                 curr = curr[NEXT]
         else:
-            yielded = set()
-            yielded_add = yielded.add
-            while curr is not root:
-                k = curr[KEY]
-                if k not in yielded:
-                    yielded_add(k)
-                    yield k, curr[VALUE]
-                curr = curr[NEXT]
+            for key in self.iterkeys():
+                yield key, self[key]
 
     def iterkeys(self, multi=False):
         root = self.root
@@ -286,7 +284,7 @@ class OrderedMultiDict(dict):
                 curr = curr[NEXT]
 
     def itervalues(self, multi=False):
-        for k, v in self.iteritems(multi):
+        for k, v in self.iteritems(multi=multi):
             yield v
 
     def todict(self, ordered=False):
@@ -304,13 +302,13 @@ class OrderedMultiDict(dict):
         return self.__class__((k, len(super_getitem(k))) for k in self)
 
     def keys(self, multi=False):
-        return list(self.iterkeys(multi))
+        return list(self.iterkeys(multi=multi))
 
     def values(self, multi=False):
-        return list(self.itervalues(multi))
+        return list(self.itervalues(multi=multi))
 
     def items(self, multi=False):
-        return list(self.iteritems(multi))
+        return list(self.iteritems(multi=multi))
 
     def __iter__(self):
         return self.iterkeys()
