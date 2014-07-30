@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+import re
 import bisect
 import datetime
 from datetime import timedelta
@@ -32,6 +33,42 @@ _BOUNDS = [(0, timedelta(seconds=1), 'second'),
 _BOUNDS = [(b[0] * b[1], b[1], b[2]) for b in _BOUNDS]
 _BOUND_DELTAS = [b[0] for b in _BOUNDS]
 
+_FLOAT_PATTERN = r'[+-]?\ *(\d+(\.\d*)?|\.\d+)([eE][+-]?\d+)?'
+_PARSE_TD_RE = re.compile("((?P<value>%s)\s*(?P<unit>\w)\w*)" % _FLOAT_PATTERN)
+_PARSE_TD_KW_MAP = dict([(unit[0], unit + 's')
+                         for _, _, unit in reversed(_BOUNDS[:-2])])
+
+
+def parse_td(text):
+    """\
+    Robustly parses a short text description of a time period into a
+    timedelta. Supports weeks, days, hours, minutes, and seconds.
+
+    >>> parse_td('1d 2h 3.5m 0s')
+    datetime.timedelta(1, 7410)
+
+    Also supports full words and whitespace.
+
+    >>> parse_td('2 weeks 1 day')
+    datetime.timedelta(15)
+
+    """
+    td_kwargs = {}
+    for match in _PARSE_TD_RE.finditer(text):
+        value, unit = match.group('value'), match.group('unit')
+        try:
+            unit_key = _PARSE_TD_KW_MAP[unit]
+        except KeyError:
+            raise ValueError('invalid time unit %r, expected one of %r'
+                             % (unit, _PARSE_TD_KW_MAP.keys))
+        try:
+            value = float(value)
+        except ValueError:
+            raise ValueError('invalid time value for unit %r: %r'
+                             % (unit, value))
+        td_kwargs[unit_key] = value
+    return timedelta(**td_kwargs)
+
 
 def decimal_relative_time(d, other=None, ndigits=0):
     """\
@@ -40,8 +77,8 @@ def decimal_relative_time(d, other=None, ndigits=0):
     (1.0, 'day')
     >>> decimal_relative_time(now - timedelta(seconds=0.002), now, ndigits=5)
     (0.002, 'seconds')
-    >>> '%g %s' % _
-    '0.002 seconds'
+    >>> decimal_relative_time(now - timedelta(days=1000), now, ndigits=1)
+    (2.7, 'years')
     """
     if other is None:
         other = datetime.datetime.utcnow()
