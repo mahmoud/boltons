@@ -55,8 +55,10 @@ PREV, NEXT, KEY, RESULT = range(4)   # names for the link fields
 
 
 class LRU(dict):
+    # inherited methods: __len__, pop, __delitem__, iterkeys, keys
+
     # TODO: corner cases size=0, size=None
-    def __init__(self, max_size=128, on_miss=None):
+    def __init__(self, max_size=128, on_miss=None, values=None):
         self.hit_count = self.miss_count = self.soft_miss_count = 0
         self.max_size = max_size
         self._id_gen = itertools.count()
@@ -65,11 +67,14 @@ class LRU(dict):
         self.root = root
         self.lock = RLock()
 
+        if values:
+            self.update(values)
+
     def __setitem__(self, key, value):
         with self.lock:
             # TODO: check for already-inserted?
             root = self.root
-            if len(self) <= self.max_size:
+            if len(self) < self.max_size:
                 # to the front of the queue
                 last = root[PREV]
                 link = [last, root, key, value]
@@ -119,6 +124,52 @@ class LRU(dict):
 
         # TODO: on_miss/defaulting
 
+    def get(self, key, default=None):
+        try:
+            return self[key]
+        except KeyError:
+            self.soft_miss_count += 1
+            return default
+
+    def update(self, E, **F):
+        # E and F are throwback names to the dict() __doc__
+        if E is self:
+            return
+        setitem = self.__setitem__
+        if hasattr(E, 'keys'):
+            for k in E.keys():
+                self[k] = E[k]
+        else:
+            seen = set()
+            seen_add = seen.add
+            for k, v in E:
+                if k not in seen and k in self:
+                    del self[k]
+                    seen_add(k)
+                setitem(k, v)
+        for k in F:
+            self[k] = F[k]
+        return
+
+    def __eq__(self, other):
+        if self is other:
+            return True
+        if len(other) != len(self):
+            return False
+        return other == self._get_value_map()
+
+    def __ne__(self, other):
+        return not (self == other)
+
+    def _get_value_map(self):
+        return dict([(k, v) for (k, (_, _, _, v)) in self.iteritems()])
+
+    def __repr__(self):
+        # yay destructuring binds
+        cn = self.__class__.__name__
+        val_map = self._get_value_map()
+        return '%s(max_size=%r, values=%r)' % (cn, self.max_size, val_map)
+
 
 def test_basic_cache():
     import string
@@ -130,9 +181,12 @@ def test_basic_cache():
 
 
 def test_lru_cache():
-    lru = LRU()
-    lru['hi'] = 5
-    print lru['hi']
+    lru = LRU(max_size=1)
+    lru['hi'] = 0
+    lru['bye'] = 1
+    print lru
+
+    import pdb;pdb.set_trace()
 
 
 if __name__ == '__main__':
