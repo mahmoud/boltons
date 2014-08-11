@@ -51,78 +51,73 @@ class BasicCache(dict):
         del defaultdict
 
 
-PREV, NEXT, KEY, RESULT = range(4)   # names for the link fields
+PREV, NEXT, KEY, VALUE = range(4)   # names for the link fields
+DEFAULT_MAX_SIZE = 128
+_MISSING = object()
 
 
 class LRU(dict):
-    # inherited methods: __len__, pop, __delitem__, iterkeys, keys
-
-    # TODO: corner cases size=0, size=None
-    def __init__(self, max_size=128, on_miss=None, values=None):
+    def __init__(self, max_size=DEFAULT_MAX_SIZE, values=None):
+        if max_size <= 0:
+            raise ValueError('expected max_size > 0, not %r' % max_size)
         self.hit_count = self.miss_count = self.soft_miss_count = 0
         self.max_size = max_size
-        self._id_gen = itertools.count()
         root = []
         root[:] = [root, root, None, None]
+        self.link_map = {}
         self.root = root
         self.lock = RLock()
 
         if values:
             self.update(values)
 
+    # inherited methods: __len__, pop, iterkeys, keys, __iter__
+    # TODO: fromkeys()?
+
     def __setitem__(self, key, value):
         with self.lock:
-            # TODO: check for already-inserted?
             root = self.root
             if len(self) < self.max_size:
                 # to the front of the queue
                 last = root[PREV]
                 link = [last, root, key, value]
                 last[NEXT] = root[PREV] = link
-                super(LRU, self).__setitem__(key, link)
+                self.link_map[key] = link
+                super(LRU, self).__setitem__(key, value)
             else:
                 # Use the old root to store the new key and result.
                 oldroot = root
                 oldroot[KEY] = key
-                oldroot[RESULT] = value
-                # Empty the oldest link and make it the new root.
-                # Keep a reference to the old key and old result to
-                # prevent their ref counts from going to zero during the
-                # update. That will prevent potentially arbitrary object
-                # clean-up code (i.e. __del__) from running while we're
-                # still adjusting the links.
+                oldroot[VALUE] = value
+                # prevent ref counts going to zero during update
                 root = oldroot[NEXT]
-                oldkey, oldresult = root[KEY], root[RESULT]
-                root[KEY] = root[RESULT] = None
+                oldkey, oldresult = root[KEY], root[VALUE]
+                root[KEY] = root[VALUE] = None
                 # Now update the cache dictionary.
+                del self.link_map[oldkey]
                 super(LRU, self).__delitem__(oldkey)
-                # Save the potentially reentrant cache[key] assignment
-                # for last, after the root and links have been put in
-                # a consistent state.
-                super(LRU, self).__setitem__(key, oldroot)
+                self.link_map[key] = oldroot
+                super(LRU, self).__setitem__(key, value)
         return
 
     def __getitem__(self, key):
         with self.lock:
             try:
-                link = super(LRU, self).__getitem__(key)
+                link = self.link_map[key]
             except KeyError:
                 self.miss_count += 1
                 raise
             root = self.root
-            if link is not None:
-                # Move the link to the front of the circular queue
-                link_prev, link_next, _key, result = link
-                link_prev[NEXT] = link_next
-                link_next[PREV] = link_prev
-                last = root[PREV]
-                last[NEXT] = root[PREV] = link
-                link[PREV] = last
-                link[NEXT] = root
-                self.hit_count += 1
-                return result
-
-        # TODO: on_miss/defaulting
+            # Move the link to the front of the queue
+            link_prev, link_next, _key, value = link
+            link_prev[NEXT] = link_next
+            link_next[PREV] = link_prev
+            last = root[PREV]
+            last[NEXT] = root[PREV] = link
+            link[PREV] = last
+            link[NEXT] = root
+            self.hit_count += 1
+            return value
 
     def get(self, key, default=None):
         try:
@@ -131,24 +126,59 @@ class LRU(dict):
             self.soft_miss_count += 1
             return default
 
+    def __delitem__(self, key):
+        with self.lock:
+            link = self.link_map.pop(key)
+            super(LRU, self).__delitem__(key)
+            link[PREV][NEXT], link[NEXT][PREV] = link[NEXT], link[PREV]
+
+    def pop(self, key, default=_MISSING):
+        # NB: hit/miss counts are bypassed for pop()
+        try:
+            ret = super(LRU, self).__getitem__(key)
+            del self[key]
+        except KeyError:
+            if default is _MISSING:
+                raise KeyError(key)
+            ret = default
+        return ret
+
+    def popitem(self):
+        with self.lock:
+            link = self.link_map.popitem()
+            super(LRU, self).__delitem__(link[KEY])
+            link[PREV][NEXT], link[NEXT][PREV] = link[NEXT], link[PREV]
+
+    def clear(self):
+        with self.lock:
+            self.root = [self.root, self.root, None, None]
+            self.link_map.clear()
+            super(LRU, self).clear()
+
+    def copy(self):
+        return self.__class__(max_size=self.max_size, values=self)
+
+    def setdefault(self, key, default=None):
+        try:
+            return self[key]
+        except KeyError:
+            self.soft_miss_count += 1
+            self[key] = default
+            return default
+
     def update(self, E, **F):
         # E and F are throwback names to the dict() __doc__
         if E is self:
             return
         setitem = self.__setitem__
-        if hasattr(E, 'keys'):
+        if callable(getattr(E, 'keys', None)):
             for k in E.keys():
-                self[k] = E[k]
+                setitem(k, E[k])
         else:
-            seen = set()
-            seen_add = seen.add
             for k, v in E:
-                if k not in seen and k in self:
-                    del self[k]
-                    seen_add(k)
                 setitem(k, v)
         for k in F:
-            self[k] = F[k]
+            setitem(k, F[k])
         return
 
     def __eq__(self, other):
@@ -156,18 +186,14 @@ class LRU(dict):
             return True
         if len(other) != len(self):
             return False
-        return other == self._get_value_map()
+        return other == self
 
     def __ne__(self, other):
         return not (self == other)
 
-    def _get_value_map(self):
-        return dict([(k, v) for (k, (_, _, _, v)) in self.iteritems()])
-
     def __repr__(self):
-        # yay destructuring binds
         cn = self.__class__.__name__
-        val_map = self._get_value_map()
+        val_map = super(LRU, self).__repr__()
         return '%s(max_size=%r, values=%r)' % (cn, self.max_size, val_map)
 
 
@@ -184,7 +210,10 @@ def test_lru_cache():
     lru = LRU(max_size=1)
     lru['hi'] = 0
     lru['bye'] = 1
+    lru['bye']
+    lru.get('hi')
     print lru
+    del lru['bye']
 
     import pdb;pdb.set_trace()
 
