@@ -61,30 +61,6 @@ def reverse_iter_lines(file_obj, blocksize=DEFAULT_BLOCKSIZE, preseek=True):
         yield buff
 
 
-def reversed_lines(file_obj, blocksize=DEFAULT_BLOCKSIZE):
-    "Generate the lines of file in reverse order."
-    part = ''
-    for block in reversed_blocks(file_obj, blocksize=blocksize):
-        for c in reversed(block):
-            if c == '\n' and part:
-                yield part[::-1]
-                part = ''
-            part += c
-    if part:
-        yield part[::-1]
-
-
-def reversed_blocks(file_obj, blocksize=DEFAULT_BLOCKSIZE):
-    "Generate blocks of file's contents in reverse order."
-    file_obj.seek(0, os.SEEK_END)
-    here = file_obj.tell()
-    while 0 < here:
-        delta = min(blocksize, here)
-        here -= delta
-        file_obj.seek(here, os.SEEK_SET)
-        yield file_obj.read(delta)
-
-
 """
 TODO: allow passthroughs for:
 
