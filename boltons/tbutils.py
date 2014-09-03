@@ -33,6 +33,15 @@ class Callpoint(object):
         self.lasti = lasti
         self.line = line
 
+    def to_dict(self):
+        ret = {}
+        for slot in self.__slots__:
+            try:
+                ret[slot] = getattr(self, slot)
+            except AttributeError:
+                pass
+        return ret
+
     @classmethod
     def from_current(cls, level=1):
         frame = sys._getframe(level)
@@ -135,6 +144,21 @@ class ExceptionInfo(object):
         tb_info = TracebackInfo.from_traceback(traceback)
         return cls(type_str, val_str, tb_info)
 
+    @classmethod
+    def from_current(cls):
+        return cls.from_exc_info(*sys.exc_info())
+
+    def __repr__(self):
+        cn = self.__class__.__name__
+        try:
+            len_frames = len(self.tb_info.frames)
+            last_frame = ', last=%r' % (self.tb_info.frames[-1],)
+        except:
+            len_frames = 0
+            last_frame = ''
+        args = (cn, self.exc_type, self.exc_msg, len_frames, last_frame)
+        return '<%s [%s: %s] (%s frames%s)>' % args
+
 
 # TODO: dedup frames, look at __eq__ on _DeferredLine
 # TODO: StackInfo/TracebackInfo split, latter stores exc
@@ -173,16 +197,10 @@ class TracebackInfo(object):
 
     @classmethod
     def from_dict(cls, d):
-        # TODO: respect message, exception; part of
-        # StackInfo/TracebackInfo split
         return cls(d['frames'])
 
     def to_dict(self):
-        # TODO: fill in message, exception; part of
-        # StackInfo/TracebackInfo split
-        return {'frames': [f._asdict() for f in self],
-                'message': None,
-                'exception': None}
+        return {'frames': [f.to_dict() for f in self.frames]}
 
     def __len__(self):
         return len(self.frames)
@@ -399,6 +417,8 @@ if __name__ == '__main__':
     except:
         _, _, exc_traceback = sys.exc_info()
         tbi = TracebackInfo.from_traceback(exc_traceback)
+        exc_info = ExceptionInfo.from_exc_info(*sys.exc_info())
+        exc_info2 = ExceptionInfo.from_current()
         tbi_str = str(tbi)
         print_exception(*sys.exc_info(), file=fake_stderr2)
         new_exc_hook_res = fake_stderr2.getvalue()
