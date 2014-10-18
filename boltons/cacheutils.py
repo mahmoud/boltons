@@ -14,17 +14,26 @@ except:
         def __exit__(self, exctype, excinst, exctb):
             pass
 
+PREV, NEXT, KEY, VALUE = range(4)   # names for the link fields
+DEFAULT_MAX_SIZE = 128
+_MISSING = object()
 
-__all__ = ['BasicCache']
+
+__all__ = ['BasicCache', 'LRU', 'DefaultLRU']
 
 
+# TODO: rename to LRI?
+# TODO: on_miss to default_factory
 class BasicCache(dict):
     """\
     a.k.a, SizeLimitedDefaultDict. LRI/Least Recently Inserted.
+
+    `on_miss` is a callable that accepts the missing key (as opposed
+    to default_factory which accepts no arguments.
     """
-    def __init__(self, size, on_miss):
+    def __init__(self, on_miss, max_size=DEFAULT_MAX_SIZE):
         super(BasicCache, self).__init__()
-        self.size = size
+        self.max_size = max_size
         self.on_miss = on_miss
         self._queue = deque()
 
@@ -32,7 +41,7 @@ class BasicCache(dict):
         ret = self.on_miss(key)
         self[key] = ret
         self._queue.append(key)
-        if len(self._queue) > self.size:
+        if len(self._queue) > self.max_size:
             old = self._queue.popleft()
             del self[old]
         return ret
@@ -49,11 +58,6 @@ class BasicCache(dict):
                 return self.__missing__(key)
     else:
         del defaultdict
-
-
-PREV, NEXT, KEY, VALUE = range(4)   # names for the link fields
-DEFAULT_MAX_SIZE = 128
-_MISSING = object()
 
 
 class LRU(dict):
@@ -195,6 +199,43 @@ class LRU(dict):
         cn = self.__class__.__name__
         val_map = super(LRU, self).__repr__()
         return '%s(max_size=%r, values=%r)' % (cn, self.max_size, val_map)
+
+
+class DefaultLRU(LRU):
+    """\
+    Like a defaultdict, but for the LRU cache. If set, the
+    `default_factory` is called on misses and assigned to the missing
+    key.
+    """
+    def __init__(self, default_factory=None, *args, **kwargs):
+        if default_factory is not None and not callable(default_factory):
+            raise TypeError('expected default_factory to be a callable'
+                            ' (or None), not %r' % default_factory)
+        self.default_factory = default_factory
+        super(DefaultLRU, self).__init__(*args, **kwargs)
+
+    def __missing__(self, key):
+        if not self.default_factory:
+            raise KeyError(key)
+        ret = self.default_factory()
+        self.soft_miss += 1
+        self[key] = ret
+        return ret
+
+    try:
+        from collections import defaultdict
+    except ImportError:
+        # no defaultdict means that __missing__ isn't supported in
+        # this version of python, so we define __getitem__
+        def __getitem__(self, key):
+            try:
+                return super(DefaultLRU, self).__getitem__(key)
+            except KeyError:
+                if self.default_factory:
+                    return self.__missing__(key)
+                raise
+    else:
+        del defaultdict
 
 
 def test_basic_cache():
