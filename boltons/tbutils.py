@@ -82,11 +82,11 @@ class Callpoint(object):
             return '%s(%s)' % (cn, ', '.join([repr(a) for a in args]))
 
     def tb_frame_str(self):
-        ret = '  File "{0}", line {1}, in {2}\n'.format(self.module_path,
-                                                        self.lineno,
-                                                        self.func_name)
+        ret = '  File "%s", line %s, in %s\n' % (self.module_path,
+                                                 self.lineno,
+                                                 self.func_name)
         if self.line:
-            ret += '    {0}\n'.format(str(self.line))
+            ret += '    %s\n' % (str(self.line).strip(),)
         return ret
 
 
@@ -116,7 +116,7 @@ class _DeferredLine(object):
         line = linecache.getline(self.filename,
                                  self.lineno,
                                  self.module_globals)
-        line = line.strip()
+        line = line.rstrip()
         self._line = line
         return line
 
@@ -127,42 +127,11 @@ class _DeferredLine(object):
         return len(str(self))
 
 
-class ExceptionInfo(object):
-    def __init__(self, exc_type, exc_msg, tb_info):
-        # TODO: additional fields for SyntaxErrors
-        self.exc_type = exc_type
-        self.exc_msg = exc_msg
-        self.tb_info = tb_info
-
-    @classmethod
-    def from_exc_info(cls, exc_type, exc_value, traceback):
-        type_str = exc_type.__name__
-        type_mod = exc_type.__module__
-        if type_mod not in ("__main__", "__builtin__", "exceptions"):
-            type_str = '%s.%s' % (type_mod, type_str)
-        val_str = _some_str(exc_value)
-        tb_info = TracebackInfo.from_traceback(traceback)
-        return cls(type_str, val_str, tb_info)
-
-    @classmethod
-    def from_current(cls):
-        return cls.from_exc_info(*sys.exc_info())
-
-    def __repr__(self):
-        cn = self.__class__.__name__
-        try:
-            len_frames = len(self.tb_info.frames)
-            last_frame = ', last=%r' % (self.tb_info.frames[-1],)
-        except:
-            len_frames = 0
-            last_frame = ''
-        args = (cn, self.exc_type, self.exc_msg, len_frames, last_frame)
-        return '<%s [%s: %s] (%s frames%s)>' % args
-
-
 # TODO: dedup frames, look at __eq__ on _DeferredLine
-# TODO: StackInfo/TracebackInfo split, latter stores exc
 class TracebackInfo(object):
+
+    callpoint_type = Callpoint
+
     def __init__(self, frames):
         self.frames = frames
 
@@ -175,7 +144,7 @@ class TracebackInfo(object):
             limit = getattr(sys, 'tracebacklimit', 1000)
         n = 0
         while frame is not None and n < limit:
-            item = Callpoint.from_frame(frame)
+            item = cls.callpoint_type.from_frame(frame)
             ret.append(item)
             frame = frame.f_back
             n += 1
@@ -189,7 +158,7 @@ class TracebackInfo(object):
             limit = getattr(sys, 'tracebacklimit', 1000)
         n = 0
         while tb is not None and n < limit:
-            item = Callpoint.from_tb(tb)
+            item = cls.callpoint_type.from_tb(tb)
             ret.append(item)
             tb = tb.tb_next
             n += 1
@@ -209,22 +178,151 @@ class TracebackInfo(object):
         return iter(self.frames)
 
     def __repr__(self):
-        class_name = self.__class__.__name__
+        cn = self.__class__.__name__
 
         if self.frames:
-            frame_part = ' last={0}'.format(repr(self.frames[-1]))
+            frame_part = ' last=%r' % (self.frames[-1],)
         else:
             frame_part = ''
 
-        return ('<{class_name} frames={nframes}{frame_part}>'
-                .format(class_name=class_name,
-                        nframes=len(self),
-                        frame_part=frame_part))
+        return '<%s frames=%s%s>' % (cn, len(self.frames), frame_part)
 
     def __str__(self):
+        return self.get_formatted()
+
+    def get_formatted(self):
         ret = 'Traceback (most recent call last):\n'
         ret += ''.join([f.tb_frame_str() for f in self.frames])
         return ret
+
+
+class ExceptionInfo(object):
+
+    tb_info_type = TracebackInfo
+
+    def __init__(self, exc_type, exc_msg, tb_info):
+        # TODO: additional fields for SyntaxErrors
+        self.exc_type = exc_type
+        self.exc_msg = exc_msg
+        self.tb_info = tb_info
+
+    @classmethod
+    def from_exc_info(cls, exc_type, exc_value, traceback):
+        type_str = exc_type.__name__
+        type_mod = exc_type.__module__
+        if type_mod not in ("__main__", "__builtin__", "exceptions"):
+            type_str = '%s.%s' % (type_mod, type_str)
+        val_str = _some_str(exc_value)
+        tb_info = cls.tb_info_type.from_traceback(traceback)
+        return cls(type_str, val_str, tb_info)
+
+    @classmethod
+    def from_current(cls):
+        return cls.from_exc_info(*sys.exc_info())
+
+    def to_dict(self):
+        return {'exc_type': self.exc_type,
+                'exc_msg': self.exc_msg,
+                'exc_tb': self.tb_info.to_dict()}
+
+    def __repr__(self):
+        cn = self.__class__.__name__
+        try:
+            len_frames = len(self.tb_info.frames)
+            last_frame = ', last=%r' % (self.tb_info.frames[-1],)
+        except:
+            len_frames = 0
+            last_frame = ''
+        args = (cn, self.exc_type, self.exc_msg, len_frames, last_frame)
+        return '<%s [%s: %s] (%s frames%s)>' % args
+
+    def get_formatted(self):
+        # TODO: add SyntaxError formatting
+        tb_str = str(self.tb_info)
+        return ''.join([tb_str, '%s: %s' % (self.exc_type, self.exc_msg)])
+
+
+class ContextualCallpoint(Callpoint):
+    def __init__(self, *a, **kw):
+        self.local_reprs = kw.pop('local_reprs', {})
+        self.pre_lines = kw.pop('pre_lines', [])
+        self.post_lines = kw.pop('post_lines', [])
+        super(ContextualCallpoint, self).__init__(*a, **kw)
+
+    @classmethod
+    def from_frame(cls, frame):
+        ret = super(ContextualCallpoint, cls).from_frame(frame)
+        ret._populate_local_reprs(frame.f_locals)
+        ret._populate_context_lines()
+        return ret
+
+    @classmethod
+    def from_tb(cls, tb):
+        ret = super(ContextualCallpoint, cls).from_tb(tb)
+        ret._populate_local_reprs(tb.tb_frame.f_locals)
+        ret._populate_context_lines()
+        return ret
+
+    def _populate_context_lines(self, pivot=8):
+        DL, lineno = _DeferredLine, self.lineno
+        try:
+            module_globals = self.line.module_globals
+        except:
+            module_globals = None
+        start_line = max(0, lineno - pivot)
+        pre_lines = [DL(self.module_path, ln, module_globals)
+                     for ln in range(start_line, lineno)]
+        self.pre_lines[:] = pre_lines
+        post_lines = [DL(self.module_path, ln, module_globals)
+                      for ln in range(lineno + 1, lineno + 1 + pivot)]
+        self.post_lines[:] = post_lines
+        return
+
+    def _populate_local_reprs(self, f_locals):
+        local_reprs = self.local_reprs
+        for k, v in f_locals.items():
+            try:
+                local_reprs[k] = repr(v)
+            except:
+                surrogate = '<unprintable %s object>' % type(v).__name__
+                local_reprs[k] = surrogate
+        return
+
+    def to_dict(self):
+        ret = super(ContextualCallpoint, self).to_dict()
+        ret['locals'] = dict(self.local_reprs)
+
+        # get the line numbers and textual lines
+        # without assuming DeferredLines
+        start_line = self.lineno - len(self.pre_lines)
+        pre_lines = [{'lineno': start_line + i, 'line': str(l)}
+                     for i, l in enumerate(self.pre_lines)]
+        # trim off leading empty lines
+        for i, item in enumerate(pre_lines):
+            if item['line']:
+                break
+        if i:
+            pre_lines = pre_lines[i:]
+        ret['pre_lines'] = pre_lines
+
+        # now post_lines
+        post_lines = [{'lineno': self.lineno + i, 'line': str(l)}
+                      for i, l in enumerate(self.post_lines)]
+        _last = 0
+        for i, item in enumerate(post_lines):
+            if item['line']:
+                _last = i
+        post_lines = post_lines[:_last + 1]
+        ret['post_lines'] = post_lines
+        return ret
+
+
+class ContextualTracebackInfo(TracebackInfo):
+    callpoint_type = ContextualCallpoint
+
+
+class ContextualExceptionInfo(ExceptionInfo):
+    tb_info_type = ContextualTracebackInfo
 
 
 # TODO: clean up & reimplement -- specifically for syntax errors
@@ -451,10 +549,28 @@ NameError: name 'plarp' is not defined
     def func1():
         return func2()
     def func2():
+        x = 5
         return func3()
     def func3():
-        return Callpoint.from_current(level=2)
+        return ContextualCallpoint.from_current(level=2)
 
     callpoint = func1()
     print(repr(callpoint))
     assert 'func2' in repr(callpoint)
+
+    def func_a():
+        a = 1
+        raise Exception('func_a exception')
+    def func_b():
+        b = 2
+        return func_a()
+    def func_c():
+        c = 3
+        return func_b()
+
+    try:
+        func_c()
+    except:
+        ctx_ei = ContextualExceptionInfo.from_current()
+        print(ctx_ei.get_formatted())
+        import pdb;pdb.set_trace()
