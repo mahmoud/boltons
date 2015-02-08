@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+import itertools
+
 from compat import basestring
 
 
@@ -166,6 +168,24 @@ def chunked_iter(src, size, **kw):
             cur_chunk[lc:] = [fill_val] * (size - lc)
         yield postprocess(cur_chunk)
     return
+
+
+def windowed_iter(src, size):
+    """\
+    Returns up to `size` tuples which represent a sliding window over
+    iterable `src`.
+
+    TODO: behavior when len(src) < size
+
+    >>> list(windowed_iter(range(7), 3))
+    [(0, 1, 2), (1, 2, 3), (2, 3, 4), (3, 4, 5), (4, 5, 6)]
+    """
+    tees = itertools.tee(src, size)
+    for i, t in enumerate(tees):
+        for _ in xrange(i):
+            next(t)
+
+    return itertools.izip(*tees)
 
 
 def bucketize(src, keyfunc=None):
