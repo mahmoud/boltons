@@ -172,19 +172,25 @@ def chunked_iter(src, size, **kw):
 
 def windowed_iter(src, size):
     """\
-    Returns up to `size` tuples which represent a sliding window over
-    iterable `src`.
-
-    TODO: behavior when len(src) < size
+    Returns tuples with length `size` which represent a sliding
+    window over iterable `src`.
 
     >>> list(windowed_iter(range(7), 3))
     [(0, 1, 2), (1, 2, 3), (2, 3, 4), (3, 4, 5), (4, 5, 6)]
+
+    If the iterable is too short to make a window of length `size`,
+    then no window tuples are returned.
+
+    >>> list(windowed_iter(range(3), 5))
+    []
     """
     tees = itertools.tee(src, size)
-    for i, t in enumerate(tees):
-        for _ in xrange(i):
-            next(t)
-
+    try:
+        for i, t in enumerate(tees):
+            for _ in xrange(i):
+                next(t)
+    except StopIteration:
+        return itertools.izip([])
     return itertools.izip(*tees)
 
 
