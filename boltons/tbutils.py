@@ -112,11 +112,14 @@ class _DeferredLine(object):
     def __str__(self):
         if hasattr(self, '_line'):
             return self._line
-        linecache.checkcache(self.filename)
-        line = linecache.getline(self.filename,
-                                 self.lineno,
-                                 self.module_globals)
-        line = line.rstrip()
+        try:
+            linecache.checkcache(self.filename)
+            line = linecache.getline(self.filename,
+                                     self.lineno,
+                                     self.module_globals)
+            line = line.rstrip()
+        except KeyError:
+            line = ''
         self._line = line
         return line
 
