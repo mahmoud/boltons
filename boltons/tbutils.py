@@ -463,38 +463,43 @@ class ParsedTB(object):
         if not isinstance(tb_str, unicode):
             tb_str = tb_str.decode('utf-8')
         tb_lines = tb_str.lstrip().splitlines()
-        if tb_lines[0].strip() == 'Traceback (most recent call last):':
-            frame_lines = tb_lines[1:-1]
-            frame_re = _frame_re
-        elif len(tb_lines) > 1 and tb_lines[-2].lstrip().startswith('^'):
-            frame_lines = tb_lines[:-2]
-            frame_re = _se_frame_re
-        else:
-            raise ValueError('unrecognized traceback string format')
+
+        # first off, handle some ignored exceptions. these can be the
+        # result of exceptions raised by __del__ during garbage
+        # collection
         while tb_lines:
             cl = tb_lines[-1]
             if cl.startswith('Exception ') and cl.endswith('ignored'):
-                # handle some ignored exceptions
                 tb_lines.pop()
             else:
                 break
-        for line in reversed(tb_lines):
-            # get the bottom-most line that looks like an actual Exception
-            # repr(), (i.e., "Exception: message")
-            exc_type, sep, exc_msg = line.partition(':')
-            if sep and exc_type and len(exc_type.split()) == 1:
-                break
+
+        if tb_lines and tb_lines[0].strip() == 'Traceback (most recent call last):':
+            start_line = 1
+            frame_re = _frame_re
+        elif len(tb_lines) > 1 and tb_lines[-2].lstrip().startswith('^'):
+            start_line = 0
+            frame_re = _se_frame_re
+        else:
+            raise ValueError('unrecognized traceback string format')
 
         frames = []
-        for pair_idx in range(0, len(frame_lines), 2):
-            frame_line = frame_lines[pair_idx].strip()
+        for pair_idx in range(start_line, len(tb_lines), 2):
+            frame_line = tb_lines[pair_idx].strip()
             frame_match = frame_re.match(frame_line)
             if frame_match:
                 frame_dict = frame_match.groupdict()
             else:
-                continue
-            frame_dict['source_line'] = frame_lines[pair_idx + 1].strip()
+                break
+            frame_dict['source_line'] = tb_lines[pair_idx + 1].strip()
             frames.append(frame_dict)
+
+        exc_line_offset = start_line + len(frames) * 2
+        try:
+            exc_line = tb_lines[exc_line_offset]
+            exc_type, _, exc_msg = exc_line.partition(':')
+        except:
+            exc_type, exc_msg = '', ''
 
         return cls(exc_type, exc_msg, frames)
 
