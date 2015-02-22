@@ -22,6 +22,7 @@ misc?
 
 - disable/restore signal context manager
 - disable/restore gc context manager
+- Tracking proxy. An object that always succeeds for all operations, saving the call history.
 
 cliutils
 --------
