@@ -1,16 +1,12 @@
 """
-    boltons
-    ~~~~~~~
-
     Functionality that should be in the standard library. Like
     builtins. But Boltons.
 
     Otherwise known as "everyone's util.py," but cleaned up and
     tested.
 
-    :copyright: (c) 2013 by Mahmoud Hashemi
+    :copyright: (c) 2015 by Mahmoud Hashemi
     :license: BSD, see LICENSE for more details.
-
 """
 
 import sys
@@ -18,7 +14,7 @@ from setuptools import setup
 
 
 __author__ = 'Mahmoud Hashemi'
-__version__ = '0.4.0dev'
+__version__ = '0.4.0'
 __contact__ = 'mahmoudrhashemi@gmail.com'
 __url__ = 'https://github.com/mahmoud/boltons'
 __license__ = 'BSD'
