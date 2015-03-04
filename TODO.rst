@@ -10,7 +10,6 @@ timeutils
 ---------
 
 - parse an ISO8601 timestamp
-- super basic timezones (like the ones in the docs)
 
 strutils
 --------
@@ -21,7 +20,6 @@ misc?
 -----
 
 - disable/restore signal context manager
-- disable/restore gc context manager
 - Tracking proxy. An object that always succeeds for all operations, saving the call history.
 
 cliutils
