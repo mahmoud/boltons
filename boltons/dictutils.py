@@ -98,16 +98,19 @@ class OrderedMultiDict(dict):
         last[NEXT] = root[PREV] = cell
         cells.append(cell)
 
-    def add(self, k, v, multi=False):
+    def add(self, k, v):
         self_insert = self._insert
         values = super(OrderedMultiDict, self).setdefault(k, [])
-        if multi:
-            for subv in v:
-                self_insert(k, subv)
+        self_insert(k, v)
+        values.append(v)
+
+    def addlist(self, k, v):
+        "called addlist for consistency, but tuples and other iterables work"
+        self_insert = self._insert
+        values = super(OrderedMultiDict, self).setdefault(k, [])
+        for subv in v:
+            self_insert(k, subv)
             values.extend(v)
-        else:
-            self_insert(k, v)
-            values.append(v)
 
     def getlist(self, k):
         return super(OrderedMultiDict, self).__getitem__(k)[:]
