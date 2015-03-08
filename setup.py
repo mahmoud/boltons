@@ -14,7 +14,7 @@ from setuptools import setup
 
 
 __author__ = 'Mahmoud Hashemi'
-__version__ = '0.4.2'
+__version__ = '0.4.3dev'
 __contact__ = 'mahmoudrhashemi@gmail.com'
 __url__ = 'https://github.com/mahmoud/boltons'
 __license__ = 'BSD'
