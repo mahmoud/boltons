@@ -40,6 +40,7 @@ four moments, so generalize wisely. (And read up on robust statistics
 and scipy.stats)
 """
 
+
 class _AnalyzerProperty(object):
     def __init__(self, name, func):
         self.name = name
@@ -59,20 +60,36 @@ class _AnalyzerProperty(object):
             setattr(obj, self.internal_name, self.func(obj))
             return getattr(obj, self.internal_name)
 
+_AP = _AnalyzerProperty
+
 
 class DataAnalyzer(object):
     def __init__(self, data, default=0.0, use_copy=True):
+        # float('nan') could also be a good default
         if use_copy:
             self.data = list(data)
         else:
             self.data = data
 
         self.default = default
+        cls = self.__class__
+        self._prop_attr_names = [a for a in dir(self)
+                                 if isinstance(getattr(cls, a, None), _AP)]
+        self._pearson_precision = 0
+
+    def clear_cache(self):
+        for attr_name in self._prop_attr_names:
+            delattr(self, getattr(self.__class__, attr_name).internal_name)
 
     def _calc_mean(self):
         """
         The arithmetic mean, or "average". Sum of the values divided by
         the number of values.
+
+        >>> mean(range(20))
+        9.5
+        >>> mean(range(19) + [949])
+        56.0
         """
         return sum(self.data, 0.0) / len(self.data)
     mean = _AnalyzerProperty('mean', _calc_mean)
@@ -106,7 +123,7 @@ class DataAnalyzer(object):
         >>> variance(range(97))
         784.0
         """
-        return mean(self._get_pow_diffs(self.data, 2))
+        return mean(self._get_pow_diffs(2))
     variance = _AnalyzerProperty('variance', _calc_variance)
 
     def _calc_std_dev(self):
@@ -166,7 +183,7 @@ class DataAnalyzer(object):
         """
         data, s_dev = self.data, self.std_dev
         if len(data) > 1 and s_dev > 0:
-            return (sum(self._get_pow_diffs(data, 3)) /
+            return (sum(self._get_pow_diffs(3)) /
                     float((len(data) - 1) * (s_dev ** 3)))
         else:
             return self.default
@@ -190,11 +207,41 @@ class DataAnalyzer(object):
         """
         data, s_dev = self.data, self.std_dev
         if len(data) > 1 and s_dev > 0:
-            return (sum(self._get_pow_diffs(data, 4)) /
+            return (sum(self._get_pow_diffs(4)) /
                     float((len(data) - 1) * (s_dev ** 4)))
         else:
             return 0.0
     kurtosis = _AnalyzerProperty('kurtosis', _calc_kurtosis)
+
+    def _calc_pearson_type(self):
+        precision = self._pearson_precision
+        skewness = self.skewness
+        kurtosis = self.kurtosis
+        beta1 = skewness ** 2.0
+        beta2 = kurtosis * 1.0
+
+        # TODO: range checks?
+
+        c0 = (4 * beta2) - (3 * beta1)
+        c1 = skewness * (beta2 + 3)
+        c2 = (2 * beta2) - (3 * beta1) - 6
+
+        if round(c1, precision) == 0:
+            if round(beta2, precision) == 3:
+                return 0  # Normal
+            else:
+                if beta2 < 3:
+                    return 2  # Symmetric Beta
+                elif beta2 > 3:
+                    return 7
+        elif round(c2, precision) == 0:
+            return 3  # Gamma
+        else:
+            k = c1 ** 2 / (4 * c0 * c2)
+            if k < 0:
+                return 1  # Beta
+        raise RuntimeError('missed a spot')
+    pearson_type = _AnalyzerProperty('pearson_type', _calc_pearson_type)
 
     def trim_relative(self, trim=0.25):
         """
@@ -202,15 +249,14 @@ class DataAnalyzer(object):
         of a list of values. When sorted, this has the effect of limiting
         the effect of outliers.
 
-        >>> trim_sample(range(12), 0.25)
-        [3, 4, 5, 6, 7, 8]
+        NOTE: this operation is in-place
         """
         if trim > 0.0:
             trim = float(trim)
-            size = len(self.vals)
+            size = len(self.data)
             size_diff = int(size * trim)
-            vals = self.vals[size_diff:-size_diff]
-        return vals
+            self.data = self.data[size_diff:-size_diff]
+        return
 
     def _get_pow_diffs(self, power):
         """
@@ -220,58 +266,32 @@ class DataAnalyzer(object):
         return [(v - m) ** power for v in self.data]
 
 
+def get_conv_func(attr_name):
+    def stats_helper(data):
+        return getattr(DataAnalyzer(data, use_copy=False),
+                       attr_name)
+    return stats_helper
+
+
 for attr_name, attr in DataAnalyzer.__dict__.items():
     if isinstance(attr, _AnalyzerProperty):
-        func = lambda data: getattr(DataAnalyzer(data), attr_name)
+        func = get_conv_func(attr_name)
+        func.__doc__ = attr.func.__doc__
         globals()[attr_name] = func
+        delattr(DataAnalyzer, '_calc_' + attr_name)
 
-
-#da = DataAnalyzer(range(20))
-#print median_abs_dev([5] * 10)
-
-
-def get_pearson_type(mean, std_dev, skewness, kurtosis, precision=0):
-    beta1 = skewness ** 2.0
-    beta2 = kurtosis * 1.0
-
-    # TODO: range checks?
-
-    c0 = (4 * beta2) - (3 * beta1)
-    c1 = skewness * (beta2 + 3)
-    c2 = (2 * beta2) - (3 * beta1) - 6
-    print beta1, beta2, c0, c1, c2
-
-    if round(c1, precision) == 0:
-        if round(beta2, precision) == 3:
-            return 0  # normal
-        else:
-            if beta2 < 3:
-                return 2  # Symmetric Beta
-            elif beta2 > 3:
-                return 7
-    elif round(c2, precision) == 0:
-        return 3  # Gamma
-    else:
-        k = c1 ** 2 / (4 * c0 * c2)
-        print 'k:', k
-        if k < 0:
-            return 1  # Beta
-    raise RuntimeError('missed a spot')
-
-
-import random
-from statsutils import mean, std_dev, skewness, kurtosis
-
-
-def get_pt(dist):
-    vals = [dist() for x in xrange(10000)]
-    pt = get_pearson_type(mean(vals),
-                          std_dev(vals),
-                          skewness(vals),
-                          kurtosis(vals))
-    return pt
 
 if __name__ == '__main__':
+    da = DataAnalyzer(range(20))
+    print da.mean
+
+    import random
+
+    def get_pt(dist):
+        vals = [dist() for x in xrange(10000)]
+        pt = pearson_type(vals)
+        return pt
+
     for x in range(3):
         # pt = get_pt(dist=lambda: random.normalvariate(15, 5))  # expect 0, normal
         # pt = get_pt(dist=lambda: random.weibullvariate(2, 3))  # gets 1, beta, weibull not specifically supported
