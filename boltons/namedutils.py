@@ -8,7 +8,8 @@ The ``namedtuple`` is identical to the built-in
 ``collections.namedtuple``, with a couple of enhancements, including a
 ``__repr__`` more suitable to inheritance. The ``namedlist`` is the
 mutable counterpart to the ``namedtuple``, and is much faster and
-lighter weight than full-fledged ``object``s.
+lighter weight than full-fledged ``object``s. If you want an even
+skinnier approach, you'll probably have to look to C.
 """
 
 
