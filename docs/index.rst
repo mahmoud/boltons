@@ -21,9 +21,9 @@ Usage
 
 Boltons can be used in a couple ways.
 
-  1. Install the boltons package using ``pip`` or ``easy_install``.
-  2. Copy the whole boltons package into your project.
-  2. Copy just the ``utils.py`` module that your package needs.
+1. Install the boltons package using ``pip`` or ``easy_install``.
+2. Copy the whole boltons package into your project.
+3. Copy just the ``utils.py`` module that your package needs.
 
 The boltons package depends on no packages, making it easy for
 inclusion into a project. Furthermore, most individual modules have
