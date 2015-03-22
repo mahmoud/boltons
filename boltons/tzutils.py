@@ -1,11 +1,21 @@
 # -*- coding: utf-8 -*-
+"""\
+The Python ``datetime`` module documentation describe how to
+create a ``datetime``-compatible "tzinfo" object. It even provides a
+few examples.
+
+The following module defines those timezones and a couple other useful
+ones, UTC (aka GMT) and Local (representing the local timezone). For
+timezones beyond this, check out ``pytz``
+"""
+
 
 import time
 from datetime import tzinfo, timedelta, datetime
 
 from timeutils import total_seconds
 
-# Basic timezones cribbed from etavta Python docs. Beyond this, look
+# Basic timezones cribbed from etavta and Python docs. Beyond this, look
 # to pytz.
 
 ZERO = timedelta(0)

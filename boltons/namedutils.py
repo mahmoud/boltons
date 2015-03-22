@@ -1,4 +1,16 @@
 # -*- coding: utf-8 -*-
+"""The ``namedutils`` module defines two lightweight container types:
+``namedtuple`` and ``namedlist``. Both are subtypes of built-in
+sequence types, which are very fast and efficient. They simply add
+named attribute accessors for specific indexes within themselves.
+
+The ``namedtuple`` is identical to the built-in
+``collections.namedtuple``, with a couple of enhancements, including a
+``__repr__`` more suitable to inheritance. The ``namedlist`` is the
+mutable counterpart to the ``namedtuple``, and is much faster and
+lighter weight than full-fledged ``object``s.
+"""
+
 
 import sys as _sys
 from collections import OrderedDict
