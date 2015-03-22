@@ -1,3 +1,5 @@
+docs/_build
+
 *.py[cod]
 
 # emacs

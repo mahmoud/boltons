@@ -1,4 +1,8 @@
 # -*- coding: utf-8 -*-
+"""
+Contains basic cache types, including LRU.
+"""
+
 
 import itertools
 from collections import deque

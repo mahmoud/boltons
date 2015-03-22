@@ -1,10 +1,6 @@
 # -*- coding: utf-8 -*-
-
 """\
-statsutils
-~~~~~~~~~~
-
-Provide some really basic stats functions, such as mean/average,
+Statsutils provides basic stats functions, such as mean/average,
 median, variance, the basics. A couple more advanced measures, such as
 skewness, kurtosis, and median absolute deviation are also provided,
 but if a project needs any more than the functions below, I'd strongly
