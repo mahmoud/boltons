@@ -1,5 +1,5 @@
-listutils
-=========
+``listutils`` - ``list`` derivatives
+====================================
 
 .. automodule:: boltons.listutils
    :members:

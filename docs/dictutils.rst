@@ -1,4 +1,4 @@
-dictutils
+``dictutils`` - Mapping types (OMD)
 =========
 
 .. automodule:: boltons.dictutils

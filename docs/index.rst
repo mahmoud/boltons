@@ -38,7 +38,6 @@ Contents:
 .. toctree::
    :maxdepth: 2
 
-   strutils
    cacheutils
    debugutils
    dictutils
@@ -55,6 +54,7 @@ Contents:
    queueutils
    setutils
    statsutils
+   strutils
    tableutils
    tbutils
    timeutils

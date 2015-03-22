@@ -1,4 +1,4 @@
-namedutils
+``namedutils`` - Lightweight containers
 ==========
 
 .. automodule:: boltons.namedutils

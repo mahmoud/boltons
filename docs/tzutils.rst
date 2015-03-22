@@ -1,4 +1,4 @@
-tzutils
+``tzutils`` - Barebone timezones
 =======
 
 .. automodule:: boltons.tzutils

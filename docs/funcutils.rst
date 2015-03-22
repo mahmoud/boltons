@@ -1,5 +1,5 @@
-funcutils
-=========
+``funcutils`` - ``functools`` fixes
+===================================
 
 .. automodule:: boltons.funcutils
    :members:

@@ -1,5 +1,5 @@
-iterutils
-=========
+``iterutils`` - ``itertools`` improvements
+==========================================
 
 .. automodule:: boltons.iterutils
    :members:

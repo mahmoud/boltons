@@ -1,5 +1,5 @@
-statsutils
-==========
+``statsutils`` - Statistics fundamentals
+========================================
 
 .. automodule:: boltons.statsutils
    :members:

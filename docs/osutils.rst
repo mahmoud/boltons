@@ -1,5 +1,5 @@
-osutils
-=======
+``osutils`` - Like ``fileutils``
+===========
 
 .. automodule:: boltons.osutils
    :members:

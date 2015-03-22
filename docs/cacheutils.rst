@@ -1,4 +1,4 @@
-cacheutils
+``cacheutils`` - Caches and caching
 ==========
 
 .. automodule:: boltons.cacheutils
