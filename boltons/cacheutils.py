@@ -6,6 +6,7 @@ used) and LRI (Least-recently inserted).
 Learn more about `caching algorithms on Wikipedia
 <https://en.wikipedia.org/wiki/Cache_algorithms#Examples>`_.
 """
+__all__ = ['LRI', 'LRU']
 
 from collections import deque
 
@@ -25,12 +26,20 @@ DEFAULT_MAX_SIZE = 128
 _MISSING = object()
 
 
-__all__ = ['LRI', 'LRU']
-
-
 class LRU(dict):
     """\
-    The ``LRU`` implements
+    The ``LRU`` implements the Least-Recently Used caching strategy,
+    with ``max_size`` equal to the maximum number of items to be
+    cached, ``values`` as the initial values in the cache, and
+    ``on_miss`` set to a callable which accepts a single argument, the
+    key not present in the cache, and returns the value to be cached.
+
+    This cache is also instrumented with statistics
+    collection. ``hit_count``, ``miss_count``, and ``soft_miss_count``
+    are all integer members that can be used to introspect the
+    performance of the cache. ("Soft" misses are misses that did not
+    raise KeyError, e.g., ``LRU.get()`` or ``on_miss`` was used to
+    cache a default.
     """
     def __init__(self, max_size=DEFAULT_MAX_SIZE, values=None,
                  on_miss=None):
@@ -207,8 +216,11 @@ class LRI(dict):
     The LRI implements the basic Least Recently Inserted strategy to
     caching. One could also think of this as a SizeLimitedDefaultDict.
 
-    ``on_miss`` is a callable that accepts the missing key (as
-    opposed to on_miss which accepts no arguments.)
+    ``on_miss`` is a callable that accepts the missing key (as opposed
+    to collections.defaultdict's ``default_factory``, which accepts no
+    arguments.) Also note that the LRI is not yet instrumented with
+    statistics tracking (as the ``LRU`` is).
+
     """
     def __init__(self, max_size=DEFAULT_MAX_SIZE, values=None,
                  on_miss=None):
@@ -245,27 +257,25 @@ class LRI(dict):
         del defaultdict
 
 
-def _test_lri():
-    import string
-    bc = LRI(10, on_miss=lambda k: k.upper())
-    for char in string.letters:
-        x = bc[char]
-        assert x == char.upper()
-    assert len(bc) == 10
-
-
-def _test_lru():
-    lru = LRU(max_size=1)
-    lru['hi'] = 0
-    lru['bye'] = 1
-    lru['bye']
-    lru.get('hi')
-    print lru
-    del lru['bye']
-
-    import pdb;pdb.set_trace()
-
-
 if __name__ == '__main__':
+    def _test_lri():
+        import string
+        bc = LRI(10, on_miss=lambda k: k.upper())
+        for char in string.letters:
+            x = bc[char]
+            assert x == char.upper()
+        assert len(bc) == 10
+
+    def _test_lru():
+        lru = LRU(max_size=1)
+        lru['hi'] = 0
+        lru['bye'] = 1
+        lru['bye']
+        lru.get('hi')
+        print lru
+        del lru['bye']
+
+        import pdb;pdb.set_trace()
+
     _test_lri()
     _test_lru()
