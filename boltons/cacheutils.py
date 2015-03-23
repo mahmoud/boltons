@@ -40,6 +40,13 @@ class LRU(dict):
     performance of the cache. ("Soft" misses are misses that did not
     raise KeyError, e.g., ``LRU.get()`` or ``on_miss`` was used to
     cache a default.
+
+    Other than the size-limiting caching behavior and statistics,
+    ``LRU`` acts like its parent class, the built-in Python dict. In
+    addition to the overridden methods below, the following methods
+    inherit the default behavior: ``__len__()``, ``pop()``,
+    ``iterkeys()``, ``keys()``, ``__iter__()``.
+
     """
     def __init__(self, max_size=DEFAULT_MAX_SIZE, values=None,
                  on_miss=None):
@@ -61,7 +68,6 @@ class LRU(dict):
         if values:
             self.update(values)
 
-    # inherited methods: __len__, pop, iterkeys, keys, __iter__
     # TODO: fromkeys()?
 
     def __setitem__(self, key, value):
