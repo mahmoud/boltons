@@ -28,8 +28,10 @@ Boltons can be used in a couple ways.
 The boltons package depends on no packages, making it easy for
 inclusion into a project. Furthermore, most individual modules have
 been written to be as self-contained as possible, allowing
-cherrypicking of functionality into projects. Basically, there are no
-hard-and-fast rules when it comes to utils.
+cherrypicking of functionality into projects. Utility libraries are
+often used extensively within a project, and because they are not
+often fundamental to the architecture of the application, stability
+may take precedence over version recency.
 
 
 Third-party packages
@@ -65,7 +67,6 @@ Contents:
    listutils
    mboxutils
    namedutils
-   osutils
    queueutils
    setutils
    statsutils
