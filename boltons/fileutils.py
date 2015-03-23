@@ -1,4 +1,11 @@
 # -*- coding: utf-8 -*-
+"""\
+
+Given how often Python is used for wrangling disk contents, one
+would expect more of these to be provided.
+
+"""
+
 import os
 import re
 import stat
@@ -11,7 +18,42 @@ from shutil import copy2, copystat, Error
 VALID_PERM_CHARS = 'rwx'
 
 
+def mkdir_p(path):
+    """\
+    Creates a directory and any parent directories that may need to
+    be created along the way, without raising errors for any existing
+    directories. This function mimics the behavior of ``mkdir -p`` of
+    Linux/BSD environments, but also works on Windows.
+    """
+    try:
+        os.makedirs(path)
+    except OSError as exc:
+        if exc.errno == errno.EEXIST and os.path.isdir(path):
+            return
+        raise
+    return
+
+
 class FilePerms(object):
+    """\
+    The ``FilePerms`` type is used to represent standard POSIX filesystem permissions:
+
+    * Read
+    * Write
+    * Execute
+
+    Across three classes of user:
+
+    * Owning (u)ser
+    * Owner's (g)roup
+    * Any (o)ther user
+
+    This class assists with computing new permissions, as well as
+    working with numeric octal ``777``-style and ``rwx``-style
+    permissions. Currently it only considers the bottom 9 permission
+    bits; it does not support sticky bits or more advanced permission
+    systems.
+    """
     # TODO: consider more than the lower 9 bits
     class _FilePermProperty(object):
         def __init__(self, attribute, offset):
@@ -83,6 +125,10 @@ class FilePerms(object):
 
 
 def atomic_save(dest_path, **kwargs):
+    """\
+    A convenient interface to the ``AtomicSaver`` type. See the
+    ``AtomicSaver`` documentation for more info.
+    """
     return AtomicSaver(dest_path, **kwargs)
 
 
@@ -95,7 +141,25 @@ def _atomic_rename(path, new_path, overwrite=False):
 
 
 class AtomicSaver(object):
+    """\
+
+    Use this to get a writable file which will be moved into place as
+    long as no exceptions are raised before its close. It returns a
+    standard Python ``file`` which can still be closed explicitly and
+    is also usable as a context manager (i.e., via the ``with``
+    statement).
+    """
     def __init__(self, dest_path, **kwargs):
+        """
+            Args:
+                dest_path (str): The path where the completed file will be written
+                overwrite (bool, optional): Whether to overwrite the destination file if it exists at completion time. Defaults to True.
+                part_file (str, optional): Name of the temporary ``part_file``. Defaults to ``dest_path`` + ".part"
+                rm_part_on_exc (bool, optional): Remove ``part_file`` on exception. Defaults to True.
+                overwrite_partfile (bool, optional): Whether to overwrite the ``part_file`` should it exist at setup time. Defaults to True.
+                open_func (callable, optional): Function used to open the file. Override this if you want to use ``codecs.open`` or some other alternative. Defaults to ``open()``.
+                open_kwargs (dict, optional): Additional keyword arguments to pass to ``open_func``. Defaults to ``{}``.
+        """
         self.dest_path = dest_path
         self.overwrite = kwargs.pop('overwrite', True)
         self.overwrite_part = kwargs.pop('overwrite_partfile', True)
@@ -118,15 +182,19 @@ class AtomicSaver(object):
         self.part_file = None
 
     def setup(self):
+        """\
+        Called on context manager entry (the ``with`` statement), the
+        ``setup()`` function creates the temporary file in the same
+        directory as the destination file. It tests for a writable
+        directory with rename permissions early, as we may be writing
+        to the part file for a while (not using os.access because of
+        the potential issues of effective vs real privileges).
+        """
         if os.path.lexists(self.dest_path):
             if not self.overwrite:
                 raise OSError(errno.EEXIST,
                               'Overwrite disabled and file already exists',
                               self.dest_path)
-        # this tests for a writable directory with rename permissions
-        # early, as we may be writing to the part file for a while (not
-        # using os.access because of the potential issues of effective vs
-        # real privileges)
         _, tmp_part_path = tempfile.mkstemp(dir=self.dest_dir,
                                             text=self.text_mode)
         try:
@@ -192,16 +260,6 @@ def iter_find_files(directory, patterns, ignored=None):
                     continue
                 filename = os.path.join(root, basename)
                 yield filename
-    return
-
-
-def mkdir_p(path):
-    try:
-        os.makedirs(path)
-    except OSError as exc:
-        if exc.errno == errno.EEXIST and os.path.isdir(path):
-            return
-        raise
     return
 
 
