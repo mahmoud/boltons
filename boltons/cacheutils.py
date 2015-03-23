@@ -46,7 +46,6 @@ class LRU(dict):
     addition to the overridden methods below, the following methods
     inherit the default behavior: ``__len__()``, ``pop()``,
     ``iterkeys()``, ``keys()``, ``__iter__()``.
-
     """
     def __init__(self, max_size=DEFAULT_MAX_SIZE, values=None,
                  on_miss=None):
