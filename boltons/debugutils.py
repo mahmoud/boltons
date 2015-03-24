@@ -1,4 +1,7 @@
 # -*- coding: utf-8 -*-
+"""\
+A small set of utilities useful for debugging misbehaving applications.
+"""
 
 
 def pdb_on_signal(signalnum=None):
