@@ -1,7 +1,32 @@
 # -*- coding: utf-8 -*-
+"""\
 
-from collections import KeysView, ValuesView, ItemsView
+Python has a very powerful mapping type at its core: the ``dict``
+type. While versatile and featureful, the ``dict`` leans minimalist in
+the interest of performance and simplicity. Specifically, it does not
+retain the order of item insertion, nor does it allow for multiple
+values per key. It is a fast, unordered 1:1 mapping.
+
+The ``OrderedMultiDict`` contrasts to the built-in ``dict``, as a
+relatively maximalist, ordered 1:n subtype of ``dict``. Virtually
+every feature of ``dict`` has been retooled to be intuitive in the
+face of this added complexity. Additional methods have been added,
+such as ``collections.Counter``-like functionality.
+
+A prime advantage of the ``OrderedMultiDict`` (``OMD``) is its
+non-destructive nature. Data can be added to an OMD without being
+rearranged or overwritten. The property can allow the developer to
+work more freely with the data, as well as make more assumptions about
+where input data will end up in the output, all without any extra
+work. One great example of this is the ``OMD.inverted()`` method,
+which returns a new ``OMD`` with the values as keys and the keys as
+values. All the data and the respective order is represented in the
+inverted form, all from an operation which would be outright wrong and
+reckless with a built-in ``dict`` or ``collections.OrderedDict``.
+"""
+
 from itertools import izip
+from collections import KeysView, ValuesView, ItemsView
 
 try:
     from compat import make_sentinel
@@ -20,6 +45,10 @@ try:
 except NameError:
     profile = lambda x: x
 
+
+# TODO: remove .todict() ordered kwarg? split out into separate toordereddict?
+# TODO: add .todict() vallist kwarg? get back a dict like {k: [v1, v2]}
+# TODO: .sorted()
 
 class OrderedMultiDict(dict):
     """\
@@ -67,7 +96,6 @@ class OrderedMultiDict(dict):
     [('a', 3), ('b', 2)]
 
     Mad props to Mark Williams for all his help.
-
     """
     def __init__(self, *args, **kwargs):
         if len(args) > 1:
@@ -99,13 +127,23 @@ class OrderedMultiDict(dict):
         cells.append(cell)
 
     def add(self, k, v):
+        """\
+        Add a single value ``v`` under a key ``k``. Existing values under
+        ``k`` are preserved.
+        """
         self_insert = self._insert
         values = super(OrderedMultiDict, self).setdefault(k, [])
         self_insert(k, v)
         values.append(v)
 
     def addlist(self, k, v):
-        "called addlist for consistency, but tuples and other iterables work"
+        """\
+        Add an iterable of values underneath a specific key, preserving
+        any values already under that key.
+
+        Called ``addlist`` for consistency, but tuples and other
+        sequences and iterables work.
+        """
         self_insert = self._insert
         values = super(OrderedMultiDict, self).setdefault(k, [])
         for subv in v:
@@ -113,9 +151,15 @@ class OrderedMultiDict(dict):
             values.extend(v)
 
     def getlist(self, k):
+        """\
+        Get a list of values added under key ``k``.
+
+        The list returned is a copy and can be operated on directly.
+        """
         return super(OrderedMultiDict, self).__getitem__(k)[:]
 
     def clear(self):
+        "Empty the ``OMD``."
         super(OrderedMultiDict, self).clear()
         self._clear_ll()
 
@@ -136,6 +180,11 @@ class OrderedMultiDict(dict):
         return cls([(k, default) for k in keys])
 
     def update(self, E, **F):
+        """\
+        Just like ``dict.update()``, add items from a dictionary or
+        iterable (and/or keyword arguments), overwriting values under
+        an existing key.
+        """
         # E and F are throwback names to the dict() __doc__
         if E is self:
             return
@@ -161,7 +210,12 @@ class OrderedMultiDict(dict):
             self[k] = F[k]
         return
 
-    def update_extend(self, E, **F):  # upsert?
+    def update_extend(self, E, **F):
+        """\
+        Add items from a dictionary or iterable (and/or keyword arguments)
+        without overwriting existing items present in the
+        ``OMD``. Like ``update()`` but less destructive.
+        """
         if E is self:
             iterator = iter(E.items())
         elif isinstance(E, OrderedMultiDict):
@@ -217,9 +271,19 @@ class OrderedMultiDict(dict):
         return not (self == other)
 
     def pop(self, k, default=_MISSING):
+        """\
+        Remove all values under key ``k``, returing the most-recently
+        inserted. Raises ``KeyError`` if the key is not present and no
+        default is provided.
+        """
         return self.popall(k, default)[-1]
 
     def popall(self, k, default=_MISSING):
+        """\
+        Remove all values under key ``k``, returning them in the form of
+        a list. Raises ``KeyError`` if the key is not present and no
+        default is provided.
+        """
         if super(OrderedMultiDict, self).__contains__(k):
             self._remove_all(k)
         if default is _MISSING:
@@ -227,6 +291,15 @@ class OrderedMultiDict(dict):
         return super(OrderedMultiDict, self).pop(k, default)
 
     def poplast(self, k=_MISSING, default=_MISSING):
+        """
+        Remove and return the most-recently inserted value under the key
+        ``k``, or the most-recently inserted key if ``k`` is not
+        provided. If no values remain under ``k``, it will be removed from the
+        ``OMD``.
+
+        Raises ``KeyError`` if ``k`` is not present in the ``OMD``, or
+        the ``OMD`` is empty.
+        """
         if k is _MISSING:
             if self:
                 k = self.root[PREV][KEY]
@@ -259,6 +332,11 @@ class OrderedMultiDict(dict):
         del self._map[k]
 
     def iteritems(self, multi=False):
+        """\
+        Iterate over the ``OMD``'s items in insertion order. By default,
+        yields only the most-recently inserted value for each key. Set
+        ``multi`` to ``True`` to get all inserted items.
+        """
         root = self.root
         curr = root[NEXT]
         if multi:
@@ -270,6 +348,12 @@ class OrderedMultiDict(dict):
                 yield key, self[key]
 
     def iterkeys(self, multi=False):
+        """\
+        Iterate over the ``OMD``'s keys in insertion order. By default,
+        yields each key once, according to the most recent
+        insertion. Set ``multi`` to ``True`` to get all keys,
+        including duplicates, in insertion order.
+        """
         root = self.root
         curr = root[NEXT]
         if multi:
@@ -287,30 +371,69 @@ class OrderedMultiDict(dict):
                 curr = curr[NEXT]
 
     def itervalues(self, multi=False):
+        """\
+        Iterate over the ``OMD``'s values in insertion order. By default,
+        yields the most-recently inserted value per unique key.  Set
+        ``multi`` to ``True`` to get all values according to insertion
+        order.
+        """
+
         for k, v in self.iteritems(multi=multi):
             yield v
 
     def todict(self, ordered=False):
+        """\
+        Gets a built-in ``dict`` of the items in this ``OMD``. Keys are
+        the same as the OMD, values are the most recently inserted
+        values for each key.
+        """
         return dict([(k, self[k]) for k in self])
 
     def inverted(self):
+        """\
+        Returns a new ``OMD`` with values and keys swapped. Like a
+        reverse index or dictionary transposition. Insertion order is
+        retained and all keys and values are represented in the
+        output.
+
+        >>> omd = OMD([(0, 2), (1, 2)])
+        >>> omd.inverted().getlist(2)
+        [0, 1]
+        """
         return self.__class__((v, k) for k, v in self.iteritems())
 
     def counts(self):
-        """
-        Returns an OMD because Counter/OrderedDict may not be
-        available, and neither Counter nor dict maintain order.
+        """\
+
+        Get a mapping from key to number of values inserted under that
+        key. Allows the ``OMD`` to be used like
+        ``collections.Counter``.
+
+        Returns an ``OMD`` because ``Counter``/``OrderedDict`` may not be
+        available, and neither ``Counter`` nor ``dict`` maintain order.
         """
         super_getitem = super(OrderedMultiDict, self).__getitem__
         return self.__class__((k, len(super_getitem(k))) for k in self)
 
     def keys(self, multi=False):
+        """
+        Returns a list of ``OMD.iterkeys()``.
+        See that method's docs for more details.
+        """
         return list(self.iterkeys(multi=multi))
 
     def values(self, multi=False):
+        """
+        Returns a list of ``OMD.itervalues()``.
+        See that method's docs for more details.
+        """
         return list(self.itervalues(multi=multi))
 
     def items(self, multi=False):
+        """
+        Returns a list of ``OMD.iteritems()``.
+        See that method's docs for more details.
+        """
         return list(self.iteritems(multi=multi))
 
     def __iter__(self):
