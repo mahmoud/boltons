@@ -46,10 +46,6 @@ except NameError:
     profile = lambda x: x
 
 
-# TODO: remove .todict() ordered kwarg? split out into separate toordereddict?
-# TODO: add .todict() vallist kwarg? get back a dict like {k: [v1, v2]}
-# TODO: .sorted()
-
 class OrderedMultiDict(dict):
     """\
     A MultiDict that remembers original insertion order. A MultiDict
@@ -95,7 +91,12 @@ class OrderedMultiDict(dict):
     >>> OrderedMultiDict([('a', 1), ('b', 2), ('a', 3)]).items(multi=False)
     [('a', 3), ('b', 2)]
 
-    Mad props to Mark Williams for all his help.
+    One caveat to look out for: While calling ``dict()`` on the OMD
+    yields a sane and usable result, the values are the actual lists
+    used to store values set for a particular key. This means that
+    adding to or otherwise mutating these lists modifies the OMD.
+
+    Special thanks to Mark Williams for all his help.
     """
     def __init__(self, *args, **kwargs):
         if len(args) > 1:
@@ -381,13 +382,29 @@ class OrderedMultiDict(dict):
         for k, v in self.iteritems(multi=multi):
             yield v
 
-    def todict(self, ordered=False):
+    def todict(self, multi=False):
         """\
         Gets a built-in ``dict`` of the items in this ``OMD``. Keys are
         the same as the OMD, values are the most recently inserted
         values for each key.
+
+        Setting the ``multi`` arg to ``True`` is yields the same
+        result as calling ``dict()`` on the OMD, except that all the
+        value lists are copies that can be safely mutated.
         """
+        if multi:
+            return dict([(k, self.getlist(k)) for k in self])
         return dict([(k, self[k]) for k in self])
+
+    def sorted(self, key=None, reverse=False):
+        """\
+        Similar to the built-in ``sorted``, except this method returns
+        a new OMD sorted by the provided key function. Note that the
+        key function receives an item and thus should have a signature
+        like ``lambda k, v: v.idx``, for example.
+        """
+        cls = self.__class__
+        return cls(sorted(self.iteritems(), key=key, reverse=reverse))
 
     def inverted(self):
         """\
@@ -407,7 +424,7 @@ class OrderedMultiDict(dict):
 
         Get a mapping from key to number of values inserted under that
         key. Allows the ``OMD`` to be used like
-        ``collections.Counter``.
+        :py:class:`collections.Counter`.
 
         Returns an ``OMD`` because ``Counter``/``OrderedDict`` may not be
         available, and neither ``Counter`` nor ``dict`` maintain order.
