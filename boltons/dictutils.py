@@ -1,28 +1,36 @@
 # -*- coding: utf-8 -*-
 """\
 
-Python has a very powerful mapping type at its core: the ``dict``
-type. While versatile and featureful, the ``dict`` leans minimalist in
-the interest of performance and simplicity. Specifically, it does not
-retain the order of item insertion, nor does it allow for multiple
-values per key. It is a fast, unordered 1:1 mapping.
+Python has a very powerful mapping type at its core: the :class:`dict`
+type. While versatile and featureful, the :class:`dict` prioritizes
+simplicity and performance. As a result, it does not retain the order
+of item insertion [1]_, nor does it store multiple values per key. It
+is a fast, unordered 1:1 mapping.
 
-The ``OrderedMultiDict`` contrasts to the built-in ``dict``, as a
-relatively maximalist, ordered 1:n subtype of ``dict``. Virtually
-every feature of ``dict`` has been retooled to be intuitive in the
+The :class:`OrderedMultiDict` contrasts to the built-in :class:`dict`,
+as a relatively maximalist, ordered 1:n subtype of ``dict``. Virtually
+every feature of :class:`dict` has been retooled to be intuitive in the
 face of this added complexity. Additional methods have been added,
-such as ``collections.Counter``-like functionality.
+such as :class:`collections.Counter`-like functionality.
 
-A prime advantage of the ``OrderedMultiDict`` (``OMD``) is its
-non-destructive nature. Data can be added to an OMD without being
-rearranged or overwritten. The property can allow the developer to
-work more freely with the data, as well as make more assumptions about
-where input data will end up in the output, all without any extra
-work. One great example of this is the ``OMD.inverted()`` method,
-which returns a new ``OMD`` with the values as keys and the keys as
-values. All the data and the respective order is represented in the
-inverted form, all from an operation which would be outright wrong and
-reckless with a built-in ``dict`` or ``collections.OrderedDict``.
+A prime advantage of the OrderedMultiDict (OMD) is its non-destructive
+nature. Data can be added to an OMD without being rearranged or
+overwritten. The property can allow the developer to work more freely
+with the data, as well as make more assumptions about where input data
+will end up in the output, all without any extra work. One great
+example of this is the :meth:`OMD.inverted()` method, which returns a
+new OMD with the values as keys and the keys as values. All the
+data and the respective order is represented in the inverted form, all
+from an operation which would be outright wrong and reckless with a
+built-in :class:`dict` or :class:`collections.OrderedDict`.
+
+Also note that the OMD has been performance tuned to be suitable for
+usage as a basic unordered MultiDict, as well. Special thanks to Mark
+Williams for all his help.
+
+.. [1] As of 2015, `basic dicts on PyPy are ordered
+   <http://morepypy.blogspot.com/2015/01/faster-more-memory-efficient-and-more.html>`_.
+
 """
 
 from itertools import izip
@@ -38,7 +46,7 @@ except ImportError:
 PREV, NEXT, KEY, VALUE, SPREV, SNEXT = range(6)
 
 
-__all__ = ['MultiDict', 'OrderedMultiDict']
+__all__ = ['MultiDict', 'OMD', 'OrderedMultiDict']
 
 try:
     profile
@@ -48,20 +56,30 @@ except NameError:
 
 class OrderedMultiDict(dict):
     """\
-    A MultiDict that remembers original insertion order. A MultiDict
-    is a dictionary that can have multiple values per key, most
-    commonly useful for handling parsed query strings and inverting
-    dictionaries to create a reverse index.
+    A MultiDict is a dictionary that can have multiple values per key
+    and the OrderedMultiDict (OMD) is a MultiDict that remembers
+    original insertion order. Common use cases include:
+
+      * handling query strings parsed from URLs
+      * inverting a dictionary to create a reverse index
+      * stacking data from multiple dictionaries in a non-destructive way
+
+    The OrderedMultiDict constructor is identical to the builtin
+    :class:`dict`, and overall the API is constitutes an intuitive
+    superset of the builtin type:
 
     >>> omd = OrderedMultiDict()
     >>> omd['a'] = 1
     >>> omd['b'] = 2
     >>> omd.add('a', 3)
-    >>> omd['a']
+    >>> omd.get('a')
     3
+    >>> omd.getlist('a')
+    [1, 3]
 
     Note that unlike some other MultiDicts, this OMD gives precedence
-    to the last value added. ``omd['a']`` refers to ``3``, not ``1``.
+    to the most recent value added. ``omd['a']`` refers to ``3``, not
+    ``1``.
 
     >>> omd
     OrderedMultiDict([('a', 1), ('b', 2), ('a', 3)])
@@ -74,29 +92,28 @@ class OrderedMultiDict(dict):
     >>> omd
     OrderedMultiDict([('b', 2)])
 
-    Note that dict()-ifying the OMD results in a dict of keys to
-    _lists_ of values:
+    Note that calling :func:`dict` on an OMD results in a dict of keys
+    to *lists* of values:
 
-    >>> dict(OrderedMultiDict([('a', 1), ('b', 2), ('a', 3)]))
+    >>> omd = OrderedMultiDict([('a', 1), ('b', 2), ('a', 3)])
+    >>> dict(omd)
     {'a': [1, 3], 'b': [2]}
 
-    If you want a flat dictionary, use ``todict()``.
+    Note that modifying those lists will modify the OMD. If you want a
+    safe-to-modify or flat dictionary, use ``todict()``.
 
-    >>> OrderedMultiDict([('a', 1), ('b', 2), ('a', 3)]).todict()
+    >>> omd.todict()
     {'a': 3, 'b': 2}
+    >>> omd.todict(multi=True)
+    {'a': [1, 3], 'b': [2]}
 
-    With ``multi=False``, items appear with the keys according to
-    original/earliest insertion order, but with the most recently
-    inserted value.
+
+    With ``multi=False``, items appear with the keys in to original
+    insertion order, alongside the most-recently inserted value for
+    that key.
+
     >>> OrderedMultiDict([('a', 1), ('b', 2), ('a', 3)]).items(multi=False)
     [('a', 3), ('b', 2)]
-
-    One caveat to look out for: While calling ``dict()`` on the OMD
-    yields a sane and usable result, the values are the actual lists
-    used to store values set for a particular key. This means that
-    adding to or otherwise mutating these lists modifies the OMD.
-
-    Special thanks to Mark Williams for all his help.
     """
     def __init__(self, *args, **kwargs):
         if len(args) > 1:
@@ -151,38 +168,60 @@ class OrderedMultiDict(dict):
             self_insert(k, subv)
             values.extend(v)
 
-    def getlist(self, k):
+    def get(self, k, default=None):
         """\
-        Get a list of values added under key ``k``.
+        Return the value for key ``k`` if ``k`` is in the dictionary,
+        else ``default``. If ``default`` is not given, it defaults to
+        ``None``, so that this method never raises a ``KeyError``.
 
-        The list returned is a copy and can be operated on directly.
+        To get all values under a key, use :meth:`OMD.getlist`.
         """
-        return super(OrderedMultiDict, self).__getitem__(k)[:]
+        return super(OrderedMultiDict, self).get(k, [default])[-1]
+
+    def getlist(self, k, default=_MISSING):
+        """\
+        Get all values for key ``k`` as a list if ``k`` is in the
+        dictionary, else ``default``. The list returned is a copy and
+        can be safely mutated. If ``default`` is not given, it
+        defaults to an empty list.
+        """
+        try:
+            return super(OrderedMultiDict, self).__getitem__(k)[:]
+        except KeyError:
+            if default is _MISSING:
+                return []
+            return default
 
     def clear(self):
-        "Empty the ``OMD``."
+        "Empty the dictionary."
         super(OrderedMultiDict, self).clear()
         self._clear_ll()
 
-    def get(self, k, default=None, multi=False):
-        ret = super(OrderedMultiDict, self).get(k, [default])
-        return ret[:] if multi else ret[-1]
-
     def setdefault(self, k, default=_MISSING):
+        """\
+        If key ``k`` is in the dictionary, return its value. If not,
+        insert ``k`` with a value of ``default`` and return
+        ``default``. ``default`` defaults to None.
+        """
         if not super(OrderedMultiDict, self).__contains__(k):
             self[k] = [] if default is _MISSING else [default]
         return default
 
     def copy(self):
-        return self.__class__(self.items(multi=True))
+        "Make a shallow copy of the dictionary."
+        return self.__class__(self.iteritems(multi=True))
 
     @classmethod
     def fromkeys(cls, keys, default=None):
+        """\
+        Create a dictionary from a list of keys, with all the values
+        defaulting to `default`, or `None` if `default` is not set.
+        """
         return cls([(k, default) for k in keys])
 
     def update(self, E, **F):
         """\
-        Just like ``dict.update()``, add items from a dictionary or
+        Just like :meth:`dict.update`, add items from a dictionary or
         iterable (and/or keyword arguments), overwriting values under
         an existing key.
         """
@@ -213,9 +252,10 @@ class OrderedMultiDict(dict):
 
     def update_extend(self, E, **F):
         """\
-        Add items from a dictionary or iterable (and/or keyword arguments)
-        without overwriting existing items present in the
-        ``OMD``. Like ``update()`` but less destructive.
+        Add items from a dictionary or iterable (and/or keyword
+        arguments) without overwriting existing items present in the
+        ``OMD``. Like :meth:`update` but adds to existing keys instead
+        of overwriting them.
         """
         if E is self:
             iterator = iter(E.items())
@@ -292,14 +332,14 @@ class OrderedMultiDict(dict):
         return super(OrderedMultiDict, self).pop(k, default)
 
     def poplast(self, k=_MISSING, default=_MISSING):
-        """
+        """\
         Remove and return the most-recently inserted value under the key
         ``k``, or the most-recently inserted key if ``k`` is not
         provided. If no values remain under ``k``, it will be removed from the
         ``OMD``.
 
-        Raises ``KeyError`` if ``k`` is not present in the ``OMD``, or
-        the ``OMD`` is empty.
+        Raises :exc:`KeyError` if ``k`` is not present in the dictionary, or
+        the dictionary is empty.
         """
         if k is _MISSING:
             if self:
@@ -378,18 +418,17 @@ class OrderedMultiDict(dict):
         ``multi`` to ``True`` to get all values according to insertion
         order.
         """
-
         for k, v in self.iteritems(multi=multi):
             yield v
 
     def todict(self, multi=False):
         """\
-        Gets a built-in ``dict`` of the items in this ``OMD``. Keys are
-        the same as the OMD, values are the most recently inserted
+        Gets a basic :class:`dict` of the items in this dictionary. Keys
+        are the same as the OMD, values are the most recently inserted
         values for each key.
 
         Setting the ``multi`` arg to ``True`` is yields the same
-        result as calling ``dict()`` on the OMD, except that all the
+        result as calling :class:`dict` on the OMD, except that all the
         value lists are copies that can be safely mutated.
         """
         if multi:
@@ -402,53 +441,59 @@ class OrderedMultiDict(dict):
         a new OMD sorted by the provided key function. Note that the
         key function receives an item and thus should have a signature
         like ``lambda k, v: v.idx``, for example.
+        >>> omd = OrderedMultiDict(zip(range(3), range(3)))
+        >>> omd.sorted(reverse=True)
+        OrderedMultiDict([(2, 2), (1, 1), (0, 0)])
         """
         cls = self.__class__
         return cls(sorted(self.iteritems(), key=key, reverse=reverse))
 
     def inverted(self):
         """\
-        Returns a new ``OMD`` with values and keys swapped. Like a
-        reverse index or dictionary transposition. Insertion order is
-        retained and all keys and values are represented in the
+        Returns a new OrderedMultiDict with values and keys swapped. Like
+        a reverse index or dictionary transposition. Insertion order
+        is retained and all keys and values are represented in the
         output.
 
         >>> omd = OMD([(0, 2), (1, 2)])
         >>> omd.inverted().getlist(2)
         [0, 1]
+
+        Inverting twice yields a copy of the original:
+
+        >>> omd.inverted().inverted()
+        OrderedMultiDict([(0, 2), (1, 2)])
         """
-        return self.__class__((v, k) for k, v in self.iteritems())
+        return self.__class__((v, k) for k, v in self.iteritems(multi=True))
 
     def counts(self):
         """\
-
-        Get a mapping from key to number of values inserted under that
-        key. Allows the ``OMD`` to be used like
+        Returns an ``OMD`` from key to number of values inserted under
+        that key. Allows the ``OMD`` to be used like
         :py:class:`collections.Counter`.
-
-        Returns an ``OMD`` because ``Counter``/``OrderedDict`` may not be
-        available, and neither ``Counter`` nor ``dict`` maintain order.
         """
+        # Returns an OMD because Counter/OrderedDict may not be
+        # available, and neither Counter nor dict maintain order.
         super_getitem = super(OrderedMultiDict, self).__getitem__
         return self.__class__((k, len(super_getitem(k))) for k in self)
 
     def keys(self, multi=False):
-        """
-        Returns a list of ``OMD.iterkeys()``.
+        """\
+        Returns a list containing the output of :meth:`iterkeys`.
         See that method's docs for more details.
         """
         return list(self.iterkeys(multi=multi))
 
     def values(self, multi=False):
         """
-        Returns a list of ``OMD.itervalues()``.
+        Returns a list containing the output of :meth:`itervalues`.
         See that method's docs for more details.
         """
         return list(self.itervalues(multi=multi))
 
     def items(self, multi=False):
         """
-        Returns a list of ``OMD.iteritems()``.
+        Returns a list containing the output of :meth:`iteritems`.
         See that method's docs for more details.
         """
         return list(self.iteritems(multi=multi))
@@ -488,13 +533,15 @@ class OrderedMultiDict(dict):
         return ItemsView(self)
 
 
+# A couple of convenient aliases
+OMD = OrderedMultiDict
 MultiDict = OrderedMultiDict
 
 
 class FastIterOrderedMultiDict(OrderedMultiDict):
     """\ An OrderedMultiDict backed by a skip list.  Iteration over keys
     is faster and uses constant memory but adding duplicate key-value
-    pairs is slower.
+    pairs is slower. Brainchild of Mark Williams.
     """
     def _clear_ll(self):
         # TODO: always reset objects? (i.e., no else block below)
@@ -591,198 +638,183 @@ class FastIterOrderedMultiDict(OrderedMultiDict):
 
 # Tests follow
 
-OMD = OrderedMultiDict
+if __name__ == '__main__':
+    _ITEMSETS = [[],
+                 [('a', 1), ('b', 2), ('c', 3)],
+                 [('A', 'One'), ('A', 'One'), ('A', 'One')],
+                 [('Z', -1), ('Y', -2), ('Y', -2)],
+                 [('a', 1), ('b', 2), ('a', 3), ('c', 4)]]
 
-_ITEMSETS = [[],
-             [('a', 1), ('b', 2), ('c', 3)],
-             [('A', 'One'), ('A', 'One'), ('A', 'One')],
-             [('Z', -1), ('Y', -2), ('Y', -2)],
-             [('a', 1), ('b', 2), ('a', 3), ('c', 4)]]
+    def test_dict_init():
+        d = dict(_ITEMSETS[1])
+        omd = OMD(d)
 
+        assert omd['a'] == 1
+        assert omd['b'] == 2
+        assert omd['c'] == 3
 
-def test_dict_init():
-    d = dict(_ITEMSETS[1])
-    omd = OMD(d)
+        assert len(omd) == 3
+        assert omd.getlist('a') == [1]
+        assert omd == d
 
-    assert omd['a'] == 1
-    assert omd['b'] == 2
-    assert omd['c'] == 3
+    def test_todict():
+        omd = OMD(_ITEMSETS[2])
+        assert len(omd) == 1
+        assert omd['A'] == 'One'
 
-    assert len(omd) == 3
-    assert omd.getlist('a') == [1]
-    assert omd == d
-
-
-def test_todict():
-    omd = OMD(_ITEMSETS[2])
-    assert len(omd) == 1
-    assert omd['A'] == 'One'
-
-    d = dict(omd)
-    assert len(d) == 1
-    assert d['A'] == ['One', 'One', 'One']
-
-    flat = omd.todict()
-    assert flat['A'] == 'One'
-
-    for itemset in _ITEMSETS:
-        omd = OMD(itemset)
-        d = dict(itemset)
+        d = dict(omd)
+        assert len(d) == 1
+        assert d['A'] == ['One', 'One', 'One']
 
         flat = omd.todict()
-        assert flat == d
+        assert flat['A'] == 'One'
 
+        for itemset in _ITEMSETS:
+            omd = OMD(itemset)
+            d = dict(itemset)
 
-def test_eq():
-    omd = OMD(_ITEMSETS[3])
-    assert omd == omd
-    assert not (omd != omd)
+            flat = omd.todict()
+            assert flat == d
 
-    omd2 = OMD(_ITEMSETS[3])
-    assert omd == omd2
-    assert omd2 == omd
-    assert not (omd != omd2)
+    def test_eq():
+        omd = OMD(_ITEMSETS[3])
+        assert omd == omd
+        assert not (omd != omd)
 
-    d = dict(_ITEMSETS[3])
-    assert d == omd
-    omd3 = OMD(d)
-    assert omd != omd3
+        omd2 = OMD(_ITEMSETS[3])
+        assert omd == omd2
+        assert omd2 == omd
+        assert not (omd != omd2)
 
+        d = dict(_ITEMSETS[3])
+        assert d == omd
+        omd3 = OMD(d)
+        assert omd != omd3
 
-def test_copy():
-    for itemset in _ITEMSETS:
-        omd = OMD(itemset)
-        omd_c = omd.copy()
-        assert omd == omd_c
-        if omd_c:
-            omd_c.pop(itemset[0][0])
-            assert omd != omd_c
-    return
+    def test_copy():
+        for itemset in _ITEMSETS:
+            omd = OMD(itemset)
+            omd_c = omd.copy()
+            assert omd == omd_c
+            if omd_c:
+                omd_c.pop(itemset[0][0])
+                assert omd != omd_c
+        return
 
+    def test_clear():
+        for itemset in _ITEMSETS:
+            omd = OMD(itemset)
+            omd.clear()
+            assert len(omd) == 0
+            assert not omd
+            omd.clear()
+            assert not omd
+            omd['a'] = 22
+            assert omd
+            omd.clear()
+            assert not omd
 
-def test_clear():
-    for itemset in _ITEMSETS:
-        omd = OMD(itemset)
-        omd.clear()
-        assert len(omd) == 0
-        assert not omd
-        omd.clear()
-        assert not omd
-        omd['a'] = 22
-        assert omd
-        omd.clear()
-        assert not omd
+    def test_types():
+        import collections
+        omd = OMD()
+        assert isinstance(omd, dict)
+        assert isinstance(omd, collections.MutableMapping)
 
+    def test_multi_correctness():
+        size = 100
+        redun = 5
 
-def test_types():
-    import collections
-    omd = OMD()
-    assert isinstance(omd, dict)
-    assert isinstance(omd, collections.MutableMapping)
+        _rng = range(size)
+        _rng_redun = range(size/redun) * redun
+        _pairs = zip(_rng_redun, _rng)
 
-
-def test_multi_correctness():
-    size = 100
-    redun = 5
-
-    _rng = range(size)
-    _rng_redun = range(size/redun) * redun
-    _pairs = zip(_rng_redun, _rng)
-
-    omd = OMD(_pairs)
-    for multi in (True, False):
-        vals = [x[1] for x in omd.iteritems(multi=multi)]
-        strictly_ascending = all([x < y for x, y in zip(vals, vals[1:])])
-        assert strictly_ascending
-    return
-
-
-def test_kv_consistency():
-    for itemset in _ITEMSETS:
-        omd = OMD(itemset)
-
+        omd = OMD(_pairs)
         for multi in (True, False):
-            items = omd.items(multi=multi)
-            keys = omd.keys(multi=multi)
-            values = omd.values(multi=multi)
+            vals = [x[1] for x in omd.iteritems(multi=multi)]
+            strictly_ascending = all([x < y for x, y in zip(vals, vals[1:])])
+            assert strictly_ascending
+        return
 
-            assert keys == [x[0] for x in items]
-            assert values == [x[1] for x in items]
-    return
+    def test_kv_consistency():
+        for itemset in _ITEMSETS:
+            omd = OMD(itemset)
 
+            for multi in (True, False):
+                items = omd.items(multi=multi)
+                keys = omd.keys(multi=multi)
+                values = omd.values(multi=multi)
 
-def test_update_basic():
-    omd = OMD(_ITEMSETS[1])
-    omd2 = OMD({'a': 10})
-    omd.update(omd2)
-    assert omd['a'] == 10
-    assert omd.getlist('a') == [10]
+                assert keys == [x[0] for x in items]
+                assert values == [x[1] for x in items]
+        return
 
-    omd2_c = omd2.copy()
-    omd2_c.pop('a')
-    assert omd2 != omd2_c
+    def test_update_basic():
+        omd = OMD(_ITEMSETS[1])
+        omd2 = OMD({'a': 10})
+        omd.update(omd2)
+        assert omd['a'] == 10
+        assert omd.getlist('a') == [10]
 
+        omd2_c = omd2.copy()
+        omd2_c.pop('a')
+        assert omd2 != omd2_c
 
-def test_update():
-    for first, second in zip(_ITEMSETS, _ITEMSETS[1:]):
-        omd1 = OMD(first)
-        omd2 = OMD(second)
-        ref1 = dict(first)
-        ref2 = dict(second)
+    def test_update():
+        for first, second in zip(_ITEMSETS, _ITEMSETS[1:]):
+            omd1 = OMD(first)
+            omd2 = OMD(second)
+            ref1 = dict(first)
+            ref2 = dict(second)
 
-        omd1.update(omd2)
-        ref1.update(ref2)
-        assert omd1.todict() == ref1
+            omd1.update(omd2)
+            ref1.update(ref2)
+            assert omd1.todict() == ref1
 
-        omd1_repr = repr(omd1)
-        omd1.update(omd1)
-        assert omd1_repr == repr(omd1)
+            omd1_repr = repr(omd1)
+            omd1.update(omd1)
+            assert omd1_repr == repr(omd1)
 
+    def test_update_extend():
+        for first, second in zip(_ITEMSETS, _ITEMSETS[1:] + [[]]):
+            omd1 = OMD(first)
+            omd2 = OMD(second)
+            ref = dict(first)
+            orig_keys = set(omd1)
 
-def test_update_extend():
-    for first, second in zip(_ITEMSETS, _ITEMSETS[1:] + [[]]):
-        omd1 = OMD(first)
-        omd2 = OMD(second)
-        ref = dict(first)
-        orig_keys = set(omd1)
+            ref.update(second)
+            omd1.update_extend(omd2)
+            for k in omd2:
+                assert len(omd1.getlist(k)) >= len(omd2.getlist(k))
 
-        ref.update(second)
-        omd1.update_extend(omd2)
-        for k in omd2:
-            assert len(omd1.getlist(k)) >= len(omd2.getlist(k))
+            assert omd1.todict() == ref
+            assert orig_keys <= set(omd1)
 
-        assert omd1.todict() == ref
-        assert orig_keys <= set(omd1)
+    def test_invert():
+        for items in _ITEMSETS:
+            omd = OMD(items)
+            iomd = omd.inverted()
+            assert len(omd) == len(iomd)
+            assert len(omd.items()) == len(iomd.items())
 
+            for val in omd.values():
+                assert val in iomd
 
-def test_invert():
-    for items in _ITEMSETS:
-        omd = OMD(items)
-        iomd = omd.inverted()
-        assert len(omd) == len(iomd)
-        assert len(omd.items()) == len(iomd.items())
+    def test_poplast():
+        for items in _ITEMSETS[1:]:
+            omd = OMD(items)
+            assert omd.poplast() == items[-1][-1]
 
-        for val in omd.values():
-            assert val in iomd
+    def test_reversed():
+        from collections import OrderedDict
+        for items in _ITEMSETS:
+            omd = OMD(items)
+            od = OrderedDict(items)
+            for ik, ok in zip(reversed(od), reversed(omd)):
+                assert ik == ok
 
-
-def test_poplast():
-    for items in _ITEMSETS[1:]:
-        omd = OMD(items)
-        assert omd.poplast() == items[-1][-1]
-
-
-def test_reversed():
-    from collections import OrderedDict
-    for items in _ITEMSETS:
-        omd = OMD(items)
-        od = OrderedDict(items)
-        for ik, ok in zip(reversed(od), reversed(omd)):
-            assert ik == ok
-
-    r100 = range(100)
-    omd = OMD(zip(r100, r100))
-    for i in r100:
-        omd.add(i, i)
-    r100.reverse()
-    assert list(reversed(omd)) == r100
+        r100 = range(100)
+        omd = OMD(zip(r100, r100))
+        for i in r100:
+            omd.add(i, i)
+        r100.reverse()
+        assert list(reversed(omd)) == r100
