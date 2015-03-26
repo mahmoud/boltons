@@ -521,15 +521,15 @@ class OrderedMultiDict(dict):
         return '%s([%s])' % (cn, kvs)
 
     def viewkeys(self):
-        "OMD.viewkeys() -> a set-like object providing a view on OMD's keys"
+        "OMD.viewkeys() -> a set-like object providing a :term:`view` on OMD's keys"
         return KeysView(self)
 
     def viewvalues(self):
-        "OMD.viewvalues() -> an object providing a view on OMD's values"
+        "OMD.viewvalues() -> an object providing a :term:`view` on OMD's values"
         return ValuesView(self)
 
     def viewitems(self):
-        "OMD.viewitems() -> a set-like object providing a view on OMD's items"
+        "OMD.viewitems() -> a set-like object providing a :term:`view` on OMD's items"
         return ItemsView(self)
 
 
