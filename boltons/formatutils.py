@@ -155,6 +155,51 @@ class BaseFormatField(object):
         return self.fstr
 
 
+_UNSET = object()
+
+
+class DeferredValue(object):
+    def __init__(self, func, cache_value=True):
+        self.func = func
+        self.cache_value = True
+        self._value = _UNSET
+
+    def get_value(self):
+        if self._value is _UNSET or not self.cache_value:
+            value = self.func()
+        if self.cache_value:
+            self._value = value
+        return value
+
+    def __int__(self):
+        return int(self.get_value())
+
+    def __float__(self):
+        return float(self.get_value())
+
+    def __str__(self):
+        return str(self.get_value())
+
+    def __unicode__(self):
+        return unicode(self.get_value())
+
+    def __repr__(self):
+        return repr(self.get_value())
+
+    def __format__(self, fmt):
+        value = self.get_value()
+
+        pt = fmt[-1:]  # presentation type
+        type_conv = _TYPE_MAP.get(pt, str)
+
+        try:
+            return value.__format__(fmt)
+        except (ValueError, TypeError):
+            # TODO: this may be overkill
+            return type_conv(value).__format__(fmt)
+
+
+
 # tests follow
 
 PFAT = namedtuple("PositionalFormatArgTest", "fstr arg_vals res")
