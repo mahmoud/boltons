@@ -1,4 +1,13 @@
 # -*- coding: utf-8 -*-
+"""\
+New-style string formatting (i.e., bracket-style/{}-style) brought a
+lot of power and features over old-style (%-style) string formatting,
+but it is far from without its own faults. Besides being more verbose
+and substantially slower, it is lacking a lot of useful
+instrumentation. The `formatutils` module provides useful format
+string introspection and manipulation functions.
+"""
+
 
 import re
 from string import Formatter
@@ -11,6 +20,11 @@ _pos_farg_re = re.compile('({{)|'         # escaped open-brace
 
 
 def construct_format_field_str(fname, fspec, conv):
+    """
+    Constructs a format field string from the field name, spec, and
+    conversion character (``fname``, ``fspec``, ``conv``). See Python
+    String Formatting for more info.
+    """
     if fname is None:
         return ''
     ret = '{' + fname
@@ -23,6 +37,10 @@ def construct_format_field_str(fname, fspec, conv):
 
 
 def split_format_str(fstr):
+    """\
+    Does very basic spliting of a format string, returns a list of
+    strings. For full tokenization, see :func:`tokenize_format_str`.
+    """
     ret = []
     for lit, fname, fspec, conv in fstr._formatter_parser():
         if fname is None:
@@ -34,6 +52,13 @@ def split_format_str(fstr):
 
 
 def infer_positional_format_args(fstr):
+    """\
+    Takes format strings with anonymous positional arguments, (e.g.,
+    "{}" and {:d}), and converts them into numbered ones for explicitness and
+    compatibility with 2.6.
+
+    Returns a string with the inferred positional arguments.
+    """
     # TODO: memoize
     ret, max_anon = '', 0
     # look for {: or {! or {. or {[ or {}
@@ -60,6 +85,15 @@ _TYPE_MAP['s'] = str
 
 
 def get_format_args(fstr):
+    """
+    Turn a format string into two lists of arguments referenced by the
+    format string. One is positional arguments, and the other is named
+    arguments. Each element of the list includes the name and the
+    nominal type of the field.
+
+    >>> get_format_args("{noun} is {1:d} years old{punct}")
+    ([(1, <type 'int'>)], [('noun', <type 'str'>), ('punct', <type 'str'>)])
+    """
     # TODO: memoize
     formatter = Formatter()
     fargs, fkwargs, _dedup = [], [], set()
@@ -93,6 +127,13 @@ def get_format_args(fstr):
 
 
 def tokenize_format_str(fstr, resolve_pos=True):
+    """\
+    Takes a format string, turns it into a list of alternating string
+    literals and :class:`BaseFormatField` tokens. By default, also
+    infers anonymous positional references into explict, numbered
+    positional references. To disable this behavior set `resolve_pos`
+    to `False`.
+    """
     ret = []
     if resolve_pos:
         fstr = infer_positional_format_args(fstr)
@@ -107,6 +148,15 @@ def tokenize_format_str(fstr, resolve_pos=True):
 
 
 class BaseFormatField(object):
+    """\
+    A class representing a reference to an argument inside of a
+    new-style format string. For instance, in "{greeting}, world!",
+    there is a field called "greeting".
+
+    These fields can have a lot of options applied to them. See the
+    Python docs on Format String Syntax for the full details:
+    https://docs.python.org/2/library/string.html#formatstrings
+    """
     def __init__(self, fname, fspec='', conv=None):
         self.set_fname(fname)
         self.set_fspec(fspec)
@@ -159,6 +209,25 @@ _UNSET = object()
 
 
 class DeferredValue(object):
+    """DeferredValue is a wrapper type, used to defer computing values
+    which would otherwise be expensive to stringify and format. This
+    is most valuable in areas like logging, where one would not want
+    to waste time formatting a value for a log message which will
+    subsequently be filtered because the message's log level was DEBUG
+    and the logger was set to only emit CRITICAL messages.
+
+    The DeferredValue is initialized with a callable that takes no
+    arguments and returns the value, which can be of any type. By
+    default DeferredValue only calls that callable once, and future
+    references will get a cached value. This behavior can be disabled
+    by setting `cache_value` to `False`.
+
+    >>> import sys
+    >>> dv = DeferredValue(lambda: len(sys._current_frames()))
+    >>> output = "works great in all {0} threads!".format(dv)
+
+    PROTIP: from formatutils import DeferredValue as DV  # keeps lines shorter
+    """
     def __init__(self, func, cache_value=True):
         self.func = func
         self.cache_value = True
@@ -199,62 +268,56 @@ class DeferredValue(object):
             return type_conv(value).__format__(fmt)
 
 
-
 # tests follow
 
-PFAT = namedtuple("PositionalFormatArgTest", "fstr arg_vals res")
-
-
-_PFATS = [PFAT('{} {} {}', ('hi', 'hello', 'bye'), "hi hello bye"),
-          PFAT('{:d} {}', (1, 2), "1 2"),
-          PFAT('{!s} {!r}', ('str', 'repr'), "str 'repr'"),
-          PFAT('{[hi]}, {.__name__!r}', ({'hi': 'hi'}, re), "hi, 're'"),
-          PFAT('{{joek}} ({} {})', ('so', 'funny'), "{joek} (so funny)")]
-
-
-def test_pos_infer():
-    for i, (tmpl, args, res) in enumerate(_PFATS):
-        converted = infer_positional_format_args(tmpl)
-        assert converted.format(*args) == res
-
-
-_TEST_TMPLS = ["example 1: {hello}",
-               "example 2: {hello:*10}",
-               "example 3: {hello:*{width}}",
-               "example 4: {hello!r:{fchar}{width}}, {width}, yes",
-               "example 5: {0}, {1:d}, {2:f}, {1}",
-               "example 6: {}, {}, {}, {1}"]
-
-
-def test_get_fstr_args():
-    results = []
-    for t in _TEST_TMPLS:
-        inferred_t = infer_positional_format_args(t)
-        res = get_format_args(inferred_t)
-        #print res
-        results.append(res)
-    return results
-
-
-def test_split_fstr():
-    results = []
-    for t in _TEST_TMPLS:
-        res = split_format_str(t)
-        #print res
-        results.append(res)
-    return results
-
-
-def test_tokenize_format_str():
-    results = []
-    for t in _TEST_TMPLS:
-        res = tokenize_format_str(t)
-        print ''.join([str(r) for r in res])
-        results.append(res)
-    return results
-
-
 if __name__ == '__main__':
+
+    PFAT = namedtuple("PositionalFormatArgTest", "fstr arg_vals res")
+
+    _PFATS = [PFAT('{} {} {}', ('hi', 'hello', 'bye'), "hi hello bye"),
+              PFAT('{:d} {}', (1, 2), "1 2"),
+              PFAT('{!s} {!r}', ('str', 'repr'), "str 'repr'"),
+              PFAT('{[hi]}, {.__name__!r}', ({'hi': 'hi'}, re), "hi, 're'"),
+              PFAT('{{joek}} ({} {})', ('so', 'funny'), "{joek} (so funny)")]
+
+    def test_pos_infer():
+        for i, (tmpl, args, res) in enumerate(_PFATS):
+            converted = infer_positional_format_args(tmpl)
+            assert converted.format(*args) == res
+
+
+    _TEST_TMPLS = ["example 1: {hello}",
+                   "example 2: {hello:*10}",
+                   "example 3: {hello:*{width}}",
+                   "example 4: {hello!r:{fchar}{width}}, {width}, yes",
+                   "example 5: {0}, {1:d}, {2:f}, {1}",
+                   "example 6: {}, {}, {}, {1}"]
+
+    def test_get_fstr_args():
+        results = []
+        for t in _TEST_TMPLS:
+            inferred_t = infer_positional_format_args(t)
+            res = get_format_args(inferred_t)
+            #print res
+            results.append(res)
+        return results
+
+    def test_split_fstr():
+        results = []
+        for t in _TEST_TMPLS:
+            res = split_format_str(t)
+            #print res
+            results.append(res)
+        return results
+
+    def test_tokenize_format_str():
+        results = []
+        for t in _TEST_TMPLS:
+            res = tokenize_format_str(t)
+            print ''.join([str(r) for r in res])
+            results.append(res)
+        return results
+
     test_tokenize_format_str()
     test_split_fstr()
     test_pos_infer()
