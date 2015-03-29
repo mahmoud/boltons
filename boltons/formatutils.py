@@ -150,7 +150,7 @@ def tokenize_format_str(fstr, resolve_pos=True):
 class BaseFormatField(object):
     """\
     A class representing a reference to an argument inside of a
-    new-style format string. For instance, in "{greeting}, world!",
+    new-style format string. For instance, in `"{greeting}, world!"`,
     there is a field called "greeting".
 
     These fields can have a lot of options applied to them. See the
