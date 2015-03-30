@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 """\
-
 :mod:`itertools` is full of great examples of Python generator
 usage. However, there are still some critical gaps. ``iterutils``
 fills many of those gaps with featureful, tested, and Pythonic
