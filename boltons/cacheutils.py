@@ -21,9 +21,15 @@ except:
         def __exit__(self, exctype, excinst, exctb):
             pass
 
+try:
+    from compat import make_sentinel
+    _MISSING = make_sentinel(var_name='_MISSING')
+except ImportError:
+    _MISSING = object()
+
+
 PREV, NEXT, KEY, VALUE = range(4)   # names for the link fields
 DEFAULT_MAX_SIZE = 128
-_MISSING = object()
 
 
 class LRU(dict):
