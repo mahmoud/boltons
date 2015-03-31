@@ -38,6 +38,8 @@ extensions = [
     'sphinx.ext.napoleon',
 ]
 
+needs_sphinx = '1.3'
+
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
 
