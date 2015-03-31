@@ -5,45 +5,13 @@ import types
 from itertools import islice
 from collections import Sequence, Mapping, MutableSequence
 
-
-_MISSING = object()
+try:
+    from compat import make_sentinel
+    _MISSING = make_sentinel(var_name='_MISSING')
+except ImportError:
+    _MISSING = object()
 
 """
-This Table class is meant to be simple, low-overhead, and extensible. Its
-most common use would be for translation between in-memory data
-structures and serialization formats, such as HTML and console-ready text.
-
-As such, it stores data in list-of-lists format, and _does not_ copy
-lists passed in. It also reserves the right to modify those lists in a
-"filling" process, whereby short lists are extended to the width of
-the table (usually determined by number of headers). This greatly
-reduces overhead and processing/validation that would have to occur
-otherwise.
-
-General description of headers behavior:
-
-Headers describe the columns, but are not part of the data, however,
-if the `headers` argument is omitted, Table tries to infer header
-names from the data. It is possible to have a table with no headers,
-just pass in `headers=None`.
-
-Supported inputs:
-
-* list of lists
-* dict (list/single)
-* object (list/single)
-* namedtuple (list/single)
-* TODO: sqlite return value
-* TODO: json
-
-Supported outputs:
-
-* HTML
-* Pretty text (also usable as GF Markdown)
-* TODO: CSV
-* TODO: json
-* TODO: json lines
-
 Some idle thoughts:
 
 * shift around column order without rearranging data
@@ -187,6 +155,43 @@ class NamedTupleInputType(InputType):
 
 
 class Table(object):
+    """
+    This Table class is meant to be simple, low-overhead, and extensible. Its
+    most common use would be for translation between in-memory data
+    structures and serialization formats, such as HTML and console-ready text.
+
+    As such, it stores data in list-of-lists format, and _does not_ copy
+    lists passed in. It also reserves the right to modify those lists in a
+    "filling" process, whereby short lists are extended to the width of
+    the table (usually determined by number of headers). This greatly
+    reduces overhead and processing/validation that would have to occur
+    otherwise.
+
+    General description of headers behavior:
+
+    Headers describe the columns, but are not part of the data, however,
+    if the `headers` argument is omitted, Table tries to infer header
+    names from the data. It is possible to have a table with no headers,
+    just pass in `headers=None`.
+
+    Supported inputs:
+
+    * list of lists
+    * dict (list/single)
+    * object (list/single)
+    * namedtuple (list/single)
+    * TODO: sqlite return value
+    * TODO: json
+
+    Supported outputs:
+
+    * HTML
+    * Pretty text (also usable as GF Markdown)
+    * TODO: CSV
+    * TODO: json
+    * TODO: json lines
+    """
+
     # order definitely matters here
     _input_types = [DictInputType(), ListInputType(),
                     NamedTupleInputType(), TupleInputType(),
@@ -195,8 +200,8 @@ class Table(object):
     _html_tr, _html_tr_close = '<tr>', '</tr>'
     _html_th, _html_th_close = '<th>', '</th>'
     _html_td, _html_td_close = '<td>', '</td>'
-    #_html_thead, _html_thead_close = '<thead>', '</thead>'
-    #_html_tfoot, _html_tfoot_close = '<tfoot>', '</tfoot>'
+    # _html_thead, _html_thead_close = '<thead>', '</thead>'
+    # _html_tfoot, _html_tfoot_close = '<tfoot>', '</tfoot>'
     _html_table_tag, _html_table_tag_close = '<table>', '</table>'
 
     def __init__(self, data=None, headers=_MISSING):
