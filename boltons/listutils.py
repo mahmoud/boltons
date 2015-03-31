@@ -1,8 +1,17 @@
 # -*- coding: utf-8 -*-
+"""Python's builtin :class:`list` is a very fast and efficient
+sequence type, but it could be better for certain access patterns,
+such as non-sequential insertion into a large lists.. ``listutils``
+provides a pure-Python solution to this problem.
 
-from itertools import chain, islice
+For utilities for working with iterables and lists, check out
+:mod:`iterutils`. For the a ``list`` version of
+:class:`collections.namedtuple`, check out :mod:`namedutils`.
+"""
+
 import operator
 from math import log as math_log
+from itertools import chain, islice
 
 try:
     from compat import make_sentinel
@@ -10,8 +19,8 @@ try:
 except ImportError:
     _MISSING = object()
 
-
-__all__ = ['BList']
+# TODO: expose splaylist?
+__all__ = ['BList', 'BarrelList']
 
 
 # TODO: keep track of list lengths and bisect to the right list for
@@ -19,16 +28,26 @@ __all__ = ['BList']
 
 class BarrelList(list):
     """\
-    A list-like container backed by many lists, to provide better
-    scaling and random insertion/deletion characteristics. If an
-    application requirements call for something more performant,
-    consider the blist module available on PyPI.
+    A list-like container backed by many dynamically-scaled sublists,
+    to provide better scaling and random insertion/deletion
+    characteristics. It is a subtype of the builtin :class:`list` and
+    has an identical API, supporting indexing, slicing, sorting,
+    etc. If application requirements call for something more
+    performant, consider the `blist module available on PyPI`_.
 
-    The name comes from Kurt Rose, who said it reminded him of barrel
-    shifters, of hardware fame.
+    The name comes by way Kurt Rose, who said it reminded him of
+    barrel shifters, not sure how, but it's BList-like, so it
+    stuck. BList is of course a reference to `B-trees`_.
+
+    .. _blist module available on PyPI: https://pypi.python.org/pypi/blist
+    .. _B-trees: https://en.wikipedia.org/wiki/B-tree
+
     """
 
     _size_factor = 1520
+    """
+    This size factor is the result of tuning using the tune() function below.
+    """
 
     def __init__(self, iterable=None, **kw):
         self.lists = [[]]
@@ -269,6 +288,13 @@ BList = BarrelList
 
 
 class SplayList(list):
+    """
+    Like a `splay tree`_, the SplayList facilitates moving higher utility
+    items closer to the front of the list for faster access.
+
+    .. _splay tree: https://en.wikipedia.org/wiki/Splay_tree
+    """
+
     def shift(self, item_index, dest_index=0):
         if item_index == dest_index:
             return
@@ -279,82 +305,77 @@ class SplayList(list):
         self[dest_index], self[item_index] = self[item_index], self[dest_index]
 
 
-# Tests
-
-def test_splay():
-    splay = SplayList(xrange(10))
-    splay.swap(0, 9)
-    assert splay[0] == 9
-    assert splay[-1] == 0
-
-    splay.shift(-2)
-    assert splay[0] == 8
-    assert splay[-1] == 0
-    assert len(splay) == 10
-
-
-def main():
-    import os
-
-    bl = BarrelList()
-    bl.insert(0, 0)
-    bl.insert(1, 1)
-    bl.insert(0, -1)
-    bl.extend(range(100000))
-    bl._balance_list(0)
-    bl.pop(50000)
-
-    rands = [ord(i) * x for i, x in zip(os.urandom(1024), range(1024))]
-    bl2 = BarrelList(rands)
-    bl2.sort()
-    print bl2[:10]
-    print bl2[:-10:-1]
-
-    bl3 = BarrelList(range(int(1e5)))
-    for i in range(10000):
-        bl3.insert(0, bl3.pop(len(bl3) / 2))
-
-    del bl3[10:5000]
-    bl3[:20:2] = range(0, -10, -1)
-    import pdb;pdb.set_trace()
-
-
-_TUNE_SETUP = """\
-
-from listutils import BarrelList
-bl = BarrelList()
-bl._size_factor = %s
-bl.extend(range(int(%s)))
-"""
-
-
-def tune():
-    from collections import defaultdict
-    import gc
-    from timeit import timeit
-    data_size = 1e5
-    old_size_factor = size_factor = 512
-    all_times = defaultdict(list)
-    min_times = {}
-    step = 512
-    while abs(step) > 4:
-        gc.collect()
-        for x in range(3):
-            tottime = timeit('bl.insert(0, bl.pop(len(bl)/2))',
-                             _TUNE_SETUP % (size_factor, data_size),
-                             number=10000)
-            all_times[size_factor].append(tottime)
-        min_time = round(min(all_times[size_factor]), 3)
-        min_times[size_factor] = min_time
-        print size_factor, min_time, step
-        if min_time > (min_times[old_size_factor] + 0.002):
-            step = -step / 2
-        old_size_factor = size_factor
-        size_factor += step
-    print tottime
-
-
+# Tests and tuning
 if __name__ == '__main__':
+    def test_splay():
+        splay = SplayList(xrange(10))
+        splay.swap(0, 9)
+        assert splay[0] == 9
+        assert splay[-1] == 0
+
+        splay.shift(-2)
+        assert splay[0] == 8
+        assert splay[-1] == 0
+        assert len(splay) == 10
+
+    def main():
+        import os
+
+        bl = BarrelList()
+        bl.insert(0, 0)
+        bl.insert(1, 1)
+        bl.insert(0, -1)
+        bl.extend(range(100000))
+        bl._balance_list(0)
+        bl.pop(50000)
+
+        rands = [ord(i) * x for i, x in zip(os.urandom(1024), range(1024))]
+        bl2 = BarrelList(rands)
+        bl2.sort()
+        print bl2[:10]
+        print bl2[:-10:-1]
+
+        bl3 = BarrelList(range(int(1e5)))
+        for i in range(10000):
+            bl3.insert(0, bl3.pop(len(bl3) / 2))
+
+        del bl3[10:5000]
+        bl3[:20:2] = range(0, -10, -1)
+        import pdb;pdb.set_trace()
+
+    _TUNE_SETUP = """\
+
+    from listutils import BarrelList
+    bl = BarrelList()
+    bl._size_factor = %s
+    bl.extend(range(int(%s)))
+    """
+
+    def tune():
+        from collections import defaultdict
+        import gc
+        from timeit import timeit
+        data_size = 1e5
+        old_size_factor = size_factor = 512
+        all_times = defaultdict(list)
+        min_times = {}
+        step = 512
+        while abs(step) > 4:
+            gc.collect()
+            for x in range(3):
+                tottime = timeit('bl.insert(0, bl.pop(len(bl)/2))',
+                                 _TUNE_SETUP % (size_factor, data_size),
+                                 number=10000)
+                all_times[size_factor].append(tottime)
+            min_time = round(min(all_times[size_factor]), 3)
+            min_times[size_factor] = min_time
+            print size_factor, min_time, step
+            if min_time > (min_times[old_size_factor] + 0.002):
+                step = -step / 2
+            old_size_factor = size_factor
+            size_factor += step
+        print tottime
+
     try:
         tune()  # main()
     except Exception as e:
