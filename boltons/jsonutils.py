@@ -2,7 +2,7 @@
 """\
 This module aims to provide various helpers for working with
 JSON. Currently it focuses on providing a reliable and intuitive means
-of working with JSON Lines-formatted file.
+of working with JSON Lines-formatted files.
 """
 
 import os
