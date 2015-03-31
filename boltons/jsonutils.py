@@ -1,4 +1,9 @@
 # -*- coding: utf-8 -*-
+"""\
+This module aims to provide various helpers for working with
+JSON. Currently it focuses on providing a reliable and intuitive means
+of working with JSON Lines-formatted file.
+"""
 
 import os
 import json
@@ -6,35 +11,39 @@ import json
 
 DEFAULT_BLOCKSIZE = 4096
 
-"""
-reverse iter lines algorithm:
+# reverse iter lines algorithm:
+#
+#  - if it ends in a newline, add an empty string to the line list
+#  - if there's one item, then prepend it to the buffer, continue
+#  - if there's more than one item, pop the last item and prepend it
+#    to the buffer, yielding it
+#  - yield all remaining items in reverse, except for the first
+#  - first item becomes the new buffer
+#
+#  - when the outer loop completes, yield the buffer
 
-- if it ends in a newline, add an empty string to the line list
-- if there's one item, then prepend it to the buffer, continue
-- if there's more than one item, pop the last item and prepend it to the buffer, yielding it
-- yield all remaining items in reverse, except for the first
-- first item becomes the new buffer
 
-- when the outer loop completes, yield the buffer
-"""
+__all__ = ['JSONLIterator', 'reverse_iter_lines']
 
 
 def reverse_iter_lines(file_obj, blocksize=DEFAULT_BLOCKSIZE, preseek=True):
     """\
-    Iteratively generates a list of lines from a file object, in
-    reverse order, i.e., Last line first, first line last. Uses the
-    `.seek()` method of file objects, and is tested compatible with
-    `file` objects, as well as StringIO/cStringIO.
+    Returns an iterator over the lines from a file object, in
+    reverse order, i.e., last line first, first line last. Uses the
+    :meth:`file.seek()` method of file objects, and is tested compatible with
+    :class:`file` objects, as well as :class:`StringIO.StringIO`.
 
-    :param file_obj: The file object. Note that this
-    generator mutably reads from the file and other functions should
-    not mutably interact with the file object.
-    :param blocksize: The block size to pass to `file.read()`
-    :param preseek: tells the function whether or not to
-    automatically seek to the end of the file. Defaults to
-    True. `preseek=False` is useful in cases when the file cursor is
-    already in position, either at the end of the file or in the
-    middle for relative reverse line generation.
+    Args:
+        file_obj (file): An open file object. Note that ``reverse_iter_lines``
+            mutably reads from the file and other functions should not mutably
+            interact with the file object.
+        blocksize (int): The block size to pass to :meth:`file.read()`
+        preseek (bool): Tells the function whether or not to automatically
+            seek to the end of the file. Defaults to ``True``.
+            ``preseek=False`` is useful in cases when the
+            file cursor is already in position, either at the end of
+            the file or in the middle for relative reverse line
+            generation.
     """
     if preseek:
         file_obj.seek(0, os.SEEK_END)
@@ -69,7 +78,33 @@ json.load(fp[, encoding[, cls[, object_hook[, parse_float[, parse_int[, parse_co
 
 
 class JSONLIterator(object):
-    def __init__(self, file_obj, ignore_errors=False, reverse=False, rel_seek=None):
+    """\
+
+    The ``JSONLIterator`` is used to iterate over JSON-encoded objects
+    stored in the `JSON Lines format`_ (one object per line).
+
+    Key among its features are the ability to read from the bottom of
+    the file, making it very effective for reading from simple
+    append-only usages of JSONL. It also has the ability to start from
+    anywhere in the file and ignore corrupted lines.
+
+    Args:
+        file_obj (file): An open file object.
+        ignore_errors (bool): Whether to skip over lines that raise an error on
+            deserialization (:func:`json.loads`).
+        reverse (bool): Controls the direction of the iteration.
+            Defaults to ``False``. If set to ``True`` and ``rel_seek``
+            is unset, seeks to the end of the file before iteration
+            begins.
+        rel_seek (float): Used to preseek the start position of
+            iteration. Set to 0.0 for the start of the file, 1.0 for the
+            end, and anything in between.
+
+    .. _JSON Lines format: http://jsonlines.org/
+
+    """
+    def __init__(self, file_obj,
+                 ignore_errors=False, reverse=False, rel_seek=None):
         self._reverse = bool(reverse)
         self._file_obj = file_obj
         self.ignore_errors = ignore_errors
@@ -78,7 +113,8 @@ class JSONLIterator(object):
             if reverse:
                 rel_seek = 1.0
         elif not -1.0 < rel_seek < 1.0:
-            raise ValueError()
+            raise ValueError("'rel_seek' expected a float between"
+                             " -1.0 and 1.0, not %r" % rel_seek)
         elif rel_seek < 0:
             rel_seek = 1.0 - rel_seek
         self._rel_seek = rel_seek
@@ -93,6 +129,7 @@ class JSONLIterator(object):
             self._line_iter = iter(self._file_obj)
 
     def _align_to_newline(self):
+        "Aligns the file object's position to the next newline."
         fo, bsize = self._file_obj, self._blocksize
         cur, total_read = '', 0
         cur_pos = fo.tell()
@@ -106,6 +143,7 @@ class JSONLIterator(object):
         fo.seek(cur_pos + newline_offset)
 
     def _init_rel_seek(self):
+        "Sets the file object's position to the relative location set above."
         rs, fo = self._rel_seek, self._file_obj
         if rs == 0.0:
             fo.seek(0, os.SEEK_SET)
@@ -124,6 +162,10 @@ class JSONLIterator(object):
         return self
 
     def next(self):
+        """Yields one :class:`dict` loaded with :func:`json.loads`, advancing
+        the file object by one line. Raises :exc:`StopIteration` upon reaching
+        the end of the file (or beginning, if ``reverse`` was set to ``True``.
+        """
         while 1:
             line = next(self._line_iter)
             if not line:
@@ -137,17 +179,16 @@ class JSONLIterator(object):
             return obj
 
 
-def _test_reverse_iter_lines(filename, blocksize=DEFAULT_BLOCKSIZE):
-    #from cStringIO import StringIO
-    fo = open('_tmp_nl.txt')
-    reference = fo.read()
-    #fo = StringIO(reference)
-    fo.seek(0, os.SEEK_END)
-    rev_lines = list(reverse_iter_lines(fo, blocksize))
-    assert '\n'.join(rev_lines[::-1]) == reference
-
-
 if __name__ == '__main__':
+    def _test_reverse_iter_lines(filename, blocksize=DEFAULT_BLOCKSIZE):
+        # from cStringIO import StringIO
+        fo = open('_tmp_nl.txt')
+        reference = fo.read()
+        # fo = StringIO(reference)
+        fo.seek(0, os.SEEK_END)
+        rev_lines = list(reverse_iter_lines(fo, blocksize))
+        assert '\n'.join(rev_lines[::-1]) == reference
+
     for blocksize in (1, 4, 11, 4096):
         _test_reverse_iter_lines('_tmp_nl.txt', blocksize)
 
