@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
 """\
-Useful utilities for working with mailboxes. Credit to Mark
-Williams for these.
+Useful utilities for working with the `mbox`_-formatted
+mailboxes. Credit to Mark Williams for these.
+
+.. _mbox: https://en.wikipedia.org/wiki/Mbox
 """
 
 import mailbox
@@ -10,30 +12,42 @@ import tempfile
 
 class mbox_readonlydir(mailbox.mbox):
     """\
-    A subclass of mbox suitable for use with mboxs insides a read-only
-    /var/mail directory.
+    A subclass of :class:`mailbox.mbox` suitable for use with mboxs
+    insides a read-only mail directory, e.g., ``/var/mail``. Otherwise
+    the API is exactly the same as the builtin mbox.
 
-    Deletes messages via truncation, in the manner of heirloom-mailx.
+    Deletes messages via truncation, in the manner of `Heirloom mailx`_.
 
-    The `maxmem` specifies the largest sized mailbox to attempt to
-    copy into RAM.  Larger mailboxes will be copied incrementally
-    which is more hazardous.
+    Args:
+        path (str): Path to the mbox file.
+        factory (type): Message type (defaults to :class:`rfc822.Message`)
+        create (bool): Create mailbox if it does not exist.
+        maxmem (int): Specifies the largest sized mailbox to attempt
+                      to copy into memory.  Larger mailboxes will be
+                      copied incrementally which is more hazardous.
 
-    NB: This can corrupt your mailbox!  Only use this if you know you
-    need it.
+    .. note::
+
+       Because this truncates and rewrites parts of the mbox file,
+       this class can corrupt your mailbox.  Only use this if you know
+       the built-in :class:`mailbox.mbox` does not work for your use
+       case.
+
+    .. _Heirloom mailx: http://heirloom.sourceforge.net/mailx.html
     """
-
     def __init__(self, path, factory=None, create=True, maxmem=1024 * 1024):
         mailbox.mbox.__init__(self, path, factory, create)
         self.maxmem = maxmem
 
     def flush(self):
         """\
-        Write any pending changes to disk.
+        Write any pending changes to disk. This is called on mailbox
+        close and is usually not called explicitly.
 
-        NB: This deletes messages via truncation, so if it fails
-        halfway through it may corrupt your mailbox!  Use only if you
-        must.
+        .. note::
+
+           This deletes messages via truncation. Interruptions may
+           corrupt your mailbox.
         """
 
         # Appending and basic assertions are the same as in mailbox.mbox.flush.
