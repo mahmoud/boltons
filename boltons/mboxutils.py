@@ -10,6 +10,9 @@ import mailbox
 import tempfile
 
 
+DEFAULT_MAXMEM = 4 * 1024 * 1024  # 4MB
+
+
 class mbox_readonlydir(mailbox.mbox):
     """\
     A subclass of :class:`mailbox.mbox` suitable for use with mboxs
@@ -21,10 +24,12 @@ class mbox_readonlydir(mailbox.mbox):
     Args:
         path (str): Path to the mbox file.
         factory (type): Message type (defaults to :class:`rfc822.Message`)
-        create (bool): Create mailbox if it does not exist.
-        maxmem (int): Specifies the largest sized mailbox to attempt
-                      to copy into memory.  Larger mailboxes will be
-                      copied incrementally which is more hazardous.
+        create (bool): Create mailbox if it does not exist. (defaults
+                       to ``True``)
+        maxmem (int): Specifies, in bytes, the largest sized mailbox
+                      to attempt to copy into memory. Larger mailboxes
+                      will be copied incrementally which is more
+                      hazardous. (defaults to 4MB)
 
     .. note::
 
@@ -34,6 +39,7 @@ class mbox_readonlydir(mailbox.mbox):
        case.
 
     .. _Heirloom mailx: http://heirloom.sourceforge.net/mailx.html
+
     """
     def __init__(self, path, factory=None, create=True, maxmem=1024 * 1024):
         mailbox.mbox.__init__(self, path, factory, create)
