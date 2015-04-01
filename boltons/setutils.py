@@ -1,4 +1,15 @@
 # -*- coding: utf-8 -*-
+"""\
+
+The :class:`set` type brings brings the practical expressiveness of
+set theory to Python. It has a very rich API overall, but lacks a
+couple of fundamental features. For one, sets are not ordered. On top
+of this, sets are not indexable, i.e, my_set[8] will raise an
+exception. The :class:`IndexedSet` type remedies both of these issues
+without compromising on the excellent complexity characteristics of
+Python's builtin set implementation.
+"""
+
 
 from bisect import bisect_left
 from itertools import chain, islice
@@ -27,10 +38,10 @@ _COMPACTION_FACTOR = 8
 
 class IndexedSet(MutableSet):
     """\
-    IndexedSet maintains insertion order and uniqueness of inserted
-    elements. It's a hybrid type, mostly like an OrderedSet, but also
-    list-like, in that it supports indexing and slicing.
-
+    IndexedSet is a :class:`collections.MutableSet` that maintains
+    insertion order and uniqueness of inserted elements. It's a hybrid
+    type, mostly like an OrderedSet, but also list-like, in that it
+    supports indexing and slicing:
 
     >>> x = IndexedSet(range(4) + range(8))
     >>> x
@@ -43,17 +54,26 @@ class IndexedSet(MutableSet):
     >>> ''.join(fcr[:fcr.index('.')])
     'frecditpo'
 
-    For the curious, the reason why IndexedSet does not support
-    __setitem__() (i.e, setting items based on index), and is not a
-    UniqueList, consider the following:
+    As you can see, the IndexedSet is almost like a UniqueList,
+    retaining only one copy of a given value, in the order it was
+    first added. For the curious, the reason why IndexedSet does not
+    support setting items based on index (i.e, ``__setitem__()``),
+    consider the following dilemma::
 
-    my_indexed_set = [A, B, C, D]
-    my_indexed_set[2] = A
+      my_indexed_set = [A, B, C, D]
+      my_indexed_set[2] = A
 
     At this point, a set requires only one A, but a list would
     overwrite C. Overwriting C would change the length of the list,
     meaning that my_indexed_set[2] would not be A, as expected with a
     list, but rather D. So, no __setitem__().
+
+    Otherwise, the API strives to be as complete a union of the
+    :class:`list` and :class:`set` APIs as possible.
+
+    Args:
+        other (iterable): An optional iterable used to initialize the set.
+
     """
     def __init__(self, other=None):
         self.item_index_map = dict()
@@ -163,11 +183,13 @@ class IndexedSet(MutableSet):
 
     # set operations
     def add(self, item):
+        "set.add(item) -> add item to the set"
         if item not in self.item_index_map:
             self.item_index_map[item] = len(self.item_list)
             self.item_list.append(item)
 
     def remove(self, item):
+        "set.remove(item) -> remove item from the set, raises if not present"
         try:
             didx = self.item_index_map.pop(item)
         except KeyError:
@@ -177,12 +199,14 @@ class IndexedSet(MutableSet):
         self._cull()
 
     def discard(self, item):
+        "set.discard(item) -> discard item from the set (does not raise)"
         try:
             self.remove(item)
         except KeyError:
             pass
 
     def clear(self):
+        "set.clear() -> empty the set"
         del self.item_list[:]
         del self.dead_indices[:]
         self.item_index_map.clear()
@@ -255,6 +279,7 @@ class IndexedSet(MutableSet):
 
     # in-place set operations
     def update(self, *others):
+        "set.update() -> add values from one or more iterables"
         if not others:
             return  # raise?
         elif len(others) == 1:
@@ -329,6 +354,7 @@ class IndexedSet(MutableSet):
         return ret
 
     def pop(self, index=None):
+        "list.pop(index) -> remove the item at a given index (-1 by default)"
         item_index_map = self.item_index_map
         len_self = len(item_index_map)
         if index is None or index == -1 or index == len_self - 1:
@@ -343,12 +369,14 @@ class IndexedSet(MutableSet):
         self._cull()
         return ret
 
-    def count(self, x):
-        if x in self.item_index_map:
+    def count(self, val):
+        "list.count(val) -> count number of instances of value (0 or 1)"
+        if val in self.item_index_map:
             return 1
         return 0
 
     def reverse(self):
+        "list.reverse() -> reverse the contents of the set in-place"
         reversed_list = list(reversed(self))
         self.item_list[:] = reversed_list
         for i, item in enumerate(self.item_list):
@@ -356,6 +384,7 @@ class IndexedSet(MutableSet):
         del self.dead_indices[:]
 
     def sort(self):
+        "list.sort() -> sort the contents of the set in-place"
         sorted_list = sorted(self)
         if sorted_list == self.item_list:
             return
@@ -365,10 +394,12 @@ class IndexedSet(MutableSet):
         del self.dead_indices[:]
 
     def index(self, val):
+        "list.index(val) -> get the index of a value, raises if not present"
         try:
             return self.item_index_map[val]
         except KeyError:
-            raise ValueError('%r is not in IndexedSet' % val)
+            cn = self.__class__.__name__
+            raise ValueError('%r is not in %s' % (val, cn))
 
 
 # Tests of a manner
