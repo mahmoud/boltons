@@ -1,4 +1,10 @@
 # -*- coding: utf-8 -*-
+"""
+So much practical programming is string manipulation, and Python
+definitely accomodates. Still, there are dozens of basic and common
+capabilities missing from the standard library, several of them
+provided and tested below.
+"""
 
 import re
 import string
@@ -8,9 +14,10 @@ import collections
 from compat import unicode, bytes
 
 
-__all__ = ['camel2under', 'under2camel', 'StringBuffer',
-           'slugify', 'split_punct_ws', 'asciify', 'pluralize',
-           'singularize', 'cardinalize']
+__all__ = ['camel2under', 'under2camel', 'slugify', 'split_punct_ws',
+           'unit_len', 'ordinalize', 'cardinalize', 'pluralize', 'singularize',
+           'asciify', 'strip_ansi', 'bytes2human',
+           'find_hashtags', 'a10n', 'StringBuffer']
 
 
 _punct_ws_str = string.punctuation + string.whitespace
@@ -45,10 +52,10 @@ def slugify(text, delim='_', lower=True, ascii=False):
     A basic function that turns text full of scary characters
     (i.e., punctuation and whitespace), into a relatively safe
     lowercased string separated only by the delimiter specified
-    by `delim`, which defaults to '_'.
+    by ``delim``, which defaults to '_'.
 
-    The `ascii` convenience flag will asciify the slug if you require
-    ascii-only slugs.
+    The ``ascii`` convenience flag will :func:`asciify` the slug if
+    you require ascii-only slugs.
 
     >>> slugify('First post! Hi!!!!~1    ')
     'first_post_hi_1'
@@ -64,21 +71,22 @@ def slugify(text, delim='_', lower=True, ascii=False):
 
 
 def split_punct_ws(text):
-    """
-    str.split() will split on whitespace, split_punct_ws will
-    split on punctuation and whitespace. This is mostly here
-    for use by slugify(), above.
+    """\
+    :meth:`str.split` will split on whitespace, :func:`split_punct_ws`
+    will split on punctuation and whitespace. This is mostly here for
+    use by :func:`slugify`, above.
 
     >>> split_punct_ws('First post! Hi!!!!~1    ')
     ['First', 'post', 'Hi', '1']
+
     """
     return [w for w in _punct_re.split(text) if w]
 
 
 def unit_len(sized_iterable, unit_noun='item'):  # TODO: len_units()/unitize()?
     """
-    Returns a plain-English description of an iterable's len(),
-    conditionally pluralized with cardinalize() (below).
+    Returns a plain-English description of an iterable's ``len()``,
+    conditionally pluralized with :func:`cardinalize` (below).
 
     >>> print unit_len(range(10), 'number')
     10 numbers
@@ -101,13 +109,16 @@ _ORDINAL_MAP = {'1': 'st',
 
 def ordinalize(number, ext_only=False):
     """\
-    Turns a number into 1st, 2nd, 3rd, 4th, etc. If the last character
-    isn't a digit, it returns the string value unchanged.
+    Turns an int ``number`` into its cardinal form, i.e., 1st, 2nd,
+    3rd, 4th, etc. If the last character isn't a digit, it returns the
+    string value unchanged.
 
     >>> ordinalize(1)
     '1st'
     >>> ordinalize(3694839230)
     '3694839230th'
+    >>> ordinalize('hi')
+    'hi'
     """
     numstr = str(number)
     ldig, ext = numstr[-1:], ''
@@ -138,6 +149,15 @@ def cardinalize(unit_noun, count):
 
 
 def singularize(word):
+    """\
+    Semi-intelligently converts an English plural to its singular
+    form, preserving case pattern.
+
+    >>> singularize('records')
+    'record'
+    >>> singularize('FEET')
+    'FOOT'
+    """
     orig_word, word = word, word.strip().lower()
     if not word or word in _IRR_S2P:
         return orig_word
@@ -159,6 +179,17 @@ def singularize(word):
 
 
 def pluralize(word):
+    """\
+    Semi-intelligently converts an English word's singular form to
+    plural, preserving case pattern.
+
+    >>> pluralize('friend')
+    'friends'
+    >>> pluralize('enemy')
+    'enemies'
+    >>> pluralize('Sheep')
+    'Sheep'
+    """
     orig_word, word = word, word.strip().lower()
     if not word or word in _IRR_P2S:
         return orig_word
@@ -216,7 +247,7 @@ HASHTAG_RE = re.compile(r"(?:^|\s)[＃#]{1}(\w+)", re.UNICODE)
 
 
 def find_hashtags(string):
-    u"""
+    """
     Finds and returns all hashtags in a string, with the hashmark
     removed. Supports full-width hashmarks for Asian languages and
     does not false-positive on URL anchors.
@@ -224,18 +255,20 @@ def find_hashtags(string):
     >>> find_hashtags('#atag http://asite/#ananchor')
     ['atag']
 
-    # the following works, doctest just struggles with it
-    #>>> find_hashtags(u"can't get enough of that dignity chicken #肯德基 woo")
-    #[u'\u80af\u5fb7\u57fa']
+    ``find_hashtags`` also works with unicode hashtags.
     """
+
+    # the following works, doctest just struggles with it
+    # >>> find_hashtags(u"can't get enough of that dignity chicken #肯德基 woo")
+    # [u'\u80af\u5fb7\u57fa']
     return HASHTAG_RE.findall(string)
 
 
 def a10n(string):
     """
     That thing where 'internationalization' becomes 'i18n', what's it
-    called? Abbreviation? Oh wait, no: a10n. (It's actually a form of numeronym:
-    http://en.wikipedia.org/wiki/Numeronym )
+    called? Abbreviation? Oh wait, no: a10n. (It's actually a form of
+    `numeronym`_.)
 
     >>> a10n('abbreviation')
     'a10n'
@@ -243,6 +276,8 @@ def a10n(string):
     'i18n'
     >>> a10n('')
     ''
+
+    .. _numeronym: http://en.wikipedia.org/wiki/Numeronym
     """
     if len(string) < 3:
         return string
@@ -256,6 +291,8 @@ class StringBuffer(object):
 
     This one is for unicode text strings. Look for ByteBuffer if you
     want to handle byte strings.
+
+    (NOTE: not quite done yet)
     """
     def __init__(self, default_encoding=None, errors='strict'):
         self.data = collections.deque()
@@ -444,7 +481,11 @@ _SIZE_RANGES = zip(_SIZE_BOUNDS, _SIZE_BOUNDS[1:])
 
 
 def bytes2human(nbytes, ndigits=0):
-    """
+    """\
+    Turns an integer value of bytes into a human readable format. Set
+    ``ndigits`` to control how many digits after the decimal point
+    should be shown (default ``0``).
+
     >>> bytes2human(128991)
     '126K'
     >>> bytes2human(100001221)
