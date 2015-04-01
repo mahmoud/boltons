@@ -1,4 +1,19 @@
 # -*- coding: utf-8 -*-
+"""\
+
+Python comes with a bevy of great data structures, from :class:`dict`
+to :class:`collections.deque`, and no shortage of serviceable
+algorithm implementations, from :func:`sorted` to :mod:`bisect`. But
+curiously priority queues are relegated to an example documented in
+:mod:`heapq`. Even there, the approach presented is not object-oriented.
+
+The ``queueutils`` module currently provides two Queue
+implementations: :class:`HeapPriorityQueue`, based on a heap, and
+:class:`SortedPriorityQueue`, based on a sorted list. Each has
+slightly different performance characteristics, but a unified API,
+based on :class:`BasePriortyQueue`.
+"""
+
 
 from heapq import heappush, heappop
 from bisect import insort
@@ -17,7 +32,8 @@ except ImportError:
     BList = list
 
 
-__all__ = ['PriorityQueue', 'HeapPriorityQueue', 'SortedPriorityQueue']
+__all__ = ['PriorityQueue', 'BasePriorityQueue',
+           'HeapPriorityQueue', 'SortedPriorityQueue']
 
 
 # TODO: make Base a real abstract class
@@ -25,6 +41,17 @@ __all__ = ['PriorityQueue', 'HeapPriorityQueue', 'SortedPriorityQueue']
 
 
 class BasePriorityQueue(object):
+    """\
+    The abstract base class for the other PriorityQueues in this
+    module. Override the ``_backend_type`` class attribute, as well as
+    the :meth:`_push_entry` and :meth:`_pop_entry` staticmethods for
+    custom subclass behavior (Don't forget to use :func:`staticmethod`).
+
+    Args:
+        priority_key (callable): A function that takes a priority as
+            passed in by :meth:`add` and returns an integer.
+
+    """
     # negating priority means larger numbers = higher priority
     _default_priority_key = staticmethod(lambda p: -int(p or 0))
     _backend_type = list
@@ -34,6 +61,8 @@ class BasePriorityQueue(object):
         self._entry_map = {}
         self._counter = itertools.count()
         self._get_priority = kw.pop('priority_key', self._default_priority_key)
+        if kw:
+            raise TypeError('unexpected keyword arguments: %r' % kw.keys())
 
     @staticmethod
     def _push_entry(backend, entry):
@@ -44,6 +73,13 @@ class BasePriorityQueue(object):
         pass  # abstract
 
     def add(self, task, priority=None):
+        """\
+        Add a task to the queue, or change the task's priority if the
+        task is already in the queue. Task can be any type, and
+        ``priority`` defaults to ``0``. Higher values representing
+        higher priority, but this behavior can be controlled by
+        setting ``priority_key`` in the constructor.
+        """
         priority = self._get_priority(priority)
         if task in self._entry_map:
             self.remove(task)
@@ -53,10 +89,18 @@ class BasePriorityQueue(object):
         self._push_entry(self._pq, entry)
 
     def remove(self, task):
+        """\
+        Remove a task from the priority queue. Raises :exc:`KeyError`
+        if the task is absent.
+        """
         entry = self._entry_map.pop(task)
         entry[-1] = _REMOVED
 
     def _cull(self, raise_exc=True):
+        """\
+        Remove entries marked as removed by previous :meth:`remove`
+        calls.
+        """
         while self._pq:
             priority, count, task = self._pq[0]
             if task is _REMOVED:
@@ -67,6 +111,11 @@ class BasePriorityQueue(object):
             raise IndexError('empty priority queue')
 
     def peek(self, default=_REMOVED):
+        """\
+        Read the next value in the queue without removing it. Returns
+        ``default`` on an empty queue, or raises ``KeyError`` if
+        ``default`` is not set.
+        """
         try:
             self._cull()
             _, _, task = self._pq[0]
@@ -77,6 +126,11 @@ class BasePriorityQueue(object):
         return task
 
     def pop(self, default=_REMOVED):
+        """\
+        Remove and return the next value in the queue. Returns
+        ``default`` on an empty queue, or raises ``KeyError`` if
+        ``default`` is not set.
+        """
         try:
             self._cull()
             _, _, task = self._pop_entry(self._pq)
@@ -88,10 +142,17 @@ class BasePriorityQueue(object):
         return task
 
     def __len__(self):
+        "Return the number of tasks in the queue."
         return len(self._entry_map)
 
 
 class HeapPriorityQueue(BasePriorityQueue):
+    """\
+    A priority queue inherited from :class:`BasePriorityQueue`, backed
+    by a list and based on the :func:`heapq.heappop` and
+    :func:`heapq.heappush` functions in the builtin :mod:`heapq`
+    module.
+    """
     @staticmethod
     def _pop_entry(backend):
         return heappop(backend)
@@ -102,6 +163,11 @@ class HeapPriorityQueue(BasePriorityQueue):
 
 
 class SortedPriorityQueue(BasePriorityQueue):
+    """\
+    A priority queue inherited from :class:`BasePriorityQueue`, based
+    on the :func:`bisect.insort` approach for in-order insertion into
+    a sorted list.
+    """
     _backend_type = BList
 
     @staticmethod
@@ -117,26 +183,25 @@ PriorityQueue = SortedPriorityQueue
 
 # tests
 
-
-def main():
-    pq = PriorityQueue()
-    func = lambda x: x
-    pq.add(func)
-    pq.remove(func)
-    pq.add(func)
-    pq.add(func)
-    assert len(pq) == 1
-    assert func == pq.pop()
-    assert len(pq) == 0
-    try:
-        pq.pop()
-    except IndexError:
-        pass
-    else:
-        assert False, 'priority queue should be empty'
-    import pdb;pdb.set_trace()
-
 if __name__ == '__main__':
+    def main():
+        pq = PriorityQueue()
+        func = lambda x: x
+        pq.add(func)
+        pq.remove(func)
+        pq.add(func)
+        pq.add(func)
+        assert len(pq) == 1
+        assert func == pq.pop()
+        assert len(pq) == 0
+        try:
+            pq.pop()
+        except IndexError:
+            pass
+        else:
+            assert False, 'priority queue should be empty'
+        import pdb;pdb.set_trace()
+
     try:
         main()
     except Exception as e:
