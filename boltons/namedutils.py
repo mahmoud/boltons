@@ -1,17 +1,20 @@
 # -*- coding: utf-8 -*-
-"""The ``namedutils`` module defines two lightweight container types:
-``namedtuple`` and ``namedlist``. Both are subtypes of built-in
+"""\
+The ``namedutils`` module defines two lightweight container types:
+:class:`namedtuple` and :class:`namedlist`. Both are subtypes of built-in
 sequence types, which are very fast and efficient. They simply add
 named attribute accessors for specific indexes within themselves.
 
-The ``namedtuple`` is identical to the built-in
-``collections.namedtuple``, with a couple of enhancements, including a
-``__repr__`` more suitable to inheritance. The ``namedlist`` is the
-mutable counterpart to the ``namedtuple``, and is much faster and
-lighter weight than full-fledged ``object``s. If you want an even
+The :class:`namedtuple` is identical to the built-in
+:class:`collections.namedtuple`, with a couple of enhancements,
+including a ``__repr__`` more suitable to inheritance.
+
+The :class:`namedlist` is the mutable counterpart to the
+:class:`namedtuple`, and is much faster and lighter-weight than
+full-blown :class:`object`. Consider this if you're implementing nodes
+in a tree, graph, or other mutable data structure. If you want an even
 skinnier approach, you'll probably have to look to C.
 """
-
 
 import sys as _sys
 from collections import OrderedDict
