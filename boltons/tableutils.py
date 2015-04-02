@@ -1,4 +1,23 @@
 # -*- coding: utf-8 -*-
+"""If there is one recurring theme in ``boltons``, it is that Python
+has excellent datastructures that constitute a good foundation for
+most quick manipulations, as well as building applications. However,
+Python usage has grown much faster than builtin data structure
+power. Python has a growing need for more advanced general-purpose
+data structures which behave intuitively.
+
+The :class:`Table` class is one example. When handed one- or
+two-dimensional data, it can provide useful, if basic, text and HTML
+renditions of small to medium sized data. It also heuristically
+handles recursive data of various formats (lists, dicts, namedtuples,
+objects).
+
+For more advanced Table-style manipulation check out the `pandas`_
+DataFrame.
+
+.. _pandas: http://pandas.pydata.org/
+
+"""
 
 import cgi
 import types
@@ -12,7 +31,7 @@ except ImportError:
     _MISSING = object()
 
 """
-Some idle thoughts:
+Some idle feature thoughts:
 
 * shift around column order without rearranging data
 * gotta make it so you can add additional items, not just initialize with
@@ -25,7 +44,11 @@ Some idle thoughts:
 * Would be nice to support different backends (currently uses lists
   exclusively). Sometimes large datasets come in list-of-dicts and
   list-of-tuples format and it's desirable to cut down processing overhead.
+
+TODO: make iterable on rows?
 """
+
+__all__ = ['Table']
 
 
 def to_text(obj, maxlen=None):
@@ -87,7 +110,7 @@ class ObjectInputType(InputType):
     def guess_headers(self, obj):
         headers = []
         for attr in dir(obj):
-            # an object's __dict__ could have non-string keys but meh
+            # an object's __dict__ could technically have non-string keys
             try:
                 val = getattr(obj, attr)
             except:
@@ -110,8 +133,8 @@ class ObjectInputType(InputType):
 
 
 # might be better to hardcode list support since it's so close to the
-#  core or might be better to make this the copy-style from_* importer
-#  and have the non-copy style be hardcoded in __init__
+# core or might be better to make this the copy-style from_* importer
+# and have the non-copy style be hardcoded in __init__
 class ListInputType(InputType):
     def check_type(self, obj):
         return isinstance(obj, MutableSequence)
@@ -180,7 +203,7 @@ class Table(object):
     * dict (list/single)
     * object (list/single)
     * namedtuple (list/single)
-    * TODO: sqlite return value
+    * TODO: DB API cursor?
     * TODO: json
 
     Supported outputs:
@@ -190,6 +213,8 @@ class Table(object):
     * TODO: CSV
     * TODO: json
     * TODO: json lines
+
+    To minimize resident size, the Table data is stored as a list of lists.
     """
 
     # order definitely matters here
@@ -215,6 +240,9 @@ class Table(object):
         self.extend(data)
 
     def extend(self, data):
+        """
+        Append the given data to the end of the Table.
+        """
         if not data:
             return
         self._data.extend(data)
@@ -243,21 +271,57 @@ class Table(object):
 
     @classmethod
     def from_dict(cls, data, headers=_MISSING, max_depth=1):
+        """\
+        Create a Table from a :class:`dict`. Operates the same as
+        :meth:`from_data`, but forces interpretation of the data as a
+        Mapping.
+        """
         return cls.from_data(data=data, headers=headers,
                              max_depth=max_depth, _data_type=DictInputType())
 
     @classmethod
     def from_list(cls, data, headers=_MISSING, max_depth=1):
+        """\
+        Create a Table from a :class:`list`. Operates the same as
+        :meth:`from_data`, but forces the interpretation of the data
+        as a Sequence.
+        """
         return cls.from_data(data=data, headers=headers,
                              max_depth=max_depth, _data_type=ListInputType())
 
     @classmethod
     def from_object(cls, data, headers=_MISSING, max_depth=1):
+        """\
+        Create a Table from an :class:`object`. Operates the same as
+        :meth:`from_data`, but forces the interpretation of the data
+        as an object. May be useful for some :class:`dict` and
+        :class:`list` subtypes.
+        """
         return cls.from_data(data=data, headers=headers,
                              max_depth=max_depth, _data_type=ObjectInputType())
 
     @classmethod
     def from_data(cls, data, headers=_MISSING, max_depth=1, _data_type=None):
+        """\
+        Create a Table from any supported data, heuristically
+        selecting how to represent the data in Table format.
+
+        Args:
+
+            data (object): Any object or iterable with data to be
+                imported to the Table.
+
+            headers (iterable): An iterable of headers to be matched
+                to the data. If not explicitly passed, headers will be
+                guessed for certain datatypes.
+
+            max_depth (int): The level to which nested Tables should
+                be created (default: 1).
+
+            _data_type (InputType subclass): For advanced use cases,
+                do not guess the type of the input data, use this data
+                type instead.
+        """
         # TODO: seen/cycle detection/reuse ?
         # maxdepth follows the same behavior as find command
         # i.e., it doesn't work if max_depth=0 is passed in
@@ -326,6 +390,29 @@ class Table(object):
 
     def to_html(self, orientation=None, wrapped=True,
                 with_headers=True, with_newlines=True, max_depth=1):
+        """\
+        Render this Table to HTML. Configure the structure of Table
+        HTML by subclassing and overriding ``_html_*`` class
+        attributes.
+
+        Args:
+            orientation (str): one of 'auto', 'horizontal', or
+                'vertical' (or the first letter of any of
+                those). Default 'auto'.
+            wrapped (bool): whether or not to include the wrapping
+                '<table></table>' tags. Default ``True``, set to
+                ``False`` if appending multiple Table outputs or an
+                otherwise customized HTML wrapping tag is needed.
+            with_newlines (bool): Set to ``True`` if output should
+                include added newlines to make the HTML more
+                readable. Default ``False``.
+            max_depth (int): Indicate how deeply to nest HTML tables
+                before simply reverting to :func:`repr`-ing the nested
+                data.
+
+        Returns:
+            A text string of the HTML of the rendered table.
+        """
         lines = []
         headers = []
         if with_headers and self.headers:
@@ -401,6 +488,14 @@ class Table(object):
             lines.append(''.join(line_parts))
 
     def to_text(self, with_headers=True, maxlen=None):
+        """\
+        Get the Table's textual representation. Only works well
+        for Tables with non-recursive data.
+
+        Args:
+            with_headers (bool): Whether to include a header row at the top.
+            maxlen (int): Max length of data in each cell.
+        """
         # TODO: verify this works for markdown
         lines = []
         widths = []
@@ -422,29 +517,27 @@ class Table(object):
         return '\n'.join(lines)
 
 
-def main():
-    global t3
-    data_dicts = [{'id': 1, 'name': 'John Doe'},
-                  {'id': 2, 'name': 'Dale Simmons'}]
-    data_lists = [['id', 'name'],
-                  [1, 'John Doe'],
-                  [2, 'Dale Simmons']]
-    t1 = Table(data_lists)
-    t2 = Table.from_dict(data_dicts[0])
-    t3 = Table.from_dict(data_dicts)
-    t3.extend([[3, 'Kurt Rose'], [4]])
-    print t1
-    print t2
-    print t2.to_html()
-    print t3
-    print t3.to_html()
-    print t3.to_text()
-
-    import re
-    t4 = Table.from_object(re.compile(''))
-    print t4.to_text()
-    import pdb;pdb.set_trace()
-
-
 if __name__ == '__main__':
+    def main():
+        data_dicts = [{'id': 1, 'name': 'John Doe'},
+                      {'id': 2, 'name': 'Dale Simmons'}]
+        data_lists = [['id', 'name'],
+                      [1, 'John Doe'],
+                      [2, 'Dale Simmons']]
+        t1 = Table(data_lists)
+        t2 = Table.from_dict(data_dicts[0])
+        t3 = Table.from_dict(data_dicts)
+        t3.extend([[3, 'Kurt Rose'], [4]])
+        print t1
+        print t2
+        print t2.to_html()
+        print t3
+        print t3.to_html()
+        print t3.to_text()
+
+        import re
+        t4 = Table.from_object(re.compile(''))
+        print t4.to_text()
+        import pdb;pdb.set_trace()
+
     main()
