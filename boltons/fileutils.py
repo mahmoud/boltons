@@ -61,6 +61,8 @@ class FilePerms(object):
             self.offset = offset
 
         def __get__(self, fp_obj, type_=None):
+            if fp_obj is None:
+                return self
             return getattr(fp_obj, self.attribute)
 
         def __set__(self, fp_obj, value):
