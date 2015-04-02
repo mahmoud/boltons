@@ -1,6 +1,27 @@
 # -*- coding: utf-8 -*-
+"""\
+One of the oft-cited tenets of Python is that it is better to ask
+forgiveness than permission. That is, there are many cases where it is
+more inclusive and correct to handle exceptions than spend extra lines
+and execution time checking for conditions. This philosophy makes good
+exception handling features all the more important. Unfortunately
+Python's :mod:`traceback` module is woefully behind the times.
 
-"""Extract, format and print information about Python stack traces."""
+The ``tbutils`` module provides two disparate but complementary featuresets:
+
+  1. With :class:`TracebackInfo` and :class:`ExceptionInfo`, the
+     ability to extract, construct, manipulate, format, and serialize
+     exceptions, tracebacks, and callstacks.
+  2. With :class:`ParsedTB`, the ability to find and parse tracebacks
+     from captured output such as logs and stdout.
+
+There is also the :class:`ContextualTracebackInfo` variant of
+:class:`TracebackInfo`, which includes much more information from each
+frame of the callstack, including values of locals and neighboring
+lines of code.
+
+"""
+
 from __future__ import print_function
 
 import re
@@ -21,8 +42,24 @@ import linecache
 
 
 class Callpoint(object):
+    """\
+
+    The Callpoint is a lightweight object used to represent a single
+    entry in the code of a call stack. It stores the code-related
+    metadata of a given frame. Available attributes are the same as
+    the parameters below.
+
+    Args:
+        func_name (str): the function name
+        lineno (int): the line number
+        module_name (str): the module name
+        module_path (str): the filesystem path of the module
+        lasti (int): the index of bytecode execution
+        line (str): the single-line code content (if available)
+
+    """
     __slots__ = ('func_name', 'lineno', 'module_name', 'module_path', 'lasti',
-                 'line')  # line is for the actual single-line code content
+                 'line')
 
     def __init__(self, module_name, module_path, func_name,
                  lineno, lasti, line=None):
@@ -34,6 +71,7 @@ class Callpoint(object):
         self.line = line
 
     def to_dict(self):
+        "Get a :class:`dict` copy of the Callpoint. Useful for serialization."
         ret = {}
         for slot in self.__slots__:
             try:
@@ -44,11 +82,13 @@ class Callpoint(object):
 
     @classmethod
     def from_current(cls, level=1):
+        "Creates a Callpoint from the location of the calling function."
         frame = sys._getframe(level)
         return cls.from_frame(frame)
 
     @classmethod
     def from_frame(cls, frame):
+        "Create a Callpoint object from data extracted from the given frame."
         func_name = frame.f_code.co_name
         lineno = frame.f_lineno
         module_name = frame.f_globals.get('__name__', '')
