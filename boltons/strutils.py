@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
-"""
-So much practical programming is string manipulation, and Python
-definitely accomodates. Still, there are dozens of basic and common
-capabilities missing from the standard library, several of them
-provided and tested below.
+"""\
+So much practical programming involves string manipulation, which
+Python readily accomodates. Still, there are dozens of basic and
+common capabilities missing from the standard library, several of them
+provided by ``strutils``.
 """
 
 import re
@@ -72,9 +72,9 @@ def slugify(text, delim='_', lower=True, ascii=False):
 
 def split_punct_ws(text):
     """\
-    :meth:`str.split` will split on whitespace, :func:`split_punct_ws`
-    will split on punctuation and whitespace. This is mostly here for
-    use by :func:`slugify`, above.
+    While :meth:`str.split` will split on whitespace,
+    :func:`split_punct_ws` will split on punctuation and
+    whitespace. This used internally by :func:`slugify`, above.
 
     >>> split_punct_ws('First post! Hi!!!!~1    ')
     ['First', 'post', 'Hi', '1']
@@ -85,8 +85,8 @@ def split_punct_ws(text):
 
 def unit_len(sized_iterable, unit_noun='item'):  # TODO: len_units()/unitize()?
     """
-    Returns a plain-English description of an iterable's ``len()``,
-    conditionally pluralized with :func:`cardinalize` (below).
+    Returns a plain-English description of an iterable's :func:`len()`x,
+    conditionally pluralized with :func:`cardinalize`, detailed below.
 
     >>> print unit_len(range(10), 'number')
     10 numbers
