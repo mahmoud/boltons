@@ -101,14 +101,14 @@ parse_td = parse_timedelta  # legacy alias
 
 
 def _cardinalize_time_unit(unit, value):
-    # remove dep on strutils
+    # removes dependency on strutils; nice and simple because
     # all time units cardinalize normally
     if value == 1:
         return unit
     return unit + 's'
 
 
-def decimal_relative_time(d, other=None, ndigits=0):
+def decimal_relative_time(d, other=None, ndigits=0, cardinalize=True):
     """Get a tuple representing the relative time difference between two
     :class:`datetime` objects or one :class:`datetime` and now.
 
@@ -119,9 +119,12 @@ def decimal_relative_time(d, other=None, ndigits=0):
             :meth:`datetime.utcnow`.
         ndigits (int): The number of decimal digits to round to,
             defaults to ``0``.
+        cardinalize (bool): Whether to pluralize the time unit if
+            appropriate, defaults to ``True``.
     Returns:
         (float, str): A tuple of the :class:`float` difference and
-           respective unit of time, pluralized if appropriate.
+           respective unit of time, pluralized if appropriate and
+           *cardinalize* is set to ``True``.
 
     Unlike :func:`relative_time`, this method's return is amenable to
     localization into other languages and custom phrasing and
@@ -145,7 +148,9 @@ def decimal_relative_time(d, other=None, ndigits=0):
     bbound, bunit, bname = _BOUNDS[b_idx]
     f_diff = diff_seconds / total_seconds(bunit)
     rounded_diff = round(f_diff, ndigits)
-    return rounded_diff, _cardinalize_time_unit(bname, abs(rounded_diff))
+    if cardinalize:
+        return rounded_diff, _cardinalize_time_unit(bname, abs(rounded_diff))
+    return rounded_diff, bname
 
 
 def relative_time(d, other=None, ndigits=0):
@@ -173,7 +178,7 @@ def relative_time(d, other=None, ndigits=0):
     '1 week from now'
 
     """
-    drt, unit = decimal_relative_time(d, other, ndigits)
+    drt, unit = decimal_relative_time(d, other, ndigits, cardinalize=True)
     phrase = 'ago'
     if drt < 0:
         phrase = 'from now'
