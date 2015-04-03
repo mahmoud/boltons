@@ -205,24 +205,27 @@ class TracebackInfo(object):
     Args:
         frames (list): A list of frame objects in the stack.
     """
-
-    # TODO: from current and from current exc
     callpoint_type = Callpoint
 
     def __init__(self, frames):
         self.frames = frames
 
     @classmethod
-    def from_frame(cls, frame, limit=None):
-        """\
-        Create a new TracebackInfo from the frame passed by recurring up
-        in the stack up to *limit* times.
+    def from_frame(cls, frame=None, level=1, limit=None):
+        """Create a new TracebackInfo *frame* by recurring up in the stack a
+        max of *limit* times. If *frame* is unset, get the frame from
+        :func:`sys._getframe` using *level*.
 
         Args:
             frame (types.FrameType): frame object from
-                :func:`sys._getframe` or elsewhere.
+                :func:`sys._getframe` or elsewhere. Default to result
+                of :func:`sys.get_frame`.
+            level (int): If *frame* is unset, the desired frame is
+                this many levels up the stack from the invocation of
+                this method. Default ``1`` (i.e., caller of this method).
             limit (int): max number of parent frames to extract
-                (defaults to :ref:`sys.tracebacklimit`)
+                (defaults to :data:`sys.tracebacklimit`)
+
         """
         ret = []
         if frame is None:
@@ -239,18 +242,24 @@ class TracebackInfo(object):
         return cls(ret)
 
     @classmethod
-    def from_traceback(cls, tb, limit=None):
+    def from_traceback(cls, tb=None, limit=None):
         """\
-        Create a new TracebackInfo from the traceback passed by recurring up
-        in the stack up to *limit* times.
+        Create a new TracebackInfo from the traceback *tb* by recurring
+        up in the stack a max of *limit* times. If *tb* is unset, get
+        the traceback from the currently handled exception. If no
+        exception is being handled, raise a :exc:`ValueError`.
 
         Args:
             frame (types.FrameType): frame object from
                 :func:`sys.exc_info` or elsewhere.
             limit (int): max number of parent frames to extract
-                (defaults to :ref:`sys.tracebacklimit`)
+                (defaults to :data:`sys.tracebacklimit`)
         """
         ret = []
+        if tb is None:
+            tb = sys.exc_info()[2]
+            if tb is None:
+                raise ValueError('no tb set and no exception being handled')
         if limit is None:
             limit = getattr(sys, 'tracebacklimit', 1000)
         n = 0
@@ -341,6 +350,10 @@ class ExceptionInfo(object):
 
     @classmethod
     def from_exc_info(cls, exc_type, exc_value, traceback):
+        """Create an :class:`ExceptionInfo` object from the exception's type,
+        value, and traceback, as returned by :func:`sys.exc_info`. See
+        also :meth:`from_current`.
+        """
         type_str = exc_type.__name__
         type_mod = exc_type.__module__
         if type_mod not in ("__main__", "__builtin__", "exceptions"):
@@ -351,6 +364,10 @@ class ExceptionInfo(object):
 
     @classmethod
     def from_current(cls):
+        """Create an :class:`ExceptionInfo` object from the current exception
+        being handled, by way of :func:`sys.exc_info`. Will raise an
+        exception if no exception is currently being handled.
+        """
         return cls.from_exc_info(*sys.exc_info())
 
     def to_dict(self):
@@ -618,6 +635,8 @@ _frame_re = re.compile(r'^File "(?P<filepath>.+)", line (?P<lineno>\d+)'
                        r', in (?P<funcname>.+)$')
 _se_frame_re = re.compile(r'^File "(?P<filepath>.+)", line (?P<lineno>\d+)')
 
+
+# TODO: ParsedException generator over large bodies of text
 
 class ParsedException(object):
     """\
