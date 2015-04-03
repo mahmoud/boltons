@@ -9,10 +9,10 @@ Python's :mod:`traceback` module is woefully behind the times.
 
 The ``tbutils`` module provides two disparate but complementary featuresets:
 
-  1. With :class:`TracebackInfo` and :class:`ExceptionInfo`, the
+  1. With :class:`ExceptionInfo` and :class:`TracebackInfo`, the
      ability to extract, construct, manipulate, format, and serialize
      exceptions, tracebacks, and callstacks.
-  2. With :class:`ParsedTB`, the ability to find and parse tracebacks
+  2. With :class:`ParsedException`, the ability to find and parse tracebacks
      from captured output such as logs and stdout.
 
 There is also the :class:`ContextualTracebackInfo` variant of
@@ -28,16 +28,18 @@ import sys
 import linecache
 
 
-# TODO: cross compatibility (jython, etc.)
-# TODO: parser
 # TODO: chaining primitives?  what are real use cases where these help?
-# TODO: intelligently truncating repr
 
 # TODO: print_* for backwards compatability
 # __all__ = ['extract_stack', 'extract_tb', 'format_exception',
 #            'format_exception_only', 'format_list', 'format_stack',
 #            'format_tb', 'print_exc', 'format_exc', 'print_exception',
 #            'print_last', 'print_stack', 'print_tb']
+
+
+__all__ = ['ExceptionInfo', 'TracebackInfo', 'Callpoint',
+           'ContextualExceptionInfo', 'ContextualTracebackInfo',
+           'ContextualCallpoint', 'print_exception', 'ParsedException']
 
 
 class Callpoint(object):
@@ -323,11 +325,12 @@ class ExceptionInfo(object):
         tb_info (TracebackInfo): Information about the stack trace of the
             exception.
 
-    Like the TracebackInfo, ExceptionInfo is most commonly
+    Like the :class:`TracebackInfo`, ExceptionInfo is most commonly
     instantiated from one of its classmethods: :meth:`from_exc_info`
     or :meth:`from_current`.
     """
 
+    #: Override this in inherited types to control the TracebackInfo type used
     tb_info_type = TracebackInfo
 
     def __init__(self, exc_type, exc_msg, tb_info):
@@ -616,7 +619,7 @@ _frame_re = re.compile(r'^File "(?P<filepath>.+)", line (?P<lineno>\d+)'
 _se_frame_re = re.compile(r'^File "(?P<filepath>.+)", line (?P<lineno>\d+)')
 
 
-class ParsedTB(object):
+class ParsedException(object):
     """\
     Stores a parsed traceback and exception as would be typically
     output by :func:`sys.excepthook` or
@@ -713,6 +716,9 @@ class ParsedTB(object):
             exc_type, exc_msg = '', ''
 
         return cls(exc_type, exc_msg, frames)
+
+
+ParsedTB = ParsedException  # legacy alias
 
 
 if __name__ == '__main__':
