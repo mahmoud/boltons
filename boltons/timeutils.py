@@ -13,7 +13,6 @@ import re
 import bisect
 import datetime
 from datetime import timedelta
-from strutils import cardinalize
 
 
 __all__ = ['total_seconds', 'parse_td', 'relative_time',
@@ -101,6 +100,14 @@ def parse_timedelta(text):
 parse_td = parse_timedelta  # legacy alias
 
 
+def _cardinalize_time_unit(unit, value):
+    # remove dep on strutils
+    # all time units cardinalize normally
+    if value == 1:
+        return unit
+    return unit + 's'
+
+
 def decimal_relative_time(d, other=None, ndigits=0):
     """Get a tuple representing the relative time difference between two
     :class:`datetime` objects or one :class:`datetime` and now.
@@ -138,7 +145,7 @@ def decimal_relative_time(d, other=None, ndigits=0):
     bbound, bunit, bname = _BOUNDS[b_idx]
     f_diff = diff_seconds / total_seconds(bunit)
     rounded_diff = round(f_diff, ndigits)
-    return rounded_diff, cardinalize(bname, abs(rounded_diff))
+    return rounded_diff, _cardinalize_time_unit(bname, abs(rounded_diff))
 
 
 def relative_time(d, other=None, ndigits=0):
