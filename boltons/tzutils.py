@@ -1,28 +1,38 @@
 # -*- coding: utf-8 -*-
-"""\
-The Python ``datetime`` module documentation describe how to
-create a ``datetime``-compatible "tzinfo" object. It even provides a
-few examples.
+"""The Python :mod:`datetime` module's documentation describes how
+to create a :class:`datetime.datetime`-compatible
+:class:`datetime.tzinfo` subtype. It even provides a few examples.
 
-The following module defines those timezones and a couple other useful
-ones, UTC (aka GMT) and Local (representing the local timezone). For
-timezones beyond this, check out ``pytz``
+The following module defines usable forms of the timezones in those
+docs, as well as a couple other useful ones, :data:`UTC` (aka GMT) and
+:data:`LocalTZ` (representing the local timezone). For timezones
+beyond these, as well as a higher degree of accuracy, check out `pytz`_.
+
+.. _pytz: https://pypi.python.org/pypi/pytz
+
 """
 
 
 import time
 from datetime import tzinfo, timedelta, datetime
 
-from timeutils import total_seconds
+from timeutils import total_seconds  # TODO
 
-# Basic timezones cribbed from etavta and Python docs. Beyond this, look
-# to pytz.
+# Basic timezones cribbed from etavta and Python docs.
 
 ZERO = timedelta(0)
 HOUR = timedelta(hours=1)
 
 
 class ConstantTZInfo(tzinfo):
+    """
+    A :class:`datetime.tzinfo` subtype whose *offset* remains constant
+    (no daylight savings).
+
+    Args:
+        name (str): Name of the timezone.
+        offset (datetime.timedelta): Offset of the timezone.
+    """
     def __init__(self, name="ConstantTZ", offset=ZERO):
         self.name = name
         self.offset = offset
@@ -49,6 +59,10 @@ UTC = ConstantTZInfo('UTC')
 
 
 class LocalTZInfo(tzinfo):
+    """The ``LocalTZInfo`` type takes data available in the time module about
+    the local timezone and makes a practical tzinfo to represent the
+    timezone settings of the operating system.
+    """
     _std_offset = timedelta(seconds=-time.timezone)
     _dst_offset = _std_offset
     if time.daylight:
@@ -72,6 +86,9 @@ class LocalTZInfo(tzinfo):
 
     def tzname(self, dt):
         return time.tzname[self.is_dst(dt)]
+
+    def __repr__(self):
+        return '%s()' % self.__class__.__name__
 
 
 LocalTZ = LocalTZInfo()
@@ -111,6 +128,11 @@ DSTEND_1967_1986 = DSTEND_1987_2006
 
 
 class USTimeZone(tzinfo):
+    """Copied directly from the Python docs, the ``USTimeZone`` is a
+    :class:`datetime.tzinfo` subtype used to create the
+    :data:`Eastern`, :data:`Central`, :data:`Mountain`, and
+    :data:`Pacific` tzinfo types.
+    """
     def __init__(self, hours, reprname, stdname, dstname):
         self.stdoffset = timedelta(hours=hours)
         self.reprname = reprname
