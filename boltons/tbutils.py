@@ -644,10 +644,10 @@ class ParsedTB(object):
             return None
 
     def to_dict(self):
-        "Get a copy as a JSON-serializable :class:`dict`"
+        "Get a copy as a JSON-serializable :class:`dict`."
         return {'exc_type': self.exc_type,
                 'exc_msg': self.exc_msg,
-                'frames': self.frames}  # TODO: copy?
+                'frames': list(self.frames)}
 
     def __repr__(self):
         cn = self.__class__.__name__
