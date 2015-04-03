@@ -1,4 +1,13 @@
 # -*- coding: utf-8 -*-
+"""Python's :mod:`datetime` module provides some of the most complex
+and powerful primitives in the Python standard library. Time is
+nontrivial, but thankfully its support is first-class in
+Python. ``dateutils`` provides some additional tools for working with
+time.
+
+See :mod:`tzutils` for handy timezone-related boltons.
+"""
+
 
 import re
 import bisect
@@ -7,11 +16,19 @@ from datetime import timedelta
 from strutils import cardinalize
 
 
+__all__ = ['total_seconds', 'parse_td', 'relative_time',
+           'decimal_relative_time']
+
+
 def total_seconds(td):
     """\
-    A pure-Python implementation of Python 2.7's timedelta.total_seconds().
+    For those with older versions of Python, a pure-Python
+    implementation of Python 2.7's :meth:`timedelta.total_seconds`.
 
-    Accepts a timedelta object, returns number of total seconds.
+    Args:
+        td (datetime.timedelta): The timedelta to convert to seconds.
+    Returns:
+        float: total number of seconds
 
     >>> td = datetime.timedelta(days=4, seconds=33)
     >>> total_seconds(td)
@@ -39,10 +56,17 @@ _PARSE_TD_KW_MAP = dict([(unit[0], unit + 's')
                          for _, _, unit in reversed(_BOUNDS[:-2])])
 
 
-def parse_td(text):
-    """\
-    Robustly parses a short text description of a time period into a
-    timedelta. Supports weeks, days, hours, minutes, and seconds.
+def parse_timedelta(text):
+    """Robustly parses a short text description of a time period into a
+    :class:`datetime.timedelta`. Supports weeks, days, hours, minutes,
+    and seconds, with or without decimal points:
+
+    Args:
+        text (str): Text to parse.
+    Returns:
+        datetime.timedelta
+    Raises:
+        ValueError: on parse failure.
 
     >>> parse_td('1d 2h 3.5m 0s')
     datetime.timedelta(1, 7410)
@@ -52,6 +76,10 @@ def parse_td(text):
     >>> parse_td('2 weeks 1 day')
     datetime.timedelta(15)
 
+    Negative times are supported, too:
+
+    >>> parse_td('-1.5 weeks 3m 20s')
+    datetime.timedelta(-11, 43400)
     """
     td_kwargs = {}
     for match in _PARSE_TD_RE.finditer(text):
@@ -70,15 +98,36 @@ def parse_td(text):
     return timedelta(**td_kwargs)
 
 
+parse_td = parse_timedelta  # legacy alias
+
+
 def decimal_relative_time(d, other=None, ndigits=0):
-    """\
+    """Get a tuple representing the relative time difference between two
+    :class:`datetime` objects or one :class:`datetime` and now.
+
+    Args:
+        d (datetime): The first datetime object.
+        other (datetime): An optional second datetime object. If
+            unset, defaults to the current time as determined
+            :meth:`datetime.utcnow`.
+        ndigits (int): The number of decimal digits to round to,
+            defaults to ``0``.
+    Returns:
+        (float, str): A tuple of the :class:`float` difference and
+           respective unit of time, pluralized if appropriate.
+
+    Unlike :func:`relative_time`, this method's return is amenable to
+    localization into other languages and custom phrasing and
+    formatting.
+
     >>> now = datetime.datetime.utcnow()
     >>> decimal_relative_time(now - timedelta(days=1, seconds=3600), now)
     (1.0, 'day')
     >>> decimal_relative_time(now - timedelta(seconds=0.002), now, ndigits=5)
     (0.002, 'seconds')
-    >>> decimal_relative_time(now - timedelta(days=1000), now, ndigits=1)
-    (2.7, 'years')
+    >>> decimal_relative_time(now, now - timedelta(days=1000), ndigits=1)
+    (-2.7, 'years')
+
     """
     if other is None:
         other = datetime.datetime.utcnow()
@@ -87,7 +136,6 @@ def decimal_relative_time(d, other=None, ndigits=0):
     abs_diff = abs(diff)
     b_idx = bisect.bisect(_BOUND_DELTAS, abs_diff) - 1
     bbound, bunit, bname = _BOUNDS[b_idx]
-    #f_diff, f_mod = divmod(diff_seconds, total_seconds(bunit))
     f_diff = diff_seconds / total_seconds(bunit)
     rounded_diff = round(f_diff, ndigits)
     return rounded_diff, cardinalize(bname, abs(rounded_diff))
@@ -95,6 +143,20 @@ def decimal_relative_time(d, other=None, ndigits=0):
 
 def relative_time(d, other=None, ndigits=0):
     """\
+    Get a string representation of the difference between two
+    :class:`datetime` objects or one :class:`datetime` and
+    now. Handles past and future times.
+
+    Args:
+        d (datetime): The first datetime object.
+        other (datetime): An optional second datetime object. If
+            unset, defaults to the current time as determined
+            :meth:`datetime.utcnow`.
+        ndigits (int): The number of decimal digits to round to,
+            defaults to ``0``.
+    Returns:
+        A short English-language string.
+
     >>> now = datetime.datetime.utcnow()
     >>> relative_time(now, ndigits=1)
     '0 seconds ago'
@@ -102,6 +164,7 @@ def relative_time(d, other=None, ndigits=0):
     '1.4 days ago'
     >>> relative_time(now + timedelta(days=7), now, ndigits=1)
     '1 week from now'
+
     """
     drt, unit = decimal_relative_time(d, other, ndigits)
     phrase = 'ago'
