@@ -13,10 +13,12 @@ statistics are:
     the cache
   * ``miss_count`` - the number of times a key has been absent and/or
     fetched by the cache
-  * ``soft_miss_count`` - the number of times a key has been absent,
-    but a default has been provided by the caller (as can be the case
-    with :meth:`dict.get` and :meth:`dict.setdefault`).
 
+  * ``soft_miss_count`` - the number of times a key has been absent,
+    but a default has been provided by the caller, as with
+    :meth:`dict.get` and :meth:`dict.setdefault`. Soft misses are a
+    subset of misses, so this number is always less than or equal to
+    ``miss_count``.
 
 Least-Recently Inserted (LRI)
 =============================
@@ -41,6 +43,10 @@ Learn more about `caching algorithms on Wikipedia
 <https://en.wikipedia.org/wiki/Cache_algorithms#Examples>`_.
 
 """
+
+# TODO: clarify soft_miss_count. is it for .get and .set_default or is
+# it for when on_miss provides a value. also, should on_miss itself be
+# allowed to raise a KeyError
 
 # TODO: generic "cached" decorator that accepts the cache instance
 # TODO: TimedLRI
@@ -142,9 +148,14 @@ class LRU(dict):
                 link = self.link_map[key]
             except KeyError:
                 self.miss_count += 1
-                raise
-            root = self.root
+                if not self.on_miss:
+                    raise
+                ret = self[key] = self.on_miss(key)
+                return ret
+
+            self.hit_count += 1
             # Move the link to the front of the queue
+            root = self.root
             link_prev, link_next, _key, value = link
             link_prev[NEXT] = link_next
             link_next[PREV] = link_prev
@@ -152,7 +163,6 @@ class LRU(dict):
             last[NEXT] = root[PREV] = link
             link[PREV] = last
             link[NEXT] = root
-            self.hit_count += 1
             return value
 
     def get(self, key, default=None):
@@ -233,29 +243,6 @@ class LRU(dict):
         return ('%s(max_size=%r, on_miss=%r, values=%r)'
                 % (cn, self.on_miss, self.max_size, val_map))
 
-    def __missing__(self, key):
-        if not self.on_miss:
-            raise KeyError(key)
-        ret = self.on_miss(key)
-        self.soft_miss += 1
-        self[key] = ret
-        return ret
-
-    try:
-        from collections import defaultdict
-    except ImportError:
-        # no defaultdict means that __missing__ isn't supported in
-        # this version of python, so we define __getitem__
-        def __getitem__(self, key):
-            try:
-                return super(LRU, self).__getitem__(key)
-            except KeyError:
-                if self.on_miss:
-                    return self.__missing__(key)
-                raise
-    else:
-        del defaultdict
-
 
 class LRI(dict):
     """\
@@ -272,12 +259,16 @@ class LRI(dict):
     >>> cap_cache
     {'a': 'A', 'b': 'B'}
     >>> cap_cache['c'] = 'C'
-    >>> cap_cache
-    {'c': 'C', 'b': 'B'}
+    >>> cap_cache.get('A')
+    None
     """
+    # In order to support delitem andn .pop() setitem will need to
+    # popleft until it finds a key still in the cache. or, only
+    # support popitems and raise an error on pop.
     def __init__(self, max_size=DEFAULT_MAX_SIZE, values=None,
                  on_miss=None):
         super(LRI, self).__init__()
+        self.hit_count = self.miss_count = self.soft_miss_count = 0
         self.max_size = max_size
         self.on_miss = on_miss
         self._queue = deque()
@@ -286,35 +277,61 @@ class LRI(dict):
             self.update(values)
 
     def __setitem__(self, key, value):
+        # TODO: pop support (see above)
         if len(self) >= self.max_size:
             old = self._queue.popleft()
             del self[old]
         super(LRI, self).__setitem__(key, value)
         self._queue.append(key)
 
-    def __missing__(self, key):
-        if not self.on_miss:
-            raise KeyError(key)
-        ret = self.on_miss(key)
-        self[key] = ret
-        self._queue.append(key)
-        if len(self._queue) > self.max_size:
-            old = self._queue.popleft()
-            del self[old]
+    def update(self, E, **F):
+        # E and F are throwback names to the dict() __doc__
+        if E is self:
+            return
+        setitem = self.__setitem__
+        if callable(getattr(E, 'keys', None)):
+            for k in E.keys():
+                setitem(k, E[k])
+        else:
+            for k, v in E:
+                setitem(k, v)
+        for k in F:
+            setitem(k, F[k])
+        return
+
+    def copy(self):
+        return self.__class__(max_size=self.max_size, values=self)
+
+    def clear(self):
+        self._queue.clear()
+        super(LRI, self).clear()
+
+    def __getitem__(self, key):
+        try:
+            ret = super(LRI, self).__getitem__(key)
+        except KeyError:
+            self.miss_count += 1
+            if not self.on_miss:
+                raise
+            ret = self[key] = self.on_miss(key)
+            return ret
+        self.hit_count += 1
         return ret
 
-    try:
-        from collections import defaultdict
-    except ImportError:
-        # no defaultdict means that __missing__ isn't supported in
-        # this version of python, so we define __getitem__
-        def __getitem__(self, key):
-            try:
-                return super(LRI, self).__getitem__(key)
-            except KeyError:
-                return self.__missing__(key)
-    else:
-        del defaultdict
+    def get(self, key, default=None):
+        try:
+            return self[key]
+        except KeyError:
+            self.soft_miss_count += 1
+            return default
+
+    def setdefault(self, key, default=None):
+        try:
+            return self[key]
+        except KeyError:
+            self.soft_miss_count += 1
+            self[key] = default
+            return default
 
 
 if __name__ == '__main__':
