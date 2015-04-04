@@ -1,10 +1,25 @@
 # -*- coding: utf-8 -*-
-"""
-``cacheutils`` contains fundamental cache types :class:`LRI`
+"""``cacheutils`` contains fundamental cache types :class:`LRI`
 (Least-recently inserted) and :class:`LRU` (Least-recently used).
 
 All caches are :class:`dict` subtypes, designed to be as
-interchangeable as possible, to facilitate experimentation.
+interchangeable as possible, to facilitate experimentation. A key
+practice with performance enhancement with caching is ensuring that
+the caching strategy is working. If the cache is constantly missing,
+it is just adding more overhead and code complexity. The standard
+statistics are:
+
+  * ``hit_count`` - the number of times the queried key has been in
+    the cache
+  * ``miss_count`` - the number of times a key has been absent and/or
+    fetched by the cache
+  * ``soft_miss_count`` - the number of times a key has been absent,
+    but a default has been provided by the caller (as can be the case
+    with :meth:`dict.get` and :meth:`dict.setdefault`).
+
+
+Least-Recently Inserted (LRI)
+=============================
 
 The :class:`LRI` is the simpler cache, implementing a very simple first-in,
 first-out (FIFO) approach to cache eviction. If the use case calls for
@@ -12,14 +27,19 @@ simple, very-low overhead caching, such as somewhat expensive local
 operations (e.g., string operations), then the LRI is likely the right
 choice.
 
-The :class:`LRU` is the more advanced cache, but still quite simple. When it
-reaches capacity, it replaces the least-recently used item. This
-strategy makes the LRU a more effective cache than the LRI for a wide
-variety of applications, but also entails more operations for all of
-its APIs, especially reads. Unlike the :class:`LRI`, the LRU is threadsafe.
+Least-Recently Used (LRU)
+=========================
+
+The :class:`LRU` is the more advanced cache, but still quite
+simple. When it reaches capacity, it replaces the least-recently used
+item. This strategy makes the LRU a more effective cache than the LRI
+for a wide variety of applications, but also entails more operations
+for all of its APIs, especially reads. Unlike the :class:`LRI`, the
+LRU has threadsafety built in.
 
 Learn more about `caching algorithms on Wikipedia
 <https://en.wikipedia.org/wiki/Cache_algorithms#Examples>`_.
+
 """
 
 # TODO: generic "cached" decorator that accepts the cache instance
@@ -66,10 +86,7 @@ class LRU(dict):
     cache a default.
 
     Other than the size-limiting caching behavior and statistics,
-    ``LRU`` acts like its parent class, the built-in Python dict. In
-    addition to the overridden methods below, the following methods
-    inherit the default behavior: ``__len__()``, ``pop()``,
-    ``iterkeys()``, ``keys()``, ``__iter__()``.
+    ``LRU`` acts like its parent class, the built-in Python dict.
     """
     def __init__(self, max_size=DEFAULT_MAX_SIZE, values=None,
                  on_miss=None):
