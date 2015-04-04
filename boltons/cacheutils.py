@@ -258,9 +258,13 @@ class LRI(dict):
     >>> cap_cache['a'], cap_cache['b'] = 'A', 'B'
     >>> cap_cache
     {'a': 'A', 'b': 'B'}
+    >>> [cap_cache['b'] for i in range(3)][0]
+    'B'
     >>> cap_cache['c'] = 'C'
-    >>> cap_cache.get('A')
+    >>> print cap_cache.get('a')
     None
+    >>> cap_cache.hit_count, cap_cache.miss_count, cap_cache.soft_miss_count
+    (3, 1, 1)
     """
     # In order to support delitem andn .pop() setitem will need to
     # popleft until it finds a key still in the cache. or, only
