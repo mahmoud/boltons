@@ -52,8 +52,10 @@ except:
 try:
     from compat import make_sentinel
     _MISSING = make_sentinel(var_name='_MISSING')
+    _KWARG_MARK = make_sentinel(var_name='_KWARG_MARK')
 except ImportError:
     _MISSING = object()
+    _KWARG_MARK = object()
 
 
 PREV, NEXT, KEY, VALUE = range(4)   # names for the link fields
@@ -320,6 +322,77 @@ class LRI(dict):
             self.soft_miss_count += 1
             self[key] = default
             return default
+
+
+### Cached decorator
+# Key-making technique adapted from Python 3.4's functools
+
+class _HashedKey(list):
+    """The _HashedKey guarantees that hash() will be called no more than once
+    per cached function invocation.
+    """
+    __slots__ = 'hash_value'
+
+    def __init__(self, key):
+        self[:] = key
+        self.hash_value = hash(tuple(key))
+
+    def __hash__(self):
+        return self.hash_value
+
+
+def _make_cache_key(args, kwargs, typed=False, kwarg_mark=_KWARG_MARK,
+                    fasttypes=frozenset(int, str, frozenset, type(None))):
+    """Make a cache key from optionally typed positional and keyword
+    arguments. If *typed* is ``True``, ``3`` and ``3.0`` will be
+    treated as separate keys.
+
+    The key is constructed in a way that is flat as possible rather than
+    as a nested structure that would take more memory.
+
+    If there is only a single argument and its data type is known to cache
+    its hash value, then that argument is returned without a wrapper.  This
+    saves space and improves lookup speed.
+    """
+    key = list(args)
+    if kwargs:
+        sorted_items = sorted(kwargs.items())
+        key.append(kwarg_mark)
+        key.extend(sorted_items)
+    if typed:
+        key.extend([type(v) for v in args])
+        if kwargs:
+            key.extend([type(v) for k, v in sorted_items])
+    elif len(key) == 1 and type(key[0]) in fasttypes:
+        return key[0]
+    return _HashedKey(key)
+
+
+class CachedFunction(object):
+    def __init__(self, func, cache, typed=False):
+        self.func = func
+        self.cache = cache
+        self.typed = typed
+
+    def __call__(self, *args, **kwargs):
+        key = _make_cache_key(args, kwargs, typed=self.typed)
+        try:
+            ret = self.cache[key]
+        except KeyError:
+            ret = self.cache[key] = self.func(*args, **kwargs)
+        return ret
+
+    def __repr__(self):
+        cn = self.__class__.__name__
+        if self.typed:
+            return "%s(func=%r, typed=%r)" % (cn, self.func, self.typed)
+        return "%s(func=%r)" % (cn, self.func)
+
+
+def cached(cache, typed=False):
+    def cached_func_decorator(func):
+        return CachedFunction(func, cache, typed=typed)
+
 
 
 if __name__ == '__main__':
