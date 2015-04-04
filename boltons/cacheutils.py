@@ -1,11 +1,29 @@
 # -*- coding: utf-8 -*-
-"""\
-Contains fundamental cache types, including LRU (Least-recently
-used) and LRI (Least-recently inserted).
+"""
+``cacheutils`` contains fundamental cache types :class:`LRI`
+(Least-recently inserted) and :class:`LRU` (Least-recently used).
+
+All caches are :class:`dict` subtypes, designed to be as
+interchangeable as possible, to facilitate experimentation.
+
+The :class:`LRI` is the simpler cache, implementing a very simple first-in,
+first-out (FIFO) approach to cache eviction. If the use case calls for
+simple, very-low overhead caching, such as somewhat expensive local
+operations (e.g., string operations), then the LRI is likely the right
+choice.
+
+The :class:`LRU` is the more advanced cache, but still quite simple. When it
+reaches capacity, it replaces the least-recently used item. This
+strategy makes the LRU a more effective cache than the LRI for a wide
+variety of applications, but also entails more operations for all of
+its APIs, especially reads. Unlike the :class:`LRI`, the LRU is threadsafe.
 
 Learn more about `caching algorithms on Wikipedia
 <https://en.wikipedia.org/wiki/Cache_algorithms#Examples>`_.
 """
+
+# TODO: generic "cached" decorator that accepts the cache instance
+# TODO: TimedLRI
 __all__ = ['LRI', 'LRU']
 
 from collections import deque
@@ -35,7 +53,7 @@ DEFAULT_MAX_SIZE = 128
 class LRU(dict):
     """\
     The ``LRU`` implements the Least-Recently Used caching strategy,
-    with ``max_size`` equal to the maximum number of items to be
+    with *max_size* equal to the maximum number of items to be
     cached, ``values`` as the initial values in the cache, and
     ``on_miss`` set to a callable which accepts a single argument, the
     key not present in the cache, and returns the value to be cached.
@@ -224,14 +242,21 @@ class LRU(dict):
 
 class LRI(dict):
     """\
-    The LRI implements the basic Least Recently Inserted strategy to
-    caching. One could also think of this as a SizeLimitedDefaultDict.
+    The ``LRI`` implements the basic *Least Recently Inserted* strategy to
+    caching. One could also think of this as a ``SizeLimitedDefaultDict``.
 
-    ``on_miss`` is a callable that accepts the missing key (as opposed
-    to collections.defaultdict's ``default_factory``, which accepts no
-    arguments.) Also note that the LRI is not yet instrumented with
-    statistics tracking (as the ``LRU`` is).
+    *on_miss* is a callable that accepts the missing key (as opposed
+    to :class:`collections.defaultdict`'s "default_factory", which
+    accepts no arguments.) Also note that, unlike the :class:`LRU`,
+    the ``LRI`` is not yet instrumented with statistics tracking.
 
+    >>> cap_cache = LRI(max_size=2)
+    >>> cap_cache['a'], cap_cache['b'] = 'A', 'B'
+    >>> cap_cache
+    {'a': 'A', 'b': 'B'}
+    >>> cap_cache['c'] = 'C'
+    >>> cap_cache
+    {'c': 'C', 'b': 'B'}
     """
     def __init__(self, max_size=DEFAULT_MAX_SIZE, values=None,
                  on_miss=None):
@@ -242,6 +267,13 @@ class LRI(dict):
 
         if values:
             self.update(values)
+
+    def __setitem__(self, key, value):
+        if len(self) >= self.max_size:
+            old = self._queue.popleft()
+            del self[old]
+        super(LRI, self).__setitem__(key, value)
+        self._queue.append(key)
 
     def __missing__(self, key):
         if not self.on_miss:
