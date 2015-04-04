@@ -33,6 +33,7 @@ Learn more about `caching algorithms on Wikipedia
 
 # TODO: generic "cached" decorator that accepts the cache instance
 # TODO: TimedLRI
+# TODO: support 0 max_size?
 __all__ = ['LRI', 'LRU']
 
 from collections import deque
@@ -223,7 +224,7 @@ class LRU(dict):
     def __repr__(self):
         cn = self.__class__.__name__
         val_map = super(LRU, self).__repr__()
-        return ('%s(max_size=%r, on_miss=%r, values=%r)'
+        return ('%s(max_size=%r, on_miss=%r, values=%s)'
                 % (cn, self.on_miss, self.max_size, val_map))
 
 
