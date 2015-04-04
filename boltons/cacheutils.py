@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
-"""``cacheutils`` contains fundamental cache types :class:`LRI`
-(Least-recently inserted) and :class:`LRU` (Least-recently used).
+"""``cacheutils`` contains consistent implementations of fundamental cache types. Currently there are two to choose from:
 
-All caches are :class:`dict` subtypes, designed to be as
+  * :class:`LRI` - Least-recently inserted
+  * :class:`LRU` - Least-recently used
+
+Both caches are :class:`dict` subtypes, designed to be as
 interchangeable as possible, to facilitate experimentation. A key
 practice with performance enhancement with caching is ensuring that
 the caching strategy is working. If the cache is constantly missing,
@@ -19,25 +21,6 @@ statistics are:
     :meth:`dict.get` and :meth:`dict.setdefault`. Soft misses are a
     subset of misses, so this number is always less than or equal to
     ``miss_count``.
-
-Least-Recently Inserted (LRI)
-=============================
-
-The :class:`LRI` is the simpler cache, implementing a very simple first-in,
-first-out (FIFO) approach to cache eviction. If the use case calls for
-simple, very-low overhead caching, such as somewhat expensive local
-operations (e.g., string operations), then the LRI is likely the right
-choice.
-
-Least-Recently Used (LRU)
-=========================
-
-The :class:`LRU` is the more advanced cache, but still quite
-simple. When it reaches capacity, it replaces the least-recently used
-item. This strategy makes the LRU a more effective cache than the LRI
-for a wide variety of applications, but also entails more operations
-for all of its APIs, especially reads. Unlike the :class:`LRI`, the
-LRU has threadsafety built in.
 
 Learn more about `caching algorithms on Wikipedia
 <https://en.wikipedia.org/wiki/Cache_algorithms#Examples>`_.
