@@ -1,8 +1,7 @@
 # -*- coding: utf-8 -*-
-"""\
+"""Given how often Python is used for wrangling disk contents, one
+would expect the standard library to have grown a few of the following:
 
-Given how often Python is used for wrangling disk contents, one
-would expect more of these to be provided.
 
 """
 
@@ -35,27 +34,48 @@ def mkdir_p(path):
 
 
 class FilePerms(object):
-    """\
-    The ``FilePerms`` type is used to represent standard POSIX filesystem permissions:
+    """The :class:`FilePerms` type is used to represent standard POSIX
+    filesystem permissions:
 
-    * Read
-    * Write
-    * Execute
+      * Read
+      * Write
+      * Execute
 
     Across three classes of user:
 
-    * Owning (u)ser
-    * Owner's (g)roup
-    * Any (o)ther user
+      * Owning (u)ser
+      * Owner's (g)roup
+      * Any (o)ther user
 
     This class assists with computing new permissions, as well as
     working with numeric octal ``777``-style and ``rwx``-style
     permissions. Currently it only considers the bottom 9 permission
     bits; it does not support sticky bits or more advanced permission
     systems.
+
+    Args:
+        user (str): A string in the 'rwx' format, omitting characters
+            for which owning user's permissions are not provided.
+        group (str): A string in the 'rwx' format, omitting characters
+            for which owning group permissions are not provided.
+        other (str): A string in the 'rwx' format, omitting characters
+            for which owning other/world permissions are not provided.
+
+    There are many ways to use :class:`FilePerms`:
+
+    >>> FilePerms(user='rwx', group='xrw', other='wxr')  # note character order
+    FilePerms(user='rwx', group='rwx', other='rwx')
+    >>> oct(int(FilePerms('r', 'r', '')))
+    '0440'
+
+    See also the :meth:`FilePerms.from_int` and
+    :meth:`FilePerms.from_path` classmethods for useful alternative
+    ways to construct :class:`FilePerms` objects.
     """
     # TODO: consider more than the lower 9 bits
     class _FilePermProperty(object):
+        _perm_val = {'r': 4, 'w': 2, 'x': 1}  # for sorting
+
         def __init__(self, attribute, offset):
             self.attribute = attribute
             self.offset = offset
@@ -78,9 +98,12 @@ class FilePerms(object):
                                  ' specification %r, expected empty string'
                                  ' or one or more of %r'
                                  % (invalid_chars, value, VALID_PERM_CHARS))
-            unique_chars = ''.join(set(value))
-            setattr(fp_obj, self.attribute, unique_chars)
-            self._update_integer(fp_obj, unique_chars)
+
+            sort_key = lambda c: self._perm_val[c]
+            new_value = ''.join(sorted(set(value),
+                                       key=sort_key, reverse=True))
+            setattr(fp_obj, self.attribute, new_value)
+            self._update_integer(fp_obj, new_value)
 
         def _update_integer(self, fp_obj, value):
             mode = 0
@@ -99,6 +122,11 @@ class FilePerms(object):
 
     @classmethod
     def from_int(cls, i):
+        """Create a :class:`FilePerms` object from an integer.
+
+        >>> FilePerms.from_int(0644)  # note the leading zero for octal
+        FilePerms(user='rw', group='r', other='r')
+        """
         i &= 0777
         key = ('', 'x', 'w', 'xw', 'r', 'rx', 'rw', 'rwx')
         parts = []
@@ -110,15 +138,29 @@ class FilePerms(object):
 
     @classmethod
     def from_path(cls, path):
+        """Make a new :class:`FilePerms` object based on the permissions
+        assigned to the file or directory at *path*.
+
+        Args:
+            path (str): Filesystem path of the target file.
+
+        >>> from os.path import expanduser
+        >>> 'r' in FilePerms.from_path(expanduser('~')).user  # probably
+        True
+        """
         stat_res = os.stat(path)
         return cls.from_int(stat.S_IMODE(stat_res.st_mode))
 
     def __int__(self):
         return self._integer
 
+    # Sphinx tip: attribute docstrings come after the attribute
     user = _FilePermProperty('_user', 2)
+    "Stores the ``rwx``-formatted *user* permission."
     group = _FilePermProperty('_group', 1)
+    "Stores the ``rwx``-formatted *group* permission."
     other = _FilePermProperty('_other', 0)
+    "Stores the ``rwx``-formatted *other* permission."
 
     def __repr__(self):
         cn = self.__class__.__name__
@@ -279,7 +321,7 @@ def copytree(src, dst, symlinks=False, ignore=None):
     The optional ignore argument is a callable. If given, it
     is called with the `src` parameter, which is the directory
     being visited by copytree(), and `names` which is the list of
-    `src` contents, as returned by os.listdir():
+    `src` contents, as returned by os.listdir()::
 
         callable(src, names) -> ignored_names
 
@@ -288,8 +330,8 @@ def copytree(src, dst, symlinks=False, ignore=None):
     list of names relative to the `src` directory that should
     not be copied.
 
-    XXX Consider this example code rather than the ultimate tool.
-
+    Note that the standard library bears the warning: "Consider this
+    example code rather than the ultimate tool."
     """
     names = os.listdir(src)
     if ignore is not None:
