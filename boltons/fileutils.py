@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
-"""Given how often Python is used for wrangling disk contents, one
-would expect the standard library to have grown a few of the following:
+"""Virtually every Python programmer has used Python for wrangling
+disk contents, and ``fileutils`` collects solutions to some of the
+most commonly-found gaps in the standard library.
 """
 
 import os
@@ -12,7 +13,8 @@ import tempfile
 from shutil import copy2, copystat, Error
 
 
-VALID_PERM_CHARS = 'rwx'
+__all__ = ['mkdir_p', 'atomic_save', 'AtomicSaver', 'FilePerms',
+           'iter_find_files', 'copytree']
 
 
 def mkdir_p(path):
@@ -72,6 +74,7 @@ class FilePerms(object):
     """
     # TODO: consider more than the lower 9 bits
     class _FilePermProperty(object):
+        _perm_chars = 'rwx'
         _perm_val = {'r': 4, 'w': 2, 'x': 1}  # for sorting
 
         def __init__(self, attribute, offset):
@@ -88,14 +91,14 @@ class FilePerms(object):
             if cur == value:
                 return
             try:
-                invalid_chars = str(value).translate(None, VALID_PERM_CHARS)
+                invalid_chars = str(value).translate(None, self._perm_chars)
             except (TypeError, UnicodeEncodeError):
                 raise TypeError('expected string, not %r' % value)
             if invalid_chars:
                 raise ValueError('got invalid chars %r in permission'
                                  ' specification %r, expected empty string'
                                  ' or one or more of %r'
-                                 % (invalid_chars, value, VALID_PERM_CHARS))
+                                 % (invalid_chars, value, self._perm_chars))
 
             sort_key = lambda c: self._perm_val[c]
             new_value = ''.join(sorted(set(value),
@@ -168,8 +171,7 @@ class FilePerms(object):
 
 def atomic_save(dest_path, **kwargs):
     """A convenient interface to the :class:`AtomicSaver` type. See the
-    :class:`AtomicSaver` documentation for more info.
-
+    :class:`AtomicSaver` documentation for details.
     """
     return AtomicSaver(dest_path, **kwargs)
 
@@ -183,11 +185,11 @@ def _atomic_rename(path, new_path, overwrite=False):
 
 
 class AtomicSaver(object):
-    """Use this to get a writable file which will be moved into place as
-    long as no exceptions are raised before it is closed. It returns a
-    standard Python :class:`file` object which can be closed
-    explicitly or used as a context manager (i.e., via the :keyword:`with`
-    statement).
+    """``AtomicSaver`` is a configurable context manager that provides a
+    writable file which will be moved into place as long as no
+    exceptions are raised before it is closed. It returns a standard
+    Python :class:`file` object which can be closed explicitly or used
+    as a context manager (i.e., via the :keyword:`with` statement).
 
     Args:
         dest_path (str): The path where the completed file will be
@@ -207,6 +209,8 @@ class AtomicSaver(object):
         open_kwargs (dict): Additional keyword arguments to pass to
             *open_func*. Defaults to ``{}``.
     """
+    # TODO: option to abort if target file modify date has changed
+    # since start?
     def __init__(self, dest_path, **kwargs):
         self.dest_path = dest_path
         self.overwrite = kwargs.pop('overwrite', True)
@@ -285,17 +289,30 @@ _CUR_DIR = os.path.dirname(os.path.abspath(__file__))
 
 
 def iter_find_files(directory, patterns, ignored=None):
-    """\
-    Finds files under a `directory`, matching `patterns` using "glob"
-    syntax (e.g., "*.txt"). It's also possible to ignore patterns with
-    the `ignored` argument, which uses the same format as `patterns.
+    """Returns a generator that yields file paths under a *directory*,
+    matching *patterns* using `glob`_ syntax (e.g., ``*.txt``). Also
+    supports *ignored* patterns.
+
+    Args:
+        directory (str): Path that serves as the root of the
+            search. Yielded paths will include this as a prefix.
+        patterns (str or list): A single pattern or list of
+            glob-formatted patterns to find under *directory*.
+        ignored (str or list): A single pattern or list of
+            glob-formatted patterns to ignore.
+
+    For example, finding Python files in the current directory:
 
     >>> filenames = sorted(iter_find_files(_CUR_DIR, '*.py'))
     >>> filenames[-1].split('/')[-1]
     'tzutils.py'
+
+    Or, Python files while ignoring emacs lockfiles:
+
     >>> filenames = iter_find_files(_CUR_DIR, '*.py', ignored='.#*')
 
-    That last example ignores emacs lockfiles.
+    .. _glob: https://en.wikipedia.org/wiki/Glob_%28programming%29
+
     """
     if isinstance(patterns, basestring):
         patterns = [patterns]
@@ -316,31 +333,23 @@ def iter_find_files(directory, patterns, ignored=None):
     return
 
 
-def copytree(src, dst, symlinks=False, ignore=None):
-    """Recursively copy a directory tree using copy2().
+def copy_tree(src, dst, symlinks=False, ignore=None):
+    """The ``copy_tree`` function is an exact copy of the built-in
+    :func:`shutil.copytree`, with one key difference: it will not
+    raise an exception if part of the tree already exists. It achieves
+    this by using :func:`mkdir_p`.
 
-    The destination directory is allowed to already exist.
-    If exception(s) occur, an Error is raised with a list of reasons.
+    Args:
+        src (str): Path of the source directory to copy.
+        dst (str): Destination path. Existing directories accepted.
+        symlinks (bool): If ``True``, copy symlinks rather than their
+            contents.
+        ignore (callable): A callable that takes a path and directory
+            listing, returning the files within the listing to be ignored.
 
-    If the optional symlinks flag is true, symbolic links in the
-    source tree result in symbolic links in the destination tree; if
-    it is false, the contents of the files pointed to by symbolic
-    links are copied.
+    For more details, check out :func:`shutil.copytree` and
+    :func:`shutil.copy2`.
 
-    The optional ignore argument is a callable. If given, it
-    is called with the `src` parameter, which is the directory
-    being visited by copytree(), and `names` which is the list of
-    `src` contents, as returned by os.listdir()::
-
-        callable(src, names) -> ignored_names
-
-    Since copytree() is called recursively, the callable will be
-    called once for each directory that is copied. It returns a
-    list of names relative to the `src` directory that should
-    not be copied.
-
-    Note that the standard library bears the warning: "Consider this
-    example code rather than the ultimate tool."
     """
     names = os.listdir(src)
     if ignore is not None:
@@ -380,6 +389,9 @@ def copytree(src, dst, symlinks=False, ignore=None):
             errors.append((src, dst, str(why)))
     if errors:
         raise Error(errors)
+
+
+copytree = copy_tree  # alias for drop-in replacement of shutil
 
 
 if __name__ == '__main__':
