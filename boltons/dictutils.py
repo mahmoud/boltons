@@ -1,36 +1,37 @@
 # -*- coding: utf-8 -*-
-"""\
-
-Python has a very powerful mapping type at its core: the :class:`dict`
+"""Python has a very powerful mapping type at its core: the :class:`dict`
 type. While versatile and featureful, the :class:`dict` prioritizes
 simplicity and performance. As a result, it does not retain the order
 of item insertion [1]_, nor does it store multiple values per key. It
 is a fast, unordered 1:1 mapping.
 
 The :class:`OrderedMultiDict` contrasts to the built-in :class:`dict`,
-as a relatively maximalist, ordered 1:n subtype of ``dict``. Virtually
-every feature of :class:`dict` has been retooled to be intuitive in the
-face of this added complexity. Additional methods have been added,
-such as :class:`collections.Counter`-like functionality.
+as a relatively maximalist, ordered 1:n subtype of
+:class:`dict`. Virtually every feature of :class:`dict` has been
+retooled to be intuitive in the face of this added
+complexity. Additional methods have been added, such as
+:class:`collections.Counter`-like functionality.
 
-A prime advantage of the OrderedMultiDict (OMD) is its non-destructive
-nature. Data can be added to an OMD without being rearranged or
-overwritten. The property can allow the developer to work more freely
-with the data, as well as make more assumptions about where input data
-will end up in the output, all without any extra work. One great
-example of this is the :meth:`OMD.inverted()` method, which returns a
-new OMD with the values as keys and the keys as values. All the
-data and the respective order is represented in the inverted form, all
-from an operation which would be outright wrong and reckless with a
-built-in :class:`dict` or :class:`collections.OrderedDict`.
+A prime advantage of the :class:`OrderedMultiDict` (OMD) is its
+non-destructive nature. Data can be added to an :class:`OMD` without being
+rearranged or overwritten. The property can allow the developer to
+work more freely with the data, as well as make more assumptions about
+where input data will end up in the output, all without any extra
+work.
 
-Also note that the OMD has been performance tuned to be suitable for
-usage as a basic unordered MultiDict, as well. Special thanks to Mark
-Williams for all his help.
+One great example of this is the :meth:`OMD.inverted()` method, which
+returns a new OMD with the values as keys and the keys as values. All
+the data and the respective order is still represented in the inverted
+form, all from an operation which would be outright wrong and reckless
+with a built-in :class:`dict` or :class:`collections.OrderedDict`.
+
+The OMD has been performance tuned to be suitable for a wide range of
+usages, including as a basic unordered MultiDict. Special
+thanks to `Mark Williams`_ for all his help.
 
 .. [1] As of 2015, `basic dicts on PyPy are ordered
    <http://morepypy.blogspot.com/2015/01/faster-more-memory-efficient-and-more.html>`_.
-
+.. _Mark Williams: https://github.com/markrwilliams
 """
 
 from itertools import izip
@@ -55,13 +56,12 @@ except NameError:
 
 
 class OrderedMultiDict(dict):
-    """\
-    A MultiDict is a dictionary that can have multiple values per key
-    and the OrderedMultiDict (OMD) is a MultiDict that remembers
+    """A MultiDict is a dictionary that can have multiple values per key
+    and the OrderedMultiDict (OMD) is a MultiDict that retains
     original insertion order. Common use cases include:
 
       * handling query strings parsed from URLs
-      * inverting a dictionary to create a reverse index
+      * inverting a dictionary to create a reverse index (values to keys)
       * stacking data from multiple dictionaries in a non-destructive way
 
     The OrderedMultiDict constructor is identical to the builtin
@@ -76,6 +76,12 @@ class OrderedMultiDict(dict):
     3
     >>> omd.getlist('a')
     [1, 3]
+
+    Some non-:class:`dict`-like behaviors also make an appearance,
+    such as support for :func:`reversed`:
+
+    >>> list(reversed(omd))
+    ['b', 'a']
 
     Note that unlike some other MultiDicts, this OMD gives precedence
     to the most recent value added. ``omd['a']`` refers to ``3``, not
@@ -100,13 +106,12 @@ class OrderedMultiDict(dict):
     {'a': [1, 3], 'b': [2]}
 
     Note that modifying those lists will modify the OMD. If you want a
-    safe-to-modify or flat dictionary, use ``todict()``.
+    safe-to-modify or flat dictionary, use :meth:`OrderedMultiDict.todict()`.
 
     >>> omd.todict()
     {'a': 3, 'b': 2}
     >>> omd.todict(multi=True)
     {'a': [1, 3], 'b': [2]}
-
 
     With ``multi=False``, items appear with the keys in to original
     insertion order, alongside the most-recently inserted value for
@@ -114,6 +119,7 @@ class OrderedMultiDict(dict):
 
     >>> OrderedMultiDict([('a', 1), ('b', 2), ('a', 3)]).items(multi=False)
     [('a', 3), ('b', 2)]
+
     """
     def __init__(self, *args, **kwargs):
         if len(args) > 1:
@@ -145,9 +151,8 @@ class OrderedMultiDict(dict):
         cells.append(cell)
 
     def add(self, k, v):
-        """\
-        Add a single value ``v`` under a key ``k``. Existing values under
-        ``k`` are preserved.
+        """Add a single value *v* under a key *k*. Existing values under *k*
+        are preserved.
         """
         self_insert = self._insert
         values = super(OrderedMultiDict, self).setdefault(k, [])
@@ -155,12 +160,11 @@ class OrderedMultiDict(dict):
         values.append(v)
 
     def addlist(self, k, v):
-        """\
-        Add an iterable of values underneath a specific key, preserving
+        """Add an iterable of values underneath a specific key, preserving
         any values already under that key.
 
-        Called ``addlist`` for consistency, but tuples and other
-        sequences and iterables work.
+        Called ``addlist`` for consistency with :meth:`getlist`, but
+        tuples and other sequences and iterables work.
         """
         self_insert = self._insert
         values = super(OrderedMultiDict, self).setdefault(k, [])
@@ -169,21 +173,19 @@ class OrderedMultiDict(dict):
             values.extend(v)
 
     def get(self, k, default=None):
-        """\
-        Return the value for key ``k`` if ``k`` is in the dictionary,
-        else ``default``. If ``default`` is not given, it defaults to
-        ``None``, so that this method never raises a ``KeyError``.
+        """Return the value for key *k* if present in the dictionary, else
+        *default*. If *default* is not given, ``None`` is returned.
+        This method never raises a :exc:`KeyError`.
 
-        To get all values under a key, use :meth:`OMD.getlist`.
+        To get all values under a key, use :meth:`OrderedMultiDict.getlist`.
         """
         return super(OrderedMultiDict, self).get(k, [default])[-1]
 
     def getlist(self, k, default=_MISSING):
-        """\
-        Get all values for key ``k`` as a list if ``k`` is in the
-        dictionary, else ``default``. The list returned is a copy and
-        can be safely mutated. If ``default`` is not given, it
-        defaults to an empty list.
+        """Get all values for key *k* as a list, if *k* is in the
+        dictionary, else *default*. The list returned is a copy and
+        can be safely mutated. If *default* is not given, an empty
+        :class:`list` is returned.
         """
         try:
             return super(OrderedMultiDict, self).__getitem__(k)[:]
@@ -198,32 +200,30 @@ class OrderedMultiDict(dict):
         self._clear_ll()
 
     def setdefault(self, k, default=_MISSING):
-        """\
-        If key ``k`` is in the dictionary, return its value. If not,
-        insert ``k`` with a value of ``default`` and return
-        ``default``. ``default`` defaults to None.
+        """If key *k* is in the dictionary, return its value. If not, insert
+        *k* with a value of *default* and return *default*. *default*
+        defaults to ``None``. See :meth:`dict.setdefault` for more
+        information.
         """
         if not super(OrderedMultiDict, self).__contains__(k):
             self[k] = [] if default is _MISSING else [default]
         return default
 
     def copy(self):
-        "Make a shallow copy of the dictionary."
+        "Return a shallow copy of the dictionary."
         return self.__class__(self.iteritems(multi=True))
 
     @classmethod
     def fromkeys(cls, keys, default=None):
-        """\
-        Create a dictionary from a list of keys, with all the values
-        defaulting to `default`, or `None` if `default` is not set.
+        """Create a dictionary from a list of keys, with all the values
+        set to *default*, or ``None`` if *default* is not set.
         """
         return cls([(k, default) for k in keys])
 
     def update(self, E, **F):
-        """\
-        Just like :meth:`dict.update`, add items from a dictionary or
-        iterable (and/or keyword arguments), overwriting values under
-        an existing key.
+        """Add items from a dictionary or iterable (and/or keyword arguments),
+        overwriting values under an existing key. See
+        :meth:`dict.update` for more details.
         """
         # E and F are throwback names to the dict() __doc__
         if E is self:
@@ -251,11 +251,10 @@ class OrderedMultiDict(dict):
         return
 
     def update_extend(self, E, **F):
-        """\
-        Add items from a dictionary or iterable (and/or keyword
-        arguments) without overwriting existing items present in the
-        ``OMD``. Like :meth:`update` but adds to existing keys instead
-        of overwriting them.
+        """Add items from a dictionary, iterable, and/or keyword
+        arguments without overwriting existing items present in the
+        dictionary. Like :meth:`update`, but adds to existing keys
+        instead of overwriting them.
         """
         if E is self:
             iterator = iter(E.items())
@@ -312,18 +311,16 @@ class OrderedMultiDict(dict):
         return not (self == other)
 
     def pop(self, k, default=_MISSING):
-        """\
-        Remove all values under key ``k``, returing the most-recently
-        inserted. Raises ``KeyError`` if the key is not present and no
-        default is provided.
+        """Remove all values under key *k*, returning the most-recently
+        inserted value. Raises :exc:`KeyError` if the key is not
+        present and no *default* is provided.
         """
         return self.popall(k, default)[-1]
 
     def popall(self, k, default=_MISSING):
-        """\
-        Remove all values under key ``k``, returning them in the form of
-        a list. Raises ``KeyError`` if the key is not present and no
-        default is provided.
+        """Remove all values under key *k*, returning them in the form of
+        a list. Raises :exc:`KeyError` if the key is not present and no
+        *default* is provided.
         """
         if super(OrderedMultiDict, self).__contains__(k):
             self._remove_all(k)
@@ -332,14 +329,11 @@ class OrderedMultiDict(dict):
         return super(OrderedMultiDict, self).pop(k, default)
 
     def poplast(self, k=_MISSING, default=_MISSING):
-        """\
-        Remove and return the most-recently inserted value under the key
-        ``k``, or the most-recently inserted key if ``k`` is not
-        provided. If no values remain under ``k``, it will be removed from the
-        ``OMD``.
-
-        Raises :exc:`KeyError` if ``k`` is not present in the dictionary, or
-        the dictionary is empty.
+        """Remove and return the most-recently inserted value under the key
+        *k*, or the most-recently inserted key if *k* is not
+        provided. If no values remain under *k*, it will be removed
+        from the OMD.  Raises :exc:`KeyError` if *k* is not present in
+        the dictionary, or the dictionary is empty.
         """
         if k is _MISSING:
             if self:
@@ -373,10 +367,9 @@ class OrderedMultiDict(dict):
         del self._map[k]
 
     def iteritems(self, multi=False):
-        """\
-        Iterate over the ``OMD``'s items in insertion order. By default,
+        """Iterate over the OMD's items in insertion order. By default,
         yields only the most-recently inserted value for each key. Set
-        ``multi`` to ``True`` to get all inserted items.
+        *multi* to ``True`` to get all inserted items.
         """
         root = self.root
         curr = root[NEXT]
@@ -389,11 +382,10 @@ class OrderedMultiDict(dict):
                 yield key, self[key]
 
     def iterkeys(self, multi=False):
-        """\
-        Iterate over the ``OMD``'s keys in insertion order. By default,
-        yields each key once, according to the most recent
-        insertion. Set ``multi`` to ``True`` to get all keys,
-        including duplicates, in insertion order.
+        """Iterate over the OMD's keys in insertion order. By default, yields
+        each key once, according to the most recent insertion. Set
+        *multi* to ``True`` to get all keys, including duplicates, in
+        insertion order.
         """
         root = self.root
         curr = root[NEXT]
@@ -412,22 +404,20 @@ class OrderedMultiDict(dict):
                 curr = curr[NEXT]
 
     def itervalues(self, multi=False):
-        """\
-        Iterate over the ``OMD``'s values in insertion order. By default,
+        """Iterate over the OMD's values in insertion order. By default,
         yields the most-recently inserted value per unique key.  Set
-        ``multi`` to ``True`` to get all values according to insertion
+        *multi* to ``True`` to get all values according to insertion
         order.
         """
         for k, v in self.iteritems(multi=multi):
             yield v
 
     def todict(self, multi=False):
-        """\
-        Gets a basic :class:`dict` of the items in this dictionary. Keys
+        """Gets a basic :class:`dict` of the items in this dictionary. Keys
         are the same as the OMD, values are the most recently inserted
         values for each key.
 
-        Setting the ``multi`` arg to ``True`` is yields the same
+        Setting the *multi* arg to ``True`` is yields the same
         result as calling :class:`dict` on the OMD, except that all the
         value lists are copies that can be safely mutated.
         """
@@ -436,24 +426,35 @@ class OrderedMultiDict(dict):
         return dict([(k, self[k]) for k in self])
 
     def sorted(self, key=None, reverse=False):
-        """\
-        Similar to the built-in ``sorted``, except this method returns
-        a new OMD sorted by the provided key function. Note that the
-        key function receives an item and thus should have a signature
-        like ``lambda k, v: v.idx``, for example.
+        """Similar to the built-in :func:`sorted`, except this method returns
+        a new :class:`OrderedMultiDict` sorted by the provided key
+        function, optionally reversed.
+
+        Args:
+            key (callable): A callable to determine the s ort key of
+             each element. The callable should expect an **item**
+             (key-value pair tuple).
+            reverse (bool): Set to ``True`` to reverse the ordering.
+
         >>> omd = OrderedMultiDict(zip(range(3), range(3)))
         >>> omd.sorted(reverse=True)
         OrderedMultiDict([(2, 2), (1, 1), (0, 0)])
+
+        Note that the key function receives an **item** (key-value
+        tuple), so the recommended signature looks like:
+
+        >>> omd = OrderedMultiDict(zip('hello', 'world'))
+        >>> omd.sorted(key=lambda (k, v): v)  # note parens around (k, v)
+        OrderedMultiDict([('o', 'd'), ('l', 'l'), ('e', 'o'), ('h', 'w')])
         """
         cls = self.__class__
         return cls(sorted(self.iteritems(), key=key, reverse=reverse))
 
     def inverted(self):
-        """\
-        Returns a new OrderedMultiDict with values and keys swapped. Like
-        a reverse index or dictionary transposition. Insertion order
-        is retained and all keys and values are represented in the
-        output.
+        """Returns a new :class:`OrderedMultiDict` with values and keys
+        swapped, like creating dictionary transposition or reverse
+        index.  Insertion order is retained and all keys and values
+        are represented in the output.
 
         >>> omd = OMD([(0, 2), (1, 2)])
         >>> omd.inverted().getlist(2)
@@ -467,10 +468,9 @@ class OrderedMultiDict(dict):
         return self.__class__((v, k) for k, v in self.iteritems(multi=True))
 
     def counts(self):
-        """\
-        Returns an ``OMD`` from key to number of values inserted under
-        that key. Allows the ``OMD`` to be used like
-        :py:class:`collections.Counter`.
+        """Returns a mapping from key to number of values inserted under that
+        key. Like :py:class:`collections.Counter`, but returns a new
+        :class:`OrderedMultiDict`.
         """
         # Returns an OMD because Counter/OrderedDict may not be
         # available, and neither Counter nor dict maintain order.
@@ -478,23 +478,20 @@ class OrderedMultiDict(dict):
         return self.__class__((k, len(super_getitem(k))) for k in self)
 
     def keys(self, multi=False):
-        """\
-        Returns a list containing the output of :meth:`iterkeys`.
-        See that method's docs for more details.
+        """Returns a list containing the output of :meth:`iterkeys`.  See
+        that method's docs for more details.
         """
         return list(self.iterkeys(multi=multi))
 
     def values(self, multi=False):
-        """
-        Returns a list containing the output of :meth:`itervalues`.
-        See that method's docs for more details.
+        """Returns a list containing the output of :meth:`itervalues`.  See
+        that method's docs for more details.
         """
         return list(self.itervalues(multi=multi))
 
     def items(self, multi=False):
-        """
-        Returns a list containing the output of :meth:`iteritems`.
-        See that method's docs for more details.
+        """Returns a list containing the output of :meth:`iteritems`.  See
+        that method's docs for more details.
         """
         return list(self.iteritems(multi=multi))
 
@@ -539,7 +536,7 @@ MultiDict = OrderedMultiDict
 
 
 class FastIterOrderedMultiDict(OrderedMultiDict):
-    """\ An OrderedMultiDict backed by a skip list.  Iteration over keys
+    """An OrderedMultiDict backed by a skip list.  Iteration over keys
     is faster and uses constant memory but adding duplicate key-value
     pairs is slower. Brainchild of Mark Williams.
     """
