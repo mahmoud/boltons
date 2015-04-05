@@ -28,3 +28,17 @@ LRU has threadsafety built in.
 
 .. autoclass:: boltons.cacheutils.LRU
    :members:
+
+
+Automatic function caching
+--------------------------
+
+Continuing in the theme of cache tunability and experimentation,
+``cacheutils`` also offers a way to pluggably cache function return
+values: the :func:`cached` function decorator.
+
+.. autofunction:: boltons.cacheutils.cached
+
+Similar functionality can be found in Python 3.4's :mod:`functools`
+module, though it is made for cache pluggability and does not support
+sharing the cache object across multiple functions.

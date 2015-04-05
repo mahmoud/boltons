@@ -390,6 +390,21 @@ class CachedFunction(object):
 
 
 def cached(cache, typed=False):
+    """\
+
+    Cache any function with the cache instance of your choosing. Note
+    that the function wrapped should take only `hashable`_ arguments.
+
+    Args:
+        cache (Mapping): Any :class:`dict`-like object suitable for
+            use as a cache. Instances of the :class:`LRU` and
+            :class:`LRI` are good choices.
+        typed (bool): Whether to factor argument types into the cache
+            check. Default ``False``, setting to ``True`` causes the
+            cache keys for ``3`` and ``3.0`` to be considered unequal.
+
+    .. _hashable: https://docs.python.org/2/glossary.html#term-hashable
+    """
     def cached_func_decorator(func):
         return CachedFunction(func, cache, typed=typed)
 
