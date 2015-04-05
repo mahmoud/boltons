@@ -1,18 +1,24 @@
 # -*- coding: utf-8 -*-
-"""\
-A small set of utilities useful for debugging misbehaving applications.
 """
+A small set of utilities useful for debugging misbehaving
+applications. Currently this focuses on ways to use :mod:`pdb`, the
+built-in Python debugger.
+"""
+
+__all__ = ['pdb_on_signal', 'pdb_on_exception']
 
 
 def pdb_on_signal(signalnum=None):
-    """
-    Installs a signal handler for `signalnum` (default SIGINT/keyboard
-    interrupt/ctrl-c) that launches a pdb breakpoint. This can be
-    useful for debugging infinite loops and getting into deep call
-    stacks.
+    """Installs a signal handler for *signalnum*, which defaults to
+    ``SIGINT``, or keyboard interrupt/ctrl-c. This signal handler
+    launches a :mod:`pdb` breakpoint. Results vary in concurrent
+    systems, but this technique can be useful for debugging infinite
+    loops, or easily getting into deep call stacks.
 
-    This may have unintended results when used in highly
-    threaded/concurrent code.
+    Args:
+        signalnum (int): The signal number of the signal to handle
+            with pdb. Defaults to :mod:`signal.SIGINT`, see
+            :mod:`signal` for more information.
     """
     import pdb
     import signal
@@ -31,18 +37,23 @@ def pdb_on_signal(signalnum=None):
 
 
 def pdb_on_exception(limit=100):
-    """
-    Installs a handler which, instead of exiting, attaches a
+    """Installs a handler which, instead of exiting, attaches a
     post-mortem pdb console whenever an unhandled exception is
     encountered.
 
-    To restore default behavior, just do:
+    Args:
+        limit (int): the max number of stack frames to display when
+            printing the traceback
 
-    `sys.excepthook = sys.__excepthook__`
+    A similar effect can be achieved from the command-line using the
+    following command::
 
-    A similar effect can be achieved with the following command:
+      python -m pdb your_code.py
 
-    `python -m pdb your_code.py`
+    But ``pdb_on_exception`` allows you to do this conditionally and within
+    your application. To restore default behavior, just do::
+
+      sys.excepthook = sys.__excepthook__
     """
     import pdb
     import sys
