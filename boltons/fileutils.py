@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 """Given how often Python is used for wrangling disk contents, one
 would expect the standard library to have grown a few of the following:
-
-
 """
 
 import os
@@ -18,11 +16,11 @@ VALID_PERM_CHARS = 'rwx'
 
 
 def mkdir_p(path):
-    """\
-    Creates a directory and any parent directories that may need to
+    """Creates a directory and any parent directories that may need to
     be created along the way, without raising errors for any existing
-    directories. This function mimics the behavior of ``mkdir -p`` of
-    Linux/BSD environments, but also works on Windows.
+    directories. This function mimics the behavior of the ``mkdir -p``
+    command available in Linux/BSD environments, but also works on
+    Windows.
     """
     try:
         os.makedirs(path)
@@ -169,9 +167,9 @@ class FilePerms(object):
 
 
 def atomic_save(dest_path, **kwargs):
-    """\
-    A convenient interface to the ``AtomicSaver`` type. See the
-    ``AtomicSaver`` documentation for more info.
+    """A convenient interface to the :class:`AtomicSaver` type. See the
+    :class:`AtomicSaver` documentation for more info.
+
     """
     return AtomicSaver(dest_path, **kwargs)
 
@@ -185,25 +183,31 @@ def _atomic_rename(path, new_path, overwrite=False):
 
 
 class AtomicSaver(object):
-    """\
-
-    Use this to get a writable file which will be moved into place as
-    long as no exceptions are raised before its close. It returns a
-    standard Python ``file`` which can still be closed explicitly and
-    is also usable as a context manager (i.e., via the ``with``
+    """Use this to get a writable file which will be moved into place as
+    long as no exceptions are raised before it is closed. It returns a
+    standard Python :class:`file` object which can be closed
+    explicitly or used as a context manager (i.e., via the :keyword:`with`
     statement).
+
+    Args:
+        dest_path (str): The path where the completed file will be
+            written.
+
+        overwrite (bool): Whether to overwrite the destination file if
+            it exists at completion time. Defaults to ``True``.
+        part_file (str): Name of the temporary *part_file*. Defaults
+            to *dest_path* + ``.part``
+        rm_part_on_exc (bool): Remove *part_file* on exception.
+            Defaults to ``True``.
+        overwrite_partfile (bool): Whether to overwrite the *part_file*,
+            should it exist at setup time. Defaults to ``True``.
+        open_func (callable): Function used to open the file. Override
+            this if you want to use :func:`codecs.open` or some other
+            alternative. Defaults to :func:`open()`.
+        open_kwargs (dict): Additional keyword arguments to pass to
+            *open_func*. Defaults to ``{}``.
     """
     def __init__(self, dest_path, **kwargs):
-        """
-            Args:
-                dest_path (str): The path where the completed file will be written
-                overwrite (bool, optional): Whether to overwrite the destination file if it exists at completion time. Defaults to True.
-                part_file (str, optional): Name of the temporary ``part_file``. Defaults to ``dest_path`` + ".part"
-                rm_part_on_exc (bool, optional): Remove ``part_file`` on exception. Defaults to True.
-                overwrite_partfile (bool, optional): Whether to overwrite the ``part_file`` should it exist at setup time. Defaults to True.
-                open_func (callable, optional): Function used to open the file. Override this if you want to use ``codecs.open`` or some other alternative. Defaults to ``open()``.
-                open_kwargs (dict, optional): Additional keyword arguments to pass to ``open_func``. Defaults to ``{}``.
-        """
         self.dest_path = dest_path
         self.overwrite = kwargs.pop('overwrite', True)
         self.overwrite_part = kwargs.pop('overwrite_partfile', True)
@@ -226,13 +230,18 @@ class AtomicSaver(object):
         self.part_file = None
 
     def setup(self):
-        """\
-        Called on context manager entry (the ``with`` statement), the
-        ``setup()`` function creates the temporary file in the same
-        directory as the destination file. It tests for a writable
-        directory with rename permissions early, as we may be writing
-        to the part file for a while (not using os.access because of
-        the potential issues of effective vs real privileges).
+        """Called on context manager entry (the :keyword:`with` statement),
+        the ``setup()`` method creates the temporary file in the same
+        directory as the destination file.
+
+        ``setup()`` tests for a writable directory with rename permissions
+        early, as the part file may not be written to immediately (not
+        using :func:`os.access` because of the potential issues of
+        effective vs. real privileges).
+
+        If the caller is not using the :class:`AtomicSaver` as a
+        context manager, this method should be called explicitly
+        before writing.
         """
         if os.path.lexists(self.dest_path):
             if not self.overwrite:
