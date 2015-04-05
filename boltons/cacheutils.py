@@ -342,7 +342,7 @@ class _HashedKey(list):
 
 
 def _make_cache_key(args, kwargs, typed=False, kwarg_mark=_KWARG_MARK,
-                    fasttypes=frozenset(int, str, frozenset, type(None))):
+                    fasttypes=frozenset([int, str, frozenset, type(None)])):
     """Make a cache key from optionally typed positional and keyword
     arguments. If *typed* is ``True``, ``3`` and ``3.0`` will be
     treated as separate keys.
