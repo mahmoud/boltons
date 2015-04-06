@@ -1,17 +1,48 @@
 # -*- coding: utf-8 -*-
-"""\
-New-style string formatting (i.e., bracket-style/{}-style) brought a
-lot of power and features over old-style (%-style) string formatting,
-but it is far from without its own faults. Besides being more verbose
-and substantially slower, it is lacking a lot of useful
-instrumentation. The `formatutils` module provides useful format
-string introspection and manipulation functions.
-"""
+"""`PEP 3101`_ introduced the :meth:`str.format` method, and what
+would later be called "new-style" string formatting. For the sake of
+explicit correctness, it is probably best to refer to Python's dual
+string formatting capabilities as *bracket-style* and
+*percent-style*. There is overlap, but one does not replace the
+other.
 
+  * Bracket-style is more pluggable, slower, and uses a method.
+  * Percent-style is simpler, faster, and uses an operator.
+
+Bracket-style formatting brought with it a much more powerful toolbox,
+but it was far from a full one. :meth:`str.format` uses `more powerful
+syntax`_, but `the tools and idioms`_ for working with
+that syntax are not well-developed nor well-advertised.
+
+``formatutils`` adds several functions for working with bracket-style
+format strings:
+
+  * :class:`DeferredValue`: Defer fetching or calculating a value
+    until format time.
+  * :func:`get_format_args`: Parse the positional and keyword
+    arguments out of a format string.
+  * :func:`tokenize_format_str`: Tokenize a format string into
+    literals and :class:`BaseFormatField` objects.
+  * :func:`construct_format_field_str`: Assists in progammatic
+    construction of format strings.
+  * :func:`infer_positional_format_args`: Converts anonymous
+    references in 2.7+ format strings to explicit positional arguments
+    suitable for usage with Python 2.6.
+
+.. _more powerful syntax: https://docs.python.org/2/library/string.html#format-string-syntax
+.. _the tools and idioms: https://docs.python.org/2/library/string.html#string-formatting
+.. _PEP 3101: https://www.python.org/dev/peps/pep-3101/
+"""
+# TODO: also include percent-formatting utils?
+# TODO: include lithoxyl.formatters.Formatter (or some adaptation)?
 
 import re
 from string import Formatter
 from collections import namedtuple
+
+__all__ = ['DeferredValue', 'get_format_args', 'tokenize_format_str',
+           'construct_format_field_str', 'infer_positional_format_args',
+           'BaseFormatField']
 
 
 _pos_farg_re = re.compile('({{)|'         # escaped open-brace
@@ -77,6 +108,7 @@ def infer_positional_format_args(fstr):
     return ret
 
 
+# This approach is hardly exhaustive but it works for most builtins
 _INTCHARS = 'bcdoxXn'
 _FLOATCHARS = 'eEfFgGn%'
 _TYPE_MAP = dict([(x, int) for x in _INTCHARS] +
@@ -131,8 +163,8 @@ def tokenize_format_str(fstr, resolve_pos=True):
     Takes a format string, turns it into a list of alternating string
     literals and :class:`BaseFormatField` tokens. By default, also
     infers anonymous positional references into explict, numbered
-    positional references. To disable this behavior set `resolve_pos`
-    to `False`.
+    positional references. To disable this behavior set *resolve_pos*
+    to ``False``.
     """
     ret = []
     if resolve_pos:
@@ -148,14 +180,14 @@ def tokenize_format_str(fstr, resolve_pos=True):
 
 
 class BaseFormatField(object):
-    """\
-    A class representing a reference to an argument inside of a
-    new-style format string. For instance, in `"{greeting}, world!"`,
-    there is a field called "greeting".
+    """A class representing a reference to an argument inside of a
+    bracket-style format string. For instance, in ``"{greeting},
+    world!"``, there is a field named "greeting".
 
-    These fields can have a lot of options applied to them. See the
-    Python docs on Format String Syntax for the full details:
-    https://docs.python.org/2/library/string.html#formatstrings
+    These fields can have many options applied to them. See the
+    Python docs on `Format String Syntax`_ for the full details.
+
+    .. _Format String Syntax: https://docs.python.org/2/library/string.html#string-formatting
     """
     def __init__(self, fname, fspec='', conv=None):
         self.set_fname(fname)
@@ -163,6 +195,8 @@ class BaseFormatField(object):
         self.set_conv(conv)
 
     def set_fname(self, fname):
+        "Set the field name."
+
         path_list = re.split('[.[]', fname)  # TODO
 
         self.base_name = path_list[0]
@@ -171,6 +205,7 @@ class BaseFormatField(object):
         self.is_positional = not self.base_name or self.base_name.isdigit()
 
     def set_fspec(self, fspec):
+        "Set the field spec."
         fspec = fspec or ''
         subfields = []
         for sublit, subfname, _, _ in fspec._formatter_parser():
@@ -182,13 +217,15 @@ class BaseFormatField(object):
         self.type_func = _TYPE_MAP.get(self.type_char, str)
 
     def set_conv(self, conv):
-        "!s and !r, etc."
+        """There are only two builtin converters: ``s`` and ``r``. They are
+        somewhat rare and appearlike ``"{ref!r}"``."""
         # TODO
         self.conv = conv
         self.conv_func = None  # TODO
 
     @property
     def fstr(self):
+        "The current state of the field in string format."
         return construct_format_field_str(self.fname, self.fspec, self.conv)
 
     def __repr__(self):
@@ -209,24 +246,33 @@ _UNSET = object()
 
 
 class DeferredValue(object):
-    """DeferredValue is a wrapper type, used to defer computing values
-    which would otherwise be expensive to stringify and format. This
-    is most valuable in areas like logging, where one would not want
-    to waste time formatting a value for a log message which will
-    subsequently be filtered because the message's log level was DEBUG
-    and the logger was set to only emit CRITICAL messages.
+    """:class:`DeferredValue` is a wrapper type, used to defer computing
+    values which would otherwise be expensive to stringify and
+    format. This is most valuable in areas like logging, where one
+    would not want to waste time formatting a value for a log message
+    which will subsequently be filtered because the message's log
+    level was DEBUG and the logger was set to only emit CRITICAL
+    messages.
 
-    The DeferredValue is initialized with a callable that takes no
-    arguments and returns the value, which can be of any type. By
-    default DeferredValue only calls that callable once, and future
-    references will get a cached value. This behavior can be disabled
-    by setting `cache_value` to `False`.
+    The :class:``DeferredValue`` is initialized with a callable that
+    takes no arguments and returns the value, which can be of any
+    type. By default DeferredValue only calls that callable once, and
+    future references will get a cached value. This behavior can be
+    disabled by setting *cache_value* to ``False``.
+
+    Args:
+
+        func (function): A callable that takes no arguments and
+            computes the value being represented.
+        cache_value (bool): Whether subsequent usages will call *func*
+            again. Defaults to ``True``.
 
     >>> import sys
     >>> dv = DeferredValue(lambda: len(sys._current_frames()))
     >>> output = "works great in all {0} threads!".format(dv)
 
-    PROTIP: from formatutils import DeferredValue as DV  # keeps lines shorter
+    PROTIP: To keep lines shorter, use: ``from formatutils import
+    DeferredValue as DV``
     """
     def __init__(self, func, cache_value=True):
         self.func = func
@@ -234,6 +280,11 @@ class DeferredValue(object):
         self._value = _UNSET
 
     def get_value(self):
+        """Computes, optionally caches, and returns the value of the
+        *func*. If ``get_value()`` has been called before, a cached
+        value may be returned depending on the *cache_value* option
+        passed to the constructor.
+        """
         if self._value is _UNSET or not self.cache_value:
             value = self.func()
         if self.cache_value:
