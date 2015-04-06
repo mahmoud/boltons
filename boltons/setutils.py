@@ -40,7 +40,10 @@ class IndexedSet(MutableSet):
     """``IndexedSet`` is a :class:`collections.MutableSet` that maintains
     insertion order and uniqueness of inserted elements. It's a hybrid
     type, mostly like an OrderedSet, but also :class:`list`-like, in
-    that it supports indexing and slicing:
+    that it supports indexing and slicing.
+
+    Args:
+        other (iterable): An optional iterable used to initialize the set.
 
     >>> x = IndexedSet(range(4) + range(8))
     >>> x
@@ -75,10 +78,6 @@ class IndexedSet(MutableSet):
 
     Otherwise, the API strives to be as complete a union of the
     :class:`list` and :class:`set` APIs as possible.
-
-    Args:
-        other (iterable): An optional iterable used to initialize the set.
-
     """
     def __init__(self, other=None):
         self.item_index_map = dict()
