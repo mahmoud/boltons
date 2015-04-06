@@ -1,19 +1,16 @@
 # -*- coding: utf-8 -*-
-
+"""Python's built-in :mod:`functools` module builds several useful
+utilities on top of Python's first-class function
+support. ``funcutils`` generally stays in the same vein, adding to and
+correcting Python's standard metaprogramming facilities.
+"""
 import functools
-from types import MethodType
+from types import MethodType, FunctionType
 from itertools import chain
 
 
-__all__ = ['partial', 'CachedInstancePartial', 'InstancePartial',
-           'dir_dict', 'mro_items']
-
-_func_type = type(lambda: None)
-
-
 def mro_items(type_obj):
-    """\
-    Takes a type and returns an iterator over all class variables
+    """Takes a type and returns an iterator over all class variables
     throughout the type hierarchy (respecting the MRO).
 
     >>> sorted([k for k, v in mro_items(int) if not (callable(v) or isinstance(v, type(int.__int__)))])
@@ -25,8 +22,7 @@ def mro_items(type_obj):
 
 
 def dir_dict(obj, raise_exc=False):
-    """\
-    Return a dictionary of attribute names to values for a given
+    """Return a dictionary of attribute names to values for a given
     object. Unlike ``obj.__dict__``, this function returns all
     attributes on the object, including ones on parent classes.
     """
@@ -42,52 +38,64 @@ def dir_dict(obj, raise_exc=False):
 
 
 def copy_function(orig, copy_dict=True):
-    """\
-    Returns a shallow copy of the function, including code object,
-    globals, closure, etc. If ``copy_dict`` is set to ``True``, then
-    the function's nonstandard attributes are also copied.
+    """Returns a shallow copy of the function, including code object,
+    globals, closure, etc.
+
+    >>> func = lambda: func
+    >>> func() is func
+    True
+    >>> func_copy = copy_function(func)
+    >>> func_copy() is func
+    True
+    >>> func_copy is not func
+    True
+
+    Args:
+        orig (function): The function to be copied. Must be a
+            function, not just any method or callable.
+        copy_dict (bool): Also copy any attributes set on the function
+            instance. Defaults to ``True``.
     """
     # TODO: Python 3 compat
-    ret = _func_type(orig.func_code,
-                     orig.func_globals,
-                     name=orig.func_name,
-                     argdefs=orig.func_defaults,
-                     closure=orig.func_closure)
+    ret = FunctionType(orig.func_code,
+                       orig.func_globals,
+                       name=orig.func_name,
+                       argdefs=orig.func_defaults,
+                       closure=orig.func_closure)
     if copy_dict:
         ret.__dict__.update(orig.__dict__)
     return ret
 
 
 class InstancePartial(functools.partial):
-    """\
-    :class:`functools.partial` is a huge convenience for anyone working
-    with Python's great first-class functions. It allows developers to
-    curry arguments and incrementally create simpler callables for a
-    variety of use cases.
+    """:class:`functools.partial` is a huge convenience for anyone
+    working with Python's great first-class functions. It allows
+    developers to curry arguments and incrementally create simpler
+    callables for a variety of use cases.
 
     Unfortunately there's one big gap in its usefulness:
     methods. Partials just don't get bound as methods and
     automatically handed a reference to ``self``. The
-    ``InstancePartial`` class remedies this by inheriting from
+    ``InstancePartial`` type remedies this by inheriting from
     :class:`functools.partial` and implementing the necessary
     descriptor protocol. There are no other differences in
     implementation or usage. :class:`CachedInstancePartial`, below,
     has the same ability, but is slightly more efficient.
+
     """
     def __get__(self, obj, obj_type):
         return MethodType(self, obj, obj_type)
 
 
 class CachedInstancePartial(functools.partial):
-    """\
-    The CachedInstancePartial is virtually the same as
+    """The ``CachedInstancePartial`` is virtually the same as
     :class:`InstancePartial`, adding support for method-usage to
     :class:`functools.partial`, except that upon first access, it
     caches the bound method on the associated object, speeding it up
     for future accesses, and bringing the method call overhead to
     about the same as non-``partial`` methods.
 
-    See the :class:`InstancePartial` docstring for more info.
+    See the :class:`InstancePartial` docstring for more details.
     """
     def __init__(self, func, *a, **kw):
         self.__name__ = None
