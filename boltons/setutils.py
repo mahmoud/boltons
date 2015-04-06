@@ -4,10 +4,10 @@
 The :class:`set` type brings brings the practical expressiveness of
 set theory to Python. It has a very rich API overall, but lacks a
 couple of fundamental features. For one, sets are not ordered. On top
-of this, sets are not indexable, i.e, my_set[8] will raise an
-exception. The :class:`IndexedSet` type remedies both of these issues
-without compromising on the excellent complexity characteristics of
-Python's builtin set implementation.
+of this, sets are not indexable, i.e, ``my_set[8]`` will raise an
+:exc:`TypeError`. The :class:`IndexedSet` type remedies both of these
+issues without compromising on the excellent complexity
+characteristics of Python's built-in set implementation.
 """
 
 
@@ -37,11 +37,10 @@ _COMPACTION_FACTOR = 8
 
 
 class IndexedSet(MutableSet):
-    """\
-    IndexedSet is a :class:`collections.MutableSet` that maintains
+    """``IndexedSet`` is a :class:`collections.MutableSet` that maintains
     insertion order and uniqueness of inserted elements. It's a hybrid
-    type, mostly like an OrderedSet, but also list-like, in that it
-    supports indexing and slicing:
+    type, mostly like an OrderedSet, but also :class:`list`-like, in
+    that it supports indexing and slicing:
 
     >>> x = IndexedSet(range(4) + range(8))
     >>> x
@@ -54,7 +53,13 @@ class IndexedSet(MutableSet):
     >>> ''.join(fcr[:fcr.index('.')])
     'frecditpo'
 
-    As you can see, the IndexedSet is almost like a UniqueList,
+    Standard set operators and interoperation with :class:`set` are
+    all supported:
+
+    >>> fcr & set('cash4gold.com')
+    IndexedSet(['c', 'd', 'o', '.', 'm'])
+
+    As you can see, the ``IndexedSet`` is almost like a ``UniqueList``,
     retaining only one copy of a given value, in the order it was
     first added. For the curious, the reason why IndexedSet does not
     support setting items based on index (i.e, ``__setitem__()``),
@@ -63,10 +68,10 @@ class IndexedSet(MutableSet):
       my_indexed_set = [A, B, C, D]
       my_indexed_set[2] = A
 
-    At this point, a set requires only one A, but a list would
-    overwrite C. Overwriting C would change the length of the list,
-    meaning that my_indexed_set[2] would not be A, as expected with a
-    list, but rather D. So, no __setitem__().
+    At this point, a set requires only one *A*, but a :class:`list` would
+    overwrite *C*. Overwriting *C* would change the length of the list,
+    meaning that ``my_indexed_set[2]`` would not be *A*, as expected with a
+    list, but rather *D*. So, no ``__setitem__()``.
 
     Otherwise, the API strives to be as complete a union of the
     :class:`list` and :class:`set` APIs as possible.
@@ -179,17 +184,18 @@ class IndexedSet(MutableSet):
 
     @classmethod
     def from_iterable(cls, it):
+        "from_iterable(it) -> create a set from an iterable"
         return cls(it)
 
     # set operations
     def add(self, item):
-        "set.add(item) -> add item to the set"
+        "add(item) -> add item to the set"
         if item not in self.item_index_map:
             self.item_index_map[item] = len(self.item_list)
             self.item_list.append(item)
 
     def remove(self, item):
-        "set.remove(item) -> remove item from the set, raises if not present"
+        "remove(item) -> remove item from the set, raises if not present"
         try:
             didx = self.item_index_map.pop(item)
         except KeyError:
@@ -199,19 +205,20 @@ class IndexedSet(MutableSet):
         self._cull()
 
     def discard(self, item):
-        "set.discard(item) -> discard item from the set (does not raise)"
+        "discard(item) -> discard item from the set (does not raise)"
         try:
             self.remove(item)
         except KeyError:
             pass
 
     def clear(self):
-        "set.clear() -> empty the set"
+        "clear() -> empty the set"
         del self.item_list[:]
         del self.dead_indices[:]
         self.item_index_map.clear()
 
     def isdisjoint(self, other):
+        "isdisjoint(other) -> return True if no overlap with other"
         iim = self.item_index_map
         for k in other:
             if k in iim:
@@ -219,6 +226,7 @@ class IndexedSet(MutableSet):
         return True
 
     def issubset(self, other):
+        "issubset(other) -> return True if other contains this set"
         if len(other) < len(self):
             return False
         for k in self.item_index_map:
@@ -227,6 +235,7 @@ class IndexedSet(MutableSet):
         return True
 
     def issuperset(self, other):
+        "issuperset(other) -> return True if set contains other"
         if len(other) > len(self):
             return False
         iim = self.item_index_map
@@ -236,9 +245,11 @@ class IndexedSet(MutableSet):
         return True
 
     def union(self, *others):
+        "union(*others) -> return a new set containing this set and others"
         return self.from_iterable(chain(self, *others))
 
     def iter_intersection(self, *others):
+        "iter_intersection(*others) -> iterate over elements also in others"
         for k in self:
             for other in others:
                 if k not in other:
@@ -248,12 +259,14 @@ class IndexedSet(MutableSet):
         return
 
     def intersection(self, *others):
+        "intersection(*others) -> get a set with overlap of this and others"
         if len(others) == 1:
             other = others[0]
             return self.from_iterable(k for k in self if k in other)
         return self.from_iterable(self.iter_intersection(*others))
 
     def iter_difference(self, *others):
+        "iter_difference(*others) -> iterate over elements not in others"
         for k in self:
             for other in others:
                 if k in other:
@@ -263,12 +276,14 @@ class IndexedSet(MutableSet):
         return
 
     def difference(self, *others):
+        "difference(*others) -> get a new set with elements not in others"
         if len(others) == 1:
             other = others[0]
             return self.from_iterable(k for k in self if k not in other)
         return self.from_iterable(self.iter_difference(*others))
 
     def symmetric_difference(self, *others):
+        "symmetric_difference(*others) -> XOR set of this and others"
         ret = self.union(*others)
         return ret.difference(self.intersection(*others))
 
@@ -279,7 +294,7 @@ class IndexedSet(MutableSet):
 
     # in-place set operations
     def update(self, *others):
-        "set.update() -> add values from one or more iterables"
+        "update(*others) -> add values from one or more iterables"
         if not others:
             return  # raise?
         elif len(others) == 1:
@@ -290,16 +305,19 @@ class IndexedSet(MutableSet):
             self.add(o)
 
     def intersection_update(self, *others):
+        "intersection_update(*others) -> discard self.difference(*others)"
         for val in self.difference(*others):
             self.discard(val)
 
     def difference_update(self, *others):
+        "difference_update(*others) -> discard self.intersection(*others)"
         if self in others:
             self.clear()
         for val in self.intersection(*others):
             self.discard(val)
 
     def symmetric_difference_update(self, other):  # note singular 'other'
+        "symmetric_difference_update(other) -> in-place XOR with other"
         if self is other:
             self.clear()
         for val in other:
@@ -325,6 +343,7 @@ class IndexedSet(MutableSet):
         return self
 
     def iter_slice(self, start, stop, step=None):
+        "iterate over a slice of the set"
         iterable = self
         if start is not None:
             start = self._get_real_index(start)
@@ -354,7 +373,7 @@ class IndexedSet(MutableSet):
         return ret
 
     def pop(self, index=None):
-        "list.pop(index) -> remove the item at a given index (-1 by default)"
+        "pop(index) -> remove the item at a given index (-1 by default)"
         item_index_map = self.item_index_map
         len_self = len(item_index_map)
         if index is None or index == -1 or index == len_self - 1:
@@ -370,13 +389,13 @@ class IndexedSet(MutableSet):
         return ret
 
     def count(self, val):
-        "list.count(val) -> count number of instances of value (0 or 1)"
+        "count(val) -> count number of instances of value (0 or 1)"
         if val in self.item_index_map:
             return 1
         return 0
 
     def reverse(self):
-        "list.reverse() -> reverse the contents of the set in-place"
+        "reverse() -> reverse the contents of the set in-place"
         reversed_list = list(reversed(self))
         self.item_list[:] = reversed_list
         for i, item in enumerate(self.item_list):
@@ -384,7 +403,7 @@ class IndexedSet(MutableSet):
         del self.dead_indices[:]
 
     def sort(self):
-        "list.sort() -> sort the contents of the set in-place"
+        "sort() -> sort the contents of the set in-place"
         sorted_list = sorted(self)
         if sorted_list == self.item_list:
             return
@@ -394,7 +413,7 @@ class IndexedSet(MutableSet):
         del self.dead_indices[:]
 
     def index(self, val):
-        "list.index(val) -> get the index of a value, raises if not present"
+        "index(val) -> get the index of a value, raises if not present"
         try:
             return self.item_index_map[val]
         except KeyError:
