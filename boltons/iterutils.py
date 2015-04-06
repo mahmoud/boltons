@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
-"""\
-:mod:`itertools` is full of great examples of Python generator
+""":mod:`itertools` is full of great examples of Python generator
 usage. However, there are still some critical gaps. ``iterutils``
 fills many of those gaps with featureful, tested, and Pythonic
 solutions.
@@ -12,12 +11,7 @@ following are based on examples in itertools docs.
 """
 import itertools
 
-from compat import basestring
-
-
-__all__ = ['is_iterable', 'is_scalar', 'split', 'split_iter',
-           'chunked', 'chunked_iter', 'windowed', 'windowed_iter',
-           'bucketize', 'partition', 'unique', 'unique_iter']
+from compat import basestring  # TODO
 
 
 def is_iterable(obj):
@@ -39,7 +33,7 @@ def is_iterable(obj):
 
 def is_scalar(obj):
     """\
-    A near-mirror of :func:`is_iterable`, returns ``False`` if an
+    A near-mirror of :func:`is_iterable`. Returns ``False`` if an
     object is an iterable container type. Strings are considered
     scalar as well, because strings are more often treated as whole
     values as opposed to iterables of 1-character substrings.
@@ -56,25 +50,25 @@ def is_scalar(obj):
 
 def split(src, sep=None, maxsplit=None):
     """\
-    Splits an iterable based on a separator, like :func:`str.split`,
+    Splits an iterable based on a separator. Like :meth:`str.split`,
     but for all iterables. Returns a list of lists.
 
     >>> split(['hi', 'hello', None, None, 'sup', None, 'soap', None])
     [['hi', 'hello'], ['sup'], ['soap']]
 
-    See :func:`split_iter` docs below for more info.
+    See :func:`split_iter` docs for more info.
     """
     return list(split_iter(src, sep, maxsplit))
 
 
 def split_iter(src, sep=None, maxsplit=None):
-    """\
-    Splits an iterable based on a separator, ``sep``. ``sep`` can be:
+    """Splits an iterable based on a separator, *sep*, a max of
+    *maxsplit* times (no max by default). *sep* can be:
 
-    * a single value
-    * an iterable of separators
-    * a single-argument callable that returns True when a separator is
-      encountered
+      * a single value
+      * an iterable of separators
+      * a single-argument callable that returns True when a separator is
+        encountered
 
     ``split_iter()`` yields lists of non-separator values. A separator will
     never appear in the output.
@@ -83,7 +77,7 @@ def split_iter(src, sep=None, maxsplit=None):
     [['hi', 'hello'], ['sup'], ['soap']]
 
     Note that ``split_iter`` is based on :func:`str.split`, so if
-    ``sep`` is None, ``split()`` "groups" separators. If empty lists
+    *sep* is ``None``, ``split()`` **groups** separators. If empty lists
     are desired between two contiguous ``None`` values, simply use
     ``sep=[None]``:
 
@@ -99,6 +93,7 @@ def split_iter(src, sep=None, maxsplit=None):
     [['hi', 'hello'], [], ['sup'], []]
 
     See :func:`split` for a list-returning version.
+
     """
     if not is_iterable(src):
         raise TypeError('expected an iterable')
@@ -139,13 +134,11 @@ def split_iter(src, sep=None, maxsplit=None):
 
 
 def chunked(src, size, count=None, **kw):
-    """\
-    Returns a list of ``count`` chunks, each with ``size`` elements,
-    generated from iterable ``src``. If ``src`` is not evenly
-    divisible by ``size``, the final chunk will have fewer than
-    ``size`` elements.  Provide the ``fill`` keyword argument to turn
-    on padding and provide a pad value, otherwise no padding will take
-    place.
+    """Returns a list of *count* chunks, each with *size* elements,
+    generated from iterable *src*. If *src* is not evenly divisible by
+    *size*, the final chunk will have fewer than *size* elements.
+    Provide the *fill* keyword argument to provide a pad value and
+    enable padding, otherwise no padding will take place.
 
     >>> chunked(range(10), 3)
     [[0, 1, 2], [3, 4, 5], [6, 7, 8], [9]]
@@ -168,19 +161,19 @@ def chunked(src, size, count=None, **kw):
 
 
 def chunked_iter(src, size, **kw):
-    """
-    Generates 'size'-sized chunks from 'src' iterable. Unless
-    the optional 'fill' keyword argument is provided, iterables
-    not even divisible by 'size' will have a final chunk that is
-    smaller than 'size'.
-
-    Note that ``fill=None`` will in fact use ``None`` as the fill value.
+    """Generates *size*-sized chunks from *src* iterable. Unless the
+    optional *fill* keyword argument is provided, iterables not even
+    divisible by *size* will have a final chunk that is smaller than
+    *size*.
 
     >>> list(chunked_iter(range(10), 3))
     [[0, 1, 2], [3, 4, 5], [6, 7, 8], [9]]
     >>> list(chunked_iter(range(10), 3, fill=None))
     [[0, 1, 2], [3, 4, 5], [6, 7, 8], [9, None, None]]
+
+    Note that ``fill=None`` in fact uses ``None`` as the fill value.
     """
+    # TODO: add count kwarg?
     if not is_iterable(src):
         raise TypeError('expected an iterable')
     size = int(size)
@@ -216,23 +209,21 @@ def chunked_iter(src, size, **kw):
 
 
 def windowed(src, size):
-    """\
-    Returns tuples with exactly length ``size``. If the iterable is
-    too short to make a window of length ``size``, no tuples are
+    """Returns tuples with exactly length *size*. If the iterable is
+    too short to make a window of length *size*, no tuples are
     returned. See :func:`windowed_iter` for more.
     """
     return list(windowed_iter(src, size))
 
 
 def windowed_iter(src, size):
-    """\
-    Returns tuples with length `size` which represent a sliding
-    window over iterable `src`.
+    """Returns tuples with length *size* which represent a sliding
+    window over iterable *src*.
 
     >>> list(windowed_iter(range(7), 3))
     [(0, 1, 2), (1, 2, 3), (2, 3, 4), (3, 4, 5), (4, 5, 6)]
 
-    If the iterable is too short to make a window of length `size`,
+    If the iterable is too short to make a window of length *size*,
     then no window tuples are returned.
 
     >>> list(windowed_iter(range(3), 5))
@@ -249,13 +240,10 @@ def windowed_iter(src, size):
     return itertools.izip(*tees)
 
 
-def bucketize(src, keyfunc=None):
-    """\
-    Group values in the ``src`` iterable by value returned by
-    ``keyfunc``.  keyfunc defaults to :class:`bool`, which will group
-    the values by truthiness. This means there will be at most two
-    keys, ``True`` and ``False``, and each key present will have a
-    list with at least one item.
+def bucketize(src, key=None):
+    """Group values in the *src* iterable by the value returned by *key*,
+    which defaults to :class:`bool`, grouping values by
+    truthiness.
 
     >>> bucketize(range(5))
     {False: [0], True: [1, 2, 3, 4]}
@@ -268,27 +256,27 @@ def bucketize(src, keyfunc=None):
     >>> bucketize([None, None, None, 'hello'])
     {False: [None, None, None], True: ['hello']}
 
-    See :func:`partition` for a version specialized for binary use
-    cases.
-
+    Note in these examples there were at most two keys, ``True`` and
+    ``False``, and each key present has a list with at least one
+    item. See :func:`partition` for a version specialized for binary
+    use cases.
     """
     if not is_iterable(src):
         raise TypeError('expected an iterable')
-    if keyfunc is None:
-        keyfunc = bool
-    if not callable(keyfunc):
+    if key is None:
+        key = bool
+    if not callable(key):
         raise TypeError('expected callable key function')
 
     ret = {}
     for val in src:
-        key = keyfunc(val)
-        ret.setdefault(key, []).append(val)
+        keyval = key(val)
+        ret.setdefault(keyval, []).append(val)
     return ret
 
 
-def partition(src, keyfunc=None):
-    """\
-    No relation to :meth:`str.partition`, ``partition`` is like
+def partition(src, key=None):
+    """No relation to :meth:`str.partition`, ``partition`` is like
     :func:`bucketize`, but for added convenience returns a tuple of
     ``(truthy_values, falsy_values)``.
 
@@ -296,7 +284,7 @@ def partition(src, keyfunc=None):
     >>> nonempty
     ['hi', 'bye']
 
-    ``keyfunc`` defaults to :class:`bool`, but can be carefully overridden to
+    *key* defaults to :class:`bool`, but can be carefully overridden to
     use any function that returns either ``True`` or ``False``.
 
     >>> import string
@@ -305,38 +293,35 @@ def partition(src, keyfunc=None):
     >>> ''.join(decimal_digits), ''.join(hexletters)
     ('0123456789', 'abcdefABCDEF')
     """
-    bucketized = bucketize(src, keyfunc)
+    bucketized = bucketize(src, key)
     return bucketized.get(True, []), bucketized.get(False, [])
 
 
 def unique(src, key=None):
-    """\
-    ``unique()`` returns a list of unique values, as determined by
-    ``key``, in the order they first appeared in the input iterable,
-    ``src``.
+    """``unique()`` returns a list of unique values, as determined by
+    *key*, in the order they first appeared in the input iterable,
+    *src*.
 
     >>> ones_n_zeros = '11010110001010010101010'
     >>> ''.join(unique(ones_n_zeros))
     '10'
 
-    See :func:`unique_iter` docs for more info.
-
+    See :func:`unique_iter` docs for more details.
     """
     return list(unique_iter(src, key))
 
 
 def unique_iter(src, key=None):
-    """\
-    Yield unique elements from the iterable ``src``, based on ``key``,
-    in the order in which they first appeared in ``src``.
+    """Yield unique elements from the iterable, *src*, based on *key*,
+    in the order in which they first appeared in *src*.
 
     >>> repetitious = [1, 2, 3] * 10
     >>> list(unique_iter(repetitious))
     [1, 2, 3]
 
-    By default, ``key`` is the object itself, but ``key`` can either
-    be a callable or, for convenience, a string name of the attribute
-    on which to uniqueify objects, falling back on identity when the
+    By default, *key* is the object itself, but *key* can either be a
+    callable or, for convenience, a string name of the attribute on
+    which to uniqueify objects, falling back on identity when the
     attribute is not present.
 
     >>> pleasantries = ['hi', 'hello', 'ok', 'bye', 'yes']
