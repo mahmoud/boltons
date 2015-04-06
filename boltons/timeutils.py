@@ -20,8 +20,7 @@ __all__ = ['total_seconds', 'parse_td', 'relative_time',
 
 
 def total_seconds(td):
-    """\
-    For those with older versions of Python, a pure-Python
+    """For those with older versions of Python, a pure-Python
     implementation of Python 2.7's :meth:`timedelta.total_seconds`.
 
     Args:
@@ -154,8 +153,7 @@ def decimal_relative_time(d, other=None, ndigits=0, cardinalize=True):
 
 
 def relative_time(d, other=None, ndigits=0):
-    """\
-    Get a string representation of the difference between two
+    """Get a string representation of the difference between two
     :class:`datetime` objects or one :class:`datetime` and
     now. Handles past and future times.
 

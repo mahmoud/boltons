@@ -68,9 +68,9 @@ def construct_format_field_str(fname, fspec, conv):
 
 
 def split_format_str(fstr):
-    """\
-    Does very basic spliting of a format string, returns a list of
+    """Does very basic spliting of a format string, returns a list of
     strings. For full tokenization, see :func:`tokenize_format_str`.
+
     """
     ret = []
     for lit, fname, fspec, conv in fstr._formatter_parser():
@@ -83,8 +83,7 @@ def split_format_str(fstr):
 
 
 def infer_positional_format_args(fstr):
-    """\
-    Takes format strings with anonymous positional arguments, (e.g.,
+    """Takes format strings with anonymous positional arguments, (e.g.,
     "{}" and {:d}), and converts them into numbered ones for explicitness and
     compatibility with 2.6.
 
@@ -159,8 +158,7 @@ def get_format_args(fstr):
 
 
 def tokenize_format_str(fstr, resolve_pos=True):
-    """\
-    Takes a format string, turns it into a list of alternating string
+    """Takes a format string, turns it into a list of alternating string
     literals and :class:`BaseFormatField` tokens. By default, also
     infers anonymous positional references into explict, numbered
     positional references. To disable this behavior set *resolve_pos*
@@ -217,7 +215,7 @@ class BaseFormatField(object):
         self.type_func = _TYPE_MAP.get(self.type_char, str)
 
     def set_conv(self, conv):
-        """There are only two builtin converters: ``s`` and ``r``. They are
+        """There are only two built-in converters: ``s`` and ``r``. They are
         somewhat rare and appearlike ``"{ref!r}"``."""
         # TODO
         self.conv = conv

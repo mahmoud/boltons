@@ -15,14 +15,15 @@ from compat import basestring  # TODO
 
 
 def is_iterable(obj):
-    """\
-    Similar in nature to :func:`callable`, ``is_iterable`` returns
-    ``True`` if an object is iterable, ``False`` if not.
+    """Similar in nature to :func:`callable`, ``is_iterable`` returns
+    ``True`` if an object is `iterable`_, ``False`` if not.
 
     >>> is_iterable([])
     True
     >>> is_iterable(object())
     False
+
+    .. _iterable: https://docs.python.org/2/glossary.html#term-iterable
     """
     try:
         iter(obj)
@@ -32,8 +33,7 @@ def is_iterable(obj):
 
 
 def is_scalar(obj):
-    """\
-    A near-mirror of :func:`is_iterable`. Returns ``False`` if an
+    """A near-mirror of :func:`is_iterable`. Returns ``False`` if an
     object is an iterable container type. Strings are considered
     scalar as well, because strings are more often treated as whole
     values as opposed to iterables of 1-character substrings.
@@ -49,8 +49,7 @@ def is_scalar(obj):
 
 
 def split(src, sep=None, maxsplit=None):
-    """\
-    Splits an iterable based on a separator. Like :meth:`str.split`,
+    """Splits an iterable based on a separator. Like :meth:`str.split`,
     but for all iterables. Returns a list of lists.
 
     >>> split(['hi', 'hello', None, None, 'sup', None, 'soap', None])

@@ -64,9 +64,9 @@ class OrderedMultiDict(dict):
       * inverting a dictionary to create a reverse index (values to keys)
       * stacking data from multiple dictionaries in a non-destructive way
 
-    The OrderedMultiDict constructor is identical to the builtin
+    The OrderedMultiDict constructor is identical to the built-in
     :class:`dict`, and overall the API is constitutes an intuitive
-    superset of the builtin type:
+    superset of the built-in type:
 
     >>> omd = OrderedMultiDict()
     >>> omd['a'] = 1

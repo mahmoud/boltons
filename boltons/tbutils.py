@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
-"""\
-One of the oft-cited tenets of Python is that it is better to ask
+"""One of the oft-cited tenets of Python is that it is better to ask
 forgiveness than permission. That is, there are many cases where it is
 more inclusive and correct to handle exceptions than spend extra lines
 and execution time checking for conditions. This philosophy makes good
@@ -43,9 +42,7 @@ __all__ = ['ExceptionInfo', 'TracebackInfo', 'Callpoint',
 
 
 class Callpoint(object):
-    """\
-
-    The Callpoint is a lightweight object used to represent a single
+    """The Callpoint is a lightweight object used to represent a single
     entry in the code of a call stack. It stores the code-related
     metadata of a given frame. Available attributes are the same as
     the parameters below.
@@ -101,8 +98,7 @@ class Callpoint(object):
 
     @classmethod
     def from_tb(cls, tb):
-        """\
-        Create a Callpoint from the traceback of the current
+        """Create a Callpoint from the traceback of the current
         exception. Main difference with :meth:`from_frame` is that
         ``lineno`` and ``lasti`` come from the traceback, which is to
         say the line that failed in the try block, not the line
@@ -126,8 +122,7 @@ class Callpoint(object):
             return '%s(%s)' % (cn, ', '.join([repr(a) for a in args]))
 
     def tb_frame_str(self):
-        """\
-        Render the Callpoint as it would appear in a standard printed
+        """Render the Callpoint as it would appear in a standard printed
         Python traceback. Returns a string with filename, line number,
         function name, and the actual code line of the error on up to
         two lines.
@@ -141,8 +136,7 @@ class Callpoint(object):
 
 
 class _DeferredLine(object):
-    """\
-    The _DeferredLine type allows Callpoints and TracebackInfos to be
+    """The _DeferredLine type allows Callpoints and TracebackInfos to be
     constructed without potentially hitting the filesystem, as is the
     normal behavior of the standard Python :mod:`traceback` and
     :mod:`linecache` modules. Calling :func:`str` fetches and caches
@@ -196,8 +190,7 @@ class _DeferredLine(object):
 
 # TODO: dedup frames, look at __eq__ on _DeferredLine
 class TracebackInfo(object):
-    """
-    The TracebackInfo class provides a basic representation of a stack
+    """The TracebackInfo class provides a basic representation of a stack
     trace, be it from an exception being handled or just part of
     normal execution. It is basically a wrapper around a list of
     :class:`Callpoint` objects representing frames.
@@ -243,8 +236,7 @@ class TracebackInfo(object):
 
     @classmethod
     def from_traceback(cls, tb=None, limit=None):
-        """\
-        Create a new TracebackInfo from the traceback *tb* by recurring
+        """Create a new TracebackInfo from the traceback *tb* by recurring
         up in the stack a max of *limit* times. If *tb* is unset, get
         the traceback from the currently handled exception. If no
         exception is being handled, raise a :exc:`ValueError`.
@@ -302,9 +294,8 @@ class TracebackInfo(object):
         return self.get_formatted()
 
     def get_formatted(self):
-        """\
-        Returns a string as formatted in the traditional Python
-        builtin style observable when an exception is not caught. In
+        """Returns a string as formatted in the traditional Python
+        built-in style observable when an exception is not caught. In
         other words, mimics :func:`traceback.format_tb` and
         :func:`traceback.format_stack`.
         """
@@ -314,8 +305,7 @@ class TracebackInfo(object):
 
 
 class ExceptionInfo(object):
-    """\
-    An ExceptionInfo object ties together three main fields suitable
+    """An ExceptionInfo object ties together three main fields suitable
     for representing an instance of an exception: The exception type
     name, a string representation of the exception itself (the
     exception message), and information about the traceback (stored as
@@ -371,8 +361,7 @@ class ExceptionInfo(object):
         return cls.from_exc_info(*sys.exc_info())
 
     def to_dict(self):
-        """\
-        Get a :class:`dict` representation of the ExceptionInfo, suitable
+        """Get a :class:`dict` representation of the ExceptionInfo, suitable
         for JSON serialization.
         """
         return {'exc_type': self.exc_type,
@@ -391,9 +380,8 @@ class ExceptionInfo(object):
         return '<%s [%s: %s] (%s frames%s)>' % args
 
     def get_formatted(self):
-        """\
-        Returns a string formatted in the traditional Python
-        builtin style observable when an exception is not caught. In
+        """Returns a string formatted in the traditional Python
+        built-in style observable when an exception is not caught. In
         other words, mimics :func:`traceback.format_exception`.
         """
         # TODO: add SyntaxError formatting
@@ -505,8 +493,7 @@ class ContextualCallpoint(Callpoint):
 
 
 class ContextualTracebackInfo(TracebackInfo):
-    """\
-    The ContextualTracebackInfo type is a :class:`TracebackInfo`
+    """The ContextualTracebackInfo type is a :class:`TracebackInfo`
     subtype that is used by :class:`ContextualExceptionInfo` and uses
     the :class:`ContextualCallpoint` as its frame-representing
     primitive.
@@ -515,8 +502,7 @@ class ContextualTracebackInfo(TracebackInfo):
 
 
 class ContextualExceptionInfo(ExceptionInfo):
-    """\
-    The ContextualTracebackInfo type is a :class:`TracebackInfo`
+    """The ContextualTracebackInfo type is a :class:`TracebackInfo`
     subtype that uses the :class:`ContextualCallpoint` as its
     frame-representing primitive.
 
@@ -639,8 +625,7 @@ _se_frame_re = re.compile(r'^File "(?P<filepath>.+)", line (?P<lineno>\d+)')
 # TODO: ParsedException generator over large bodies of text
 
 class ParsedException(object):
-    """\
-    Stores a parsed traceback and exception as would be typically
+    """Stores a parsed traceback and exception as would be typically
     output by :func:`sys.excepthook` or
     :func:`traceback.print_exception`.
 

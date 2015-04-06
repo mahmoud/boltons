@@ -157,7 +157,7 @@ class BasePriorityQueue(object):
 class HeapPriorityQueue(BasePriorityQueue):
     """A priority queue inherited from :class:`BasePriorityQueue`,
     backed by a list and based on the :func:`heapq.heappop` and
-    :func:`heapq.heappush` functions in the builtin :mod:`heapq`
+    :func:`heapq.heappush` functions in the built-in :mod:`heapq`
     module.
     """
     @staticmethod

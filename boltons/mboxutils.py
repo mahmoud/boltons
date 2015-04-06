@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
-"""\
-Useful utilities for working with the `mbox`_-formatted
+"""Useful utilities for working with the `mbox`_-formatted
 mailboxes. Credit to Mark Williams for these.
 
 .. _mbox: https://en.wikipedia.org/wiki/Mbox
@@ -14,10 +13,9 @@ DEFAULT_MAXMEM = 4 * 1024 * 1024  # 4MB
 
 
 class mbox_readonlydir(mailbox.mbox):
-    """\
-    A subclass of :class:`mailbox.mbox` suitable for use with mboxs
+    """A subclass of :class:`mailbox.mbox` suitable for use with mboxs
     insides a read-only mail directory, e.g., ``/var/mail``. Otherwise
-    the API is exactly the same as the builtin mbox.
+    the API is exactly the same as the built-in mbox.
 
     Deletes messages via truncation, in the manner of `Heirloom mailx`_.
 
@@ -39,15 +37,13 @@ class mbox_readonlydir(mailbox.mbox):
        case.
 
     .. _Heirloom mailx: http://heirloom.sourceforge.net/mailx.html
-
     """
     def __init__(self, path, factory=None, create=True, maxmem=1024 * 1024):
         mailbox.mbox.__init__(self, path, factory, create)
         self.maxmem = maxmem
 
     def flush(self):
-        """\
-        Write any pending changes to disk. This is called on mailbox
+        """Write any pending changes to disk. This is called on mailbox
         close and is usually not called explicitly.
 
         .. note::
