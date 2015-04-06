@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
-"""``cacheutils`` contains consistent implementations of fundamental cache types. Currently there are two to choose from:
+"""``cacheutils`` contains consistent implementations of fundamental
+cache types. Currently there are two to choose from:
 
   * :class:`LRI` - Least-recently inserted
   * :class:`LRU` - Least-recently used
@@ -24,14 +25,12 @@ statistics are:
 
 Learn more about `caching algorithms on Wikipedia
 <https://en.wikipedia.org/wiki/Cache_algorithms#Examples>`_.
-
 """
 
 # TODO: clarify soft_miss_count. is it for .get and .set_default or is
 # it for when on_miss provides a value. also, should on_miss itself be
 # allowed to raise a KeyError
 
-# TODO: generic "cached" decorator that accepts the cache instance
 # TODO: TimedLRI
 # TODO: support 0 max_size?
 __all__ = ['LRI', 'LRU']
@@ -63,19 +62,34 @@ DEFAULT_MAX_SIZE = 128
 
 
 class LRU(dict):
-    """\
-    The ``LRU`` implements the Least-Recently Used caching strategy,
-    with *max_size* equal to the maximum number of items to be
-    cached, ``values`` as the initial values in the cache, and
-    ``on_miss`` set to a callable which accepts a single argument, the
-    key not present in the cache, and returns the value to be cached.
+    """The ``LRU`` is :class:`dict` subtype implementation of the
+    *Least-Recently Used* caching strategy.
+
+    Args:
+        max_size (int): Max number of items to cache. Defaults to ``128``.
+        values (iterable): Initial values for the cache. Defaults to ``None``.
+        on_miss (callable): a callable which accepts a single argument, the
+            key not present in the cache, and returns the value to be cached.
+
+    >>> cap_cache = LRU(max_size=2)
+    >>> cap_cache['a'], cap_cache['b'] = 'A', 'B'
+    >>> cap_cache
+    {'a': 'A', 'b': 'B'}
+    >>> [cap_cache['b'] for i in range(3)][0]
+    'B'
+    >>> cap_cache['c'] = 'C'
+    >>> print cap_cache.get('a')
+    None
 
     This cache is also instrumented with statistics
     collection. ``hit_count``, ``miss_count``, and ``soft_miss_count``
     are all integer members that can be used to introspect the
     performance of the cache. ("Soft" misses are misses that did not
-    raise KeyError, e.g., ``LRU.get()`` or ``on_miss`` was used to
+    raise :exc:`KeyError`, e.g., ``LRU.get()`` or ``on_miss`` was used to
     cache a default.
+
+    >>> cap_cache.hit_count, cap_cache.miss_count, cap_cache.soft_miss_count
+    (3, 1, 1)
 
     Other than the size-limiting caching behavior and statistics,
     ``LRU`` acts like its parent class, the built-in Python dict.
@@ -231,8 +245,7 @@ class LRU(dict):
 
 
 class LRI(dict):
-    """\
-    The ``LRI`` implements the basic *Least Recently Inserted* strategy to
+    """The ``LRI`` implements the basic *Least Recently Inserted* strategy to
     caching. One could also think of this as a ``SizeLimitedDefaultDict``.
 
     *on_miss* is a callable that accepts the missing key (as opposed
@@ -390,9 +403,7 @@ class CachedFunction(object):
 
 
 def cached(cache, typed=False):
-    """\
-
-    Cache any function with the cache instance of your choosing. Note
+    """Cache any function with the cache instance of your choosing. Note
     that the function wrapped should take only `hashable`_ arguments.
 
     Args:
