@@ -1,26 +1,31 @@
 # -*- coding: utf-8 -*-
-"""\
-The Python Garbage Collector (GC) doesn't usually get too much attention,
-probably because:
+"""The Python Garbage Collector (`GC`_) doesn't usually get too much
+attention, probably because:
 
-- Python's reference counting effectively handles the vast majority of
-  unused objects
-- People are slowly learning to avoid implementing ``__del__()``
-- The collection itself strikes a good balance between simplicity and
-  power (tuneable generation sizes)
-- The collector itself is fast and rarely the cause of long pauses
-  associated with GC in other runtimes
+  - Python's `reference counting`_ effectively handles the vast majority of
+    unused objects
+  - People are slowly learning to avoid implementing `object.__del__()`_
+  - The collection itself strikes a good balance between simplicity and
+    power (`tunable generation sizes`_)
+  - The collector itself is fast and rarely the cause of long pauses
+    associated with GC in other runtimes
 
 Even so, for many applications, the time will come when the developer
 will need to track down:
 
- - Circular references
- - Misbehaving objects (locks, ``__del__()``)
- - Memory leaks
- - Or just ways to shave off a couple percent of execution time
+  - Circular references
+  - Misbehaving objects (locks, ``__del__()``)
+  - Memory leaks
+  - Or just ways to shave off a couple percent of execution time
 
-The GC is a well-instrumented entry point for exactly these
-tasks, and ``gcutils`` aims to facilitate it further.
+Thanks to the :mod:`gc` module, the GC is a well-instrumented entry
+point for exactly these tasks, and ``gcutils`` aims to facilitate it
+further.
+
+.. _GC: https://docs.python.org/2/glossary.html#term-garbage-collection
+.. _reference counting: https://docs.python.org/2/glossary.html#term-reference-count
+.. _object.__del__(): https://docs.python.org/2/glossary.html#term-reference-count
+.. _tunable generation sizes: https://docs.python.org/2/library/gc.html#gc.set_threshold
 """
 # TODO: type survey
 
@@ -30,8 +35,7 @@ __all__ = ['get_all', 'GCToggler', 'toggle_gc', 'toggle_gc_postcollect']
 
 
 def get_all(type_obj, include_subtypes=True):
-    """\
-    Get a list containing all instances of a given type.  This will
+    """Get a list containing all instances of a given type.  This will
     work for the vast majority of types out there.
 
     >>> class Ratking(object): pass
@@ -48,16 +52,19 @@ def get_all(type_obj, include_subtypes=True):
 
     Still, it's not hard to see how this functionality can be used to
     find all instances of a leaking type and track them down further
-    using :func:`gc.get_referrers` and :func:`gc.get_referrents`.
-    Furthermore, there are some optimizations present, such that
-    getting instances of user-created types is quite fast. Also,
-    setting ``include_subtypes`` to ``False`` is another way to
-    increase performance where instances of subtypes aren't required.
+    using :func:`gc.get_referrers` and :func:`gc.get_referents`.
 
-    Finally, in concurrent environments, note that objects coming back
-    may be partially constructed (their ``__init__()`` may not have
-    completed) or in all sorts of states, so caveat emptor.
+    ``get_all()`` is optimized such that getting instances of
+    user-created types is quite fast. Setting *include_subtypes* to
+    ``False`` will further increase performance in cases where
+    instances of subtypes aren't required.
 
+    .. note::
+
+      There are no guarantees about the state of objects returned by
+      ``get_all()``, especially in concurrent environments. For
+      instance, it is possible for an object to be in the middle of
+      executing its ``__init__()`` and be only partially constructed.
     """
     # TODO: old-style classes
     if not isinstance(type_obj, type):
@@ -75,9 +82,7 @@ def get_all(type_obj, include_subtypes=True):
 
 
 class GCToggler(object):
-    """\
-
-    The ``GCToggler`` is a context-manager that allows one to safely
+    """The ``GCToggler`` is a context-manager that allows one to safely
     take more control of your garbage collection schedule. Anecdotal
     experience says certain object-creation-heavy tasks see speedups
     of around 10% by simply doing one explicit collection at the very
@@ -85,16 +90,16 @@ class GCToggler(object):
 
     Two GCTogglers are already present in the ``gcutils`` module:
 
-    - ``toggle_gc`` simply turns off GC at context entrance, and
+    - :data:`toggle_gc` simply turns off GC at context entrance, and
       re-enables at exit
-    - ``toggle_gc_postcollect`` does the same, but triggers an
+    - :data:`toggle_gc_postcollect` does the same, but triggers an
       explicit collection after re-enabling.
 
     >>> with toggle_gc:
     ...     x = [object() for i in xrange(1000)]
 
     Between those two instances, the ``GCToggler`` type probably won't
-    be used much directly, but is exported for inheritance purposes.
+    be used much directly, but is documented for inheritance purposes.
     """
     def __init__(self, postcollect=False):
         self.postcollect = postcollect
@@ -109,7 +114,13 @@ class GCToggler(object):
 
 
 toggle_gc = GCToggler()
+"""A context manager for disabling GC for a code block. See
+:class:`GCToggler` for more details."""
+
+
 toggle_gc_postcollect = GCToggler(postcollect=True)
+"""A context manager for disabling GC for a code block, and collecting
+before re-enabling. See :class:`GCToggler` for more details."""
 
 
 if __name__ == '__main__':
