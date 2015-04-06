@@ -27,12 +27,13 @@ __all__ = ['BList', 'BarrelList']
 # faster getitem (and slightly slower setitem and delitem ops)
 
 class BarrelList(list):
-    """A :class:`list` subtype backed by many dynamically-scaled sublists,
-    to provide better scaling and random insertion/deletion
-    characteristics. It is a subtype of the builtin :class:`list` and
-    has an identical API, supporting indexing, slicing, sorting,
-    etc. If application requirements call for something more
-    performant, consider the `blist module available on PyPI`_.
+    """The ``BarrelList`` is a :class:`list` subtype backed by many
+    dynamically-scaled sublists, to provide better scaling and random
+    insertion/deletion characteristics. It is a subtype of the builtin
+    :class:`list` and has an identical API, supporting indexing,
+    slicing, sorting, etc. If application requirements call for
+    something more performant, consider the `blist module available on
+    PyPI`_.
 
     The name comes by way of Kurt Rose, who said it reminded him of
     barrel shifters. Not sure how, but it's BList-like, so the name
@@ -48,9 +49,16 @@ class BarrelList(list):
     99999
     >>> len(blist.lists)  # how many underlying lists
     8
+    >>> slice_idx = blist.lists[0][-1]
+    >>> blist[slice_idx:slice_idx + 2]
+    BarrelList([11637, 11638])
+
+    Slicing is supported and works just fine across list borders,
+    returning another instance of the BarrelList.
 
     .. _blist module available on PyPI: https://pypi.python.org/pypi/blist
     .. _B-trees: https://en.wikipedia.org/wiki/B-tree
+
     """
 
     _size_factor = 1520
