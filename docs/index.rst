@@ -1,38 +1,72 @@
 .. boltons documentation master file, created on Sat Mar 21 00:34:18 2015.
-
-
 boltons
 =======
 
 *boltons should be builtins.*
 
 **Boltons** is a set of pure-Python utilities in the same spirit as
-the Python builtins, and yet somehow not present in the standard
-library. A few examples include:
+the Python builtins, and yet somehow not present in `the standard
+library`_. A few examples include:
 
-* Atomic file saving, bolted on with fileutils
-* A highly-optimized ``OrderedMultiDict``, in dictutils
-* Two types of ``PriorityQueue``, in queueutils
-* "Chunked" and "windowed" iteration, among many others, in iterutils
-* A full-featured ``TracebackInfo`` type, for representing stack traces, in tbutils
+  * Atomic file saving, bolted on with :mod:`fileutils`
+  * A highly-optimized :class:`OrderedMultiDict`, in :mod:`dictutils`
+  * Two types of ``PriorityQueue``, in :mod:`queueutils`
+  * "Chunked" and "windowed" iteration, among many others, in :mod:`iterutils`
+  * A full-featured ``TracebackInfo`` type, for representing stack
+    traces, in :mod:`tbutils`
 
-Usage
------
+.. _the standard library: https://docs.python.org/2.7/library/index.html
 
-Boltons can be used in a couple ways.
+Installation and Integration
+----------------------------
 
-1. Install the boltons package using ``pip`` or ``easy_install``.
-2. Copy the whole boltons package into your project.
-3. Copy just the ``utils.py`` module that your package needs.
+Boltons can be added to a project in a few ways. There's the obvious one::
 
-The boltons package depends on no packages, making it easy for
-inclusion into a project. Furthermore, most individual modules have
+  pip install boltons
+
+Then just import away::
+
+  from boltons.cacheutils import LRU
+  my_cache = LRU()
+
+However, because of the nature of utilities, application developers
+might want to consider:
+
+  1. Copying the whole ``boltons`` package into your project.
+  2. Copying just the ``utils.py`` file that your package requires.
+
+Utility libraries are often used extensively within a project, and
+because they are not often fundamental to the architecture of the
+application, simplicity and stability may take precedence over version
+recency. Boltons take this into account by design.
+
+Design of a ``bolton``
+----------------------
+
+``boltons`` aims to be a living library, an ever-expanding collection
+of tested and true utilities. For a ``bolton`` to be a ``bolton``, it
+should:
+
+  1. Be pure-Python and as self-contained as possible.
+  2. Perform a common task or fulfill a common role.
+  3. Demonstrate and mitigate some insufficiency in the standard library.
+  4. Strive for the standard set forth by the standard library by
+     striking a balance between best practice and "good enough",
+     correctness and common sense.
+
+The ``boltons`` package depends on no packages, making it easy for
+inclusion into a project. Furthermore, virtually all individual modules have
 been written to be as self-contained as possible, allowing
-cherrypicking of functionality into projects. Utility libraries are
-often used extensively within a project, and because they are not
-often fundamental to the architecture of the application, stability
-may take precedence over version recency.
+cherrypicking of functionality into projects.
 
+Themes of ``boltons``
+---------------------
+
+1. From the docs (queueutils, iterutils, tzutils)
+2. Standard lib reimpl (fileutils.copytree, namedutils.namedtuple)
+3. One-off implementations discovered in other libs utils.py or equivalent (strutils.slugify, bytes2human, relative time)
+4. More powerful multi-purpose data structures (OMD, IndexedSet, BList, namedlist, Table)
+5. Personal practice (debugutils, gcutils, tbutils)
 
 Third-party packages
 --------------------
@@ -50,7 +84,8 @@ Found something missing in boltons? If you are very motivated, submit
 a Pull Request. Otherwise, submit a feature request on the Issues
 page, and we will figure something out.
 
-Contents:
+Section listing
+---------------
 
 .. toctree::
    :maxdepth: 2
