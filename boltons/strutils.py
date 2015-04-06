@@ -17,7 +17,7 @@ from compat import unicode, bytes
 __all__ = ['camel2under', 'under2camel', 'slugify', 'split_punct_ws',
            'unit_len', 'ordinalize', 'cardinalize', 'pluralize', 'singularize',
            'asciify', 'strip_ansi', 'bytes2human',
-           'find_hashtags', 'a10n', 'StringBuffer']
+           'find_hashtags', 'a10n']  # 'StringBuffer']
 
 
 _punct_ws_str = string.punctuation + string.whitespace
@@ -26,9 +26,8 @@ _camel2under_re = re.compile('((?<=[a-z0-9])[A-Z]|(?!^)[A-Z](?=[a-z]))')
 
 
 def camel2under(camel_string):
-    """
-    Converts a camelcased string to underscores. Useful for
-    turning a class name into a function name.
+    """Converts a camelcased string to underscores. Useful for turning a
+    class name into a function name.
 
     >>> camel2under('BasicParseTest')
     'basic_parse_test'
@@ -37,9 +36,8 @@ def camel2under(camel_string):
 
 
 def under2camel(under_string):
-    """
-    Converts an underscored string to camelcased. Useful for
-    turning a function name into a class name.
+    """Converts an underscored string to camelcased. Useful for turning a
+    function name into a class name.
 
     >>> under2camel('complex_tokenizer')
     'ComplexTokenizer'
@@ -52,9 +50,9 @@ def slugify(text, delim='_', lower=True, ascii=False):
     A basic function that turns text full of scary characters
     (i.e., punctuation and whitespace), into a relatively safe
     lowercased string separated only by the delimiter specified
-    by ``delim``, which defaults to '_'.
+    by *delim*, which defaults to ``_``.
 
-    The ``ascii`` convenience flag will :func:`asciify` the slug if
+    The *ascii* convenience flag will :func:`asciify` the slug if
     you require ascii-only slugs.
 
     >>> slugify('First post! Hi!!!!~1    ')
@@ -71,22 +69,20 @@ def slugify(text, delim='_', lower=True, ascii=False):
 
 
 def split_punct_ws(text):
-    """\
-    While :meth:`str.split` will split on whitespace,
+    """While :meth:`str.split` will split on whitespace,
     :func:`split_punct_ws` will split on punctuation and
     whitespace. This used internally by :func:`slugify`, above.
 
     >>> split_punct_ws('First post! Hi!!!!~1    ')
     ['First', 'post', 'Hi', '1']
-
     """
     return [w for w in _punct_re.split(text) if w]
 
 
 def unit_len(sized_iterable, unit_noun='item'):  # TODO: len_units()/unitize()?
-    """
-    Returns a plain-English description of an iterable's :func:`len()`x,
-    conditionally pluralized with :func:`cardinalize`, detailed below.
+    """Returns a plain-English description of an iterable's
+    :func:`len()`, conditionally pluralized with :func:`cardinalize`,
+    detailed below.
 
     >>> print unit_len(range(10), 'number')
     10 numbers
@@ -108,10 +104,13 @@ _ORDINAL_MAP = {'1': 'st',
 
 
 def ordinalize(number, ext_only=False):
-    """\
-    Turns an int ``number`` into its cardinal form, i.e., 1st, 2nd,
+    """Turns *number* into its cardinal form, i.e., 1st, 2nd,
     3rd, 4th, etc. If the last character isn't a digit, it returns the
     string value unchanged.
+
+    Args:
+        number (int or str): Number to be cardinalized.
+        ext_only (bool): Whether to return only the suffix. Default ``False``.
 
     >>> ordinalize(1)
     '1st'
@@ -119,13 +118,14 @@ def ordinalize(number, ext_only=False):
     '3694839230th'
     >>> ordinalize('hi')
     'hi'
+
     """
     numstr = str(number)
-    ldig, ext = numstr[-1:], ''
-    if not ldig:
+    rdig, ext = numstr[-1:], ''
+    if not rdig:
         return ''
-    if ldig in string.digits:
-        ext = _ORDINAL_MAP.get(ldig, 'th')
+    if rdig in string.digits:
+        ext = _ORDINAL_MAP.get(rdig, 'th')
     if ext_only:
         return ext
     else:
@@ -133,9 +133,8 @@ def ordinalize(number, ext_only=False):
 
 
 def cardinalize(unit_noun, count):
-    """\
-    Conditionally pluralizes a singular word ``unit_noun`` if
-    ``count`` is not one, preserving case when possible.
+    """Conditionally pluralizes a singular word *unit_noun* if
+    *count* is not one, preserving case when possible.
 
     >>> vowels = 'aeiou'
     >>> print len(vowels), cardinalize('vowel', len(vowels))
@@ -149,14 +148,14 @@ def cardinalize(unit_noun, count):
 
 
 def singularize(word):
-    """\
-    Semi-intelligently converts an English plural to its singular
-    form, preserving case pattern.
+    """Semi-intelligently converts an English plural *word* to its
+    singular form, preserving case pattern.
 
     >>> singularize('records')
     'record'
     >>> singularize('FEET')
     'FOOT'
+
     """
     orig_word, word = word, word.strip().lower()
     if not word or word in _IRR_S2P:
@@ -179,8 +178,7 @@ def singularize(word):
 
 
 def pluralize(word):
-    """\
-    Semi-intelligently converts an English word's singular form to
+    """Semi-intelligently converts an English *word* from singular form to
     plural, preserving case pattern.
 
     >>> pluralize('friend')
@@ -247,8 +245,7 @@ HASHTAG_RE = re.compile(r"(?:^|\s)[＃#]{1}(\w+)", re.UNICODE)
 
 
 def find_hashtags(string):
-    """
-    Finds and returns all hashtags in a string, with the hashmark
+    """Finds and returns all hashtags in a string, with the hashmark
     removed. Supports full-width hashmarks for Asian languages and
     does not false-positive on URL anchors.
 
@@ -265,10 +262,9 @@ def find_hashtags(string):
 
 
 def a10n(string):
-    """
-    That thing where 'internationalization' becomes 'i18n', what's it
-    called? Abbreviation? Oh wait, no: a10n. (It's actually a form of
-    `numeronym`_.)
+    """That thing where "internationalization" becomes "i18n", what's it
+    called? Abbreviation? Oh wait, no: ``a10n``. (It's actually a form
+    of `numeronym`_.)
 
     >>> a10n('abbreviation')
     'a10n'
@@ -322,22 +318,22 @@ ANSI_TERMINATORS = ('H', 'f', 'A', 'B', 'C', 'D', 'R', 's', 'u', 'J',
 
 
 def strip_ansi(text):
-    """\
-    Strips (doesn't interpret) ANSI escape codes from ``text``. Useful
-    for the occasional time when a log or redirected output
-    accidentally captures console color codes and the like.
+    """Strips ANSI escape codes from *text*. Useful for the occasional
+    time when a log or redirected output accidentally captures console
+    color codes and the like.
 
     >>> strip_ansi('\x1b[0m\x1b[1;36mart\x1b[46;34m\xdc')
     'art'
 
-    (The test above is an excerpt from ANSI art on
-    http://sixteencolors.net. Sadly, this function does not interpret
-    or render ANSI art, but you can do so with
-    http://www.bedroomlan.org/projects/ansi2img or
-    https://github.com/atdt/escapes.js)
+    The test above is an excerpt from ANSI art on
+    `sixteencolors.net`_. This function does not interpret or render
+    ANSI art, but you can do so with `ansi2img`_ or `escapes.js`_.
 
-    TODO: move to cliutils.py
+    .. _sixteencolors.net: http://sixteencolors.net
+    .. _ansi2img: http://www.bedroomlan.org/projects/ansi2img
+    .. _escapes.js: https://github.com/atdt/escapes.js
     """
+    # TODO: move to cliutils.py
     nansi, keep, i, text_len = [], True, 0, len(text)
     while i < text_len:
         if not keep and text[i] in ANSI_TERMINATORS:
@@ -356,20 +352,23 @@ def strip_ansi(text):
 
 
 def asciify(text, ignore=False):
-    """
-    Converts a unicode or bytestring into a bytestring with
+    """Converts a unicode or bytestring, *text*, into a bytestring with
     just ascii characters. Performs basic deaccenting for all you
     Europhiles out there.
 
-    Also, a gentle reminder that this is a _utility_, primarily meant
+    Also, a gentle reminder that this is a **utility**, primarily meant
     for slugification. Whenever possible, make your application work
-    _with_ unicode, not against it.
+    **with** unicode, not against it.
+
+    Args:
+        text (str or unicode): The string to be asciified.
+        ignore (bool): Configures final encoding to ignore remaining
+            unasciified unicode instead of replacing it.
 
     >>> asciify('Beyoncé')
     'Beyonce'
-
-    TODO: Python 3 compliance.
     """
+    # TODO: Python 3 compliance.
     try:
         try:
             return text.encode('ascii')
@@ -387,6 +386,7 @@ def asciify(text, ignore=False):
 
 
 class DeaccenterDict(dict):
+    "A small caching dictionary for deaccenting."
     def __missing__(self, key):
         ch = self.get(key)
         if ch is not None:
@@ -481,9 +481,8 @@ _SIZE_RANGES = zip(_SIZE_BOUNDS, _SIZE_BOUNDS[1:])
 
 
 def bytes2human(nbytes, ndigits=0):
-    """\
-    Turns an integer value of bytes into a human readable format. Set
-    ``ndigits`` to control how many digits after the decimal point
+    """Turns an integer value of *nbytes* into a human readable format. Set
+    *ndigits* to control how many digits after the decimal point
     should be shown (default ``0``).
 
     >>> bytes2human(128991)
