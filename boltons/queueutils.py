@@ -1,17 +1,17 @@
 # -*- coding: utf-8 -*-
-"""\
-
-Python comes with a bevy of great data structures, from :class:`dict`
+"""Python comes with a bevy of great data structures, from :class:`dict`
 to :class:`collections.deque`, and no shortage of serviceable
 algorithm implementations, from :func:`sorted` to :mod:`bisect`. But
-curiously priority queues are relegated to an example documented in
-:mod:`heapq`. Even there, the approach presented is not object-oriented.
+priority queues are curiously relegated to an example documented in
+:mod:`heapq`. And even there, the approach presented is not
+full-featured and object-oriented.
 
 The ``queueutils`` module currently provides two Queue
 implementations: :class:`HeapPriorityQueue`, based on a heap, and
-:class:`SortedPriorityQueue`, based on a sorted list. Each has
-slightly different performance characteristics, but a unified API,
-based on :class:`BasePriortyQueue`.
+:class:`SortedPriorityQueue`, based on a sorted list. Both use a
+unified API based on :class:`BasePriortyQueue` to facilitate testing
+the slightly different performance characteristics on various
+application use cases.
 """
 
 
@@ -41,11 +41,11 @@ __all__ = ['PriorityQueue', 'BasePriorityQueue',
 
 
 class BasePriorityQueue(object):
-    """\
-    The abstract base class for the other PriorityQueues in this
+    """The abstract base class for the other PriorityQueues in this
     module. Override the ``_backend_type`` class attribute, as well as
     the :meth:`_push_entry` and :meth:`_pop_entry` staticmethods for
-    custom subclass behavior (Don't forget to use :func:`staticmethod`).
+    custom subclass behavior. (Don't forget to use
+    :func:`staticmethod`).
 
     Args:
         priority_key (callable): A function that takes a priority as
@@ -73,12 +73,11 @@ class BasePriorityQueue(object):
         pass  # abstract
 
     def add(self, task, priority=None):
-        """\
-        Add a task to the queue, or change the task's priority if the
-        task is already in the queue. Task can be any type, and
-        ``priority`` defaults to ``0``. Higher values representing
+        """Add a task to the queue, or change the *task*'s priority if
+        *task* is already in the queue. *task* can be any type, and
+        *priority* defaults to ``0``. Higher values representing
         higher priority, but this behavior can be controlled by
-        setting ``priority_key`` in the constructor.
+        setting *priority_key* in the constructor.
         """
         priority = self._get_priority(priority)
         if task in self._entry_map:
@@ -89,18 +88,14 @@ class BasePriorityQueue(object):
         self._push_entry(self._pq, entry)
 
     def remove(self, task):
-        """\
-        Remove a task from the priority queue. Raises :exc:`KeyError`
-        if the task is absent.
+        """Remove a task from the priority queue. Raises :exc:`KeyError` if
+        the *task* is absent.
         """
         entry = self._entry_map.pop(task)
         entry[-1] = _REMOVED
 
     def _cull(self, raise_exc=True):
-        """\
-        Remove entries marked as removed by previous :meth:`remove`
-        calls.
-        """
+        "Remove entries marked as removed by previous :meth:`remove` calls."
         while self._pq:
             priority, count, task = self._pq[0]
             if task is _REMOVED:
@@ -111,10 +106,9 @@ class BasePriorityQueue(object):
             raise IndexError('empty priority queue')
 
     def peek(self, default=_REMOVED):
-        """\
-        Read the next value in the queue without removing it. Returns
-        ``default`` on an empty queue, or raises ``KeyError`` if
-        ``default`` is not set.
+        """Read the next value in the queue without removing it. Returns
+        *default* on an empty queue, or raises :exc:`KeyError` if
+        *default* is not set.
         """
         try:
             self._cull()
@@ -126,10 +120,9 @@ class BasePriorityQueue(object):
         return task
 
     def pop(self, default=_REMOVED):
-        """\
-        Remove and return the next value in the queue. Returns
-        ``default`` on an empty queue, or raises ``KeyError`` if
-        ``default`` is not set.
+        """Remove and return the next value in the queue. Returns *default* on
+        an empty queue, or raises :exc:`KeyError` if *default* is not
+        set.
         """
         try:
             self._cull()
@@ -147,9 +140,8 @@ class BasePriorityQueue(object):
 
 
 class HeapPriorityQueue(BasePriorityQueue):
-    """\
-    A priority queue inherited from :class:`BasePriorityQueue`, backed
-    by a list and based on the :func:`heapq.heappop` and
+    """A priority queue inherited from :class:`BasePriorityQueue`,
+    backed by a list and based on the :func:`heapq.heappop` and
     :func:`heapq.heappush` functions in the builtin :mod:`heapq`
     module.
     """
@@ -163,8 +155,7 @@ class HeapPriorityQueue(BasePriorityQueue):
 
 
 class SortedPriorityQueue(BasePriorityQueue):
-    """\
-    A priority queue inherited from :class:`BasePriorityQueue`, based
+    """A priority queue inherited from :class:`BasePriorityQueue`, based
     on the :func:`bisect.insort` approach for in-order insertion into
     a sorted list.
     """
