@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Python comes with a bevy of great data structures, from :class:`dict`
+"""Python comes with a many great data structures, from :class:`dict`
 to :class:`collections.deque`, and no shortage of serviceable
 algorithm implementations, from :func:`sorted` to :mod:`bisect`. But
 priority queues are curiously relegated to an example documented in
@@ -12,6 +12,20 @@ implementations: :class:`HeapPriorityQueue`, based on a heap, and
 unified API based on :class:`BasePriortyQueue` to facilitate testing
 the slightly different performance characteristics on various
 application use cases.
+
+>>> pq = PriorityQueue()
+>>> pq.add('low priority task', 0)
+>>> pq.add('high priority task', 2)
+>>> pq.add('medium priority task 1', 1)
+>>> pq.add('medium priority task 2', 1)
+>>> len(pq)
+4
+>>> pq.pop()
+'high priority task'
+>>> pq.peek()
+'medium priority task 1'
+>>> len(pq)
+3
 """
 
 
@@ -48,8 +62,9 @@ class BasePriorityQueue(object):
     :func:`staticmethod`).
 
     Args:
-        priority_key (callable): A function that takes a priority as
-            passed in by :meth:`add` and returns an integer.
+        priority_key (callable): A function that takes *priority* as
+            passed in by :meth:`add` and returns an integer
+            representing the effective priority.
 
     """
     # negating priority means larger numbers = higher priority
