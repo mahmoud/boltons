@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
-"""\
-This module aims to provide various helpers for working with
+"""``jsonutils`` aims to provide various helpers for working with
 JSON. Currently it focuses on providing a reliable and intuitive means
-of working with JSON Lines-formatted files.
+of working with `JSON Lines`_-formatted files.
+
+.. _JSON Lines: http://jsonlines.org/
+
 """
 
 import os
@@ -27,10 +29,9 @@ __all__ = ['JSONLIterator', 'reverse_iter_lines']
 
 
 def reverse_iter_lines(file_obj, blocksize=DEFAULT_BLOCKSIZE, preseek=True):
-    """\
-    Returns an iterator over the lines from a file object, in
+    """Returns an iterator over the lines from a file object, in
     reverse order, i.e., last line first, first line last. Uses the
-    :meth:`file.seek()` method of file objects, and is tested compatible with
+    :meth:`file.seek` method of file objects, and is tested compatible with
     :class:`file` objects, as well as :class:`StringIO.StringIO`.
 
     Args:
@@ -78,14 +79,12 @@ json.load(fp[, encoding[, cls[, object_hook[, parse_float[, parse_int[, parse_co
 
 
 class JSONLIterator(object):
-    """\
-
-    The ``JSONLIterator`` is used to iterate over JSON-encoded objects
+    """The ``JSONLIterator`` is used to iterate over JSON-encoded objects
     stored in the `JSON Lines format`_ (one object per line).
 
-    Key among its features are the ability to read from the bottom of
-    the file, making it very effective for reading from simple
-    append-only usages of JSONL. It also has the ability to start from
+    Most notably it has the ability to efficiently read from the
+    bottom of files, making it very effective for reading in simple
+    append-only JSONL use cases. It also has the ability to start from
     anywhere in the file and ignore corrupted lines.
 
     Args:
@@ -93,7 +92,7 @@ class JSONLIterator(object):
         ignore_errors (bool): Whether to skip over lines that raise an error on
             deserialization (:func:`json.loads`).
         reverse (bool): Controls the direction of the iteration.
-            Defaults to ``False``. If set to ``True`` and ``rel_seek``
+            Defaults to ``False``. If set to ``True`` and *rel_seek*
             is unset, seeks to the end of the file before iteration
             begins.
         rel_seek (float): Used to preseek the start position of
@@ -101,7 +100,6 @@ class JSONLIterator(object):
             end, and anything in between.
 
     .. _JSON Lines format: http://jsonlines.org/
-
     """
     def __init__(self, file_obj,
                  ignore_errors=False, reverse=False, rel_seek=None):
