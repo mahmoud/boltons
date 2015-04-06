@@ -12,8 +12,8 @@ renditions of small to medium sized data. It also heuristically
 handles recursive data of various formats (lists, dicts, namedtuples,
 objects).
 
-For more advanced Table-style manipulation check out the `pandas`_
-DataFrame.
+For more advanced :class:`Table`-style manipulation check out the
+`pandas`_ DataFrame.
 
 .. _pandas: http://pandas.pydata.org/
 
@@ -199,10 +199,10 @@ class Table(object):
 
     Supported inputs:
 
-    * list of lists
-    * dict (list/single)
-    * object (list/single)
-    * namedtuple (list/single)
+    * :class:`list` of :class:`list` objects
+    * :class:`dict` (list/single)
+    * :class:`object` (list/single)
+    * :class:`collections.namedtuple` (list/single)
     * TODO: DB API cursor?
     * TODO: json
 
@@ -271,8 +271,7 @@ class Table(object):
 
     @classmethod
     def from_dict(cls, data, headers=_MISSING, max_depth=1):
-        """\
-        Create a Table from a :class:`dict`. Operates the same as
+        """Create a Table from a :class:`dict`. Operates the same as
         :meth:`from_data`, but forces interpretation of the data as a
         Mapping.
         """
@@ -281,8 +280,7 @@ class Table(object):
 
     @classmethod
     def from_list(cls, data, headers=_MISSING, max_depth=1):
-        """\
-        Create a Table from a :class:`list`. Operates the same as
+        """Create a Table from a :class:`list`. Operates the same as
         :meth:`from_data`, but forces the interpretation of the data
         as a Sequence.
         """
@@ -291,8 +289,7 @@ class Table(object):
 
     @classmethod
     def from_object(cls, data, headers=_MISSING, max_depth=1):
-        """\
-        Create a Table from an :class:`object`. Operates the same as
+        """Create a Table from an :class:`object`. Operates the same as
         :meth:`from_data`, but forces the interpretation of the data
         as an object. May be useful for some :class:`dict` and
         :class:`list` subtypes.
@@ -302,12 +299,10 @@ class Table(object):
 
     @classmethod
     def from_data(cls, data, headers=_MISSING, max_depth=1, _data_type=None):
-        """\
-        Create a Table from any supported data, heuristically
+        """Create a Table from any supported data, heuristically
         selecting how to represent the data in Table format.
 
         Args:
-
             data (object): Any object or iterable with data to be
                 imported to the Table.
 
@@ -390,8 +385,7 @@ class Table(object):
 
     def to_html(self, orientation=None, wrapped=True,
                 with_headers=True, with_newlines=True, max_depth=1):
-        """\
-        Render this Table to HTML. Configure the structure of Table
+        """Render this Table to HTML. Configure the structure of Table
         HTML by subclassing and overriding ``_html_*`` class
         attributes.
 
@@ -488,8 +482,7 @@ class Table(object):
             lines.append(''.join(line_parts))
 
     def to_text(self, with_headers=True, maxlen=None):
-        """\
-        Get the Table's textual representation. Only works well
+        """Get the Table's textual representation. Only works well
         for Tables with non-recursive data.
 
         Args:
