@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 """Python's builtin :class:`list` is a very fast and efficient
 sequence type, but it could be better for certain access patterns,
-such as non-sequential insertion into a large lists.. ``listutils``
+such as non-sequential insertion into a large lists. ``listutils``
 provides a pure-Python solution to this problem.
 
 For utilities for working with iterables and lists, check out
-:mod:`iterutils`. For the a ``list`` version of
+:mod:`iterutils`. For the a :class:`list`-based version of
 :class:`collections.namedtuple`, check out :mod:`namedutils`.
 """
 
@@ -27,29 +27,36 @@ __all__ = ['BList', 'BarrelList']
 # faster getitem (and slightly slower setitem and delitem ops)
 
 class BarrelList(list):
-    """\
-    A list-like container backed by many dynamically-scaled sublists,
+    """A :class:`list` subtype backed by many dynamically-scaled sublists,
     to provide better scaling and random insertion/deletion
     characteristics. It is a subtype of the builtin :class:`list` and
     has an identical API, supporting indexing, slicing, sorting,
     etc. If application requirements call for something more
     performant, consider the `blist module available on PyPI`_.
 
-    The name comes by way Kurt Rose, who said it reminded him of
-    barrel shifters, not sure how, but it's BList-like, so it
+    The name comes by way of Kurt Rose, who said it reminded him of
+    barrel shifters. Not sure how, but it's BList-like, so the name
     stuck. BList is of course a reference to `B-trees`_.
+
+    Args:
+        iterable: An optional iterable of initial values for the list.
+
+    >>> blist = BList(xrange(100000))
+    >>> blist.pop(50000)
+    50000
+    >>> len(blist)
+    99999
+    >>> len(blist.lists)  # how many underlying lists
+    8
 
     .. _blist module available on PyPI: https://pypi.python.org/pypi/blist
     .. _B-trees: https://en.wikipedia.org/wiki/B-tree
-
     """
 
     _size_factor = 1520
-    """
-    This size factor is the result of tuning using the tune() function below.
-    """
+    "This size factor is the result of tuning using the tune() function below."
 
-    def __init__(self, iterable=None, **kw):
+    def __init__(self, iterable=None):
         self.lists = [[]]
         if iterable:
             self.extend(iterable)
@@ -288,9 +295,8 @@ BList = BarrelList
 
 
 class SplayList(list):
-    """
-    Like a `splay tree`_, the SplayList facilitates moving higher utility
-    items closer to the front of the list for faster access.
+    """Like a `splay tree`_, the SplayList facilitates moving higher
+    utility items closer to the front of the list for faster access.
 
     .. _splay tree: https://en.wikipedia.org/wiki/Splay_tree
     """
