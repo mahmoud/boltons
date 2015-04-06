@@ -183,7 +183,7 @@ class Table(object):
     most common use would be for translation between in-memory data
     structures and serialization formats, such as HTML and console-ready text.
 
-    As such, it stores data in list-of-lists format, and _does not_ copy
+    As such, it stores data in list-of-lists format, and *does not* copy
     lists passed in. It also reserves the right to modify those lists in a
     "filling" process, whereby short lists are extended to the width of
     the table (usually determined by number of headers). This greatly
@@ -193,9 +193,9 @@ class Table(object):
     General description of headers behavior:
 
     Headers describe the columns, but are not part of the data, however,
-    if the `headers` argument is omitted, Table tries to infer header
+    if the *headers* argument is omitted, Table tries to infer header
     names from the data. It is possible to have a table with no headers,
-    just pass in `headers=None`.
+    just pass in ``headers=None``.
 
     Supported inputs:
 
