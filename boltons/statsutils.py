@@ -68,6 +68,17 @@ dilemma. ``statsutils`` also includes several robust statistical methods:
 .. _Median Absolute Deviation: https://en.wikipedia.org/wiki/Median_absolute_deviation
 .. _Trimming: https://en.wikipedia.org/wiki/Trimmed_estimator
 
+Online and Offline Statistics
+-----------------------------
+
+`Online`_ statistics have nothing to do with computer
+networks. Rather, it involves calculating statistics in a `streaming`_
+fashion, without all the data being available. The :class:`Stats` type
+is meant to be used in the more traditional fashion, for offline
+statistics when all the data is available.
+
+.. _Online: https://en.wikipedia.org/wiki/Online_algorithm
+.. _streaming: https://en.wikipedia.org/wiki/Streaming_algorithm
 """
 
 
@@ -76,8 +87,6 @@ class _StatsProperty(object):
         self.name = name
         self.func = func
         self.internal_name = '_' + name
-
-        # TODO: del func off orig object?
 
     def __get__(self, obj, objtype=None):
         if obj is None:
