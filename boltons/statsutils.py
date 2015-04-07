@@ -1,14 +1,6 @@
  # -*- coding: utf-8 -*-
 """``statsutils`` provides statistical functionality, such as mean
-(average), median, and variance, for basic data analysis. A few more
-advanced measures, such as skewness, kurtosis, and median absolute
-deviation are also provided, but if a project needs any more than the
-functions below, I'd strongly recommend investigating ``scipy.stats``
-or some other NumPy-based statistics package.
-
-(Note that all functions default to 0.0 when passed no values, which,
-while not totally accurate, has usually worked out fine for basic
-usage.)
+(average), median, and variance, for basic data analysis.
 
 The :class:`Stats` type provides all the main functionality of the
 ``statsutils`` module. A :class:`Stats` object wraps a given dataset,
@@ -18,8 +10,17 @@ multiple measures, as many measures rely on other measures. For
 example, relative standard deviation (:meth:`Stats.rel_std_dev`) relies
 on both the mean and standard deviation.
 
-Brief intro to statistical moments
-----------------------------------
+The :class:`Stats` type's methods have a module-level counterpart for
+convenience when the computation reuse advantages do not apply.
+
+>>> stats = Stats(range(42))
+>>> stats.mean
+20.5
+>>> mean(range(42))
+20.5
+
+Statistical moments
+-------------------
 
 Python programmers are probably familiar with the concept of the
 *mean* or *average*, which gives a rough quantitiative middle value by
@@ -55,15 +56,18 @@ Moment-based statistics are notorious for being easily skewed by
 outliers. The whole field of robust statistics aims to mitigate this
 dilemma. ``statsutils`` also includes several robust statistical methods:
 
-  * `Median`_ -
-  * `Trimean`_ -
-  * `Median Absolute Deviation`_ (MAD) -
-  * `Trimming`_ -
+  * `Median`_ - The middle value of a sorted dataset
+  * `Trimean`_ - Another robust measure of the data's central tendency
+  * `Median Absolute Deviation`_ (MAD) - A robust measure of
+    variability, a natural counterpart to :func:`variance`.
+  * `Trimming`_ - Reducing a dataset to only the middle majority of
+    data is a simple way of making other estimators more robust.
 
 .. _Median: https://en.wikipedia.org/wiki/Median
 .. _Trimean: https://en.wikipedia.org/wiki/Trimean
 .. _Median Absolute Deviation: https://en.wikipedia.org/wiki/Median_absolute_deviation
 .. _Trimming: https://en.wikipedia.org/wiki/Trimmed_estimator
+
 """
 
 
@@ -274,7 +278,7 @@ class Stats(object):
         of a list of values. When sorted, this has the effect of limiting
         the effect of outliers.
 
-        NOTE: this operation is in-place
+        NOTE: this operation is in-place and assumes data is sorted
         """
         if trim > 0.0:
             trim = float(trim)
@@ -292,8 +296,8 @@ class Stats(object):
 
 
 def get_conv_func(attr_name):
-    def stats_helper(data):
-        return getattr(Stats(data, use_copy=False),
+    def stats_helper(data, default=0.0):
+        return getattr(Stats(data, default=default, use_copy=False),
                        attr_name)
     return stats_helper
 
