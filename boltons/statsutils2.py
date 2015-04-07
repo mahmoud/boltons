@@ -41,7 +41,7 @@ and scipy.stats)
 """
 
 
-class _AnalyzerProperty(object):
+class _StatsProperty(object):
     def __init__(self, name, func):
         self.name = name
         self.func = func
@@ -60,10 +60,8 @@ class _AnalyzerProperty(object):
             setattr(obj, self.internal_name, self.func(obj))
             return getattr(obj, self.internal_name)
 
-_AP = _AnalyzerProperty
 
-
-class DataAnalyzer(object):
+class Stats(object):
     def __init__(self, data, default=0.0, use_copy=True):
         # float('nan') could also be a good default
         if use_copy:
@@ -74,7 +72,8 @@ class DataAnalyzer(object):
         self.default = default
         cls = self.__class__
         self._prop_attr_names = [a for a in dir(self)
-                                 if isinstance(getattr(cls, a, None), _AP)]
+                                 if isinstance(getattr(cls, a, None),
+                                               _StatsProperty)]
         self._pearson_precision = 0
 
     def clear_cache(self):
@@ -88,11 +87,11 @@ class DataAnalyzer(object):
 
         >>> mean(range(20))
         9.5
-        >>> mean(range(19) + [949])
+        >>> mean(range(19) + [949])  # 949 is an arbitrary outlier
         56.0
         """
         return sum(self.data, 0.0) / len(self.data)
-    mean = _AnalyzerProperty('mean', _calc_mean)
+    mean = _StatsProperty('mean', _calc_mean)
 
     def _calc_median(self):
         """
@@ -113,7 +112,7 @@ class DataAnalyzer(object):
             return sorted_data[mid]
         else:
             return (sorted_data[mid - 1] + sorted_data[mid]) / 2.0
-    median = _AnalyzerProperty('median', _calc_median)
+    median = _StatsProperty('median', _calc_median)
 
     def _calc_variance(self):
         """\
@@ -124,7 +123,7 @@ class DataAnalyzer(object):
         784.0
         """
         return mean(self._get_pow_diffs(2))
-    variance = _AnalyzerProperty('variance', _calc_variance)
+    variance = _StatsProperty('variance', _calc_variance)
 
     def _calc_std_dev(self):
         """\
@@ -134,7 +133,7 @@ class DataAnalyzer(object):
         28.0
         """
         return self.variance ** 0.5
-    std_dev = _AnalyzerProperty('std_dev', _calc_std_dev)
+    std_dev = _StatsProperty('std_dev', _calc_std_dev)
 
     def _calc_median_abs_dev(self):
         """\
@@ -145,9 +144,9 @@ class DataAnalyzer(object):
         24.0
         """
         sorted_vals = sorted(self.data)
-        x = float(median(sorted_vals))
+        x = float(median(sorted_vals))  # programmatically defined below
         return median([abs(x - v) for v in sorted_vals])
-    median_abs_dev = _AnalyzerProperty('median_abs_dev', _calc_median_abs_dev)
+    median_abs_dev = _StatsProperty('median_abs_dev', _calc_median_abs_dev)
 
     def _calc_rel_std_dev(self):
         """\
@@ -163,7 +162,7 @@ class DataAnalyzer(object):
             return self.std_dev / abs_mean
         else:
             return self.default
-    rel_std_dev = _AnalyzerProperty('rel_std_dev', _calc_rel_std_dev)
+    rel_std_dev = _StatsProperty('rel_std_dev', _calc_rel_std_dev)
 
     def _calc_skewness(self):
         """\
@@ -187,7 +186,7 @@ class DataAnalyzer(object):
                     float((len(data) - 1) * (s_dev ** 3)))
         else:
             return self.default
-    skewness = _AnalyzerProperty('skewness', _calc_skewness)
+    skewness = _StatsProperty('skewness', _calc_skewness)
 
     def _calc_kurtosis(self):
         """\
@@ -211,7 +210,7 @@ class DataAnalyzer(object):
                     float((len(data) - 1) * (s_dev ** 4)))
         else:
             return 0.0
-    kurtosis = _AnalyzerProperty('kurtosis', _calc_kurtosis)
+    kurtosis = _StatsProperty('kurtosis', _calc_kurtosis)
 
     def _calc_pearson_type(self):
         precision = self._pearson_precision
@@ -241,7 +240,7 @@ class DataAnalyzer(object):
             if k < 0:
                 return 1  # Beta
         raise RuntimeError('missed a spot')
-    pearson_type = _AnalyzerProperty('pearson_type', _calc_pearson_type)
+    pearson_type = _StatsProperty('pearson_type', _calc_pearson_type)
 
     def trim_relative(self, trim=0.25):
         """
@@ -268,21 +267,21 @@ class DataAnalyzer(object):
 
 def get_conv_func(attr_name):
     def stats_helper(data):
-        return getattr(DataAnalyzer(data, use_copy=False),
+        return getattr(Stats(data, use_copy=False),
                        attr_name)
     return stats_helper
 
 
-for attr_name, attr in DataAnalyzer.__dict__.items():
-    if isinstance(attr, _AnalyzerProperty):
+for attr_name, attr in Stats.__dict__.items():
+    if isinstance(attr, _StatsProperty):
         func = get_conv_func(attr_name)
         func.__doc__ = attr.func.__doc__
         globals()[attr_name] = func
-        delattr(DataAnalyzer, '_calc_' + attr_name)
+        delattr(Stats, '_calc_' + attr_name)
 
 
 if __name__ == '__main__':
-    da = DataAnalyzer(range(20))
+    da = Stats(range(20))
     print da.mean
 
     import random
