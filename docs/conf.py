@@ -28,8 +28,9 @@ sys.path.insert(0, PACKAGE_PATH)
 
 
 def get_mod_stats():
+    # TODO: docstring percentage.
     import pkgutil
-    from boltons.funcutils import get_module_defs
+    from boltons.funcutils import get_module_callables
 
     mod_count = 0
     tot_type_count = 0
@@ -39,7 +40,7 @@ def get_mod_stats():
         if not mod_name.endswith('utils'):
             continue
         mod = __import__(mod_name)
-        types, funcs, others = get_module_defs(mod, ignore=ignore)
+        types, funcs = get_module_callables(mod, ignore=ignore)
         if not len(types) and not len(funcs):
             continue
         mod_count += 1
@@ -50,7 +51,15 @@ def get_mod_stats():
     print ('==== %s modules ==== %s types ==== %s funcs ====' % ret)
     return ret
 
-get_mod_stats()
+B_MOD_COUNT, B_TYPE_COUNT, B_FUNC_COUNT = get_mod_stats()
+
+rst_epilog = """
+.. |b_mod_count| replace:: {mod_count}
+.. |b_type_count| replace:: {type_count}
+.. |b_func_count| replace:: {func_count}
+""".format(mod_count=B_MOD_COUNT,
+           type_count=B_TYPE_COUNT,
+           func_count=B_FUNC_COUNT)
 
 
 # -- General configuration ------------------------------------------------

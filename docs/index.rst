@@ -45,6 +45,11 @@ great! Built-in support for imaginary numbers for goodness sake!
 Gaps
 ----
 
+.. appx 50, 75, and 20, respectively
+
+Boltons is |b_type_count| types and |b_func_count| functions spread
+across |b_mod_count| modules. Gaps are bound to be found.
+
 Found something missing in the standard library that should be in
 ``boltons``? First, take a moment to read the very brief
 :doc:`architecture` statement to make sure the functionality would be
