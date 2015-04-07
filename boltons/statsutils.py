@@ -1,43 +1,69 @@
  # -*- coding: utf-8 -*-
-"""\
-statsutils
-~~~~~~~~~~
-
-Provide some really basic stats functions, such as mean/average,
-median, variance, the basics. A couple more advanced measures, such as
-skewness, kurtosis, and median absolute deviation are also provided,
-but if a project needs any more than the functions below, I'd strongly
-recommend investigating ``scipy.stats`` or some other NumPy-based
-statistics package.
+"""``statsutils`` provides statistical functionality, such as mean
+(average), median, and variance, for basic data analysis. A few more
+advanced measures, such as skewness, kurtosis, and median absolute
+deviation are also provided, but if a project needs any more than the
+functions below, I'd strongly recommend investigating ``scipy.stats``
+or some other NumPy-based statistics package.
 
 (Note that all functions default to 0.0 when passed no values, which,
 while not totally accurate, has usually worked out fine for basic
 usage.)
 
-A note on statistical moments
------------------------------
+The :class:`Stats` type provides all the main functionality of the
+``statsutils`` module. A :class:`Stats` object wraps a given dataset,
+providing all statistical measures as property attributes. These
+attributes cache their results, which allows efficient computation of
+multiple measures, as many measures rely on other measures. For
+example, relative standard deviation (:meth:`Stats.rel_std_dev`) relies
+on both the mean and standard deviation.
 
-Most people are probably familiar with the concept of the "mean" or
-"average", which gives a sort of quantitiative "middle-ish" value by
-which a sample can be can be generalized. But the mean is just the
-first of four ways a sample or distribution can be described:
+Brief intro to statistical moments
+----------------------------------
 
-Statistical moments and what they generally describe:
+Python programmers are probably familiar with the concept of the
+*mean* or *average*, which gives a rough quantitiative middle value by
+which a sample can be can be generalized. However, the mean is just
+the first of four `moment`_-based measures by which a sample or
+distribution can be measured.
 
-1. Average - theoretical middle value
-2. Variance - width of value dispersion
-3. Skewness - symmetry of distribution
-4. Kurtosis - "peakiness" or long-tailed-ness
+The four `Standardized moments`_ are:
 
-For more information it's probably best to read a bit of Wikipedia:
+  1. `Mean`_ - :func:`mean` - theoretical middle value
+  2. `Variance`_ - :func:`variance` - width of value dispersion
+  3. `Skewness`_ - :func:`skewness` - symmetry of distribution
+  4. `Kurtosis`_ - :func:`kurtosis` - "peakiness" or "long-tailed"-ness
 
-http://en.wikipedia.org/wiki/Moment_(mathematics)
+For more information check out `the Moment article on Wikipedia`_.
+
+.. _moment: http://en.wikipedia.org/wiki/Moment_(mathematics)
+.. _Standardied moments: https://en.wikipedia.org/wiki/Standardized_moment
+.. _Mean: https://en.wikipedia.org/wiki/Mean
+.. _Variance: https://en.wikipedia.org/wiki/Variance
+.. _Skewness: https://en.wikipedia.org/wiki/Skewness
+.. _Kurtosis: https://en.wikipedia.org/wiki/Kurtosis
 
 Keep in mind that while these moments can give a bit more insight into
 the shape and distribution of data, they do not guarantee a complete
 picture. Wildly different datasets can have the same values for all
-four moments, so generalize wisely. (And read up on robust statistics
-and scipy.stats)
+four moments, so generalize wisely.
+
+Robust statistics
+-----------------
+
+Moment-based statistics are notorious for being easily skewed by
+outliers. The whole field of robust statistics aims to mitigate this
+dilemma. ``statsutils`` also includes several robust statistical methods:
+
+  * `Median`_ -
+  * `Trimean`_ -
+  * `Median Absolute Deviation`_ (MAD) -
+  * `Trimming`_ -
+
+.. _Median: https://en.wikipedia.org/wiki/Median
+.. _Trimean: https://en.wikipedia.org/wiki/Trimean
+.. _Median Absolute Deviation: https://en.wikipedia.org/wiki/Median_absolute_deviation
+.. _Trimming: https://en.wikipedia.org/wiki/Trimmed_estimator
 """
 
 
