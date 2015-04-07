@@ -16,11 +16,42 @@ import os
 import sys
 import sphinx
 
+
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 CUR_PATH = os.path.dirname(os.path.abspath(__file__))
-sys.path.insert(0, os.path.abspath(CUR_PATH + '/../'))
+PROJECT_PATH = os.path.abspath(CUR_PATH + '/../')
+PACKAGE_PATH = os.path.abspath(CUR_PATH + '/../boltons/')
+sys.path.insert(0, PROJECT_PATH)
+sys.path.insert(0, PACKAGE_PATH)
+
+
+def get_mod_stats():
+    import pkgutil
+    from boltons.funcutils import get_module_defs
+
+    mod_count = 0
+    tot_type_count = 0
+    tot_func_count = 0
+    ignore = lambda attr_name: attr_name.startswith('_')
+    for _, mod_name, _ in pkgutil.iter_modules([PACKAGE_PATH]):
+        if not mod_name.endswith('utils'):
+            continue
+        mod = __import__(mod_name)
+        types, funcs, others = get_module_defs(mod, ignore=ignore)
+        if not len(types) and not len(funcs):
+            continue
+        mod_count += 1
+        tot_type_count += len(types)
+        tot_func_count += len(funcs)
+
+    ret = (mod_count, tot_type_count, tot_func_count)
+    print ('==== %s modules ==== %s types ==== %s funcs ====' % ret)
+    return ret
+
+get_mod_stats()
+
 
 # -- General configuration ------------------------------------------------
 

@@ -4,9 +4,39 @@ utilities on top of Python's first-class function
 support. ``funcutils`` generally stays in the same vein, adding to and
 correcting Python's standard metaprogramming facilities.
 """
+import sys
 import functools
 from types import MethodType, FunctionType
 from itertools import chain
+
+
+def get_module_callables(mod, ignore=None):
+    """Returns two maps of (*types*, *funcs*) from *mod*, optionally
+    ignoring based on the :class:`bool` return value of the *ignore*
+    callable. *mod* can be a string name of a module in
+    :data:`sys.modules` or the module instance itself.
+    """
+    if isinstance(mod, basestring):
+        mod = sys.modules[mod]
+    types, funcs = {}, {}
+    for attr_name in dir(mod):
+        if ignore and ignore(attr_name):
+            continue
+        try:
+            attr = getattr(mod, attr_name)
+        except:
+            continue
+        try:
+            attr_mod_name = attr.__module__
+        except AttributeError:
+            continue
+        if attr_mod_name != mod.__name__:
+            continue
+        if isinstance(attr, type):
+            types[attr_name] = attr
+        elif callable(attr):
+            funcs[attr_name] = attr
+    return types, funcs
 
 
 def mro_items(type_obj):
