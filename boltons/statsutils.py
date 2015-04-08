@@ -161,20 +161,29 @@ class Stats(object):
         middle values of a sample. Compared to the mean, it's generally
         more resilient to the presence of outliers in the sample.
 
-        >>> median([1, 2, 3])
+        >>> median([2, 1, 3])
         2
         >>> median(range(97))
         48
         >>> median(range(96) + [1066])  # 1066 is an arbitrary outlier
         48
         """
-        sorted_data, size = self._get_sorted_data(), len(self.data)
-        mid = size // 2  # aka floor division
-        if size % 2 == 1:
-            return sorted_data[mid]
-        else:
-            return (sorted_data[mid - 1] + sorted_data[mid]) / 2.0
+        return self._get_quantile(self._get_sorted_data(), 0.5)
     median = _StatsProperty('median', _calc_median)
+
+    def _calc_trimean(self):
+        """
+        >>> trimean([2, 1, 3])
+        2.0
+        >>> trimean(range(97))
+        48.0
+        >>> trimean(range(96) + [1066])  # 1066 is an arbitrary outlier
+        48.0
+        """
+        sorted_data = self._get_sorted_data()
+        gq = lambda q: self._get_quantile(sorted_data, q)
+        return (gq(0.25) + (2 * gq(0.5)) + gq(0.75)) / 4.0
+    trimean = _StatsProperty('trimean', _calc_trimean)
 
     def _calc_variance(self):
         """\
