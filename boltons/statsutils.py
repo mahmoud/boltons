@@ -71,14 +71,16 @@ dilemma. ``statsutils`` also includes several robust statistical methods:
 Online and Offline Statistics
 -----------------------------
 
-`Online`_ statistics have nothing to do with computer
-networks. Rather, it involves calculating statistics in a `streaming`_
-fashion, without all the data being available. The :class:`Stats` type
-is meant to be used in the more traditional fashion, for offline
-statistics when all the data is available.
+Unrelated to computer networking, `online`_ statistics involve
+calculating statistics in a `streaming`_ fashion, without all the data
+being available. The :class:`Stats` type is meant for the more
+traditional offline statistics when all the data is available. For
+pure-Python online statistics accumulators, look at the `Lithoxyl`_
+system instrumentation package.
 
 .. _Online: https://en.wikipedia.org/wiki/Online_algorithm
 .. _streaming: https://en.wikipedia.org/wiki/Streaming_algorithm
+.. _Lithoxyl: https://github.com/mahmoud/lithoxyl
 """
 
 from math import floor, ceil
@@ -89,6 +91,10 @@ class _StatsProperty(object):
         self.name = name
         self.func = func
         self.internal_name = '_' + name
+
+        doc = func.__doc__ or ''
+        pre_doctest_doc, _, _ = doc.partition('>>>')
+        self.__doc__ = pre_doctest_doc
 
     def __get__(self, obj, objtype=None):
         if obj is None:
@@ -122,6 +128,12 @@ class Stats(object):
                                  if isinstance(getattr(cls, a, None),
                                                _StatsProperty)]
         self._pearson_precision = 0
+
+    def __len__(self):
+        return len(self.data)
+
+    def __iter__(self):
+        return iter(self.data)
 
     def _get_sorted_data(self):
         """When using a copy of the data, it's better to have that copy be
@@ -337,8 +349,10 @@ class Stats(object):
         of a list of values. This has the effect of limiting the
         effect of outliers.
 
-        NOTE: this operation is in-place and does not return a copy.
+        .. note:
 
+            This operation modifies the data in-place. It does not
+            make or return a copy.
         """
         trim = float(amount)
         if not 0.0 <= trim <= 1.0:
@@ -349,6 +363,7 @@ class Stats(object):
         if size_diff == 0.0:
             return
         self.data = self._get_sorted_data()[size_diff:-size_diff]
+        self.clear_cache()
 
     def _get_pow_diffs(self, power):
         """
@@ -358,7 +373,7 @@ class Stats(object):
         return [(v - m) ** power for v in self.data]
 
 
-def get_conv_func(attr_name):
+def _get_conv_func(attr_name):
     def stats_helper(data, default=0.0):
         return getattr(Stats(data, default=default, use_copy=False),
                        attr_name)
@@ -367,10 +382,14 @@ def get_conv_func(attr_name):
 
 for attr_name, attr in Stats.__dict__.items():
     if isinstance(attr, _StatsProperty):
-        func = get_conv_func(attr_name)
+        func = _get_conv_func(attr_name)
         func.__doc__ = attr.func.__doc__
         globals()[attr_name] = func
         delattr(Stats, '_calc_' + attr_name)
+# cleanup
+del attr
+del attr_name
+del func
 
 
 if __name__ == '__main__':
