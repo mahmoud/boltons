@@ -81,6 +81,8 @@ statistics when all the data is available.
 .. _streaming: https://en.wikipedia.org/wiki/Streaming_algorithm
 """
 
+from math import floor, ceil
+
 
 class _StatsProperty(object):
     def __init__(self, name, func):
@@ -101,8 +103,14 @@ class _StatsProperty(object):
 
 
 class Stats(object):
+    """The ``Stats`` type is used to represent a group of unordered
+    statistical datapoints for calculations such as mean, median, and
+    variance.
+    """
     def __init__(self, data, default=0.0, use_copy=True):
         # float('nan') could also be a good default
+        self._use_copy = use_copy
+        self._is_sorted = False
         if use_copy:
             self.data = list(data)
         else:
@@ -114,6 +122,21 @@ class Stats(object):
                                  if isinstance(getattr(cls, a, None),
                                                _StatsProperty)]
         self._pearson_precision = 0
+
+    def _get_sorted_data(self):
+        """When using a copy of the data, it's better to have that copy be
+        sorted, but we do it lazily using this method, in case no
+        sorted measures are used. I.e., if median is never called,
+        sorting would be a waste.
+
+        When not using a copy, it's presumed that all optimizations
+        are on the user.
+        """
+        if not self._use_copy:
+            return sorted(self.data)
+        elif not self._is_sorted:
+            self.data.sort()
+        return self.data
 
     def clear_cache(self):
         for attr_name in self._prop_attr_names:
@@ -145,7 +168,7 @@ class Stats(object):
         >>> median(range(96) + [1066])  # 1066 is an arbitrary outlier
         48
         """
-        sorted_data, size = sorted(self.data), len(self.data)
+        sorted_data, size = self._get_sorted_data(), len(self.data)
         mid = size // 2  # aka floor division
         if size % 2 == 1:
             return sorted_data[mid]
@@ -281,20 +304,42 @@ class Stats(object):
         raise RuntimeError('missed a spot')
     pearson_type = _StatsProperty('pearson_type', _calc_pearson_type)
 
-    def trim_relative(self, trim=0.25):
-        """
-        A utility function used to cut a proportion of values off each end
-        of a list of values. When sorted, this has the effect of limiting
-        the effect of outliers.
+    @staticmethod
+    def _get_quantile(sorted_data, q):
+        data, n = sorted_data, len(sorted_data)
+        idx = q / 1.0 * (n - 1)
+        idx_f, idx_c = int(floor(idx)), int(ceil(idx))
+        if idx_f == idx_c:
+            return data[idx_f]
+        return (data[idx_f] * (idx_c - idx)) + (data[idx_c] * (idx - idx_f))
 
-        NOTE: this operation is in-place and assumes data is sorted
+    def get_quantile(self, q):
         """
-        if trim > 0.0:
-            trim = float(trim)
-            size = len(self.data)
-            size_diff = int(size * trim)
-            self.data = self.data[size_diff:-size_diff]
-        return
+        >>> Stats(range(100)).get_quantile(0.5)
+        49.5
+        """
+        q = float(q)
+        if not 0.0 <= q <= 1.0:
+            raise ValueError('expected q between 0.0 and 1.0, not %r' % q)
+        return self._get_quantile(self._get_sorted_data(), q)
+
+    def trim_relative(self, amount=0.15):
+        """A utility function used to cut a proportion of values off each end
+        of a list of values. This has the effect of limiting the
+        effect of outliers.
+
+        NOTE: this operation is in-place and does not return a copy.
+
+        """
+        trim = float(amount)
+        if not 0.0 <= trim <= 1.0:
+            raise ValueError('expected amount between 0.0 and 1.0, not %r'
+                             % trim)
+        size = len(self.data)
+        size_diff = int(size * trim)
+        if size_diff == 0.0:
+            return
+        self.data = self._get_sorted_data()[size_diff:-size_diff]
 
     def _get_pow_diffs(self, power):
         """
