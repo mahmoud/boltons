@@ -6,7 +6,7 @@ boltons
 
 **Boltons** is a set of pure-Python utilities in the same spirit as
 the Python builtins, and yet conspicuously missing from the `the
-standard library`_. A few examples include:
+standard library`_, including:
 
   * Atomic file saving, bolted on with :mod:`fileutils`
   * A highly-optimized :class:`OrderedMultiDict`, in :mod:`dictutils`
@@ -14,6 +14,12 @@ standard library`_. A few examples include:
   * "Chunked" and "windowed" iteration, among many others, in :mod:`iterutils`
   * A full-featured ``TracebackInfo`` type, for representing stack
     traces, in :mod:`tbutils`
+
+And that's just a small selection. As of |today|, ``boltons`` is
+|b_type_count| types and |b_func_count| functions spread across
+|b_mod_count| modules.
+
+.. appx 50, 75, and 23, respectively, as of initial docs writing
 
 .. _the standard library: https://docs.python.org/2.7/library/index.html
 
@@ -24,7 +30,7 @@ Boltons can be added to a project in a few ways. There's the obvious one::
 
   pip install boltons
 
-Then just import away::
+Then dozens of boltons are just an import away::
 
   from boltons.cacheutils import LRU
   my_cache = LRU()
@@ -44,11 +50,6 @@ great! Built-in support for imaginary numbers for goodness sake!
 
 Gaps
 ----
-
-.. appx 50, 75, and 20, respectively
-
-Boltons is |b_type_count| types and |b_func_count| functions spread
-across |b_mod_count| modules. Gaps are bound to be found.
 
 Found something missing in the standard library that should be in
 ``boltons``? First, take a moment to read the very brief
