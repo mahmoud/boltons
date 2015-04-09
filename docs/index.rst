@@ -11,7 +11,7 @@ including:
   * :func:`Atomic file saving <boltons.fileutils.atomic_save>`, bolted on with
     :mod:`~boltons.fileutils`
   * A highly-optimized :class:`~boltons.dictutils.OrderedMultiDict`,
-    in :mod:`boltons.dictutils`
+    in :mod:`~boltons.dictutils`
   * Two types of :class:`~boltons.queueutils.PriorityQueue`, in
     :mod:`~boltons.queueutils`
   * :func:`Chunked <boltons.iterutils.chunked>` and
