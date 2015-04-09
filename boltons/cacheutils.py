@@ -73,7 +73,7 @@ class LRU(dict):
 
     >>> cap_cache = LRU(max_size=2)
     >>> cap_cache['a'], cap_cache['b'] = 'A', 'B'
-    >>> cap_cache
+    >>> dict(cap_cache)
     {'a': 'A', 'b': 'B'}
     >>> [cap_cache['b'] for i in range(3)][0]
     'B'
