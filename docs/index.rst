@@ -4,22 +4,26 @@ boltons
 
 *boltons should be builtins.*
 
-**Boltons** is a set of pure-Python utilities in the same spirit as
-the Python builtins, and yet conspicuously missing from the `the
-standard library`_, including:
+**Boltons** is a set of pure-Python utilities in the same spirit as —
+and yet conspicuously missing from — the `the standard library`_,
+including:
 
-  * Atomic file saving, bolted on with :mod:`fileutils`
-  * A highly-optimized :class:`OrderedMultiDict`, in :mod:`dictutils`
-  * Two types of ``PriorityQueue``, in :mod:`queueutils`
-  * "Chunked" and "windowed" iteration, among many others, in :mod:`iterutils`
-  * A full-featured ``TracebackInfo`` type, for representing stack
-    traces, in :mod:`tbutils`
+  * :func:`Atomic file saving <boltons.fileutils.atomic_save>`, bolted on with
+    :mod:`~boltons.fileutils`
+  * A highly-optimized :class:`~boltons.dictutils.OrderedMultiDict`,
+    in :mod:`boltons.dictutils`
+  * Two types of :class:`~boltons.queueutils.PriorityQueue`, in
+    :mod:`boltons.queueutils`
+  * :func:`Chunked <boltons.iterutils.chunked>` and :func:`windowed
+    <boltons.iterutils.windowed>` iteration, in :mod:`boltons.iterutils`
+  * A full-featured :class:`~boltons.tbutils.TracebackInfo` type, for
+    representing stack traces, in :mod:`boltons.tbutils`
 
 And that's just a small selection. As of |today|, ``boltons`` is
 |b_type_count| types and |b_func_count| functions spread across
 |b_mod_count| modules.
 
-.. appx 50, 75, and 23, respectively, as of initial docs writing
+.. counts are appx 50, 75, and 23, respectively, as of initial docs writing
 
 .. _the standard library: https://docs.python.org/2.7/library/index.html
 
@@ -43,22 +47,27 @@ Third-party packages
 --------------------
 
 The majority of boltons strive to be "good enough" for a wide range of
-basic uses, leaving advanced use cases to specialized 3rd party
-libraries. For example, no radical recommendations of NumPy inclusion
-in the standard lib; the builtin number types and operations are
-great! Built-in support for imaginary numbers for goodness sake!
+basic uses, leaving advanced use cases to Python's `myriad specialized
+3rd-party libraries`_. In many cases the respective ``boltons`` module
+will describe 3rd-party alternatives worth investigating when use
+cases outgrow ``boltons``. If you've found a natural "next-step"
+library worth mentioning, :ref:`consider filing an issue <Gaps>`!
+
+.. _myriad specialized 3rd-party libraries: https://pypi.python.org/pypi
+
+.. _gaps:
 
 Gaps
 ----
 
 Found something missing in the standard library that should be in
-``boltons``? First, take a moment to read the very brief
-:doc:`architecture` statement to make sure the functionality would be
-a good fit.
+``boltons``? Found something missing in ``boltons``? First, take a
+moment to read the very brief :doc:`architecture` statement to make
+sure the functionality would be a good fit.
 
-Then, if you are very motivated, submit `a Pull
-Request`_. Otherwise, submit a feature request on `the Issues page`_,
-and we will figure something out.
+Then, if you are very motivated, submit `a Pull Request`_. Otherwise,
+submit a short feature request on `the Issues page`_, and we will
+figure something out.
 
 .. _a Pull Request: https://github.com/mahmoud/boltons/pulls
 .. _the Issues Page: https://github.com/mahmoud/boltons/issues
