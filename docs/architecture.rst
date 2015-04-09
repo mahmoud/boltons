@@ -1,7 +1,9 @@
 Architecture
 ============
 
-
+``boltons`` has a minimalist architecture: remain as consistent, and
+self-contained as possible, with an eye toward maintaining its range
+of use cases and usage patterns as wide as possible.
 
 .. _arch_integration:
 
@@ -37,13 +39,46 @@ should:
      correctness and common sense.
   5. Have approachable documentation with at least one helpful
      :mod:`doctest`, links to relevant standard library functionality, as
-     well as any 3rd party packages that provide further capabilities.
+     well as any 3rd-party packages that provide further capabilities.
 
 Themes of ``boltons``
 ---------------------
 
-1. From the docs (queueutils, iterutils, tzutils)
-2. Standard lib reimpl (fileutils.copytree, namedutils.namedtuple)
-3. One-off implementations discovered in other libs utils.py or equivalent (strutils.slugify, bytes2human, relative time)
-4. More powerful multi-purpose data structures (OMD, IndexedSet, BList, namedlist, Table)
-5. Personal practice (debugutils, gcutils, tbutils)
+``boltons`` has had a wide variety of inspirations over the years, but
+a definite set of themes have emerged:
+
+1. From the Python docs:
+
+   1. :mod:`~boltons.queueutils` - `heapq docs`_
+   2. :mod:`~boltons.iterutils` - `itertools docs`_
+   3. :mod:`~boltons.tzutils` - `datetime docs`_
+
+2. Reimplementations and tweaks of the standard library:
+
+   1. :func:`boltons.fileutils.copytree` - :func:`shutil.copytree`
+   2. :class:`boltons.namedutils.namedtuple` - :func:`collections.namedtuple`
+
+3. One-off implementations discovered in multiple other libraries' ``utils.py`` or equivalent
+
+   1. :func:`boltons.strutils.slugify`
+   2. :func:`boltons.strutils.bytes2human`
+   3. :func:`boltons.timeutils.relative_time`
+
+4. More powerful multi-purpose data structures
+
+   1. :class:`boltons.dictutils.OrderedMultiDict`
+   2. :class:`boltons.setutils.IndexedSet`
+   3. :class:`boltons.listutils.BList`
+   4. :class:`boltons.namedutils.namedlist`
+   5. :class:`boltons.tableutils.Table`
+
+5. Personal practice and experience
+
+   1. :mod:`boltons.debugutils`
+   2. :mod:`boltons.gcutils`
+   3. :mod:`boltons.tbutils`
+
+
+.. _heapq docs: https://docs.python.org/2/library/heapq.html#priority-queue-implementation-notes
+.. _itertools docs: https://docs.python.org/2/library/itertools.html#recipes
+.. _datetime docs: https://docs.python.org/2/library/datetime.html#tzinfo-objects
