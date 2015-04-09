@@ -101,6 +101,9 @@ author = u'Mahmoud Hashemi'
 version = '0.4'
 release = '0.4.3'
 
+if os.name != 'nt':
+    today_fmt = '%B %e, %Y'
+
 exclude_patterns = ['_build']
 
 # The name of the Pygments (syntax highlighting) style to use.
