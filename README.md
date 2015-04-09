@@ -3,7 +3,7 @@
 *boltons should be builtins.*
 
 **Boltons** is a set of over 100 BSD-licensed, pure-Python utilities
-in the same spirit as — and yet conspicuously missing from — the
+in the same spirit as — and yet conspicuously missing from —
 [the standard library][stdlib], including:
 
   * [Atomic file saving][atomic], bolted on with [fileutils][fileutils]
