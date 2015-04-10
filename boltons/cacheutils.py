@@ -79,7 +79,7 @@ class LRU(dict):
     >>> [cap_cache['b'] for i in range(3)][0]
     'B'
     >>> cap_cache['c'] = 'C'
-    >>> print cap_cache.get('a')
+    >>> print(cap_cache.get('a'))
     None
 
     This cache is also instrumented with statistics
@@ -262,7 +262,7 @@ class LRI(dict):
     >>> [cap_cache['b'] for i in range(3)][0]
     'B'
     >>> cap_cache['c'] = 'C'
-    >>> print cap_cache.get('a')
+    >>> print(cap_cache.get('a'))
     None
     >>> cap_cache.hit_count, cap_cache.miss_count, cap_cache.soft_miss_count
     (3, 1, 1)
@@ -438,10 +438,11 @@ if __name__ == '__main__':
         lru['bye'] = 1
         lru['bye']
         lru.get('hi')
-        print lru
+        print(lru)
         del lru['bye']
 
         import pdb;pdb.set_trace()
 
     _test_lri()
     _test_lru()
+
