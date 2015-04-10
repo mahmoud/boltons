@@ -16,7 +16,7 @@ beyond these, as well as a higher degree of accuracy, check out `pytz`_.
 import time
 from datetime import tzinfo, timedelta, datetime
 
-from timeutils import total_seconds  # TODO
+from .timeutils import total_seconds  # TODO
 
 # Basic timezones cribbed from etavta and Python docs.
 

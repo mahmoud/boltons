@@ -11,7 +11,7 @@ following are based on examples in itertools docs.
 """
 
 import itertools
-from compat import basestring  # TODO
+from .compat import basestring  # TODO
 
 try:
     from itertools import izip

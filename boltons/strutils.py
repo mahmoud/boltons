@@ -12,7 +12,7 @@ import string
 import unicodedata
 import collections
 
-from compat import unicode, bytes
+from .compat import unicode, bytes
 
 
 __all__ = ['camel2under', 'under2camel', 'slugify', 'split_punct_ws',
