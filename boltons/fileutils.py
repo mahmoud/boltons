@@ -80,6 +80,7 @@ class FilePerms(object):
     # TODO: consider more than the lower 9 bits
     class _FilePermProperty(object):
         _perm_chars = 'rwx'
+        _perm_set = frozenset('rwx')
         _perm_val = {'r': 4, 'w': 2, 'x': 1}  # for sorting
 
         def __init__(self, attribute, offset):
@@ -96,8 +97,8 @@ class FilePerms(object):
             if cur == value:
                 return
             try:
-                invalid_chars = str(value).translate(None, self._perm_chars)
-            except (TypeError, UnicodeEncodeError):
+                invalid_chars = set(str(value)) - self._perm_set
+            except TypeError:
                 raise TypeError('expected string, not %r' % value)
             if invalid_chars:
                 raise ValueError('got invalid chars %r in permission'
