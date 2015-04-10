@@ -67,8 +67,10 @@ class FilePerms(object):
 
     >>> FilePerms(user='rwx', group='xrw', other='wxr')  # note character order
     FilePerms(user='rwx', group='rwx', other='rwx')
-    >>> oct(int(FilePerms('r', 'r', '')))
-    '0440'
+    >>> int(FilePerms('r', 'r', ''))
+    288
+    >>> oct(288)[-3:]  # XXX Py3k
+    '440'
 
     See also the :meth:`FilePerms.from_int` and
     :meth:`FilePerms.from_path` classmethods for useful alternative
@@ -127,14 +129,14 @@ class FilePerms(object):
     def from_int(cls, i):
         """Create a :class:`FilePerms` object from an integer.
 
-        >>> FilePerms.from_int(0644)  # note the leading zero for octal
+        >>> FilePerms.from_int(0o644)  # note the leading zero-oh for octal
         FilePerms(user='rw', group='r', other='r')
         """
-        i &= 0777
+        i &= 0o777
         key = ('', 'x', 'w', 'xw', 'r', 'rx', 'rw', 'rwx')
         parts = []
         while i:
-            parts.append(key[i & 07])
+            parts.append(key[i & 0o7])
             i >>= 3
         parts.reverse()
         return cls(*parts)
