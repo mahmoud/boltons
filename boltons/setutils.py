@@ -16,6 +16,7 @@ from bisect import bisect_left
 from itertools import chain, islice
 from collections import MutableSet
 import operator
+from .compat import lrange
 
 try:
     from compat import make_sentinel
@@ -46,7 +47,7 @@ class IndexedSet(MutableSet):
     Args:
         other (iterable): An optional iterable used to initialize the set.
 
-    >>> x = IndexedSet(range(4) + range(8))
+    >>> x = IndexedSet(lrange(4) + lrange(8))
     >>> x
     IndexedSet([0, 1, 2, 3, 4, 5, 6, 7])
     >>> x - set(range(2))
