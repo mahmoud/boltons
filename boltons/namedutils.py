@@ -26,7 +26,7 @@ except ImportError:
     OrderedDict = dict
 from keyword import iskeyword as _iskeyword
 from operator import itemgetter as _itemgetter
-from six import exec_
+from six import exec_, string_types
 
 # Tiny templates
 
@@ -120,9 +120,9 @@ def namedtuple(typename, field_names, verbose=False, rename=False):
 
     # Validate the field names.  At the user's option, either generate an error
     # message or automatically replace the field name with a valid name.
-    if isinstance(field_names, basestring):
+    if isinstance(field_names, string_types):
         field_names = field_names.replace(',', ' ').split()
-    field_names = map(str, field_names)
+    field_names = [str(x) for x in field_names]
     if rename:
         seen = set()
         for index, name in enumerate(field_names):
@@ -278,9 +278,9 @@ def namedlist(typename, field_names, verbose=False, rename=False):
 
     # Validate the field names.  At the user's option, either generate an error
     # message or automatically replace the field name with a valid name.
-    if isinstance(field_names, basestring):
+    if isinstance(field_names, string_types):
         field_names = field_names.replace(',', ' ').split()
-    field_names = map(str, field_names)
+    field_names = [str(x) for x in field_names]
     if rename:
         seen = set()
         for index, name in enumerate(field_names):

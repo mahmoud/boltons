@@ -13,6 +13,7 @@ import errno
 import fnmatch
 import tempfile
 from shutil import copy2, copystat, Error
+from six import string_types
 
 
 __all__ = ['mkdir_p', 'atomic_save', 'AtomicSaver', 'FilePerms',
@@ -318,13 +319,13 @@ def iter_find_files(directory, patterns, ignored=None):
     .. _glob: https://en.wikipedia.org/wiki/Glob_%28programming%29
 
     """
-    if isinstance(patterns, basestring):
+    if isinstance(patterns, string_types):
         patterns = [patterns]
     pats_re = re.compile('|'.join([fnmatch.translate(p) for p in patterns]))
 
     if not ignored:
         ignored = []
-    elif isinstance(ignored, basestring):
+    elif isinstance(ignored, string_types):
         ignored = [ignored]
     ign_re = re.compile('|'.join([fnmatch.translate(p) for p in ignored]))
     for root, dirs, files in os.walk(directory):
