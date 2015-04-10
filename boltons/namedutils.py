@@ -17,7 +17,14 @@ skinnier approach, you'll probably have to look to C.
 """
 
 import sys as _sys
-from collections import OrderedDict
+try:
+    from collections import OrderedDict
+except ImportError:
+    # backwards compatibility (2.6 has no OrderedDict)
+    try:
+        from boltons.dictutils import OrderedMultiDict as OrderedDict
+    except ImportError:
+        OrderedDict = dict
 from keyword import iskeyword as _iskeyword
 from operator import itemgetter as _itemgetter
 
