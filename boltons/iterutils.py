@@ -9,9 +9,15 @@ returns an iterator (denoted by the ``*_iter`` naming pattern), and a
 shorter-named convenience form that returns a list. Some of the
 following are based on examples in itertools docs.
 """
-import itertools
 
+import itertools
 from compat import basestring  # TODO
+
+try:
+    from itertools import izip
+except ImportError:
+    # Python 3
+    izip, xrange = zip, range
 
 
 def is_iterable(obj):
@@ -235,8 +241,8 @@ def windowed_iter(src, size):
             for _ in xrange(i):
                 next(t)
     except StopIteration:
-        return itertools.izip([])
-    return itertools.izip(*tees)
+        return izip([])
+    return izip(*tees)
 
 
 def bucketize(src, key=None):
