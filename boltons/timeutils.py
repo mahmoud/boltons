@@ -53,6 +53,7 @@ _PARSE_TD_RE = re.compile("((?P<value>%s)\s*(?P<unit>\w)\w*)" % _FLOAT_PATTERN)
 _PARSE_TD_KW_MAP = dict([(unit[0], unit + 's')
                          for _, _, unit in reversed(_BOUNDS[:-2])])
 
+_UNIX_EPOCH = datetime.datetime(1970, 1, 1, 0, 0, 0)
 
 def parse_timedelta(text):
     """Robustly parses a short text description of a time period into a
@@ -180,3 +181,26 @@ def relative_time(d, other=None, ndigits=0):
     if drt < 0:
         phrase = 'from now'
     return '%g %s %s' % (abs(drt), unit, phrase)
+
+def epoch_to_datetime(sec_epoch):
+    """Turn a number of seconds since the UNIX epoch into a datetime object.
+
+    Args:
+        sec_epoch (int or float): Number of seconds since 1 January 1970.
+
+    Returns:
+        The corresponding datetime object
+    """
+    return _UNIX_EPOCH + timedelta(seconds=float(sec_epoch))
+
+def datetime_to_epoch(dt):
+    """Get the number of seconds since the UNIX epoch corresponding to
+    a given `datetime` objects.
+
+    Args:
+        dt (datetime): A `datetime` object.
+
+    Returns:
+        Number of seconds since 1 January 1970 as a float.
+    """
+    return total_seconds(dt - _UNIX_EPOCH)
