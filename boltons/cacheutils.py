@@ -416,10 +416,21 @@ def cached(cache, typed=False):
             check. Default ``False``, setting to ``True`` causes the
             cache keys for ``3`` and ``3.0`` to be considered unequal.
 
+    >>> my_cache = LRU()
+    >>> @cached(my_cache)
+    ... def cached_lower(x):
+    ...     return x.lower()
+    ...
+    >>> cached_lower("CaChInG's FuN AgAiN!")
+    "caching's fun again!"
+    >>> len(my_cache)
+    1
+
     .. _hashable: https://docs.python.org/2/glossary.html#term-hashable
     """
     def cached_func_decorator(func):
         return CachedFunction(func, cache, typed=typed)
+    return cached_func_decorator
 
 
 
@@ -445,4 +456,3 @@ if __name__ == '__main__':
 
     _test_lri()
     _test_lru()
-
