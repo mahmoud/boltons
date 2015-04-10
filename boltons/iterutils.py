@@ -11,12 +11,12 @@ following are based on examples in itertools docs.
 """
 
 import itertools
-from .compat import basestring  # TODO
 
 try:
     from itertools import izip
 except ImportError:
-    # Python 3
+    # Python 3 compat
+    basestring = (str, bytes)
     izip, xrange = zip, range
 
 
