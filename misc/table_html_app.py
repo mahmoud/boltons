@@ -1,11 +1,8 @@
 # -*- coding: utf-8 -*-
 
 import os
-import sys
 import json
-from os.path import expanduser
 
-sys.path.append(expanduser('~/projects/clastic'))
 import clastic
 from clastic import Application
 from clastic.render import JSONRender
@@ -13,7 +10,7 @@ from clastic.middleware import GetParamMiddleware
 from clastic import Response
 from clastic.sinter import getargspec
 
-from tableutils import Table
+from boltons.tableutils import Table
 
 _DATA = json.load(open('meta_stats.json'))
 
