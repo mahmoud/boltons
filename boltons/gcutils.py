@@ -34,9 +34,6 @@ from __future__ import print_function
 import gc
 import sys
 
-from .compat import xrange
-
-
 __all__ = ['get_all', 'GCToggler', 'toggle_gc', 'toggle_gc_postcollect']
 
 
@@ -112,7 +109,7 @@ class GCToggler(object):
       explicit collection after re-enabling.
 
     >>> with toggle_gc:
-    ...     x = [object() for i in xrange(1000)]
+    ...     x = [object() for i in range(1000)]
 
     Between those two instances, the ``GCToggler`` type probably won't
     be used much directly, but is documented for inheritance purposes.
@@ -156,10 +153,10 @@ if __name__ == '__main__':
 
         start = time.time()
         with toggle_gc_postcollect:
-            x = [{} for x in xrange(COUNT)]
+            x = [{} for x in range(COUNT)]
         print(time.time() - start, 'secs without gc')
 
         start = time.time()
-        x = [{} for x in xrange(COUNT)]
+        x = [{} for x in range(COUNT)]
         print(time.time() - start, 'secs with gc')
     _test_main()
