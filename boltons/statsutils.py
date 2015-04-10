@@ -86,6 +86,7 @@ system instrumentation package.
 from __future__ import print_function
 
 from math import floor, ceil
+from six import iteritems
 
 
 class _StatsProperty(object):
@@ -382,7 +383,7 @@ def _get_conv_func(attr_name):
     return stats_helper
 
 
-for attr_name, attr in Stats.__dict__.items():
+for attr_name, attr in list(iteritems(Stats.__dict__)):
     if isinstance(attr, _StatsProperty):
         func = _get_conv_func(attr_name)
         func.__doc__ = attr.func.__doc__

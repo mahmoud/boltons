@@ -10,6 +10,7 @@ import sys
 import functools
 from types import MethodType, FunctionType
 from itertools import chain
+from six import iteritems
 
 
 def get_module_callables(mod, ignore=None):
@@ -49,7 +50,7 @@ def mro_items(type_obj):
     ['denominator', 'imag', 'numerator', 'real']
     """
     # TODO: handle slots?
-    return chain.from_iterable([ct.__dict__.iteritems()
+    return chain.from_iterable([iteritems(ct.__dict__)
                                 for ct in type_obj.__mro__])
 
 
