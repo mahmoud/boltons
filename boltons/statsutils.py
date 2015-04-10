@@ -13,10 +13,10 @@ on both the mean and standard deviation.
 The :class:`Stats` type's methods have a module-level counterpart for
 convenience when the computation reuse advantages do not apply.
 
->>> stats = Stats(lrange(42))
+>>> stats = Stats(range(42))
 >>> stats.mean
 20.5
->>> mean(lrange(42))
+>>> mean(range(42))
 20.5
 
 Statistical moments
@@ -86,8 +86,6 @@ system instrumentation package.
 from __future__ import print_function
 
 from math import floor, ceil
-from six import iteritems
-from .compat import lrange
 
 
 class _StatsProperty(object):
@@ -163,9 +161,9 @@ class Stats(object):
         The arithmetic mean, or "average". Sum of the values divided by
         the number of values.
 
-        >>> mean(lrange(20))
+        >>> mean(range(20))
         9.5
-        >>> mean(lrange(19) + [949])  # 949 is an arbitrary outlier
+        >>> mean(list(range(19)) + [949])  # 949 is an arbitrary outlier
         56.0
         """
         return sum(self.data, 0.0) / len(self.data)
@@ -179,9 +177,9 @@ class Stats(object):
 
         >>> median([2, 1, 3])
         2
-        >>> median(lrange(97))
+        >>> median(range(97))
         48
-        >>> median(lrange(96) + [1066])  # 1066 is an arbitrary outlier
+        >>> median(list(range(96)) + [1066])  # 1066 is an arbitrary outlier
         48
         """
         return self._get_quantile(self._get_sorted_data(), 0.5)
@@ -191,9 +189,9 @@ class Stats(object):
         """
         >>> trimean([2, 1, 3])
         2.0
-        >>> trimean(lrange(97))
+        >>> trimean(range(97))
         48.0
-        >>> trimean(lrange(96) + [1066])  # 1066 is an arbitrary outlier
+        >>> trimean(list(range(96)) + [1066])  # 1066 is an arbitrary outlier
         48.0
         """
         sorted_data = self._get_sorted_data()
@@ -206,7 +204,7 @@ class Stats(object):
         Variance is the average of the squares of the difference between
         each value and the mean.
 
-        >>> variance(lrange(97))
+        >>> variance(range(97))
         784.0
         """
         return mean(self._get_pow_diffs(2))
@@ -216,7 +214,7 @@ class Stats(object):
         """\
         Standard deviation. Square root of the variance.
 
-        >>> std_dev(lrange(97))
+        >>> std_dev(range(97))
         28.0
         """
         return self.variance ** 0.5
@@ -227,7 +225,7 @@ class Stats(object):
         Median Absolute Deviation is a robust measure of statistical
         dispersion: http://en.wikipedia.org/wiki/Median_absolute_deviation
 
-        >>> median_abs_dev(lrange(97))
+        >>> median_abs_dev(range(97))
         24.0
         """
         sorted_vals = sorted(self.data)
@@ -241,7 +239,7 @@ class Stats(object):
 
         http://en.wikipedia.org/wiki/Relative_standard_deviation
 
-        >>> print('%1.3f' % rel_std_dev(lrange(97)))
+        >>> print('%1.3f' % rel_std_dev(range(97)))
         0.583
         """
         abs_mean = abs(self.mean)
@@ -260,10 +258,10 @@ class Stats(object):
 
         See the module docstring for more about statistical moments.
 
-        >>> skewness(lrange(97))  # symmetrical around 48.0
+        >>> skewness(range(97))  # symmetrical around 48.0
         0.0
-        >>> left_skewed = skewness(lrange(97) + lrange(10))
-        >>> right_skewed = skewness(lrange(97) + lrange(87, 97))
+        >>> left_skewed = skewness(list(range(97)) + list(range(10)))
+        >>> right_skewed = skewness(list(range(97)) + list(range(87, 97)))
         >>> round(left_skewed, 3), round(right_skewed, 3)
         (0.114, -0.114)
         """
@@ -285,7 +283,7 @@ class Stats(object):
 
         See the module docstring for more about statistical moments.
 
-        >>> kurtosis(lrange(9))
+        >>> kurtosis(range(9))
         1.99125
 
         With a kurtosis of 1.99125, [0, 1, 2, 3, 4, 5, 6, 7, 8] is more
@@ -340,7 +338,7 @@ class Stats(object):
 
     def get_quantile(self, q):
         """
-        >>> Stats(lrange(100)).get_quantile(0.5)
+        >>> Stats(range(100)).get_quantile(0.5)
         49.5
         """
         q = float(q)
@@ -384,7 +382,7 @@ def _get_conv_func(attr_name):
     return stats_helper
 
 
-for attr_name, attr in list(iteritems(Stats.__dict__)):
+for attr_name, attr in list(Stats.__dict__.items()):
     if isinstance(attr, _StatsProperty):
         func = _get_conv_func(attr_name)
         func.__doc__ = attr.func.__doc__
@@ -397,13 +395,13 @@ del func
 
 
 if __name__ == '__main__':
-    da = Stats(lrange(20))
+    da = Stats(range(20))
     print(da.mean)
 
     import random
 
     def get_pt(dist):
-        vals = [dist() for x in xrange(10000)]
+        vals = [dist() for x in range(10000)]
         pt = pearson_type(vals)
         return pt
 
