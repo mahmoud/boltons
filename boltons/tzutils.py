@@ -16,12 +16,30 @@ beyond these, as well as a higher degree of accuracy, check out `pytz`_.
 import time
 from datetime import tzinfo, timedelta, datetime
 
-from .timeutils import total_seconds  # TODO
-
 # Basic timezones cribbed from etavta and Python docs.
 
 ZERO = timedelta(0)
 HOUR = timedelta(hours=1)
+
+
+# copied from timeutils for tzutils independence:
+def total_seconds(td):
+    """For those with older versions of Python, a pure-Python
+    implementation of Python 2.7's :meth:`timedelta.total_seconds`.
+
+    Args:
+        td (datetime.timedelta): The timedelta to convert to seconds.
+    Returns:
+        float: total number of seconds
+
+    >>> td = datetime.timedelta(days=4, seconds=33)
+    >>> total_seconds(td)
+    345633.0
+    """
+    a_milli = 1000000.0
+    td_ds = td.seconds + (td.days * 86400)  # 24 * 60 * 60
+    td_micro = td.microseconds + (td_ds * a_milli)
+    return td_micro / a_milli
 
 
 class ConstantTZInfo(tzinfo):
