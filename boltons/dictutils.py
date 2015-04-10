@@ -34,8 +34,12 @@ thanks to `Mark Williams`_ for all his help.
 .. _Mark Williams: https://github.com/markrwilliams
 """
 
-from itertools import izip
 from collections import KeysView, ValuesView, ItemsView
+
+try:
+    from itertools import izip
+except ImportError:
+    izip = zip  # Python 3
 
 try:
     from compat import make_sentinel
@@ -445,7 +449,7 @@ class OrderedMultiDict(dict):
         tuple), so the recommended signature looks like:
 
         >>> omd = OrderedMultiDict(zip('hello', 'world'))
-        >>> omd.sorted(key=lambda (k, v): v)  # note parens around (k, v)
+        >>> omd.sorted(key=lambda i: i[1])  # i[0] is the key, i[1] is the val
         OrderedMultiDict([('o', 'd'), ('l', 'l'), ('e', 'o'), ('h', 'w')])
         """
         cls = self.__class__
