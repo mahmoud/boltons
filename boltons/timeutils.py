@@ -134,9 +134,8 @@ def decimal_relative_time(d, other=None, ndigits=0, cardinalize=True):
     (1.0, 'day')
     >>> decimal_relative_time(now - timedelta(seconds=0.002), now, ndigits=5)
     (0.002, 'seconds')
-    >>> decimal_relative_time(now, now - timedelta(days=1000), ndigits=1)
-    (-2.7, 'years')
-
+    >>> decimal_relative_time(now, now - timedelta(days=900), ndigits=1)
+    (-2.5, 'years')
     """
     if other is None:
         other = datetime.datetime.utcnow()

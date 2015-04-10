@@ -237,7 +237,7 @@ class Stats(object):
 
         http://en.wikipedia.org/wiki/Relative_standard_deviation
 
-        >>> round(rel_std_dev(range(97)), 3)
+        >>> print('%1.3f' % rel_std_dev(range(97)))
         0.583
         """
         abs_mean = abs(self.mean)
