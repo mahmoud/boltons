@@ -197,6 +197,16 @@ class TracebackInfo(object):
 
     Args:
         frames (list): A list of frame objects in the stack.
+
+    .. note ::
+
+      ``TracebackInfo`` can represent both exception tracebacks and
+      non-exception tracebacks (aka stack traces). As a result, there
+      is no ``TracebackInfo.from_current()``, as that would be
+      ambiguous. Instead, call :meth:`TracebackInfo.from_frame`
+      without the *frame* argument for a stack trace, or
+      :meth:`TracebackInfo.from_traceback` without the *tb* argument
+      for an exception traceback.
     """
     callpoint_type = Callpoint
 
@@ -211,7 +221,7 @@ class TracebackInfo(object):
 
         Args:
             frame (types.FrameType): frame object from
-                :func:`sys._getframe` or elsewhere. Default to result
+                :func:`sys._getframe` or elsewhere. Defaults to result
                 of :func:`sys.get_frame`.
             level (int): If *frame* is unset, the desired frame is
                 this many levels up the stack from the invocation of
@@ -242,10 +252,15 @@ class TracebackInfo(object):
         exception is being handled, raise a :exc:`ValueError`.
 
         Args:
-            frame (types.FrameType): frame object from
-                :func:`sys.exc_info` or elsewhere.
+
+            frame (types.TracebackType): traceback object from
+                :func:`sys.exc_info` or elsewhere. If absent or set to
+                ``None``, defaults to ``sys.exc_info()[2]``, and
+                raises a :exc:`ValueError` if no exception is
+                currently being handled.
             limit (int): max number of parent frames to extract
                 (defaults to :data:`sys.tracebacklimit`)
+
         """
         ret = []
         if tb is None:
