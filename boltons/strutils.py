@@ -5,12 +5,16 @@ common capabilities missing from the standard library, several of them
 provided by ``strutils``.
 """
 
+from __future__ import print_function
+
 import re
 import string
 import unicodedata
 import collections
 
-from compat import unicode, bytes
+from .compat import unicode, bytes
+from six.moves import zip
+from six import unichr
 
 
 __all__ = ['camel2under', 'under2camel', 'slugify', 'split_punct_ws',
@@ -56,8 +60,15 @@ def slugify(text, delim='_', lower=True, ascii=False):
 
     >>> slugify('First post! Hi!!!!~1    ')
     'first_post_hi_1'
-    >>> slugify("Kurt Gödel's pretty cool.", ascii=True)
-    'kurt_goedel_s_pretty_cool'
+
+    # TODO: repr under Py3k
+    # >>> slugify("Kurt Gödel's pretty cool.", ascii=True)
+    # 'kurt_goedel_s_pretty_cool'
+
+    >>> slugify("Kurt Gödel's pretty cool.", ascii=True) == \
+        b'kurt_goedel_s_pretty_cool'
+    True
+
     """
     ret = delim.join(split_punct_ws(text))
     if ascii:
@@ -83,11 +94,11 @@ def unit_len(sized_iterable, unit_noun='item'):  # TODO: len_units()/unitize()?
     :func:`len()`, conditionally pluralized with :func:`cardinalize`,
     detailed below.
 
-    >>> print unit_len(range(10), 'number')
+    >>> print(unit_len(range(10), 'number'))
     10 numbers
-    >>> print unit_len('aeiou', 'vowel')
+    >>> print(unit_len('aeiou', 'vowel'))
     5 vowels
-    >>> print unit_len([], 'worry')
+    >>> print(unit_len([], 'worry'))
     No worries
     """
     count = len(sized_iterable)
@@ -136,9 +147,9 @@ def cardinalize(unit_noun, count):
     *count* is not one, preserving case when possible.
 
     >>> vowels = 'aeiou'
-    >>> print len(vowels), cardinalize('vowel', len(vowels))
+    >>> print(len(vowels), cardinalize('vowel', len(vowels)))
     5 vowels
-    >>> print 3, cardinalize('Wish', 3)
+    >>> print(3, cardinalize('Wish', 3))
     3 Wishes
     """
     if count == 1:
@@ -364,8 +375,13 @@ def asciify(text, ignore=False):
         ignore (bool): Configures final encoding to ignore remaining
             unasciified unicode instead of replacing it.
 
-    >>> asciify('Beyoncé')
-    'Beyonce'
+    # TODO: repr under Py3k
+    # >>> asciify('Beyoncé')
+    # 'Beyonce'
+
+    >>> asciify('Beyoncé') == b'Beyonce'
+    True
+
     """
     # TODO: Python 3 compliance.
     try:
@@ -476,7 +492,7 @@ DEACCENT_MAP = DeaccenterDict(_BASE_DEACCENT_MAP)
 
 _SIZE_SYMBOLS = ('B', 'K', 'M', 'G', 'T', 'P', 'E', 'Z', 'Y')
 _SIZE_BOUNDS = [(1024 ** i, sym) for i, sym in enumerate(_SIZE_SYMBOLS)]
-_SIZE_RANGES = zip(_SIZE_BOUNDS, _SIZE_BOUNDS[1:])
+_SIZE_RANGES = list(zip(_SIZE_BOUNDS, _SIZE_BOUNDS[1:]))
 
 
 def bytes2human(nbytes, ndigits=0):
@@ -503,6 +519,6 @@ def bytes2human(nbytes, ndigits=0):
 
 if __name__ == '__main__':
     b = asciify(u'Beyoncé')
-    print ord(b[-1])
-    print b
-    print DEACCENT_MAP
+    print(ord(b[-1]))
+    print(b)
+    print(DEACCENT_MAP)

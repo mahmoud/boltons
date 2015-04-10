@@ -4,6 +4,8 @@ disk contents, and ``fileutils`` collects solutions to some of the
 most commonly-found gaps in the standard library.
 """
 
+from __future__ import print_function
+
 import os
 import re
 import stat
@@ -11,6 +13,7 @@ import errno
 import fnmatch
 import tempfile
 from shutil import copy2, copystat, Error
+from six import string_types
 
 
 __all__ = ['mkdir_p', 'atomic_save', 'AtomicSaver', 'FilePerms',
@@ -65,8 +68,10 @@ class FilePerms(object):
 
     >>> FilePerms(user='rwx', group='xrw', other='wxr')  # note character order
     FilePerms(user='rwx', group='rwx', other='rwx')
-    >>> oct(int(FilePerms('r', 'r', '')))
-    '0440'
+    >>> int(FilePerms('r', 'r', ''))
+    288
+    >>> oct(288)[-3:]  # XXX Py3k
+    '440'
 
     See also the :meth:`FilePerms.from_int` and
     :meth:`FilePerms.from_path` classmethods for useful alternative
@@ -75,6 +80,7 @@ class FilePerms(object):
     # TODO: consider more than the lower 9 bits
     class _FilePermProperty(object):
         _perm_chars = 'rwx'
+        _perm_set = frozenset('rwx')
         _perm_val = {'r': 4, 'w': 2, 'x': 1}  # for sorting
 
         def __init__(self, attribute, offset):
@@ -91,8 +97,8 @@ class FilePerms(object):
             if cur == value:
                 return
             try:
-                invalid_chars = str(value).translate(None, self._perm_chars)
-            except (TypeError, UnicodeEncodeError):
+                invalid_chars = set(str(value)) - self._perm_set
+            except TypeError:
                 raise TypeError('expected string, not %r' % value)
             if invalid_chars:
                 raise ValueError('got invalid chars %r in permission'
@@ -125,14 +131,14 @@ class FilePerms(object):
     def from_int(cls, i):
         """Create a :class:`FilePerms` object from an integer.
 
-        >>> FilePerms.from_int(0644)  # note the leading zero for octal
+        >>> FilePerms.from_int(0o644)  # note the leading zero-oh for octal
         FilePerms(user='rw', group='r', other='r')
         """
-        i &= 0777
+        i &= 0o777
         key = ('', 'x', 'w', 'xw', 'r', 'rx', 'rw', 'rwx')
         parts = []
         while i:
-            parts.append(key[i & 07])
+            parts.append(key[i & 0o7])
             i >>= 3
         parts.reverse()
         return cls(*parts)
@@ -314,13 +320,13 @@ def iter_find_files(directory, patterns, ignored=None):
     .. _glob: https://en.wikipedia.org/wiki/Glob_%28programming%29
 
     """
-    if isinstance(patterns, basestring):
+    if isinstance(patterns, string_types):
         patterns = [patterns]
     pats_re = re.compile('|'.join([fnmatch.translate(p) for p in patterns]))
 
     if not ignored:
         ignored = []
-    elif isinstance(ignored, basestring):
+    elif isinstance(ignored, string_types):
         ignored = [ignored]
     ign_re = re.compile('|'.join([fnmatch.translate(p) for p in ignored]))
     for root, dirs, files in os.walk(directory):
@@ -377,11 +383,11 @@ def copy_tree(src, dst, symlinks=False, ignore=None):
         # continue with other files
         except Error as e:
             errors.extend(e.args[0])
-        except EnvironmentError, why:
+        except EnvironmentError as why:
             errors.append((srcname, dstname, str(why)))
     try:
         copystat(src, dst)
-    except OSError, why:
+    except OSError as why:
         if WindowsError is not None and isinstance(why, WindowsError):
             # Copying file access times may fail on Windows
             pass
@@ -409,8 +415,8 @@ if __name__ == '__main__':
             up.other = 'nope'
         except ValueError:
             pass
-        print up
-        print 'user:', up.user
-        print oct(int(up))
-        print oct(int(FilePerms()))
+        print(up)
+        print('user:', up.user)
+        print(oct(int(up)))
+        print(oct(int(FilePerms())))
     _main()

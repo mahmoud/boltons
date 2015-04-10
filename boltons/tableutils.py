@@ -19,10 +19,13 @@ For more advanced :class:`Table`-style manipulation check out the
 
 """
 
+from __future__ import print_function
+
 import cgi
 import types
 from itertools import islice
 from collections import Sequence, Mapping, MutableSequence
+from six import string_types, integer_types
 
 try:
     from compat import make_sentinel
@@ -70,11 +73,10 @@ def escape_html(obj, maxlen=None):
     return cgi.escape(text, quote=True)
 
 
-_DNR = set([types.NoneType, types.BooleanType, types.IntType, types.LongType,
-            types.ComplexType, types.FloatType, types.StringType,
-            types.UnicodeType, types.NotImplementedType, types.SliceType,
+_DNR = set((type(None), bool, complex, float,
+            type(NotImplemented), slice,
             types.FunctionType, types.MethodType, types.BuiltinFunctionType,
-            types.GeneratorType])
+            types.GeneratorType) + string_types + integer_types)
 
 
 class UnsupportedData(TypeError):
@@ -521,16 +523,16 @@ if __name__ == '__main__':
         t2 = Table.from_dict(data_dicts[0])
         t3 = Table.from_dict(data_dicts)
         t3.extend([[3, 'Kurt Rose'], [4]])
-        print t1
-        print t2
-        print t2.to_html()
-        print t3
-        print t3.to_html()
-        print t3.to_text()
+        print(t1)
+        print(t2)
+        print(t2.to_html())
+        print(t3)
+        print(t3.to_html())
+        print(t3.to_text())
 
         import re
         t4 = Table.from_object(re.compile(''))
-        print t4.to_text()
+        print(t4.to_text())
         import pdb;pdb.set_trace()
 
     main()

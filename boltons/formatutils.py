@@ -36,6 +36,8 @@ format strings:
 # TODO: also include percent-formatting utils?
 # TODO: include lithoxyl.formatters.Formatter (or some adaptation)?
 
+from __future__ import print_function
+
 import re
 from string import Formatter
 from collections import namedtuple
@@ -122,8 +124,13 @@ def get_format_args(fstr):
     arguments. Each element of the list includes the name and the
     nominal type of the field.
 
-    >>> get_format_args("{noun} is {1:d} years old{punct}")
-    ([(1, <type 'int'>)], [('noun', <type 'str'>), ('punct', <type 'str'>)])
+    # >>> get_format_args("{noun} is {1:d} years old{punct}")
+    # ([(1, <type 'int'>)], [('noun', <type 'str'>), ('punct', <type 'str'>)])
+
+    # XXX: Py3k
+    >>> get_format_args("{noun} is {1:d} years old{punct}") == \
+        ([(1, int)], [('noun', str), ('punct', str)])
+    True
     """
     # TODO: memoize
     formatter = Formatter()
@@ -347,7 +354,7 @@ if __name__ == '__main__':
         for t in _TEST_TMPLS:
             inferred_t = infer_positional_format_args(t)
             res = get_format_args(inferred_t)
-            #print res
+            #print(res)
             results.append(res)
         return results
 
@@ -355,7 +362,7 @@ if __name__ == '__main__':
         results = []
         for t in _TEST_TMPLS:
             res = split_format_str(t)
-            #print res
+            #print(res)
             results.append(res)
         return results
 
@@ -363,7 +370,7 @@ if __name__ == '__main__':
         results = []
         for t in _TEST_TMPLS:
             res = tokenize_format_str(t)
-            print ''.join([str(r) for r in res])
+            print(''.join([str(r) for r in res]))
             results.append(res)
         return results
 

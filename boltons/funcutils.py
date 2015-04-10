@@ -4,10 +4,13 @@ utilities on top of Python's first-class function
 support. ``funcutils`` generally stays in the same vein, adding to and
 correcting Python's standard metaprogramming facilities.
 """
+from __future__ import print_function
+
 import sys
 import functools
 from types import MethodType, FunctionType
 from itertools import chain
+from six import iteritems
 
 
 def get_module_callables(mod, ignore=None):
@@ -47,7 +50,7 @@ def mro_items(type_obj):
     ['denominator', 'imag', 'numerator', 'real']
     """
     # TODO: handle slots?
-    return chain.from_iterable([ct.__dict__.iteritems()
+    return chain.from_iterable([iteritems(ct.__dict__)
                                 for ct in type_obj.__mro__])
 
 
@@ -86,12 +89,11 @@ def copy_function(orig, copy_dict=True):
         copy_dict (bool): Also copy any attributes set on the function
             instance. Defaults to ``True``.
     """
-    # TODO: Python 3 compat
-    ret = FunctionType(orig.func_code,
-                       orig.func_globals,
-                       name=orig.func_name,
-                       argdefs=orig.func_defaults,
-                       closure=orig.func_closure)
+    ret = FunctionType(orig.__code__,
+                       orig.__globals__,
+                       name=orig.__name__,
+                       argdefs=getattr(orig, "__defaults__", None),
+                       closure=getattr(orig, "__closure__", None))
     if copy_dict:
         ret.__dict__.update(orig.__dict__)
     return ret
@@ -181,11 +183,11 @@ if __name__ == '__main__':
             pass
 
         g = SubGreeter('hello')
-        print g.greet()
-        print g.native_greet()
-        print g.partial_greet()
-        print g.cached_partial_greet()
-        print CachedInstancePartial(g.greet, excitement='s')()
+        print(g.greet())
+        print(g.native_greet())
+        print(g.partial_greet())
+        print(g.cached_partial_greet())
+        print(CachedInstancePartial(g.greet, excitement='s')())
 
         def callee():
             return 1

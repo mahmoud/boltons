@@ -10,11 +10,13 @@ issues without compromising on the excellent complexity
 characteristics of Python's built-in set implementation.
 """
 
+from __future__ import print_function
 
 from bisect import bisect_left
 from itertools import chain, islice
 from collections import MutableSet
 import operator
+from .compat import lrange
 
 try:
     from compat import make_sentinel
@@ -45,7 +47,7 @@ class IndexedSet(MutableSet):
     Args:
         other (iterable): An optional iterable used to initialize the set.
 
-    >>> x = IndexedSet(range(4) + range(8))
+    >>> x = IndexedSet(lrange(4) + lrange(8))
     >>> x
     IndexedSet([0, 1, 2, 3, 4, 5, 6, 7])
     >>> x - set(range(2))
@@ -427,29 +429,28 @@ if __name__ == '__main__':
     five2nine = zero2nine & IndexedSet(range(5, 15))
     x = IndexedSet(five2nine)
     x |= set([10])
-    print zero2nine, five2nine, x, x[-1]
-    print zero2nine ^ five2nine
-    print x[:3], x[2:4:-1]
+    print(zero2nine, five2nine, x, x[-1])
+    print(zero2nine ^ five2nine)
+    print(x[:3], x[2:4:-1])
 
     try:
         thou = IndexedSet(range(1000))
-        print thou.pop(), thou.pop()
-        print thou.pop(499), thou.pop(499),
-        print [thou[i] for i in range(495, 505)]
-        print 'thou hath', len(thou), 'items'
+        print(thou.pop(), thou.pop())
+        print(thou.pop(499), thou.pop(499), [thou[i] for i in range(495, 505)])
+        print('thou hath', len(thou), 'items')
         while len(thou) > 600:
             dead_idx_len = len(thou.dead_indices)
             dead_idx_count = thou._dead_index_count
             thou.pop(0)
             new_dead_idx_len = len(thou.dead_indices)
             if new_dead_idx_len < dead_idx_len:
-                print 'thou hath culled',
-                print dead_idx_count, 'indices'
-        print 'thou hath', len(thou), 'items'
-        print 'thou hath', thou._dead_index_count, 'dead indices'
-        print 'exposing _MISSING:', any([thou[i] is _MISSING for i in range(len(thou))])
+                print('thou hath culled', dead_idx_count, 'indices')
+        print('thou hath', len(thou), 'items')
+        print('thou hath', thou._dead_index_count, 'dead indices')
+        print('exposing _MISSING:', any([thou[i] is _MISSING
+                                         for i in range(len(thou))]))
         thou &= IndexedSet(range(500, 503))
-        print thou
+        print(thou)
 
         from os import urandom
         import time
@@ -458,14 +459,14 @@ if __name__ == '__main__':
         start_time, start_size = time.time(), len(big_set)
         while len(big_set) > 10000:
             if len(big_set) % 10000 == 0:
-                print len(big_set) / 10000
+                print(len(big_set) / 10000)
             rand = rands.pop()
             big_set.pop(rand)
             big_set.pop(-rand)
         end_time, end_size = time.time(), len(big_set)
-        print
-        print 'popped %s items in %s seconds' % (start_size - end_size,
-                                                 end_time - start_time)
+        print()
+        print('popped %s items in %s seconds' % (start_size - end_size,
+                                                 end_time - start_time))
     except Exception as e:
         import pdb;pdb.post_mortem()
         raise

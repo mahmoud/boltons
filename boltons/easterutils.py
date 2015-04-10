@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from __future__ import print_function
 
 
 def gobs_program():
@@ -8,7 +9,7 @@ def gobs_program():
     https://www.youtube.com/watch?v=JbnjusltDHk
     """
     while True:
-        print "Penus",
+        print("Penus", end=" ")
 
 
 if __name__ == '__main__':
