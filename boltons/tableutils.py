@@ -25,6 +25,7 @@ import cgi
 import types
 from itertools import islice
 from collections import Sequence, Mapping, MutableSequence
+from six import string_types, integer_types
 
 try:
     from compat import make_sentinel
@@ -72,11 +73,10 @@ def escape_html(obj, maxlen=None):
     return cgi.escape(text, quote=True)
 
 
-_DNR = set([types.NoneType, types.BooleanType, types.IntType, types.LongType,
-            types.ComplexType, types.FloatType, types.StringType,
-            types.UnicodeType, types.NotImplementedType, types.SliceType,
+_DNR = set((type(None), bool, complex, float,
+            type(NotImplemented), slice,
             types.FunctionType, types.MethodType, types.BuiltinFunctionType,
-            types.GeneratorType])
+            types.GeneratorType) + string_types + integer_types)
 
 
 class UnsupportedData(TypeError):
