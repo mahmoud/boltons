@@ -89,12 +89,11 @@ def copy_function(orig, copy_dict=True):
         copy_dict (bool): Also copy any attributes set on the function
             instance. Defaults to ``True``.
     """
-    # TODO: Python 3 compat
-    ret = FunctionType(orig.func_code,
-                       orig.func_globals,
-                       name=orig.func_name,
-                       argdefs=orig.func_defaults,
-                       closure=orig.func_closure)
+    ret = FunctionType(orig.__code__,
+                       orig.__globals__,
+                       name=orig.__name__,
+                       argdefs=getattr(orig, "__defaults__", None),
+                       closure=getattr(orig, "__closure__", None))
     if copy_dict:
         ret.__dict__.update(orig.__dict__)
     return ret
