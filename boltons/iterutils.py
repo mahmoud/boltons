@@ -151,12 +151,8 @@ def chunked(src, size, count=None, **kw):
     chunk_iter = chunked_iter(src, size, **kw)
     if count is None:
         return list(chunk_iter)
-    ret = []
-    for chunk in chunk_iter:
-        if len(ret) >= count:
-            return ret
-        ret.append(chunk)
-    return ret
+    else:
+        return list(itertools.islice(chunk_iter, count))
 
 
 def chunked_iter(src, size, **kw):
