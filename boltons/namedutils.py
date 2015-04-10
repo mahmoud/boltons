@@ -26,6 +26,7 @@ except ImportError:
     OrderedDict = dict
 from keyword import iskeyword as _iskeyword
 from operator import itemgetter as _itemgetter
+from six import exec_
 
 # Tiny templates
 
@@ -175,7 +176,7 @@ def namedtuple(typename, field_names, verbose=False, rename=False):
                      _property=property,
                      _tuple=tuple)
     try:
-        exec class_definition in namespace
+        exec_(class_definition, namespace)
     except SyntaxError as e:
         raise SyntaxError(e.message + ':\n' + class_definition)
     result = namespace[typename]
@@ -339,7 +340,7 @@ def namedlist(typename, field_names, verbose=False, rename=False):
                      _property=property,
                      _list=list)
     try:
-        exec class_definition in namespace
+        exec_(class_definition, namespace)
     except SyntaxError as e:
         raise SyntaxError(e.message + ':\n' + class_definition)
     result = namespace[typename]
