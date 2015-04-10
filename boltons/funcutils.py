@@ -43,8 +43,8 @@ def mro_items(type_obj):
     """Takes a type and returns an iterator over all class variables
     throughout the type hierarchy (respecting the MRO).
 
-    >>> sorted([k for k, v in mro_items(int) if not (callable(v) or isinstance(v, type(int.__int__)))])
-    ['__class__', '__doc__', '__doc__', 'denominator', 'imag', 'numerator', 'real']
+    >>> sorted(set([k for k, v in mro_items(int) if not k.startswith('__') and not callable(v)]))
+    ['denominator', 'imag', 'numerator', 'real']
     """
     # TODO: handle slots?
     return chain.from_iterable([ct.__dict__.iteritems()
