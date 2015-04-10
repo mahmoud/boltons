@@ -30,6 +30,7 @@ further.
 # TODO: type survey
 
 import gc
+import sys
 
 __all__ = ['get_all', 'GCToggler', 'toggle_gc', 'toggle_gc_postcollect']
 
@@ -69,7 +70,11 @@ def get_all(type_obj, include_subtypes=True):
     # TODO: old-style classes
     if not isinstance(type_obj, type):
         raise TypeError('expected a type, not %r' % type_obj)
-    if gc.is_tracked(type_obj):
+    try:
+        type_is_tracked = gc.is_tracked(type_obj)
+    except AttributeError:
+        type_is_tracked = False  # Python 2.6 and below don't get the speedup
+    if type_is_tracked:
         to_check = gc.get_referrers(type_obj)
     else:
         to_check = gc.get_objects()
@@ -79,6 +84,12 @@ def get_all(type_obj, include_subtypes=True):
     else:
         ret = [x for x in to_check if type(x) is type_obj]
     return ret
+
+
+_IS_PYPY = '__pypy__' in sys.builtin_module_names
+if _IS_PYPY:
+    # pypy's gc is just different, y'all
+    del get_all
 
 
 class GCToggler(object):
