@@ -32,7 +32,7 @@ def total_seconds(td):
     Returns:
         float: total number of seconds
 
-    >>> td = datetime.timedelta(days=4, seconds=33)
+    >>> td = timedelta(days=4, seconds=33)
     >>> total_seconds(td)
     345633.0
     """
