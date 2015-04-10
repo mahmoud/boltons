@@ -228,7 +228,7 @@ class AtomicSaver(object):
         if not self.part_filename:
             self.part_path = dest_path + '.part'
         else:
-            self.part_path = os.path.join(self.dest_dir, self.part_path)
+            self.part_path = os.path.join(self.dest_dir, self.part_filename)
         self.mode = 'w+' if self.text_mode else 'w+b'
 
         self.part_file = None
