@@ -101,16 +101,17 @@ class OrderedMultiDict(dict):
     Note that calling :func:`dict` on an OMD results in a dict of keys
     to *lists* of values:
 
+    >>> from pprint import pprint as pp  # ensuring proper key ordering
     >>> omd = OrderedMultiDict([('a', 1), ('b', 2), ('a', 3)])
-    >>> dict(omd)
+    >>> pp(dict(omd))
     {'a': [1, 3], 'b': [2]}
 
     Note that modifying those lists will modify the OMD. If you want a
     safe-to-modify or flat dictionary, use :meth:`OrderedMultiDict.todict()`.
 
-    >>> omd.todict()
+    >>> pp(omd.todict())
     {'a': 3, 'b': 2}
-    >>> omd.todict(multi=True)
+    >>> pp(omd.todict(multi=True))
     {'a': [1, 3], 'b': [2]}
 
     With ``multi=False``, items appear with the keys in to original

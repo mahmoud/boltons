@@ -73,7 +73,8 @@ class LRU(dict):
 
     >>> cap_cache = LRU(max_size=2)
     >>> cap_cache['a'], cap_cache['b'] = 'A', 'B'
-    >>> dict(cap_cache)
+    >>> from pprint import pprint as pp
+    >>> pp(dict(cap_cache))
     {'a': 'A', 'b': 'B'}
     >>> [cap_cache['b'] for i in range(3)][0]
     'B'
@@ -255,7 +256,8 @@ class LRI(dict):
 
     >>> cap_cache = LRI(max_size=2)
     >>> cap_cache['a'], cap_cache['b'] = 'A', 'B'
-    >>> cap_cache
+    >>> from pprint import pprint as pp
+    >>> pp(cap_cache)
     {'a': 'A', 'b': 'B'}
     >>> [cap_cache['b'] for i in range(3)][0]
     'B'
