@@ -12,9 +12,11 @@ import string
 import unicodedata
 import collections
 
-from .compat import unicode, bytes
-from six.moves import zip
-from six import unichr
+try:
+    unicode, str, bytes, basestring = unicode, str, str, basestring
+except NameError:  # basestring not defined in Python 3
+    unicode, str, bytes, basestring = str, bytes, bytes, str
+    unichr = chr
 
 
 __all__ = ['camel2under', 'under2camel', 'slugify', 'split_punct_ws',
@@ -122,15 +124,15 @@ def ordinalize(number, ext_only=False):
         number (int or str): Number to be cardinalized.
         ext_only (bool): Whether to return only the suffix. Default ``False``.
 
-    >>> ordinalize(1)
-    '1st'
-    >>> ordinalize(3694839230)
-    '3694839230th'
-    >>> ordinalize('hi')
-    'hi'
+    >>> print(ordinalize(1))
+    1st
+    >>> print(ordinalize(3694839230))
+    3694839230th
+    >>> print(ordinalize('hi'))
+    hi
 
     """
-    numstr = str(number)
+    numstr = unicode(number)
     rdig, ext = numstr[-1:], ''
     if not rdig:
         return ''
@@ -519,6 +521,6 @@ def bytes2human(nbytes, ndigits=0):
 
 if __name__ == '__main__':
     b = asciify(u'Beyoncé')
-    print(ord(b[-1]))
+    print(ord(unicode(b)[-1]))
     print(b)
     print(DEACCENT_MAP)
