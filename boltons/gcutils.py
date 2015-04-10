@@ -34,6 +34,9 @@ from __future__ import print_function
 import gc
 import sys
 
+from .compat import xrange
+
+
 __all__ = ['get_all', 'GCToggler', 'toggle_gc', 'toggle_gc_postcollect']
 
 

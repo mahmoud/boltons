@@ -15,11 +15,9 @@ import operator
 from math import log as math_log
 from itertools import chain, islice
 
-try:
-    from compat import make_sentinel
-    _MISSING = make_sentinel(var_name='_MISSING')
-except ImportError:
-    _MISSING = object()
+from .compat import make_sentinel, xrange
+_MISSING = make_sentinel(var_name='_MISSING')
+
 
 # TODO: expose splaylist?
 __all__ = ['BList', 'BarrelList']
