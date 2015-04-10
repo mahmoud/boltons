@@ -9,6 +9,8 @@ For utilities for working with iterables and lists, check out
 :class:`collections.namedtuple`, check out :mod:`namedutils`.
 """
 
+from __future__ import print_function
+
 import operator
 from math import log as math_log
 from itertools import chain, islice
@@ -346,8 +348,8 @@ if __name__ == '__main__':
         rands = [ord(i) * x for i, x in zip(os.urandom(1024), range(1024))]
         bl2 = BarrelList(rands)
         bl2.sort()
-        print bl2[:10]
-        print bl2[:-10:-1]
+        print(bl2[:10])
+        print(bl2[:-10:-1])
 
         bl3 = BarrelList(range(int(1e5)))
         for i in range(10000):
@@ -383,12 +385,12 @@ if __name__ == '__main__':
                 all_times[size_factor].append(tottime)
             min_time = round(min(all_times[size_factor]), 3)
             min_times[size_factor] = min_time
-            print size_factor, min_time, step
+            print(size_factor, min_time, step)
             if min_time > (min_times[old_size_factor] + 0.002):
                 step = -step / 2
             old_size_factor = size_factor
             size_factor += step
-        print tottime
+        print(tottime)
 
     try:
         tune()  # main()

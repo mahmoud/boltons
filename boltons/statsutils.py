@@ -83,6 +83,8 @@ system instrumentation package.
 .. _Lithoxyl: https://github.com/mahmoud/lithoxyl
 """
 
+from __future__ import print_function
+
 from math import floor, ceil
 
 
@@ -394,7 +396,7 @@ del func
 
 if __name__ == '__main__':
     da = Stats(range(20))
-    print da.mean
+    print(da.mean)
 
     import random
 
@@ -410,6 +412,6 @@ if __name__ == '__main__':
         # pt = get_pt(dist=lambda: random.betavariate(2, 3))  # expect 1, beta
         # pt = get_pt(dist=lambda: random.expovariate(0.2))  # expect 3, beta
         pt = get_pt(dist=lambda: random.uniform(0.0, 10.0))  # gets 2
-        print 'pearson type:', pt
+        print('pearson type:', pt)
 
         import pdb;pdb.set_trace()

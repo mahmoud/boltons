@@ -19,6 +19,8 @@ For more advanced :class:`Table`-style manipulation check out the
 
 """
 
+from __future__ import print_function
+
 import cgi
 import types
 from itertools import islice
@@ -521,16 +523,16 @@ if __name__ == '__main__':
         t2 = Table.from_dict(data_dicts[0])
         t3 = Table.from_dict(data_dicts)
         t3.extend([[3, 'Kurt Rose'], [4]])
-        print t1
-        print t2
-        print t2.to_html()
-        print t3
-        print t3.to_html()
-        print t3.to_text()
+        print(t1)
+        print(t2)
+        print(t2.to_html())
+        print(t3)
+        print(t3.to_html())
+        print(t3.to_text())
 
         import re
         t4 = Table.from_object(re.compile(''))
-        print t4.to_text()
+        print(t4.to_text())
         import pdb;pdb.set_trace()
 
     main()

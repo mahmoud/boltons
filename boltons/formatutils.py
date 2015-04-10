@@ -36,6 +36,8 @@ format strings:
 # TODO: also include percent-formatting utils?
 # TODO: include lithoxyl.formatters.Formatter (or some adaptation)?
 
+from __future__ import print_function
+
 import re
 from string import Formatter
 from collections import namedtuple
@@ -347,7 +349,7 @@ if __name__ == '__main__':
         for t in _TEST_TMPLS:
             inferred_t = infer_positional_format_args(t)
             res = get_format_args(inferred_t)
-            #print res
+            #print(res)
             results.append(res)
         return results
 
@@ -355,7 +357,7 @@ if __name__ == '__main__':
         results = []
         for t in _TEST_TMPLS:
             res = split_format_str(t)
-            #print res
+            #print(res)
             results.append(res)
         return results
 
@@ -363,7 +365,7 @@ if __name__ == '__main__':
         results = []
         for t in _TEST_TMPLS:
             res = tokenize_format_str(t)
-            print ''.join([str(r) for r in res])
+            print(''.join([str(r) for r in res]))
             results.append(res)
         return results
 

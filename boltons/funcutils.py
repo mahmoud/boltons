@@ -4,6 +4,8 @@ utilities on top of Python's first-class function
 support. ``funcutils`` generally stays in the same vein, adding to and
 correcting Python's standard metaprogramming facilities.
 """
+from __future__ import print_function
+
 import sys
 import functools
 from types import MethodType, FunctionType
@@ -181,11 +183,11 @@ if __name__ == '__main__':
             pass
 
         g = SubGreeter('hello')
-        print g.greet()
-        print g.native_greet()
-        print g.partial_greet()
-        print g.cached_partial_greet()
-        print CachedInstancePartial(g.greet, excitement='s')()
+        print(g.greet())
+        print(g.native_greet())
+        print(g.partial_greet())
+        print(g.cached_partial_greet())
+        print(CachedInstancePartial(g.greet, excitement='s')())
 
         def callee():
             return 1

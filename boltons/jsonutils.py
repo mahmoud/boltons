@@ -7,6 +7,8 @@ of working with `JSON Lines`_-formatted files.
 
 """
 
+from __future__ import print_function
+
 import os
 import json
 
@@ -190,4 +192,4 @@ if __name__ == '__main__':
     for blocksize in (1, 4, 11, 4096):
         _test_reverse_iter_lines('_tmp_nl.txt', blocksize)
 
-    print list(JSONLIterator(open('_tmp_jsonl.jsonl'), reverse=True))
+    print(list(JSONLIterator(open('_tmp_jsonl.jsonl'), reverse=True)))

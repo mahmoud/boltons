@@ -4,6 +4,8 @@ disk contents, and ``fileutils`` collects solutions to some of the
 most commonly-found gaps in the standard library.
 """
 
+from __future__ import print_function
+
 import os
 import re
 import stat
@@ -409,8 +411,8 @@ if __name__ == '__main__':
             up.other = 'nope'
         except ValueError:
             pass
-        print up
-        print 'user:', up.user
-        print oct(int(up))
-        print oct(int(FilePerms()))
+        print(up)
+        print('user:', up.user)
+        print(oct(int(up)))
+        print(oct(int(FilePerms())))
     _main()

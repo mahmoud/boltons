@@ -16,6 +16,8 @@ in a tree, graph, or other mutable data structure. If you want an even
 skinnier approach, you'll probably have to look to C.
 """
 
+from __future__ import print_function
+
 import sys as _sys
 try:
     from collections import OrderedDict
@@ -163,7 +165,7 @@ def namedtuple(typename, field_names, verbose=False, rename=False):
     class_definition = _namedtuple_tmpl.format(**fmt_kw)
 
     if verbose:
-        print class_definition
+        print(class_definition)
 
     # Execute the template string in a temporary namespace and support
     # tracing utilities by setting a value for frame.f_globals['__name__']
@@ -321,7 +323,7 @@ def namedlist(typename, field_names, verbose=False, rename=False):
     class_definition = _namedlist_tmpl.format(**fmt_kw)
 
     if verbose:
-        print class_definition
+        print(class_definition)
 
     def itemsetter(key):
         def _itemsetter(obj, value):
@@ -364,9 +366,9 @@ if __name__ == '__main__':
     from cPickle import loads, dumps
     MutablePoint = namedlist('MutablePoint', 'x, y', True, True)
     p = MutablePoint(x=10, y=20)
-    print p
+    print(p)
     p[0] = 11
-    print p
+    print(p)
     p.x = 12
-    print p
+    print(p)
     assert p == loads(dumps(p))

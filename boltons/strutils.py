@@ -5,6 +5,8 @@ common capabilities missing from the standard library, several of them
 provided by ``strutils``.
 """
 
+from __future__ import print_function
+
 import re
 import string
 import unicodedata
@@ -83,11 +85,11 @@ def unit_len(sized_iterable, unit_noun='item'):  # TODO: len_units()/unitize()?
     :func:`len()`, conditionally pluralized with :func:`cardinalize`,
     detailed below.
 
-    >>> print unit_len(range(10), 'number')
+    >>> print(unit_len(range(10), 'number'))
     10 numbers
-    >>> print unit_len('aeiou', 'vowel')
+    >>> print(unit_len('aeiou', 'vowel'))
     5 vowels
-    >>> print unit_len([], 'worry')
+    >>> print(unit_len([], 'worry'))
     No worries
     """
     count = len(sized_iterable)
@@ -136,9 +138,9 @@ def cardinalize(unit_noun, count):
     *count* is not one, preserving case when possible.
 
     >>> vowels = 'aeiou'
-    >>> print len(vowels), cardinalize('vowel', len(vowels))
+    >>> print(len(vowels), cardinalize('vowel', len(vowels)))
     5 vowels
-    >>> print 3, cardinalize('Wish', 3)
+    >>> print(3, cardinalize('Wish', 3))
     3 Wishes
     """
     if count == 1:
@@ -503,6 +505,6 @@ def bytes2human(nbytes, ndigits=0):
 
 if __name__ == '__main__':
     b = asciify(u'Beyoncé')
-    print ord(b[-1])
-    print b
-    print DEACCENT_MAP
+    print(ord(b[-1]))
+    print(b)
+    print(DEACCENT_MAP)
