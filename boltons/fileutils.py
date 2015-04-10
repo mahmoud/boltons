@@ -13,11 +13,18 @@ import errno
 import fnmatch
 import tempfile
 from shutil import copy2, copystat, Error
-from six import string_types
 
 
 __all__ = ['mkdir_p', 'atomic_save', 'AtomicSaver', 'FilePerms',
            'iter_find_files', 'copytree']
+
+
+FULL_PERMS = 511  # 0777 that both Python 2 and 3 can digest
+_SINGLE_FULL_PERM = 7  # or 07 in Python 2
+try:
+    basestring
+except NameError:
+    basestring = (str, bytes)  # Python 3 compat
 
 
 def mkdir_p(path):
@@ -134,11 +141,11 @@ class FilePerms(object):
         >>> FilePerms.from_int(0o644)  # note the leading zero-oh for octal
         FilePerms(user='rw', group='r', other='r')
         """
-        i &= 0o777
+        i &= FULL_PERMS
         key = ('', 'x', 'w', 'xw', 'r', 'rx', 'rw', 'rwx')
         parts = []
         while i:
-            parts.append(key[i & 0o7])
+            parts.append(key[i & _SINGLE_FULL_PERM])
             i >>= 3
         parts.reverse()
         return cls(*parts)
@@ -320,13 +327,13 @@ def iter_find_files(directory, patterns, ignored=None):
     .. _glob: https://en.wikipedia.org/wiki/Glob_%28programming%29
 
     """
-    if isinstance(patterns, string_types):
+    if isinstance(patterns, basestring):
         patterns = [patterns]
     pats_re = re.compile('|'.join([fnmatch.translate(p) for p in patterns]))
 
     if not ignored:
         ignored = []
-    elif isinstance(ignored, string_types):
+    elif isinstance(ignored, basestring):
         ignored = [ignored]
     ign_re = re.compile('|'.join([fnmatch.translate(p) for p in ignored]))
     for root, dirs, files in os.walk(directory):
