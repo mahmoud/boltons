@@ -13,6 +13,8 @@ import unicodedata
 import collections
 
 from .compat import unicode, bytes
+from six.moves import zip
+from six import unichr
 
 
 __all__ = ['camel2under', 'under2camel', 'slugify', 'split_punct_ws',
@@ -58,8 +60,15 @@ def slugify(text, delim='_', lower=True, ascii=False):
 
     >>> slugify('First post! Hi!!!!~1    ')
     'first_post_hi_1'
-    >>> slugify("Kurt Gödel's pretty cool.", ascii=True)
-    'kurt_goedel_s_pretty_cool'
+
+    # TODO: repr under Py3k
+    # >>> slugify("Kurt Gödel's pretty cool.", ascii=True)
+    # 'kurt_goedel_s_pretty_cool'
+
+    >>> slugify("Kurt Gödel's pretty cool.", ascii=True) == \
+        b'kurt_goedel_s_pretty_cool'
+    True
+
     """
     ret = delim.join(split_punct_ws(text))
     if ascii:
@@ -366,8 +375,13 @@ def asciify(text, ignore=False):
         ignore (bool): Configures final encoding to ignore remaining
             unasciified unicode instead of replacing it.
 
-    >>> asciify('Beyoncé')
-    'Beyonce'
+    # TODO: repr under Py3k
+    # >>> asciify('Beyoncé')
+    # 'Beyonce'
+
+    >>> asciify('Beyoncé') == b'Beyonce'
+    True
+
     """
     # TODO: Python 3 compliance.
     try:
