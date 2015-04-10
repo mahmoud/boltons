@@ -25,7 +25,11 @@ import cgi
 import types
 from itertools import islice
 from collections import Sequence, Mapping, MutableSequence
-from six import string_types, integer_types
+try:
+    string_types, integer_types = (str, unicode), (int, long)
+except:
+    # Python 3 compat
+    string_types, integer_types = (str, bytes), (int,)
 
 try:
     from compat import make_sentinel
