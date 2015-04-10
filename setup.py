@@ -32,9 +32,6 @@ setup(name='boltons',
       zip_safe=False,
       license=__license__,
       platforms='any',
-      install_requires=[
-          "six==1.9.0",
-      ],
       classifiers=[
           'Intended Audience :: Developers',
           'Topic :: Software Development :: Libraries',
