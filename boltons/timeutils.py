@@ -16,7 +16,8 @@ from datetime import timedelta
 
 
 __all__ = ['total_seconds', 'parse_td', 'relative_time',
-           'decimal_relative_time']
+           'decimal_relative_time', 'epoch_to_datetime',
+           'datetime_to_epoch']
 
 
 def total_seconds(td):
