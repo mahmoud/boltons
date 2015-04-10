@@ -152,7 +152,7 @@ def chunked(src, size, count=None, **kw):
     if count is None:
         return list(chunk_iter)
     else:
-        return list(islice(chunk_iter, count))
+        return list(itertools.islice(chunk_iter, count))
 
 
 def chunked_iter(src, size, **kw):
