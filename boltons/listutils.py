@@ -9,7 +9,7 @@ For utilities for working with iterables and lists, check out
 :class:`collections.namedtuple`, check out :mod:`namedutils`.
 """
 
-from __future__ import print_function
+from __future__ import print_function, division
 
 import operator
 from math import log as math_log
@@ -95,7 +95,7 @@ class BarrelList(list):
         cur_list, len_self = self.lists[list_idx], len(self)
         size_limit = self._cur_size_limit
         if len(cur_list) > size_limit:
-            half_limit = size_limit / 2
+            half_limit = size_limit // 2
             while len(cur_list) > half_limit:
                 next_list_idx = list_idx + 1
                 self.lists.insert(next_list_idx, cur_list[-half_limit:])
@@ -353,7 +353,7 @@ if __name__ == '__main__':
 
         bl3 = BarrelList(range(int(1e5)))
         for i in range(10000):
-            bl3.insert(0, bl3.pop(len(bl3) / 2))
+            bl3.insert(0, bl3.pop(len(bl3) // 2))
 
         del bl3[10:5000]
         bl3[:20:2] = range(0, -10, -1)
@@ -379,7 +379,7 @@ if __name__ == '__main__':
         while abs(step) > 4:
             gc.collect()
             for x in range(3):
-                tottime = timeit('bl.insert(0, bl.pop(len(bl)/2))',
+                tottime = timeit('bl.insert(0, bl.pop(len(bl)//2))',
                                  _TUNE_SETUP % (size_factor, data_size),
                                  number=10000)
                 all_times[size_factor].append(tottime)
@@ -387,7 +387,7 @@ if __name__ == '__main__':
             min_times[size_factor] = min_time
             print(size_factor, min_time, step)
             if min_time > (min_times[old_size_factor] + 0.002):
-                step = -step / 2
+                step = -step // 2
             old_size_factor = size_factor
             size_factor += step
         print(tottime)
