@@ -14,7 +14,7 @@ from setuptools import setup
 
 
 __author__ = 'Mahmoud Hashemi'
-__version__ = '0.5.2dev'
+__version__ = '0.6.0'
 __contact__ = 'mahmoudrhashemi@gmail.com'
 __url__ = 'https://github.com/mahmoud/boltons'
 __license__ = 'BSD'
@@ -39,5 +39,6 @@ setup(name='boltons',
           'Intended Audience :: Developers',
           'Topic :: Software Development :: Libraries',
           'Programming Language :: Python :: 2.6',
-          'Programming Language :: Python :: 2.7', ]
+          'Programming Language :: Python :: 2.7',
+          'Programming Language :: Python :: 3.4', ]
       )
