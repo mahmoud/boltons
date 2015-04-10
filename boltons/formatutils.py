@@ -124,8 +124,13 @@ def get_format_args(fstr):
     arguments. Each element of the list includes the name and the
     nominal type of the field.
 
-    >>> get_format_args("{noun} is {1:d} years old{punct}")
-    ([(1, <type 'int'>)], [('noun', <type 'str'>), ('punct', <type 'str'>)])
+    # >>> get_format_args("{noun} is {1:d} years old{punct}")
+    # ([(1, <type 'int'>)], [('noun', <type 'str'>), ('punct', <type 'str'>)])
+
+    # XXX: Py3k
+    >>> get_format_args("{noun} is {1:d} years old{punct}") == \
+        ([(1, int)], [('noun', str), ('punct', str)])
+    True
     """
     # TODO: memoize
     formatter = Formatter()
