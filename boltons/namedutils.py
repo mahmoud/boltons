@@ -26,7 +26,15 @@ except ImportError:
     OrderedDict = dict
 from keyword import iskeyword as _iskeyword
 from operator import itemgetter as _itemgetter
-from six import exec_, string_types
+
+try:
+    basestring
+    def exec_(code, global_env):
+        exec("exec code in global_env")
+except NameError:
+    basestring = (str, bytes)  # Python 3 compat
+    def exec_(code, global_env):
+        exec(code, global_env)
 
 # Tiny templates
 
@@ -39,7 +47,6 @@ _imm_field_tmpl = '''\
 _m_field_tmpl = '''\
     {name} = _property(_itemgetter({index:d}), _itemsetter({index:d}), doc='Alias for field {index:d}')
 '''
-
 
 #################################################################
 ### namedtuple
@@ -120,7 +127,7 @@ def namedtuple(typename, field_names, verbose=False, rename=False):
 
     # Validate the field names.  At the user's option, either generate an error
     # message or automatically replace the field name with a valid name.
-    if isinstance(field_names, string_types):
+    if isinstance(field_names, basestring):
         field_names = field_names.replace(',', ' ').split()
     field_names = [str(x) for x in field_names]
     if rename:
@@ -253,6 +260,7 @@ class {typename}(list):
 {field_defs}
 '''
 
+
 def namedlist(typename, field_names, verbose=False, rename=False):
     """Returns a new subclass of list with named fields.
 
@@ -278,7 +286,7 @@ def namedlist(typename, field_names, verbose=False, rename=False):
 
     # Validate the field names.  At the user's option, either generate an error
     # message or automatically replace the field name with a valid name.
-    if isinstance(field_names, string_types):
+    if isinstance(field_names, basestring):
         field_names = field_names.replace(',', ' ').split()
     field_names = [str(x) for x in field_names]
     if rename:
@@ -326,7 +334,7 @@ def namedlist(typename, field_names, verbose=False, rename=False):
     if verbose:
         print(class_definition)
 
-    def itemsetter(key):
+    def _itemsetter(key):
         def _itemsetter(obj, value):
             obj[key] = value
         return _itemsetter
@@ -334,7 +342,7 @@ def namedlist(typename, field_names, verbose=False, rename=False):
     # Execute the template string in a temporary namespace and support
     # tracing utilities by setting a value for frame.f_globals['__name__']
     namespace = dict(_itemgetter=_itemgetter,
-                     _itemsetter=itemsetter,
+                     _itemsetter=_itemsetter,
                      __name__='namedlist_%s' % typename,
                      OrderedDict=OrderedDict,
                      _property=property,
@@ -345,10 +353,11 @@ def namedlist(typename, field_names, verbose=False, rename=False):
         raise SyntaxError(e.message + ':\n' + class_definition)
     result = namespace[typename]
 
-    # For pickling to work, the __module__ variable needs to be set to the frame
-    # where the named list is created.  Bypass this step in environments where
-    # sys._getframe is not defined (Jython for example) or sys._getframe is not
-    # defined for arguments greater than 0 (IronPython).
+    # For pickling to work, the __module__ variable needs to be set to
+    # the frame where the named list is created.  Bypass this step in
+    # environments where sys._getframe is not defined (Jython for
+    # example) or sys._getframe is not defined for arguments greater
+    # than 0 (IronPython).
     try:
         frame = _sys._getframe(1)
         result.__module__ = frame.f_globals.get('__name__', '__main__')
