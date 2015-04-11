@@ -29,7 +29,7 @@ def gencls(*bases, **extras):
     Hello, Eve
 
     """
-    return type('gencls:{}'.format(','.join(base.__name__ for base in bases)), bases, extras)
+    return type('gencls:{0}'.format(','.join(base.__name__ for base in bases)), bases, extras)
 
 
 def issubclass(subcls, supercls):
@@ -60,9 +60,9 @@ def get_all_subclasses(cls):
     >>> class D(A):
     ...     pass
     ... 
-    >>> get_all_subclasses(A) == {B, C, D}
+    >>> get_all_subclasses(A) == set([B, C, D])
     True
-    >>> get_all_subclasses(B) == {C}
+    >>> get_all_subclasses(B) == set([C])
     True
 
     """
