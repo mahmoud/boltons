@@ -29,7 +29,7 @@ def _raise(ex_type, ex, tb):
 
 def cmd(args, return_stdout=True, return_stderr=False, return_code=False, return_proc=False,
         stdin=None, stdout=PIPE, stderr=PIPE, success=0, cwd=None, close_fds=True, env={}, clear_env=False):
-    """Run a command, blocking until it exits.
+    r"""Run a command, blocking until it exits.
     By default, returns the command's stdout as a string.
     First argument "args" should be either a list of arguments,
     or a string (which will be subject to shell interpretation).
