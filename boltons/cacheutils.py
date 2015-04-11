@@ -242,7 +242,7 @@ class LRU(dict):
         cn = self.__class__.__name__
         val_map = super(LRU, self).__repr__()
         return ('%s(max_size=%r, on_miss=%r, values=%s)'
-                % (cn, self.on_miss, self.max_size, val_map))
+                % (cn, self.max_size, self.on_miss, val_map))
 
 
 class LRI(dict):
