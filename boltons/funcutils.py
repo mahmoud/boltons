@@ -99,11 +99,35 @@ def copy_function(orig, copy_dict=True):
 
 
 def partial_ordering(cls):
-    """Class decorator. Similar to functools.total_ordering, except it
-    is used to define partial orderings (ie. it is possible that x is niether
-    greater than, equal to or less than y). It assumes the presence
-    of a <= (__le__) and >= (__ge__) method, but nothing else.
-    It will not override any existing additional comparison methods.
+    """Class decorator, similar to :func:`functools.total_ordering`,
+    except it is used to define `partial orderings`_ (i.e., it is
+    possible that *x* is neither greater than, equal to, or less than
+    *y*). It assumes the presence of the ``__le__()`` and ``__ge__()``
+    method, but nothing else. It will not override any existing
+    additional comparison methods.
+
+    .. _partial orderings: https://en.wikipedia.org/wiki/Partially_ordered_set
+
+    >>> @partial_ordering
+    ... class MySet(set):
+    ...     def __le__(self, other):
+    ...         return self.issubset(other)
+    ...     def __ge__(self, other):
+    ...         return self.issuperset(other)
+    ...
+    >>> a = MySet([1,2,3])
+    >>> b = MySet([1,2])
+    >>> c = MySet([1,2,4])
+    >>> b < a
+    True
+    >>> b > a
+    False
+    >>> b < c
+    True
+    >>> a < c
+    False
+    >>> c > a
+    False
     """
     def __lt__(self, other): return self <= other and not self >= other
     def __gt__(self, other): return self >= other and not self <= other
