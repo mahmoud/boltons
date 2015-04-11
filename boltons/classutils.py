@@ -60,15 +60,12 @@ def get_all_subclasses(cls):
     >>> class D(A):
     ...     pass
     ... 
-    >>> get_all_subclasses(A)
-    set([<class 'boltons.classutils.D'>, <class 'boltons.classutils.B'>, <class 'boltons.classutils.C'>])
-    >>> get_all_subclasses(B)
-    set([<class 'boltons.classutils.C'>])
+    >>> get_all_subclasses(A) == {B, C, D}
+    True
+    >>> get_all_subclasses(B) == {C}
+    True
 
     """
-	# XXX Doctest result is fragile - relies on str(set), which relies on hash order
-	#     Also set repr() is different between py2,3
-	#     How to make it better without losing readability?
     subs = set(cls.__subclasses__())
     subs_of_subs = [get_all_subclasses(subcls) for subcls in subs]
     return subs.union(*subs_of_subs)
