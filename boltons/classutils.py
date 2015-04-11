@@ -18,7 +18,7 @@ def gencls(*bases, **extras):
     >>> class A(object):
     ...     name = 'Alice'
     ...     def greet(self):
-    ...         print 'Hello, ' + self.name
+    ...         print('Hello, ' + self.name)
     ...
     >>> class BobNameMixin(object):
     ...     name = 'Bob'
@@ -66,8 +66,9 @@ def get_all_subclasses(cls):
     set([<class 'boltons.classutils.C'>])
 
     """
-	# XXX doctest result is fragile - relies on str(set), which relies on hash order
-	#     how to make it better without losing readability?
+	# XXX Doctest result is fragile - relies on str(set), which relies on hash order
+	#     Also set repr() is different between py2,3
+	#     How to make it better without losing readability?
     subs = set(cls.__subclasses__())
     subs_of_subs = [get_all_subclasses(subcls) for subcls in subs]
     return subs.union(*subs_of_subs)
@@ -92,11 +93,11 @@ class mixedmethod(object):
         ...   @mixedmethod
         ...   def foo(self):
         ...     return self.x
-        >>> print MyCls.foo()
+        >>> MyCls.foo()
         1
         >>> mycls = MyCls()
         >>> mycls.x = 2
-        >>> print mycls.foo()
+        >>> mycls.foo()
         2
     """
 
