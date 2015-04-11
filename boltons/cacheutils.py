@@ -133,7 +133,7 @@ class LRU(dict):
                 oldroot[KEY] = key
                 oldroot[VALUE] = value
                 # prevent ref counts going to zero during update
-                root = oldroot[NEXT]
+                self.root = root = oldroot[NEXT]
                 oldkey, oldresult = root[KEY], root[VALUE]
                 root[KEY] = root[VALUE] = None
                 # Now update the cache dictionary.
@@ -433,8 +433,15 @@ def cached(cache, typed=False):
     return cached_func_decorator
 
 
+def test_21():
+    cache = LRU(max_size=3)
+    for i in xrange(4):
+        cache[i] = i
+
 
 if __name__ == '__main__':
+    test_21()
+
     def _test_lri():
         import string
         bc = LRI(10, on_miss=lambda k: k.upper())
