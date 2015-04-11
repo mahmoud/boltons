@@ -1,12 +1,12 @@
-"""
-    Functionality that should be in the standard library. Like
-    builtins. But Boltons.
+"""Functionality that should be in the standard library. Like
+builtins, but Boltons.
 
-    Otherwise known as "everyone's util.py," but cleaned up and
-    tested.
+Otherwise known as, "everyone's util.py," but cleaned up and
+tested.
 
-    :copyright: (c) 2015 by Mahmoud Hashemi
-    :license: BSD, see LICENSE for more details.
+Contains over 125 BSD-licensed utility types and functions that can be
+used as a package or independently. `Extensively documented on Read
+the Docs <http://boltons.readthedocs.org>`_.
 """
 
 from setuptools import setup
