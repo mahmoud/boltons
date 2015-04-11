@@ -105,7 +105,7 @@ def cmd(args, return_stdout=True, return_stderr=False, return_code=False, return
         shell = False
 
     # normalise env, clear_env to single dict
-    env = {str(k): str(v) for k, v in env.items()}
+    env = dict((str(k), str(v)) for k, v in env.items())
     if not clear_env:
         user_env = env
         env = os.environ.copy()
@@ -190,8 +190,8 @@ class FailedProcessError(CalledProcessError):
         if self.exitcode >= 0:
             status = 'failed with exit code {}'.format(self.exitcode)
         else:
-            SIGNALS = {value: name for name, value in signal.__dict__.items()
-                       if name.startswith('SIG') and not name.startswith('SIG_')}
+            SIGNALS = ((value, name) for name, value in signal.__dict__.items()
+                       if name.startswith('SIG') and not name.startswith('SIG_'))
             signum = -self.exitcode
             status = 'was killed by {}'.format(SIGNALS.get(signum, "Unknown signal {}".format(signum)))
         return "Process {!r} {}".format(self.args, status)
