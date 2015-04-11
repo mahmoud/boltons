@@ -40,9 +40,12 @@ Then dozens of boltons are just an import away::
   from boltons.cacheutils import LRU
   my_cache = LRU()
 
-However, because of the nature of utilities, application developers
-might want to consider other options. See the
-:ref:`Integration <arch_integration>` section for more details.
+Due to the nature of utilities, application developers might want to
+consider other integration options. See the :ref:`Integration
+<arch_integration>` section of the architecture document for more
+details.
+
+Boltons is tested against Python 2.6, 2.7, 3.4, and PyPy.
 
 Third-party packages
 --------------------
