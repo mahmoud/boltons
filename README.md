@@ -13,7 +13,8 @@ in the same spirit as — and yet conspicuously missing from —
   * A full-featured [TracebackInfo][tbinfo] type, for representing stack traces,
     in [tbutils][tbutils]
 
-[Full and extensive docs are available on Read The Docs.][rtd]
+Boltons is tested against Python 2.6, 2.7, 3.4, and
+PyPy. [Full and extensive docs are available on Read The Docs.][rtd]
 
 [stdlib]: https://docs.python.org/2.7/library/index.html
 [rtd]: https://boltons.readthedocs.org/en/latest/
