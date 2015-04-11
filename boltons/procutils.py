@@ -18,6 +18,14 @@ from subprocess import PIPE, Popen, CalledProcessError
 
 IS_PY2 = sys.version_info[0] == 2
 
+def _raise(ex_type, ex, tb):
+    # py3 compat
+    if IS_PY2:
+        # wrap in exec() so we don't parse unless we need to (prevent SyntaxError in py3)
+        exec('raise ex_type, ex, tb')
+    else:
+        raise ex
+
 
 def cmd(args, return_stdout=True, return_stderr=False, return_code=False, return_proc=False,
         stdin=None, stdout=PIPE, stderr=PIPE, success=0, cwd=None, close_fds=True, env={}, clear_env=False):
@@ -142,11 +150,7 @@ def cmd(args, return_stdout=True, return_stderr=False, return_code=False, return
                 proc.kill()
             except OSError:
                 pass
-        if IS_PY2:
-            # wrap in exec() so we don't parse unless we need to (prevent SyntaxError in py3)
-            exec('raise ex_type, ex, tb')
-        else:
-            raise ex
+        _raise(ex_type, ex, tb)
 
     if not success(stdout, stderr, exitcode):
         raise FailedProcessError(args, stdout, stderr, exitcode)
