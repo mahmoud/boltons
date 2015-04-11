@@ -10,6 +10,11 @@ shorter-named convenience form that returns a list. Some of the
 following are based on examples in itertools docs.
 """
 
+__all__ = ['is_iterable', 'is_scalar', 'split', 'split_iter', 'chunked',
+           'chunked_iter', 'windowed', 'windowed_iter', 'bucketize', 'partition',
+           'unique', 'unique_iter', 'one']
+
+
 import itertools
 
 try:
