@@ -17,6 +17,9 @@ import weakref
 from subprocess import PIPE, Popen, CalledProcessError
 
 IS_PY2 = sys.version_info[0] == 2
+bytes, str, unicode = (bytes, bytes, unicode) if IS_PY2 else (bytes, str, str)
+if not IS_PY2:
+    basestring = bytes, unicode
 
 def _raise(ex_type, ex, tb):
     # py3 compat
