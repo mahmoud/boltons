@@ -102,7 +102,7 @@ class Pool(object):
     def put(self, resource):
         """Return a resource previously taken from the pool."""
         if isinstance(resource, ResourceWrapper):
-            resource = resource.__resource
+            resource = resource._resource
         if resource not in self.members:
             raise ValueError("Given resource is not owned by this pool")
         if resource not in self.used:
@@ -123,8 +123,8 @@ class Pool(object):
         can no longer be put() back (though you could re-introduce it with adopt()).
         """
         if isinstance(resource, ResourceWrapper):
-            wrapper, resource = resource, resource.__resource
-            wrapper.__pool = None
+            wrapper, resource = resource, resource._resource
+            wrapper._pool = None
         if resource not in self.members:
             raise ValueError("Given resource is not owned by this pool")
         for collection in (self.to_clean, self.used, self.members):
@@ -219,25 +219,23 @@ class ResourceWrapper(object):
     attribute access. Special features like isinstance() or operators will not behave correctly.
     """
     def __init__(self, pool, resource):
-        self.__pool = pool
-        self.__resource = resource
+        self._pool = pool
+        self._resource = resource
 
     def __getattr__(self, attr):
-        return getattr(self.__resource, attr)
+        return getattr(self._resource, attr)
 
     def __setattr__(self, attr, value):
-        # weirdness here due to Name Mangling:
-        # https://docs.python.org/2/tutorial/classes.html#private-variables-and-class-local-references
-        if attr.startswith('_ResourceWrapper__'):
+        if not hasattr(self, '_resource'):
             return super(ResourceWrapper, self).__setattr__(attr, value)
-        return setattr(self.__resource, attr, value)
+        return setattr(self._resource, attr, value)
 
     def __enter__(self):
         pass
 
     def __exit__(self, *exc_info):
-        if not self.__pool: return
-        self.__pool.put(self)
+        if not self._pool: return
+        self._pool.put(self)
 
 
 class PoolExhaustedException(Exception):
