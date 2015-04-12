@@ -88,7 +88,7 @@ def cmd(args, return_stdout=True, return_stderr=False, return_code=False, return
 
     An example similar to subprocess.call(), re-using the parent's stdin/out/err as per subprocess' defaults:
         >>> cmd(["echo", "hello"], stdin=sys.stdin, stdout=sys.stdout, stderr=sys.stderr,
-        ...     return_stdout=False, return_code=True)
+        ...     return_stdout=False, return_code=True) # doctest: +SKIP
         hello
         0
 
