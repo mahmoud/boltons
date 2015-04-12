@@ -21,23 +21,27 @@ try:
     # python3.3 added monotonic time to stdlib
     monotonic = time.monotonic
 except AttributeError:
-    from importlib import import_module
-    # lib name, function that gets value given module (in order of preference)
-    _monotonic_libs = [
-        ('monotonic', lambda module: module.monotonic()),
-        ('monotime', lambda module: module.monotonic()),
-        ('monoclock', lambda module: module.nano_count() / 1e9),
-    ]
-    for _lib, _func in _monotonic_libs:
-        try:
-            _monotonic_module = import_module(_lib)
-        except (ImportError, RuntimeError):
-            # "monotonic" will raise RuntimeError if no implementation for platform
-            continue
-        monotonic = lambda: _func(_monotonic_module)
-        break
+    try:
+        from importlib import import_module
+    except ImportError:
+        monotonic = None # py2.6
     else:
-        monotonic = None
+        # lib name, function that gets value given module (in order of preference)
+        _monotonic_libs = [
+            ('monotonic', lambda module: module.monotonic()),
+            ('monotime', lambda module: module.monotonic()),
+            ('monoclock', lambda module: module.nano_count() / 1e9),
+        ]
+        for _lib, _func in _monotonic_libs:
+            try:
+                _monotonic_module = import_module(_lib)
+            except (ImportError, RuntimeError):
+                # "monotonic" will raise RuntimeError if no implementation for platform
+                continue
+            monotonic = lambda: _func(_monotonic_module)
+            break
+        else:
+            monotonic = None
 
 
 __all__ = ['total_seconds', 'parse_td', 'relative_time',
