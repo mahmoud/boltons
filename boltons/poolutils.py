@@ -29,7 +29,7 @@ try:
 except ImportError:
     import queue as Queue
 
-__all__ = [threadpool, thread_job]
+__all__ = ['ThreadPool', 'ThreadJob']
 
 
 class ThreadJob(object):
