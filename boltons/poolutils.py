@@ -226,7 +226,9 @@ class ResourceWrapper(object):
         return getattr(self.__resource, attr)
 
     def __setattr__(self, attr, value):
-        if attr.startswith('__'):
+        # weirdness here due to Name Mangling:
+        # https://docs.python.org/2/tutorial/classes.html#private-variables-and-class-local-references
+        if attr.startswith('_ResourceWrapper__'):
             return super(ResourceWrapper, self).__setattr__(attr, value)
         return setattr(self.__resource, attr, value)
 
