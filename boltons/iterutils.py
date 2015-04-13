@@ -354,13 +354,14 @@ def unique_iter(src, key=None):
 
 
 def one(src, cmp=None):
-    """
-    Return the object in the given iterable ``src`` that evaluates to True.
+    """Along the same lines as builtins, :func:`all` and :func:`any`,
+    ``one()`` returns the single object in the given iterable *src*
+    that evaluates to ``True``, as determined by callable *cmp*. If
+    unset, *cmp* defaults to :class:`bool`.
 
-    If the given iterable has more than one object that evaluates to True,
-    or if there is no object that fulfills such condition, return False.
-
-    If a callable ``cmp`` is given, it's used to evaluate each element.
+    If *src* has more than one object that evaluates to ``True``, or
+    if there is no object that fulfills such condition, return
+    ``False``. It's like an `XOR`_ over an iterable.
 
     >>> one((True, False, False))
     True
@@ -377,7 +378,10 @@ def one(src, cmp=None):
     >>> one((10, 20, 30, 42), lambda i: i > 40)
     42
 
-    See https://github.com/mgaitan/one for further use cases
+    See `Martín Gaitán's original repo`_ for further use cases.
+
+    .. Martín Gaitán's original repo: https://github.com/mgaitan/one
+    .. XOR: https://en.wikipedia.org/wiki/Exclusive_or
     """
     the_one = False
     for i in src:
