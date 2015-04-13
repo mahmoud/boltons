@@ -19,9 +19,9 @@ class Pool(object):
     >>> class ThingPool(Pool):
     ...     def factory(self):
     ...         print("Made a thing")
-    ...         return "a thing"
+    ...         return object()
     ...     def _destroy(self, thing):
-    ...         print "Closed a thing"
+    ...         print("Closed a thing")
     ... 
     >>> pool = ThingPool(min=1, max=2, limit=3)
     Made a thing
@@ -49,6 +49,11 @@ class Pool(object):
 
     """
 
+    # Note that we don't bother with full-blown thread safety,
+    # but we do some small and easy extra steps to ensure we are greenlet-safe.
+    # factory(), _clean() and _destroy() are assumed to potentially block, so all operations
+    # assume other operations may occur during those calls.
+
     def __init__(self, factory=None, clean=None, destroy=None,
                  min=None, max=None, limit=None):
         """Create a new Pool containing objects as returned from factory()
@@ -56,6 +61,8 @@ class Pool(object):
         Optional args:
             clean: An optional fn that is used to "reset" used resources to a clean state.
                    If defined, it should take one arg (the resource) and return the modified resource.
+                   It may return None to indicate the resource has been updated in-place and the same reference
+                   may be used.
             destroy: An optional fn that is used to properly dispose of a resource. For example,
                      it might close a connection or kill a thread. If defined, it should take the resource
                      as its only arg.
@@ -90,7 +97,7 @@ class Pool(object):
         """Get a resource. Returned object is actually a wrapped version of the resource
         which allows a context manager (with clause) which returns the resource to the pool on exit.
         """
-        if not self.available and not self.clean(destroy=False):
+        if not self.available and not self.clean_one(destroy=False):
             if self.limit is not None and len(self.members) + self.creating >= self.limit:
                 raise PoolExhaustedException()
             self.create()
@@ -107,6 +114,7 @@ class Pool(object):
             raise ValueError("Given resource is not owned by this pool")
         if resource not in self.used:
             raise ValueError("Given resource is not in use")
+        self.used.remove(resource)
         self.to_clean.append(resource)
 
     def adopt(self, resource, in_use=False):
@@ -118,7 +126,7 @@ class Pool(object):
         if in_use:
             self.used.add(resource)
 
-    def remove(self, resource):
+    def remove(self, resource, _no_min=False):
         """Fully remove resource from the pool. The pool completely forgets about the resource and it
         can no longer be put() back (though you could re-introduce it with adopt()).
         """
@@ -130,12 +138,13 @@ class Pool(object):
         for collection in (self.to_clean, self.used, self.members):
             if resource in collection:
                 collection.remove(resource)
-        # create back up to min if needed
-        self._ensure_min()
+        if not _no_min:
+            # create back up to min if needed
+            self._ensure_min()
 
-    def destroy(self, resource):
+    def destroy(self, resource, _no_min=False):
         """Destroy resource, removing it from the pool and calling the destroy callback."""
-        self.remove(resource)
+        self.remove(resource, _no_min=_no_min)
         self._destroy(resource)
 
     def clean_one(self, destroy=True):
@@ -151,12 +160,18 @@ class Pool(object):
         if not self.to_clean:
             return False
         resource = self.to_clean.pop(0)
-        self.cleaning.add(resource)
+        assert resource in self.members, "Resource to clean not owned by pool"
         if destroy and self.max is not None and len(self.members) > self.max:
             self.destroy(resource)
             return True
+        self.cleaning.add(resource)
         cleaned = self._clean(resource)
-        assert resource in self.members, "Resource to clean not owned by pool"
+        if cleaned is None:
+            # assume resource was cleaned in place
+            cleaned = resource
+        self.cleaning.remove(resource)
+        if resource not in self.members:
+            return True # resource was remove()ed while we were cleaning - do nothing
         self.members.remove(resource)
         self.members.append(cleaned)
         return True
@@ -187,9 +202,8 @@ class Pool(object):
 
     def destroy_all(self):
         """Destroy all resources. The pool should not be used after this is called."""
-        members = self.members[:]
-        while members:
-            self.destroy(members[0])
+        while self.members:
+            self.destroy(self.members[0], _no_min=True)
 
     def _ensure_min(self):
         """Ensure we have at least self.min members"""
@@ -229,6 +243,12 @@ class ResourceWrapper(object):
         if not hasattr(self, '_resource'):
             return super(ResourceWrapper, self).__setattr__(attr, value)
         return setattr(self._resource, attr, value)
+
+    def __str__(self):
+        return str(self._resource)
+
+    def __repr__(self):
+        return "<Resource {self._resource!r} of pool {self._pool!r}>".format(self=self)
 
     def __enter__(self):
         pass
