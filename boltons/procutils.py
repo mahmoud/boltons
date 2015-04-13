@@ -43,7 +43,7 @@ def cmd(args, return_stdout=True, return_stderr=False, return_code=False, return
     Note that this function only supports POSIX platforms.
 
     Simple usage:
-        >>> cmd(['echo', 'hello world'])
+        >>> cmd(['echo', 'hello world']) # doctest: +SKIP
         'hello world\n'
 
     A note on return values:
@@ -86,7 +86,7 @@ def cmd(args, return_stdout=True, return_stderr=False, return_code=False, return
 
     An example of a more complex usage:
         >>> cmd('read input; echo foo; echo $input >&2; exit $BAZ',
-        ...     stdin='bar', stdout=None, return_stderr=True, success=[0,1], env={"BAZ": 1})
+        ...     stdin='bar', stdout=None, return_stderr=True, success=[0,1], env={"BAZ": 1}) # doctest: +SKIP
         (None, 'bar\n')
 
     An example similar to subprocess.call(), re-using the parent's stdin/out/err as per subprocess' defaults:
