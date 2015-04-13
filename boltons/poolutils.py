@@ -32,10 +32,10 @@ class Pool(object):
     Made a thing
     >>> thing3 = pool.get() # now we're over max
     Made a thing
-    >>> thing4 = pool.get() # now we've hit the hard limit
+    >>> thing4 = pool.get() # doctest: +SKIP
     Traceback (most recent call last):
       File "<stdin>", line 1, in <module>
-    PoolExhaustedException
+    PoolExhaustedException  # now we've hit the hard limit
     >>> pool.put(thing1)
     >>> pool.put(thing2)
     >>> pool.clean() # we clean up and destroy any excess things above max
