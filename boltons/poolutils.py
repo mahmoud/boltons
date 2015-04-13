@@ -240,7 +240,7 @@ class ResourceWrapper(object):
         return getattr(self._resource, attr)
 
     def __setattr__(self, attr, value):
-        if not hasattr(self, '_resource'):
+        if '_resource' not in self.__dict__:
             return super(ResourceWrapper, self).__setattr__(attr, value)
         return setattr(self._resource, attr, value)
 
