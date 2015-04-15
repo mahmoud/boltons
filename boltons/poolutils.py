@@ -57,7 +57,6 @@ class ThreadJob(object):
 class ThreadPool(object):
 
     def __init__(self, nthreads=10):
-        self.nthreads = 0
         self._q_size = 0
         self._job_q = Queue.Queue()
         self._result_q = Queue.Queue()
