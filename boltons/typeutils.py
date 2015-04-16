@@ -82,9 +82,8 @@ def issubclass(subclass, baseclass):
 
 
 def get_all_subclasses(cls):
-    """Recursive method to find all decendents of cls, ie.
-    its subclasses, subclasses of those classes, etc.
-    Returns a set.
+    """Recursively finds and returns a :class:`list` of all types
+    inherited from *cls*.
 
     >>> class A(object):
     ...     pass
@@ -102,6 +101,7 @@ def get_all_subclasses(cls):
     ['B', 'D', 'C']
     >>> [t.__name__ for t in get_all_subclasses(B)]
     ['C']
+
     """
     try:
         to_check = deque(cls.__subclasses__())
