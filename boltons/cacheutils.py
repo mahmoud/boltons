@@ -49,7 +49,7 @@ except:
             pass
 
 try:
-    from compat import make_sentinel
+    from typeutils import make_sentinel
     _MISSING = make_sentinel(var_name='_MISSING')
     _KWARG_MARK = make_sentinel(var_name='_KWARG_MARK')
 except ImportError:

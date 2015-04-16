@@ -32,7 +32,7 @@ except:
     string_types, integer_types = (str, bytes), (int,)
 
 try:
-    from compat import make_sentinel
+    from typeutils import make_sentinel
     _MISSING = make_sentinel(var_name='_MISSING')
 except ImportError:
     _MISSING = object()

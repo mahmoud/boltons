@@ -34,7 +34,7 @@ from bisect import insort
 import itertools
 
 try:
-    from compat import make_sentinel
+    from typeutils import make_sentinel
     _REMOVED = make_sentinel(var_name='_REMOVED')
 except ImportError:
     _REMOVED = object()

@@ -18,7 +18,7 @@ from collections import MutableSet
 import operator
 
 try:
-    from compat import make_sentinel
+    from typeutils import make_sentinel
     _MISSING = make_sentinel(var_name='_MISSING')
 except ImportError:
     _MISSING = object()

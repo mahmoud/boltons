@@ -10,6 +10,41 @@ from collections import deque
 _issubclass = issubclass
 
 
+def make_sentinel(name='_MISSING', var_name=None):
+    """Creates and returns a new instance of a new class, suitable for
+    usage as a "sentinel", a kind of singleton often used to indicate
+    a value is missing when ``None`` is a valid input.
+
+    Args:
+        name (str): Name of the Sentinel, used in ``__repr__``s
+        var_name (str): Set this name to the name of the variable in
+            its respective module enable pickleability.
+
+    >>> make_sentinel(var_name='_MISSING')
+    _MISSING
+
+    The most common use cases here in boltons are as default values
+    for optional function arguments, partly because of its
+    less-confusing appearance in automatically generated
+    documentation. Sentinels also function well as placeholders in queues
+    and linked lists.
+    """
+    class Sentinel(object):
+        def __init__(self):
+            self.name = name
+            self.var_name = var_name
+        def __repr__(self):
+            if self.var_name:
+                return self.var_name
+            return '%s(%r)' % (self.__class__.__name__, self.name)
+        if var_name:
+            def __reduce__(self):
+                return self.var_name
+        def __nonzero__(self):
+            return False
+    return Sentinel()
+
+
 def issubclass(subclass, baseclass):
     """Just like the built-in :func:`issubclass`, this function checks
     whether *subclass* is inherited from *baseclass*. Unlike the
