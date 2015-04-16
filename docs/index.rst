@@ -102,4 +102,5 @@ Section listing
    tableutils
    tbutils
    timeutils
+   typeutils
    tzutils
