@@ -1,17 +1,30 @@
 # -*- coding: utf-8 -*-
 """Python's built-in :mod:`functools` module builds several useful
 utilities on top of Python's first-class function support.
-``classutils`` attempts to do the same for metaprogramming with
-classes, types and instances.
+``typeutils`` attempts to do the same for metaprogramming with types
+and instances.
 """
 
-def issubclass(subcls, supercls):
-    """As per the builtin issubclass(), but will simply return False if
-    either arg is not suitable (eg. if subcls is not a class),
-    instead of raising TypeError.
+
+def issubclass(subclass, baseclass):
+    """Just like the built-in :func:`issubclass`, this function checks
+    whether *subclass* is inherited from *baseclass*. Unlike the
+    built-in function, this ``issubclass`` will simply return
+    ``False`` if either argument is not suitable (e.g., if *subclass*
+    is not an instance of :class:`type`), instead of raising
+    :exc:`TypeError`.
+
+    Args:
+        subclass (type): The target class to check.
+        baseclass (type): The base class *subclass* will be checked against.
+
+    >>> issubclass(bool, int)  # always a fun fact
+    True
+    >>> issubclass('hi', 'friend')
+    False
     """
     try:
-        return __builtins__['issubclass'](subcls, supercls)
+        return __builtins__['issubclass'](subclass, baseclass)
     except TypeError:
         return False
 
