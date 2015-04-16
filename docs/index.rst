@@ -15,7 +15,7 @@ including:
   * Two types of :class:`~boltons.queueutils.PriorityQueue`, in
     :mod:`~boltons.queueutils`
   * :func:`Chunked <boltons.iterutils.chunked>` and
-    :func:`~boltons.iterutils.windowed` iteration, in
+    :func:`windowed <boltons.iterutils.windowed>` iteration, in
     :mod:`~boltons.iterutils`
   * A full-featured :class:`~boltons.tbutils.TracebackInfo` type, for
     representing stack traces, in :mod:`~boltons.tbutils`
