@@ -36,7 +36,7 @@ class BufferedSocket(object):
         self.rbuf = ""
         return data
 
-    def peek(self, n, timeout=None):
+    def peek(self, n, timeout=_UNSET):
         'peek n bytes from the socket, but keep them in the buffer'
         if len(self.rbuf) >= n:
             return self.rbuf[:n]
