@@ -11,12 +11,12 @@ _issubclass = issubclass
 
 
 def make_sentinel(name='_MISSING', var_name=None):
-    """Creates and returns a new instance of a new class, suitable for
+    """Creates and returns a new **instance** of a new class, suitable for
     usage as a "sentinel", a kind of singleton often used to indicate
     a value is missing when ``None`` is a valid input.
 
     Args:
-        name (str): Name of the Sentinel, used in ``__repr__``s
+        name (str): Name of the Sentinel
         var_name (str): Set this name to the name of the variable in
             its respective module enable pickleability.
 
@@ -28,6 +28,17 @@ def make_sentinel(name='_MISSING', var_name=None):
     less-confusing appearance in automatically generated
     documentation. Sentinels also function well as placeholders in queues
     and linked lists.
+
+    .. note::
+
+      By design, additional calls to ``make_sentinel`` with the same
+      values will not produce equivalent objects.
+
+      >>> make_sentinel('TEST') == make_sentinel('TEST')
+      False
+      >>> type(make_sentinel('TEST')) == type(make_sentinel('TEST'))
+      False
+
     """
     class Sentinel(object):
         def __init__(self):
@@ -108,7 +119,7 @@ def get_all_subclasses(cls):
 
 
 class classproperty(object):
-    """Much like a :func:`property`, but the wrapped get function is a
+    """Much like a :class:`property`, but the wrapped get function is a
     class method.  For simplicity, only read-only properties are
     implemented.
     """
