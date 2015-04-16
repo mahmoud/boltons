@@ -5,6 +5,10 @@ utilities on top of Python's first-class function support.
 and instances.
 """
 
+from collections import deque
+
+_issubclass = issubclass
+
 
 def issubclass(subclass, baseclass):
     """Just like the built-in :func:`issubclass`, this function checks
@@ -18,13 +22,15 @@ def issubclass(subclass, baseclass):
         subclass (type): The target class to check.
         baseclass (type): The base class *subclass* will be checked against.
 
-    >>> issubclass(bool, int)  # always a fun fact
+    >>> class MyObject(object): pass
+    ...
+    >>> issubclass(MyObject, object)  # always a fun fact
     True
     >>> issubclass('hi', 'friend')
     False
     """
     try:
-        return __builtins__['issubclass'](subclass, baseclass)
+        return _issubclass(subclass, baseclass)
     except TypeError:
         return False
 
@@ -46,20 +52,31 @@ def get_all_subclasses(cls):
     >>> class D(A):
     ...     pass
     ...
-    >>> get_all_subclasses(A) == set([B, C, D])
-    True
-    >>> get_all_subclasses(B) == set([C])
-    True
-
+    >>> [t.__name__ for t in get_all_subclasses(A)]
+    ['B', 'D', 'C']
+    >>> [t.__name__ for t in get_all_subclasses(B)]
+    ['C']
     """
-    subs = set(cls.__subclasses__())
-    subs_of_subs = [get_all_subclasses(subcls) for subcls in subs]
-    return subs.union(*subs_of_subs)
+    try:
+        to_check = deque(cls.__subclasses__())
+    except (AttributeError, TypeError):
+        raise TypeError('expected type object, not %r' % cls)
+    seen, ret = set(), []
+    while to_check:
+        cur = to_check.popleft()
+        if cur in seen:
+            continue
+        ret.append(cur)
+        seen.add(cur)
+        to_check.extend(cur.__subclasses__())
+    return ret
 
 
 class classproperty(object):
-    """Acts like a stdlib @property, but the wrapped get function is a class method.
-    For simplicity, only read-only properties are implemented."""
+    """Much like a :func:`property`, but the wrapped get function is a
+    class method.  For simplicity, only read-only properties are
+    implemented.
+    """
 
     def __init__(self, fn):
         self.fn = fn
