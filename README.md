@@ -34,13 +34,13 @@ PyPy. [Full and extensive docs are available on Read The Docs.][rtd]
 
 ## Installation
 
-Boltons can be added to a project in a few ways. There's the obvious one::
+Boltons can be added to a project in a few ways. There's the obvious one:
 
 ```
     pip install boltons
 ```
 
-Then dozens of boltons are just an import away::
+Then, [thanks to PyPI][boltons_pypi], dozens of boltons are just an import away:
 
 ```python
     from boltons.cacheutils import LRU
@@ -52,6 +52,7 @@ want to consider other options. Boltons is pure-Python and has no
 dependencies. See the [Integration][integration] section of the docs
 for more details.
 
+[boltons_pypi]: https://pypi.python.org/pypi/boltons
 [integration]: https://boltons.readthedocs.org/en/latest/architecture.html#integration
 
 ## Third-party packages
