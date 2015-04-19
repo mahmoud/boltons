@@ -729,7 +729,11 @@ class ParsedException(object):
             frame_match = frame_re.match(frame_line)
             if frame_match:
                 frame_dict = frame_match.groupdict()
-                next_line = tb_lines[line_no + 1]
+                try:
+                    next_line = tb_lines[line_no + 1]
+                except IndexError:
+                    # We read what we could
+                    next_line = ''
                 next_line_stripped = next_line.strip()
                 if (
                         frame_re.match(next_line_stripped) or
