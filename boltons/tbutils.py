@@ -27,6 +27,12 @@ import sys
 import linecache
 
 
+if str is bytes:  # py2
+    text = unicode
+else:  # py3
+    text = str
+
+
 # TODO: chaining primitives?  what are real use cases where these help?
 
 # TODO: print_* for backwards compatability
@@ -691,7 +697,7 @@ class ParsedException(object):
         Args:
             tb_str (str): The traceback text (:class:`unicode` or UTF-8 bytes)
         """
-        if not isinstance(tb_str, unicode):
+        if not isinstance(tb_str, text):
             tb_str = tb_str.decode('utf-8')
         tb_lines = tb_str.lstrip().splitlines()
 
@@ -717,21 +723,27 @@ class ParsedException(object):
             raise ValueError('unrecognized traceback string format')
 
         frames = []
-        for pair_idx in range(start_line, len(tb_lines), 2):
-            frame_line = tb_lines[pair_idx].strip()
+        line_no = start_line
+        while True:
+            frame_line = tb_lines[line_no].strip()
             frame_match = frame_re.match(frame_line)
             if frame_match:
                 frame_dict = frame_match.groupdict()
+                next_line = tb_lines[line_no + 1].strip()
+                if frame_re.match(next_line):
+                    frame_dict['source_line'] = ''
+                else:
+                    frame_dict['source_line'] = next_line
+                    line_no += 1
             else:
                 break
-            frame_dict['source_line'] = tb_lines[pair_idx + 1].strip()
+            line_no += 1
             frames.append(frame_dict)
 
-        exc_line_offset = start_line + len(frames) * 2
         try:
-            exc_line = tb_lines[exc_line_offset]
+            exc_line = tb_lines[line_no]
             exc_type, _, exc_msg = exc_line.partition(':')
-        except:
+        except Exception:
             exc_type, exc_msg = '', ''
 
         return cls(exc_type, exc_msg, frames)

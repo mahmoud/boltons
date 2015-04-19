@@ -6,4 +6,4 @@ python:
   - "pypy"
 
 install: "pip install -r requirements-test.txt"
-script: "py.test --doctest-modules boltons"
+script: "py.test --doctest-modules boltons tests"
