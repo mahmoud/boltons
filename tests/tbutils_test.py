@@ -42,3 +42,13 @@ MyException: ExceptionValue
 '''
     parsed = ParsedException.from_string(tb)
     assert parsed.exc_type == 'MyException'
+
+
+def test_last_line_is_eval_like():
+    tb = '''\
+Traceback (most recent call last):
+  File "<string>", line 2, in _some_function
+MyException: ExceptionValue
+'''
+    parsed = ParsedException.from_string(tb)
+    assert parsed.exc_type == 'MyException'

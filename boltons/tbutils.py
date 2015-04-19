@@ -729,11 +729,19 @@ class ParsedException(object):
             frame_match = frame_re.match(frame_line)
             if frame_match:
                 frame_dict = frame_match.groupdict()
-                next_line = tb_lines[line_no + 1].strip()
-                if frame_re.match(next_line):
+                next_line = tb_lines[line_no + 1]
+                next_line_stripped = next_line.strip()
+                if (
+                        frame_re.match(next_line_stripped) or
+                        # The exception message will not be indented
+                        # This check is to avoid overrunning on eval-like
+                        # tracebacks where the last frame doesn't have source
+                        # code in the traceback
+                        not next_line.startswith(' ')
+                ):
                     frame_dict['source_line'] = ''
                 else:
-                    frame_dict['source_line'] = next_line
+                    frame_dict['source_line'] = next_line_stripped
                     line_no += 1
             else:
                 break
