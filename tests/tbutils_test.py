@@ -15,7 +15,7 @@ MyException: ExceptionValue
 '''
     parsed = ParsedException.from_string(tb)
     assert parsed.exc_type == 'MyException'
-    assert parsed.exc_msg == ' ExceptionValue'
+    assert parsed.exc_msg == 'ExceptionValue'
     assert parsed.frames == [
         {
             'source_line': 'return some_other_function(1)',
@@ -65,4 +65,4 @@ MyException: ExceptionValue that
 spans two lines
 '''
     parsed = ParsedException.from_string(tb)
-    assert parsed.exc_msg == ' ExceptionValue that\nspans two lines'
+    assert parsed.exc_msg == 'ExceptionValue that\nspans two lines'

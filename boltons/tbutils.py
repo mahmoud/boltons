@@ -754,7 +754,7 @@ class ParsedException(object):
 
         try:
             exc_line = '\n'.join(tb_lines[line_no:])
-            exc_type, _, exc_msg = exc_line.partition(':')
+            exc_type, _, exc_msg = exc_line.partition(': ')
         except Exception:
             exc_type, exc_msg = '', ''
 
