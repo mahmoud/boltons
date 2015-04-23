@@ -66,14 +66,14 @@ class BufferedSocket(object):
         try:
             start = time.time()
             self.sock.settimeout(timeout)
-            nxt = self.rbuf or self.sock.recv(32 * 1024)
+            nxt = self.rbuf or self.sock.recv(maxbytes)
             while nxt and marker not in nxt:
                 chunks.append(nxt)
                 recvd += len(nxt)
                 if maxbytes is not None and recvd >= maxbytes:
                     raise NotFound(marker, recvd)
                 self.sock.settimeout(timeout - (time.time() - start))
-                nxt = self.sock.recv(32 * 1024)
+                nxt = self.sock.recv(maxbytes)
             if not nxt:
                 raise ConnectionClosed(
                     'connection closed after reading {0} bytes without'
@@ -234,15 +234,15 @@ if __name__ == "__main__":
                 client = NetstringSocket(clientsock)
                 while 1:
                     request = client.read_ns()
-                    if request == 'close':
+                    if request == b'close':
                         clientsock.close()
                         break
-                    if request == 'shutdown':
+                    if request == b'shutdown':
                         running = False
                         break
-                    if request == 'reply4k':
+                    if request == b'reply4k':
                         client.write_ns(b'a' * 4096)
-                    if request == 'ping':
+                    if request == b'ping':
                         client.write_ns(b'pong')
 
         serversock = socket.socket()
@@ -292,7 +292,7 @@ if __name__ == "__main__":
         except NetstringMessageTooLong:
             print("raised MessageTooLong correctly")
         try:
-            client.bsock.recv_until('b', maxbytes=4096)
+            client.bsock.recv_until(b'b', maxbytes=4096)
             raise Exception('recv_until did not raise NotFound')
         except NotFound:
             print("raised NotFound correctly")
