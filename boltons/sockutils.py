@@ -208,7 +208,8 @@ class NetstringSocket(object):
         size = len(payload)
         if size > self.maxsize:
             raise NetstringMessageTooLong(size, self.maxsize)
-        self.bsock.send(str(size) + b':' + payload + b',')
+        data = str(size).encode('ascii') + b':' + payload + b','
+        self.bsock.send(data)
 
 
 class NetstringProtocolError(Error):
