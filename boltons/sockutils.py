@@ -19,7 +19,7 @@ class BufferedSocket(object):
                  timeout=DEFAULT_TIMEOUT, maxbytes=DEFAULT_MAXBYTES):
         self.sock = sock
         self.sock.settimeout(None)
-        self.rbuf = ""
+        self.rbuf = b''
         self.sbuf = []
         self.timeout = timeout
         self.maxbytes = maxbytes
@@ -44,7 +44,7 @@ class BufferedSocket(object):
         # don't empty buffer till after network communication is complete,
         # to avoid data loss on transient / retry-able errors (e.g. read
         # timeout)
-        self.rbuf = ""
+        self.rbuf = b''
         return data
 
     def peek(self, n, timeout=_UNSET):
@@ -79,15 +79,15 @@ class BufferedSocket(object):
                     'connection closed after reading {0} bytes without'
                     ' finding symbol {1}'.format(recvd, marker))
         except socket.timeout:
-            self.rbuf = ''.join(chunks)
+            self.rbuf = b''.join(chunks)
             raise Timeout(
                 timeout, 'read {0} bytes without finding symbol {1}'.format(
                     recvd, marker))
         except:  # in case of error, retain data read so far in buffer
-            self.rbuf = ''.join(chunks)
+            self.rbuf = b''.join(chunks)
             raise
         val, _, self.rbuf = nxt.partition(marker)
-        return ''.join(chunks) + val
+        return b''.join(chunks) + val
 
     def recv_all(self, size, timeout=_UNSET):
         'read off of socket until size bytes have been read'
@@ -111,26 +111,26 @@ class BufferedSocket(object):
                     'connection was closed after reading'
                     ' {0} of {1} bytes'.format(total_bytes, size))
         except socket.timeout:
-            self.rbuf = ''.join(chunks)
+            self.rbuf = b''.join(chunks)
             raise Timeout(
                 timeout, 'read {0} of {1} bytes'.format(total_bytes, size))
         except:  # in case of error, retain data read so far in buffer
-            self.rbuf = ''.join(chunks)
+            self.rbuf = b''.join(chunks)
             raise
         extra_bytes = total_bytes - size
         if extra_bytes:
             last, self.rbuf = nxt[:-extra_bytes], nxt[-extra_bytes:]
         else:
-            last, self.rbuf = nxt, ""
+            last, self.rbuf = nxt, b''
         chunks.append(last)
-        return ''.join(chunks)
+        return b''.join(chunks)
 
     def send(self, data, flags=0, timeout=_UNSET):
         if timeout is _UNSET:
             timeout = self.timeout
         if flags:
             raise ValueError("flags not supported")
-        self.sbuf = [''.join(self.sbuf) + data]
+        self.sbuf = [b''.join(self.sbuf) + data]
         self.sock.settimeout(timeout)
         start = time.time()
         try:
@@ -145,7 +145,7 @@ class BufferedSocket(object):
     sendall = send
 
     def flush(self):
-        self.send('')
+        self.send(b'')
 
     def buffer(self, data):
         self.sbuf.append(data)
@@ -176,9 +176,9 @@ class NotFound(Error):
 
 
 class NetstringSocket(object):
-    '''
+    """
     Reads and writes using the netstring protocol.
-    '''
+    """
     def __init__(self, sock, timeout=30, maxsize=32 * 1024):
         self.maxlensize = len(str(maxsize)) + 1  # len(str()) == log10
         self.timeout = timeout
@@ -196,11 +196,11 @@ class NetstringSocket(object):
         if timeout is _UNSET:
             timeout = self.timeout
         # start = time.time()
-        size = int(self.bsock.recv_until(':', self.timeout, self.maxlensize))
+        size = int(self.bsock.recv_until(b':', self.timeout, self.maxlensize))
         if size > self.maxsize:
             raise NetstringMessageTooLong(size, self.maxsize)
         payload = self.bsock.recv_all(size)
-        assert self.bsock.recv(1) == ',', NetstringProtocolError(
+        assert self.bsock.recv(1) == b',', NetstringProtocolError(
             "missing traililng ',' after netstring")
         return payload
 
@@ -208,7 +208,7 @@ class NetstringSocket(object):
         size = len(payload)
         if size > self.maxsize:
             raise NetstringMessageTooLong(size, self.maxsize)
-        self.bsock.send(str(size) + ':' + payload + ',')
+        self.bsock.send(str(size) + b':' + payload + b',')
 
 
 class NetstringProtocolError(Error):
@@ -224,7 +224,7 @@ class NetstringMessageTooLong(NetstringProtocolError):
 if __name__ == "__main__":
     def test():
         print("running self tests")
-        import thread
+        import threading
 
         def server():
             running = True
@@ -240,16 +240,16 @@ if __name__ == "__main__":
                         running = False
                         break
                     if request == 'reply4k':
-                        client.write_ns('a' * 4096)
+                        client.write_ns(b'a' * 4096)
                     if request == 'ping':
-                        client.write_ns('pong')
+                        client.write_ns(b'pong')
 
         serversock = socket.socket()
         serversock.bind(('127.0.0.1', 0))
         serversock.listen(100)
         ip, port = serversock.getsockname()
 
-        thread.start_new_thread(server, ())
+        threading.Thread(target=server).start()
 
         def client_connect():
             clientsock = socket.create_connection((ip, port))
@@ -257,15 +257,15 @@ if __name__ == "__main__":
             return client
 
         client = client_connect()
-        client.write_ns('ping')
-        assert client.read_ns() == 'pong'
+        client.write_ns(b'ping')
+        assert client.read_ns() == b'pong'
         s = time.time()
         for i in range(1000):
-            client.write_ns('ping')
-            assert client.read_ns() == 'pong'
+            client.write_ns(b'ping')
+            assert client.read_ns() == b'pong'
         dur = time.time() - s
         print("netstring ping-pong latency", dur, "ms")
-        client.write_ns('close')
+        client.write_ns(b'close')
         try:
             client.read_ns()
             raise Exception('read from closed socket')
@@ -280,11 +280,11 @@ if __name__ == "__main__":
         except Timeout:
             print("read_ns raised timeout correctly")
 
-        client.write_ns('close')
+        client.write_ns(b'close')
 
         client = client_connect()
         client.setmaxsize(2048)
-        client.write_ns('reply4k')
+        client.write_ns(b'reply4k')
         try:
             client.read_ns()
             raise Exception('read more than maxsize')
@@ -295,12 +295,12 @@ if __name__ == "__main__":
             raise Exception('recv_until did not raise NotFound')
         except NotFound:
             print("raised NotFound correctly")
-        assert client.bsock.recv_all(4097) == 'a' * 4096 + ','
+        assert client.bsock.recv_all(4097) == b'a' * 4096 + b','
         print('correctly maintained buffer after exception raised')
 
         client.bsock.settimeout(0.01)
         try:
-            client.bsock.recv_until('a')
+            client.bsock.recv_until(b'a')
             raise Exception('recv_until did not raise Timeout')
         except Timeout:
             print('recv_until correctly raised Timeout')
@@ -310,7 +310,7 @@ if __name__ == "__main__":
         except Timeout:
             print('recv_all correctly raised Timeout')
 
-        client.write_ns('shutdown')
+        client.write_ns(b'shutdown')
         print("all passed")
 
     test()
