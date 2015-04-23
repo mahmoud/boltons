@@ -1,11 +1,22 @@
+# -*- coding: utf-8 -*-
+
 import time
 import socket
 
-_UNSET = object()
+
+try:
+    from typeutils import make_sentinel
+    _UNSET = make_sentinel(var_name='_MISSING')
+except ImportError:
+    _UNSET = object()
+
+DEFAULT_TIMEOUT = 10  # 10 seconds
+DEFAULT_MAXBYTES = 32 * 1024  # 32kb
 
 
 class BufferedSocket(object):
-    def __init__(self, sock, timeout=10, maxbytes=32 * 1024):
+    def __init__(self, sock,
+                 timeout=DEFAULT_TIMEOUT, maxbytes=DEFAULT_MAXBYTES):
         self.sock = sock
         self.sock.settimeout(None)
         self.rbuf = ""
@@ -71,7 +82,7 @@ class BufferedSocket(object):
             self.rbuf = ''.join(chunks)
             raise Timeout(
                 timeout, 'read {0} bytes without finding symbol {1}'.format(
-                        recvd, marker))
+                    recvd, marker))
         except:  # in case of error, retain data read so far in buffer
             self.rbuf = ''.join(chunks)
             raise
@@ -164,7 +175,6 @@ class NotFound(Error):
                 symbol, bytes_read))
 
 
-
 class NetstringSocket(object):
     '''
     Reads and writes using the netstring protocol.
@@ -185,7 +195,7 @@ class NetstringSocket(object):
     def read_ns(self, timeout=_UNSET, maxsize=_UNSET):
         if timeout is _UNSET:
             timeout = self.timeout
-        start = time.time()
+        # start = time.time()
         size = int(self.bsock.recv_until(':', self.timeout, self.maxlensize))
         if size > self.maxsize:
             raise NetstringMessageTooLong(size, self.maxsize)
@@ -195,9 +205,10 @@ class NetstringSocket(object):
         return payload
 
     def write_ns(self, payload):
-        if len(payload) > self.maxsize:
+        size = len(payload)
+        if size > self.maxsize:
             raise NetstringMessageTooLong(size, self.maxsize)
-        self.bsock.send(str(len(payload)) + ':' + payload + ',')
+        self.bsock.send(str(size) + ':' + payload + ',')
 
 
 class NetstringProtocolError(Error):
