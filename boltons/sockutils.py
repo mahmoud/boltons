@@ -223,7 +223,7 @@ class NetstringMessageTooLong(NetstringProtocolError):
 
 if __name__ == "__main__":
     def test():
-        print "running self tests"
+        print("running self tests")
         import thread
 
         def server():
@@ -264,13 +264,13 @@ if __name__ == "__main__":
             client.write_ns('ping')
             assert client.read_ns() == 'pong'
         dur = time.time() - s
-        print "netstring ping-pong latency", dur, "ms"
+        print("netstring ping-pong latency", dur, "ms")
         client.write_ns('close')
         try:
             client.read_ns()
             raise Exception('read from closed socket')
         except ConnectionClosed:
-            print "raised ConnectionClosed correctly"
+            print("raised ConnectionClosed correctly")
 
         client = client_connect()
         client.settimeout(0.1)
@@ -278,7 +278,7 @@ if __name__ == "__main__":
             client.read_ns()
             raise Exception('did not timeout')
         except Timeout:
-            print "read_ns raised timeout correctly"
+            print("read_ns raised timeout correctly")
 
         client.write_ns('close')
 
@@ -289,28 +289,28 @@ if __name__ == "__main__":
             client.read_ns()
             raise Exception('read more than maxsize')
         except NetstringMessageTooLong:
-            print "raised MessageTooLong correctly"
+            print("raised MessageTooLong correctly")
         try:
             client.bsock.recv_until('b', maxbytes=4096)
             raise Exception('recv_until did not raise NotFound')
         except NotFound:
-            print "raised NotFound correctly"
+            print("raised NotFound correctly")
         assert client.bsock.recv_all(4097) == 'a' * 4096 + ','
-        print 'correctly maintained buffer after exception raised'
+        print('correctly maintained buffer after exception raised')
 
         client.bsock.settimeout(0.01)
         try:
             client.bsock.recv_until('a')
             raise Exception('recv_until did not raise Timeout')
         except Timeout:
-            print 'recv_until correctly raised Timeout'
+            print('recv_until correctly raised Timeout')
         try:
             client.bsock.recv_all(1)
             raise Exception('recv_all did not raise Timeout')
         except Timeout:
-            print 'recv_all correctly raised Timeout'
+            print('recv_all correctly raised Timeout')
 
         client.write_ns('shutdown')
-        print "all passed"
+        print("all passed")
 
     test()
