@@ -34,7 +34,8 @@ thanks to `Mark Williams`_ for all his help.
 .. _Mark Williams: https://github.com/markrwilliams
 """
 
-from collections import KeysView, ValuesView, ItemsView
+import json
+from collections import KeysView, ValuesView, ItemsView, defaultdict
 
 try:
     from itertools import izip
@@ -51,7 +52,7 @@ except ImportError:
 PREV, NEXT, KEY, VALUE, SPREV, SNEXT = range(6)
 
 
-__all__ = ['MultiDict', 'OMD', 'OrderedMultiDict']
+__all__ = ['MultiDict', 'OMD', 'OrderedMultiDict', 'TaxonomyDict', 'TaxonomyTree']
 
 try:
     profile
@@ -638,6 +639,64 @@ class FastIterOrderedMultiDict(OrderedMultiDict):
             curr = curr[PREV]
 
 
+class TaxonomyDict(defaultdict):
+    """
+    Recursive Tree implementing AutoVivification for taxonomy
+
+    >>> taxonomy = TaxonomyTree()
+
+    Defining nodes by attribute access
+    >>> taxonomy.languages.script.python # doctest:+ELLIPSIS
+    defaultdict(...)
+    >>> taxonomy.languages.script.perl # doctest:+ELLIPSIS
+    defaultdict(...)
+    >>> taxonomy.languages.functional.elixir # doctest:+ELLIPSIS
+    defaultdict(...)
+    >>> taxonomy.languages.functional.f_sharp # doctest:+ELLIPSIS
+    defaultdict(...)
+    >>> taxonomy.databases.nosql.mongo # doctest:+ELLIPSIS
+    defaultdict(...)
+    >>> taxonomy.databases.nosql.cassandra # doctest:+ELLIPSIS
+    defaultdict(...)
+    >>> taxonomy.databases.sql.mysql # doctest:+ELLIPSIS
+    defaultdict(...)
+    >>> taxonomy.databases.sql.postgres # doctest:+ELLIPSIS
+    defaultdict(...)
+
+    Or by item access
+    >>> taxonomy['databases']['hybrid']['orient']
+    defaultdict(...)
+
+    Can print as_dict or as_json
+
+    >>> taxonomy_dict = taxonomy.as_dict()
+    >>> print(taxonomy_dict['languages'])
+    {u'functional': {u'f_sharp': {}, u'elixir': {}}, u'script': {u'python': {}, u'perl': {}}}
+    >>> print(taxonomy_dict['databases'])
+    {u'hybrid': {u'orient': {}}, u'nosql': {u'mongo': {}, u'cassandra': {}}, u'sql': {u'postgres': {}, u'mysql': {}}}
+    """
+    
+    def __getattr__(self, attr):
+        return self[attr]
+
+    def __setattr__(self, attr, val):
+        self[attr] = val
+
+    def as_json(self, indent=4, sort_keys=True):
+        return json.dumps(self, indent=indent, sort_keys=sort_keys)
+
+    def __unicode__(self):
+        return self.as_json()
+
+    __str__ = __unicode__
+
+    def as_dict(self):
+        return json.loads(self.as_json())
+
+
+TaxonomyTree = lambda: TaxonomyDict(TaxonomyTree)
+
+
 # Tests follow
 
 if __name__ == '__main__':
@@ -820,3 +879,6 @@ if __name__ == '__main__':
             omd.add(i, i)
         r100.reverse()
         assert list(reversed(omd)) == r100
+
+    def test_taxonomy_tree():
+        raise
