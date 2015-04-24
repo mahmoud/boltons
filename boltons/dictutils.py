@@ -675,7 +675,7 @@ class TaxonomyDict(defaultdict):
     >>> print(taxonomy_dict['databases'])
     {u'hybrid': {u'orient': {}}, u'nosql': {u'mongo': {}, u'cassandra': {}}, u'sql': {u'postgres': {}, u'mysql': {}}}
     """
-    
+
     def __getattr__(self, attr):
         return self[attr]
 
@@ -881,4 +881,48 @@ if __name__ == '__main__':
         assert list(reversed(omd)) == r100
 
     def test_taxonomy_tree():
-        raise
+        """
+        Should create the dict
+        {
+            "databases": {
+                "hybrid": {
+                    "orient": {}
+                },
+                "nosql": {
+                    "cassandra": {},
+                    "mongo": {}
+                },
+                "sql": {
+                    "mysql": {},
+                    "postgres": {}
+                }
+            },
+            "linguagens": {
+                "funcionais": {
+                    "elixir": {},
+                    "f_sharp": {}
+                },
+                "script": {
+                    "perl": {},
+                    "python": {}
+                }
+            }
+        }
+        """
+        taxonomy = TaxonomyTree()
+
+        taxonomy.languages.script.python
+        taxonomy.languages.script.perl
+        taxonomy.languages.functional.elixir
+        taxonomy.languages.functional.f_sharp
+        taxonomy.databases.nosql.mongo
+        taxonomy.databases.nosql.cassandra
+        taxonomy.databases.sql.mysql
+        taxonomy.databases.sql.postgres
+        taxonomy['databases']['hybrid']['orient']
+
+        taxonomy_dict = taxonomy.as_dict()
+        assert [u'perl', u'python'] == sorted(taxonomy_dict['languages']['script'].keys())
+        assert [u'mysql', u'postgres'] == sorted(taxonomy_dict['databases']['sql'].keys())
+        assert [u'cassandra', u'mongo'] == sorted(taxonomy_dict['databases']['nosql'].keys())
+        assert [u'orient'] == sorted(taxonomy_dict['databases']['hybrid'].keys())
