@@ -12,11 +12,11 @@ def ceil_from_iter(src, x, allow_equal=True):
         allow_equal (bool): Defaults to ``True``. Allows equality to be ignored if set to ``False``.
 
     >>> VALID_CABLE_CSA = [1.5, 2.5, 4, 6, 10, 25, 35, 50]
-    >>> ceil_from_iter(VALID_CABLE_CSA,3.5)
+    >>> ceil_from_iter(VALID_CABLE_CSA, 3.5)
     4
-    >>> ceil_from_iter(VALID_CABLE_CSA,4)
+    >>> ceil_from_iter(VALID_CABLE_CSA, 4)
     4
-    >>> ceil_from_iter(VALID_CABLE_CSA,4,allow_equal=False)
+    >>> ceil_from_iter(VALID_CABLE_CSA, 4, allow_equal=False)
     6
     """
 
@@ -33,11 +33,11 @@ def floor_from_iter(src, x, allow_equal=True):
         allow_equal (bool): Defaults to ``True``. Allows equality to be ignored if set to ``False``.
 
     >>> VALID_CABLE_CSA = [1.5, 2.5, 4, 6, 10, 25, 35, 50]
-    >>> floor_from_iter(VALID_CABLE_CSA,3.5)
+    >>> floor_from_iter(VALID_CABLE_CSA, 3.5)
     2.5
-    >>> floor_from_iter(VALID_CABLE_CSA,2.5)
+    >>> floor_from_iter(VALID_CABLE_CSA, 2.5)
     2.5
-    >>> floor_from_iter(VALID_CABLE_CSA,2.5,allow_equal=False)
+    >>> floor_from_iter(VALID_CABLE_CSA, 2.5, allow_equal=False)
     1.5
     """
 
