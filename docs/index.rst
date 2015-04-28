@@ -93,6 +93,7 @@ Section listing
    iterutils
    jsonutils
    listutils
+   mathutils
    mboxutils
    namedutils
    queueutils
