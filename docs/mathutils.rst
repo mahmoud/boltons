@@ -1,5 +1,5 @@
-``mathutils`` - General purpose math functions
-==============================================
+``mathutils`` - Mathematical functions
+======================================
 
 .. automodule:: boltons.mathutils
 
