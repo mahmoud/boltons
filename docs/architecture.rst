@@ -28,7 +28,7 @@ Design of a ``bolton``
 ----------------------
 
 ``boltons`` aims to be a living library, an ever-expanding collection
-of tested and true utilities. For a ``bolton`` to be a ``bolton``, it
+of tested and true utilities. For a bolton to be a bolton, it
 should:
 
   1. Be pure-Python and as self-contained as possible.
@@ -36,10 +36,17 @@ should:
   3. Demonstrate and mitigate some insufficiency in the standard library.
   4. Strive for the standard set forth by the standard library by
      striking a balance between best practice and "good enough",
-     correctness and common sense.
+     correctness and common sense. When in doubt, ask, "what would the
+     standard library do?"
   5. Have approachable documentation with at least one helpful
      :mod:`doctest`, links to relevant standard library functionality, as
      well as any 3rd-party packages that provide further capabilities.
+
+Finally, boltons should be substantial implementations of commonly
+trivialized stumbling blocks and not the other way around. The larger
+the problem solved, the less likely the functionality is suitable for
+inclusion in boltons; boltons are fundamental and self-contained, not
+sweeping and architecture-defining.
 
 Themes of ``boltons``
 ---------------------
