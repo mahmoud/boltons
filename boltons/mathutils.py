@@ -12,7 +12,7 @@ def ceil(x, options=None):
 
     Args:
         x (int or float): Number to be tested.
-        options (iterable): Optional terable of arbitrary numbers
+        options (iterable): Optional iterable of arbitrary numbers
           (ints or floats).
 
     >>> VALID_CABLE_CSA = [1.5, 2.5, 4, 6, 10, 25, 35, 50]

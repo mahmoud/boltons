@@ -6,11 +6,11 @@
 Alternative Ceiling/Floor Functions
 -----------------------------------
 
-.. autofunction:: boltons.mathutils.ceil_from_iter
+.. autofunction:: boltons.mathutils.ceil
 
-.. autofunction:: boltons.mathutils.floor_from_iter
+.. autofunction:: boltons.mathutils.floor
 
-Note: :func:`ceil_from_iter` and :func:`floor_from_iter` functions are based on `this example`_ using from the
+Note: :func:`ceil` and :func:`floor` functions are based on `this example`_ using from the
 :mod:`bisect` module in the standard library. Refer to this `StackOverflow Answer`_ for further information regarding
 the performance impact of this approach.
 
