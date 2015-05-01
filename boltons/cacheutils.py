@@ -192,9 +192,10 @@ class LRU(dict):
 
     def popitem(self):
         with self.lock:
-            link = self.link_map.popitem()
+            key, link = self.link_map.popitem()
             super(LRU, self).__delitem__(link[KEY])
             link[PREV][NEXT], link[NEXT][PREV] = link[NEXT], link[PREV]
+            return key, link[VALUE]
 
     def clear(self):
         with self.lock:
