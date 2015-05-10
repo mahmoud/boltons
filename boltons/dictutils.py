@@ -290,9 +290,12 @@ class OrderedMultiDict(dict):
     def __eq__(self, other):
         if self is other:
             return True
-        elif len(other) != len(self):
+        try:
+            if len(other) != len(self):
+                return False
+        except TypeError:
             return False
-        elif isinstance(other, OrderedMultiDict):
+        if isinstance(other, OrderedMultiDict):
             selfi = self.iteritems(multi=True)
             otheri = other.iteritems(multi=True)
             for (selfk, selfv), (otherk, otherv) in izip(selfi, otheri):
