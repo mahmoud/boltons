@@ -31,10 +31,11 @@ class BufferedSocket(object):
         self.maxbytes = maxbytes
 
     def recv(self, size, flags=0, timeout=_UNSET):
+
         if timeout is _UNSET:
             timeout = self.timeout
         if flags:
-            raise ValueError("flags not supported")
+            raise ValueError("non-zero flags not supported: %r" % flags)
         if len(self.rbuf) >= size:
             data, self.rbuf = self.rbuf[:size], self.rbuf[size:]
             return data
@@ -51,12 +52,15 @@ class BufferedSocket(object):
         'peek n bytes from the socket, but keep them in the buffer'
         if len(self.rbuf) >= n:
             return self.rbuf[:n]
-        data = self.recv_all(n, timeout=timeout)
+        data = self.recv_size(n, timeout=timeout)
         self.rbuf = data + self.rbuf
         return data
 
     def recv_until(self, marker, timeout=_UNSET, maxbytes=_UNSET):
         'read off of socket until the marker is found'
+        if len(marker) != 1:
+            raise ValueError('expected marker to be a 1-byte string, not %r'
+                             % marker)
         if maxbytes is _UNSET:
             maxbytes = self.maxbytes
         if timeout is _UNSET:
@@ -89,7 +93,7 @@ class BufferedSocket(object):
         val, _, self.rbuf = nxt.partition(marker)
         return b''.join(chunks) + val
 
-    def recv_all(self, size, timeout=_UNSET):
+    def recv_size(self, size, timeout=_UNSET):
         'read off of socket until size bytes have been read'
         if timeout is _UNSET:
             timeout = self.timeout
@@ -199,7 +203,7 @@ class NetstringSocket(object):
         size = int(self.bsock.recv_until(b':', self.timeout, self.maxlensize))
         if size > self.maxsize:
             raise NetstringMessageTooLong(size, self.maxsize)
-        payload = self.bsock.recv_all(size)
+        payload = self.bsock.recv_size(size)
         assert self.bsock.recv(1) == b',', NetstringProtocolError(
             "missing traililng ',' after netstring")
         return payload
@@ -296,7 +300,7 @@ if __name__ == "__main__":
             raise Exception('recv_until did not raise NotFound')
         except NotFound:
             print("raised NotFound correctly")
-        assert client.bsock.recv_all(4097) == b'a' * 4096 + b','
+        assert client.bsock.recv_size(4097) == b'a' * 4096 + b','
         print('correctly maintained buffer after exception raised')
 
         client.bsock.settimeout(0.01)
@@ -306,10 +310,10 @@ if __name__ == "__main__":
         except Timeout:
             print('recv_until correctly raised Timeout')
         try:
-            client.bsock.recv_all(1)
-            raise Exception('recv_all did not raise Timeout')
+            client.bsock.recv_size(1)
+            raise Exception('recv_size did not raise Timeout')
         except Timeout:
-            print('recv_all correctly raised Timeout')
+            print('recv_size correctly raised Timeout')
 
         client.write_ns(b'shutdown')
         print("all passed")
