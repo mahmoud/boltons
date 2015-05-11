@@ -1,5 +1,8 @@
 # -*- coding: utf-8 -*-
 
+# TODO: test the settimeout(0) support on BufferedSocket (should work)
+# TODO: maybe add settimeout(0) support on the netstring socket
+
 import time
 import socket
 
@@ -15,6 +18,18 @@ DEFAULT_MAXBYTES = 32 * 1024  # 32kb
 
 
 class BufferedSocket(object):
+    """Mainly provides recv_until and recv_size. recv, send, sendall, and
+    peek all function as similarly as possible to the built-in socket
+    API.
+
+    This type has been tested against both the built-in socket type as
+    well as those from gevent and eventlet. It also features support
+    for sockets with timeouts set to 0 (aka nonblocking), provided the
+    caller is prepared to handle the EWOULDBLOCK exceptions. Much like
+    the built-in socket, the BufferedSocket is not intrinsically
+    threadsafe for higher-level protocols.
+    """
+    # TODO: recv_close()  # receive until socket closed
     def __init__(self, sock,
                  timeout=DEFAULT_TIMEOUT, maxbytes=DEFAULT_MAXBYTES):
         self.sock = sock
