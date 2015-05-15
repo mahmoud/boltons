@@ -14,9 +14,13 @@ import collections
 
 try:
     unicode, str, bytes, basestring = unicode, str, str, basestring
+    from HTMLParser import HTMLParser
+    import htmlentitydefs
 except NameError:  # basestring not defined in Python 3
     unicode, str, bytes, basestring = str, bytes, bytes, str
     unichr = chr
+    from html.parser import HTMLParser
+    from html import entities as htmlentitydefs
 
 
 __all__ = ['camel2under', 'under2camel', 'slugify', 'split_punct_ws',
@@ -517,6 +521,49 @@ def bytes2human(nbytes, ndigits=0):
     return '{hnbytes:.{ndigits}f}{symbol}'.format(hnbytes=hnbytes,
                                                   ndigits=ndigits,
                                                   symbol=symbol)
+
+
+class HTMLTextExtractor(HTMLParser):
+    def __init__(self):
+        self.reset()
+        self.strict = False
+        self.convert_charrefs = True
+        self.result = []
+
+    def handle_data(self, d):
+        self.result.append(d)
+
+    def handle_charref(self, number):
+        if number[0] == u'x' or number[0] == u'X':
+            codepoint = int(number[1:], 16)
+        else:
+            codepoint = int(number)
+        self.result.append(unichr(codepoint))
+
+    def handle_entityref(self, name):
+        try:
+            codepoint = htmlentitydefs.name2codepoint[name]
+        except KeyError:
+            self.result.append(u'&' + name + u';')
+        else:
+            self.result.append(unichr(codepoint))
+
+    def get_text(self):
+        return u''.join(self.result)
+
+
+def html2text(html):
+    """Strips tags from HTML text, returning markup-free text. Also, does
+    a best effort replacement of entities like "&nbsp;"
+
+    >>> r = html2text(u'<a href="#">Test &amp;<em>(\u0394&#x03b7;&#956;&#x03CE;)</em></a>')
+    >>> r == u'Test &(\u0394\u03b7\u03bc\u03ce)'
+    True
+    """
+    # based on answers to http://stackoverflow.com/questions/753052/
+    s = HTMLTextExtractor()
+    s.feed(html)
+    return s.get_text()
 
 
 if __name__ == '__main__':
