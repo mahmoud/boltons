@@ -433,34 +433,4 @@ def cached(cache, typed=False):
         return CachedFunction(func, cache, typed=typed)
     return cached_func_decorator
 
-
-def test_21():
-    cache = LRU(max_size=3)
-    for i in xrange(4):
-        cache[i] = i
-
-
-if __name__ == '__main__':
-    test_21()
-
-    def _test_lri():
-        import string
-        bc = LRI(10, on_miss=lambda k: k.upper())
-        for char in string.letters:
-            x = bc[char]
-            assert x == char.upper()
-        assert len(bc) == 10
-
-    def _test_lru():
-        lru = LRU(max_size=1)
-        lru['hi'] = 0
-        lru['bye'] = 1
-        lru['bye']
-        lru.get('hi')
-        print(lru)
-        del lru['bye']
-
-        import pdb;pdb.set_trace()
-
-    _test_lri()
-    _test_lru()
+# end cacheutils.py
