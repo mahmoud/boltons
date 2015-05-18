@@ -11,6 +11,13 @@ import functools
 from types import MethodType, FunctionType
 from itertools import chain
 
+try:
+    xrange
+    make_method = MethodType
+except NameError:
+    # Python 3
+    make_method = lambda desc, obj, obj_type: MethodType(desc, obj)
+
 
 def get_module_callables(mod, ignore=None):
     """Returns two maps of (*types*, *funcs*) from *mod*, optionally
@@ -157,7 +164,7 @@ class InstancePartial(functools.partial):
 
     """
     def __get__(self, obj, obj_type):
-        return MethodType(self, obj, obj_type)
+        return make_method(self, obj, obj_type)
 
 
 class CachedInstancePartial(functools.partial):
@@ -170,71 +177,28 @@ class CachedInstancePartial(functools.partial):
 
     See the :class:`InstancePartial` docstring for more details.
     """
-    def __init__(self, func, *a, **kw):
-        self.__name__ = None
-        self.__doc__ = func.__doc__
-        self.__module__ = func.__module__
-
     def __get__(self, obj, obj_type):
+        # These assignments could've been in __init__, but there was
+        # no simple way to do it without breaking one of PyPy or Py3.
+        self.__name__ = None
+        self.__doc__ = self.func.__doc__
+        self.__module__ = self.func.__module__
+
         name = self.__name__
         if name is None:
             for k, v in mro_items(obj_type):
                 if v is self:
                     self.__name__ = name = k
         if obj is None:
-            return MethodType(self, obj, obj_type)
+            return make_method(self, obj, obj_type)
         try:
             # since this is a data descriptor, this block
             # is probably only hit once (per object)
             return obj.__dict__[name]
         except KeyError:
-            obj.__dict__[name] = ret = MethodType(self, obj, obj_type)
+            obj.__dict__[name] = ret = make_method(self, obj, obj_type)
             return ret
 
 partial = CachedInstancePartial
 
-
-#class FunctionDef(object):
-#    """
-#    general blocker: accept a bunch of fine-grained arguments, or just
-#    accept a whole ArgSpec? or a whole signature?
-#    """
-#    def __init__(self, name, code, doc=None):
-#        pass
-
-# tests
-
-if __name__ == '__main__':
-
-    def _partial_main():
-        class Greeter(object):
-            def __init__(self, greeting):
-                self.greeting = greeting
-
-            def greet(self, excitement='.'):
-                return self.greeting.capitalize() + excitement
-
-            partial_greet = InstancePartial(greet, excitement='!')
-            cached_partial_greet = CachedInstancePartial(greet, excitement='...')
-
-            def native_greet(self):
-                return self.greet(';')
-
-        class SubGreeter(Greeter):
-            pass
-
-        g = SubGreeter('hello')
-        print(g.greet())
-        print(g.native_greet())
-        print(g.partial_greet())
-        print(g.cached_partial_greet())
-        print(CachedInstancePartial(g.greet, excitement='s')())
-
-        def callee():
-            return 1
-        callee_copy = copy_function(callee)
-        assert callee is not callee_copy
-        assert callee() == callee_copy()
-        import pdb;pdb.set_trace()
-
-    _partial_main()
+# end funcutils.py

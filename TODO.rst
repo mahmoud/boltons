@@ -33,3 +33,14 @@ statsutils
 
 - percentiles
 - geometric mean (2 ** sum(log(a, b, ...))
+
+funcutils
+---------
+
+#class FunctionDef(object):
+#    """
+#    general blocker: accept a bunch of fine-grained arguments, or just
+#    accept a whole ArgSpec? or a whole signature?
+#    """
+#    def __init__(self, name, code, doc=None):
+#        pass
