@@ -165,6 +165,7 @@ def chunked(src, size, count=None, **kw):
     else:
         return list(itertools.islice(chunk_iter, count))
 
+pairwise = lambda src, *args, **kw: chunked(src, 2, *args, **kw)
 
 def chunked_iter(src, size, **kw):
     """Generates *size*-sized chunks from *src* iterable. Unless the
@@ -213,6 +214,7 @@ def chunked_iter(src, size, **kw):
         yield postprocess(cur_chunk)
     return
 
+pairwise_iter = lambda src, **kw: chunked(src, 2, **kw)
 
 def windowed(src, size):
     """Returns tuples with exactly length *size*. If the iterable is
