@@ -408,22 +408,8 @@ copytree = copy_tree  # alias for drop-in replacement of shutil
 
 
 if __name__ == '__main__':
+    pass
     #with atomic_save('/tmp/final.txt') as f:
     #    f.write('rofl')
     #    raise ValueError('nope')
     #    f.write('\n')
-
-    def _main():
-        up = FilePerms()
-        up.other = ''
-        up.user = 'xrw'
-        up.group = 'rrrwx'
-        try:
-            up.other = 'nope'
-        except ValueError:
-            pass
-        print(up)
-        print('user:', up.user)
-        print(oct(int(up)))
-        print(oct(int(FilePerms())))
-    _main()
