@@ -37,9 +37,9 @@ thanks to `Mark Williams`_ for all his help.
 from collections import KeysView, ValuesView, ItemsView
 
 try:
-    from itertools import izip
+    from itertools import izip_longest
 except ImportError:
-    izip = zip  # Python 3
+    from itertools import zip_longest as izip_longest
 
 try:
     from typeutils import make_sentinel
@@ -298,7 +298,8 @@ class OrderedMultiDict(dict):
         if isinstance(other, OrderedMultiDict):
             selfi = self.iteritems(multi=True)
             otheri = other.iteritems(multi=True)
-            for (selfk, selfv), (otherk, otherv) in izip(selfi, otheri):
+            zipped_items = izip_longest(selfi, otheri, fillvalue=(None, None))
+            for (selfk, selfv), (otherk, otherv) in zipped_items:
                 if selfk != otherk or selfv != otherv:
                     return False
             if not(next(selfi, _MISSING) is _MISSING
