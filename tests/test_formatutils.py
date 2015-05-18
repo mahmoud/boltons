@@ -28,8 +28,16 @@ _TEST_TMPLS = ["example 1: {hello}",
                "example 2: {hello:*10}",
                "example 3: {hello:*{width}}",
                "example 4: {hello!r:{fchar}{width}}, {width}, yes",
-               "example 5: {0}, {1:d}, {2:f}, {1}",
-               "example 6: {}, {}, {}, {1}"]
+               "example 5: {0}, {1:d}, {2:f}, {1}"]
+
+try:
+    from collections import OrderedDict
+except ImportError:
+    pass  # skip the non-2.6 compatible tests on 2.6
+else:
+    _TEST_TMPLS.append("example 6: {}, {}, {}, {1}")
+finally:
+    del OrderedDict
 
 
 def test_get_fstr_args():

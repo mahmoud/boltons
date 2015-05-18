@@ -182,7 +182,11 @@ def test_poplast():
 
 
 def test_reversed():
-    from collections import OrderedDict
+    try:
+        from collections import OrderedDict
+    except:
+        # skip on python 2.6
+        return
     for items in _ITEMSETS:
         omd = OMD(items)
         od = OrderedDict(items)
