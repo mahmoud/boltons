@@ -165,8 +165,6 @@ def chunked(src, size, count=None, **kw):
     else:
         return list(itertools.islice(chunk_iter, count))
 
-pairwise = lambda src, *args, **kw: chunked(src, 2, *args, **kw)
-
 def chunked_iter(src, size, **kw):
     """Generates *size*-sized chunks from *src* iterable. Unless the
     optional *fill* keyword argument is provided, iterables not even
@@ -214,7 +212,15 @@ def chunked_iter(src, size, **kw):
         yield postprocess(cur_chunk)
     return
 
-pairwise_iter = lambda src, **kw: chunked(src, 2, **kw)
+def pairwise(src, count=None, **kw):
+    """Shortcut for calling chunked with size set to 2
+    """
+    return chunked(src, 2, count, **kw)
+
+def pairwise_iter(src, **kw):
+    """Shortcut for calling chunked_iter with size set to 2
+    """
+    return chunked_iter(src, 2, **kw)
 
 def windowed(src, size):
     """Returns tuples with exactly length *size*. If the iterable is
