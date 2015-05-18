@@ -36,7 +36,6 @@ except ImportError:
     pass  # skip the non-2.6 compatible tests on 2.6
 else:
     _TEST_TMPLS.append("example 6: {}, {}, {}, {1}")
-finally:
     del OrderedDict
 
 
