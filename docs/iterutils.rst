@@ -14,6 +14,8 @@ from the standard library.
 .. autofunction:: split_iter
 .. autofunction:: chunked
 .. autofunction:: chunked_iter
+.. autofunction:: pairwise
+.. autofunction:: pairwise_iter
 .. autofunction:: windowed
 .. autofunction:: windowed_iter
 
