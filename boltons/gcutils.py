@@ -134,29 +134,3 @@ toggle_gc = GCToggler()
 toggle_gc_postcollect = GCToggler(postcollect=True)
 """A context manager for disabling GC for a code block, and collecting
 before re-enabling. See :class:`GCToggler` for more details."""
-
-
-if __name__ == '__main__':
-    class TestType(object):
-        pass
-
-    tt = TestType()
-
-    def _test_main():
-        print('TestTypes:', len(get_all(TestType)))
-        print('bools:', len(get_all(bool)))
-        import pdb;pdb.set_trace()
-
-    def _test_main2():
-        import time
-        COUNT = int(1e6)
-
-        start = time.time()
-        with toggle_gc_postcollect:
-            x = [{} for x in range(COUNT)]
-        print(time.time() - start, 'secs without gc')
-
-        start = time.time()
-        x = [{} for x in range(COUNT)]
-        print(time.time() - start, 'secs with gc')
-    _test_main()
