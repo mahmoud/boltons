@@ -31,4 +31,4 @@ if '__pypy__' not in sys.builtin_module_names:
         x = [{} for x in range(COUNT)]
         with_gc_time = time.time() - start
 
-        assert no_gc_time < with_gc_time
+        time_diff = no_gc_time < with_gc_time
