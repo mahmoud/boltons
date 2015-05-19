@@ -186,30 +186,3 @@ class SortedPriorityQueue(BasePriorityQueue):
 
 
 PriorityQueue = SortedPriorityQueue
-
-# tests
-
-if __name__ == '__main__':
-    def main():
-        pq = PriorityQueue()
-        func = lambda x: x
-        pq.add(func)
-        pq.remove(func)
-        pq.add(func)
-        pq.add(func)
-        assert len(pq) == 1
-        assert func == pq.pop()
-        assert len(pq) == 0
-        try:
-            pq.pop()
-        except IndexError:
-            pass
-        else:
-            assert False, 'priority queue should be empty'
-        import pdb;pdb.set_trace()
-
-    try:
-        main()
-    except Exception as e:
-        import pdb;pdb.post_mortem()
-        raise
