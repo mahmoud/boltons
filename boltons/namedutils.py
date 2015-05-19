@@ -36,6 +36,8 @@ except NameError:
     def exec_(code, global_env):
         exec(code, global_env)
 
+__all__ = ['namedlist', 'namedtuple']
+
 # Tiny templates
 
 _repr_tmpl = '{name}=%r'
@@ -249,7 +251,7 @@ class {typename}(list):
 
     def __getnewargs__(self):
         'Return self as a plain list.  Used by copy and pickle.'
-        return list(self)
+        return tuple(self)
 
     __dict__ = _property(_asdict)
 
@@ -365,20 +367,3 @@ def namedlist(typename, field_names, verbose=False, rename=False):
         pass
 
     return result
-
-
-if __name__ == '__main__':
-#    from cPickle import loads, dumps
-#    Point = namedtuple('Point', 'x, y', True, True)
-#    p = Point(x=10, y=20)
-#    assert p == loads(dumps(p))
-
-    from cPickle import loads, dumps
-    MutablePoint = namedlist('MutablePoint', 'x, y', True, True)
-    p = MutablePoint(x=10, y=20)
-    print(p)
-    p[0] = 11
-    print(p)
-    p.x = 12
-    print(p)
-    assert p == loads(dumps(p))
