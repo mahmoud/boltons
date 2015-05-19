@@ -1,4 +1,4 @@
- # -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 """``statsutils`` provides statistical functionality, such as mean
 (average), median, and variance, for basic data analysis.
 
@@ -392,26 +392,3 @@ for attr_name, attr in list(Stats.__dict__.items()):
 del attr
 del attr_name
 del func
-
-
-if __name__ == '__main__':
-    da = Stats(range(20))
-    print(da.mean)
-
-    import random
-
-    def get_pt(dist):
-        vals = [dist() for x in range(10000)]
-        pt = pearson_type(vals)
-        return pt
-
-    for x in range(3):
-        # pt = get_pt(dist=lambda: random.normalvariate(15, 5))  # expect 0, normal
-        # pt = get_pt(dist=lambda: random.weibullvariate(2, 3))  # gets 1, beta, weibull not specifically supported
-        # pt = get_pt(dist=lambda: random.gammavariate(2, 3))  # expect 3, gamma
-        # pt = get_pt(dist=lambda: random.betavariate(2, 3))  # expect 1, beta
-        # pt = get_pt(dist=lambda: random.expovariate(0.2))  # expect 3, beta
-        pt = get_pt(dist=lambda: random.uniform(0.0, 10.0))  # gets 2
-        print('pearson type:', pt)
-
-        # import pdb;pdb.set_trace()
