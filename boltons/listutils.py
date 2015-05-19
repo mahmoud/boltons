@@ -31,6 +31,7 @@ except NameError:
 __all__ = ['BList', 'BarrelList']
 
 
+# TODO: comparators
 # TODO: keep track of list lengths and bisect to the right list for
 # faster getitem (and slightly slower setitem and delitem ops)
 
@@ -325,81 +326,3 @@ class SplayList(list):
 
     def swap(self, item_index, dest_index):
         self[dest_index], self[item_index] = self[item_index], self[dest_index]
-
-
-# Tests and tuning
-if __name__ == '__main__':
-    def test_splay():
-        splay = SplayList(xrange(10))
-        splay.swap(0, 9)
-        assert splay[0] == 9
-        assert splay[-1] == 0
-
-        splay.shift(-2)
-        assert splay[0] == 8
-        assert splay[-1] == 0
-        assert len(splay) == 10
-
-    def main():
-        import os
-
-        bl = BarrelList()
-        bl.insert(0, 0)
-        bl.insert(1, 1)
-        bl.insert(0, -1)
-        bl.extend(range(100000))
-        bl._balance_list(0)
-        bl.pop(50000)
-
-        rands = [ord(i) * x for i, x in zip(os.urandom(1024), range(1024))]
-        bl2 = BarrelList(rands)
-        bl2.sort()
-        print(bl2[:10])
-        print(bl2[:-10:-1])
-
-        bl3 = BarrelList(range(int(1e5)))
-        for i in range(10000):
-            bl3.insert(0, bl3.pop(len(bl3) // 2))
-
-        del bl3[10:5000]
-        bl3[:20:2] = range(0, -10, -1)
-        import pdb;pdb.set_trace()
-
-    _TUNE_SETUP = """\
-
-    from listutils import BarrelList
-    bl = BarrelList()
-    bl._size_factor = %s
-    bl.extend(range(int(%s)))
-    """
-
-    def tune():
-        from collections import defaultdict
-        import gc
-        from timeit import timeit
-        data_size = 1e5
-        old_size_factor = size_factor = 512
-        all_times = defaultdict(list)
-        min_times = {}
-        step = 512
-        while abs(step) > 4:
-            gc.collect()
-            for x in range(3):
-                tottime = timeit('bl.insert(0, bl.pop(len(bl)//2))',
-                                 _TUNE_SETUP % (size_factor, data_size),
-                                 number=10000)
-                all_times[size_factor].append(tottime)
-            min_time = round(min(all_times[size_factor]), 3)
-            min_times[size_factor] = min_time
-            print(size_factor, min_time, step)
-            if min_time > (min_times[old_size_factor] + 0.002):
-                step = -step // 2
-            old_size_factor = size_factor
-            size_factor += step
-        print(tottime)
-
-    try:
-        tune()  # main()
-    except Exception as e:
-        import pdb;pdb.post_mortem()
-        raise
