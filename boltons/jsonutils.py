@@ -178,18 +178,4 @@ class JSONLIterator(object):
                 continue
             return obj
 
-
-if __name__ == '__main__':
-    def _test_reverse_iter_lines(filename, blocksize=DEFAULT_BLOCKSIZE):
-        # from cStringIO import StringIO
-        fo = open('_tmp_nl.txt')
-        reference = fo.read()
-        # fo = StringIO(reference)
-        fo.seek(0, os.SEEK_END)
-        rev_lines = list(reverse_iter_lines(fo, blocksize))
-        assert '\n'.join(rev_lines[::-1]) == reference
-
-    for blocksize in (1, 4, 11, 4096):
-        _test_reverse_iter_lines('_tmp_nl.txt', blocksize)
-
-    print(list(JSONLIterator(open('_tmp_jsonl.jsonl'), reverse=True)))
+    __next__ = next
