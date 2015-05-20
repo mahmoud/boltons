@@ -367,7 +367,7 @@ class ExceptionInfo(object):
         """
         type_str = exc_type.__name__
         type_mod = exc_type.__module__
-        if type_mod not in ("__main__", "__builtin__", "exceptions"):
+        if type_mod not in ("__main__", "__builtin__", "exceptions", "builtins"):
             type_str = '%s.%s' % (type_mod, type_str)
         val_str = _some_str(exc_value)
         tb_info = cls.tb_info_type.from_traceback(traceback)
@@ -762,83 +762,3 @@ class ParsedException(object):
 
 
 ParsedTB = ParsedException  # legacy alias
-
-
-if __name__ == '__main__':
-    import cStringIO
-
-    builtin_exc_hook = sys.excepthook
-    fix_print_exception()
-    tbi_str = ''
-
-    def test():
-        raise ValueError('yay fun')
-
-    fake_stderr1 = cStringIO.StringIO()
-    fake_stderr2 = cStringIO.StringIO()
-    sys.stderr = fake_stderr1
-
-    try:
-        test()
-    except:
-        _, _, exc_traceback = sys.exc_info()
-        tbi = TracebackInfo.from_traceback(exc_traceback)
-        exc_info = ExceptionInfo.from_exc_info(*sys.exc_info())
-        exc_info2 = ExceptionInfo.from_current()
-        tbi_str = str(tbi)
-        print_exception(*sys.exc_info(), file=fake_stderr2)
-        new_exc_hook_res = fake_stderr2.getvalue()
-        builtin_exc_hook(*sys.exc_info())
-        builtin_exc_hook_res = fake_stderr1.getvalue()
-    finally:
-        sys.stderr = sys.__stderr__
-
-    print()
-    print('# Single frame:\n')
-    print(tbi.frames[-1].tb_frame_str())
-
-    print('# Traceback info:\n')
-    print(tbi_str)
-
-    print('# Full except hook output:\n')
-    print(new_exc_hook_res)
-
-    assert new_exc_hook_res == builtin_exc_hook_res
-
-    FAKE_TB_STR = u"""
-Traceback (most recent call last):
-  File "example.py", line 2, in <module>
-    plarp
-NameError: name 'plarp' is not defined
-"""
-    parsed_tb = ParsedTB.from_string(FAKE_TB_STR)
-    print(parsed_tb)
-
-    def func1():
-        return func2()
-    def func2():
-        x = 5
-        return func3()
-    def func3():
-        return ContextualCallpoint.from_current(level=2)
-
-    callpoint = func1()
-    print(repr(callpoint))
-    assert 'func2' in repr(callpoint)
-
-    def func_a():
-        a = 1
-        raise Exception('func_a exception')
-    def func_b():
-        b = 2
-        return func_a()
-    def func_c():
-        c = 3
-        return func_b()
-
-    try:
-        func_c()
-    except:
-        ctx_ei = ContextualExceptionInfo.from_current()
-        print(ctx_ei.get_formatted())
-        import pdb;pdb.set_trace()
