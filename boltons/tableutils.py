@@ -29,6 +29,7 @@ try:
     string_types, integer_types = (str, unicode), (int, long)
 except:
     # Python 3 compat
+    unicode = str
     string_types, integer_types = (str, bytes), (int,)
 
 try:
@@ -243,6 +244,7 @@ class Table(object):
         self.headers = headers or []
         self._data = []
         self._width = 0
+
         self.extend(data)
 
     def extend(self, data):
@@ -498,7 +500,7 @@ class Table(object):
         # TODO: verify this works for markdown
         lines = []
         widths = []
-        headers = self.headers
+        headers = list(self.headers)
         text_data = [[to_text(cell, maxlen=maxlen) for cell in row]
                      for row in self._data]
         for idx in range(self._width):
@@ -514,29 +516,3 @@ class Table(object):
             lines.append(' | '.join([cell.center(widths[j])
                                      for j, cell in enumerate(row)]))
         return '\n'.join(lines)
-
-
-if __name__ == '__main__':
-    def main():
-        data_dicts = [{'id': 1, 'name': 'John Doe'},
-                      {'id': 2, 'name': 'Dale Simmons'}]
-        data_lists = [['id', 'name'],
-                      [1, 'John Doe'],
-                      [2, 'Dale Simmons']]
-        t1 = Table(data_lists)
-        t2 = Table.from_dict(data_dicts[0])
-        t3 = Table.from_dict(data_dicts)
-        t3.extend([[3, 'Kurt Rose'], [4]])
-        print(t1)
-        print(t2)
-        print(t2.to_html())
-        print(t3)
-        print(t3.to_html())
-        print(t3.to_text())
-
-        import re
-        t4 = Table.from_object(re.compile(''))
-        print(t4.to_text())
-        import pdb;pdb.set_trace()
-
-    main()
