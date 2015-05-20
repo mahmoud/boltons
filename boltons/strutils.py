@@ -564,10 +564,3 @@ def html2text(html):
     s = HTMLTextExtractor()
     s.feed(html)
     return s.get_text()
-
-
-if __name__ == '__main__':
-    b = asciify(u'Beyoncé')
-    print(ord(unicode(b)[-1]))
-    print(b)
-    print(DEACCENT_MAP)
