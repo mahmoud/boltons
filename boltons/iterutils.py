@@ -58,6 +58,11 @@ def is_scalar(obj):
     """
     return not is_iterable(obj) or isinstance(obj, basestring)
 
+def is_container(obj):
+    """The inverse of :func:`is_scalar`.  Returns ``True`` if an object
+    is iterable but not a string type.
+    """
+    return is_iterable(obj) and not isinstance(obj, basestring)
 
 def split(src, sep=None, maxsplit=None):
     """Splits an iterable based on a separator. Like :meth:`str.split`,
