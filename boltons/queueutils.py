@@ -3,8 +3,12 @@
 to :class:`collections.deque`, and no shortage of serviceable
 algorithm implementations, from :func:`sorted` to :mod:`bisect`. But
 priority queues are curiously relegated to an example documented in
-:mod:`heapq`. And even there, the approach presented is not
-full-featured and object-oriented.
+:mod:`heapq`. Even there, the approach presented is not full-featured
+and object-oriented. There is a built-in priority queue,
+:class:`Queue.PriorityQueue`, but in addition to its austere API, it
+carries the double-edged sword of threadsafety, making it fine for
+multi-threaded, multi-consumer applications, but high-overhead for
+cooperative/single-threaded use cases.
 
 The ``queueutils`` module currently provides two Queue
 implementations: :class:`HeapPriorityQueue`, based on a heap, and
@@ -26,6 +30,7 @@ application use cases.
 'medium priority task 1'
 >>> len(pq)
 3
+
 """
 
 
