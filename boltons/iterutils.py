@@ -399,48 +399,56 @@ def one(src, cmp=None):
             the_one = i
     return the_one
 
-def groupby_iter(src, key=lambda x: x, keep=0):
-    """``groupby_iter()`` yields lists of neighboring elements
-    with equal keys from the iterable *src*
+def groupby(src, key=lambda x: x, keep=0):
+    """
+    Description
+    ===========
+    Iteration utility to group adjacent elements from an
+    iterator that share a common key
 
-    :keep: an integer indicating which elements to keep from 
-    each group.
-        0 means keep all the elements from each group
-        A positive integer N means keep the first N elements
-        A negative integer N means keep the last N elements
+    Parameters
+    ==========
+    src: an iterator or iterable object
+    key: a function that returns the key to group by from each
+    element in the iterator
+    keep: which elements to keep
+      - 0: all elements
+      - n < 0: last n elements
+      - n > 0: first n elements
 
+    Returns
+    =======
+    An iterator of lists with a list for each group
 
-    >>> list(groupby_iter((1,1,2,3,3,3,4)))
+    Examples
+    ========
+    >>> list(groupby((1,1,2,3,3,3,4)))
     [[1, 1], [2], [3, 3, 3], [4]]
 
-    >>> list(groupby_iter(([1,1],[10,2],[5,2],[1,2]), key=lambda x: x[1]))
+    >>> list(groupby(([1,1],[10,2],[5,2],[1,2]), key=lambda x: x[1]))
     [[[1, 1]], [[10, 2], [5, 2], [1, 2]]]
-    """
+    """ 
+
     if not is_iterable(src):
         raise TypeError('expected an iterable')
     if not callable(key):
         raise TypeError('expected callable key function')
 
-    if keep > 0: s = slice(None,keep)
-    elif keep < 0: s = slice(keep,None)
-    else: s = slice(None)
+    if keep > 0: 
+        group_slice = slice(None,keep)
+    elif keep < 0: 
+        group_slice = slice(keep,None)
+    else: 
+        group_slice = slice(None)
 
     src = iter(src)
-    out = [src.next()]
-    for e in src:
-        if key(out[-1]) == key(e):
-            out.append(e)
-            out = out[slice]
+    group = [src.next()]
+    for item in src:
+        if key(group[-1]) == key(item):
+            group.append(item)
+            group = group[group_slice]
         else:
-            yield out
-            out = [e]
-    yield out
-
-def groupby(src, key=lambda x: x):
-    """
-    """
-    return list(groupby_iter(src, key))
-
-
-
+            yield group
+            group = [item]
+    yield group
 
