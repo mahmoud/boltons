@@ -398,3 +398,57 @@ def one(src, cmp=None):
                 return False
             the_one = i
     return the_one
+
+def groupby(src, key=lambda x: x, keep=0):
+    """
+    Description
+    ===========
+    Iteration utility to group adjacent elements from an
+    iterator that share a common key
+
+    Parameters
+    ==========
+    src: an iterator or iterable object
+    key: a function that returns the key to group by from each
+    element in the iterator
+    keep: which elements to keep
+      - 0: all elements
+      - n < 0: last n elements
+      - n > 0: first n elements
+
+    Returns
+    =======
+    An iterator of lists with a list for each group
+
+    Examples
+    ========
+    >>> list(groupby((1,1,2,3,3,3,4)))
+    [[1, 1], [2], [3, 3, 3], [4]]
+
+    >>> list(groupby(([1,1],[10,2],[5,2],[1,2]), key=lambda x: x[1]))
+    [[[1, 1]], [[10, 2], [5, 2], [1, 2]]]
+    """ 
+
+    if not is_iterable(src):
+        raise TypeError('expected an iterable')
+    if not callable(key):
+        raise TypeError('expected callable key function')
+
+    if keep > 0: 
+        group_slice = slice(None,keep)
+    elif keep < 0: 
+        group_slice = slice(keep,None)
+    else: 
+        group_slice = slice(None)
+
+    src = iter(src)
+    group = [src.next()]
+    for item in src:
+        if key(group[-1]) == key(item):
+            group.append(item)
+            group = group[group_slice]
+        else:
+            yield group
+            group = [item]
+    yield group
+
