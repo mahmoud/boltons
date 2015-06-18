@@ -579,7 +579,7 @@ class FastIterOrderedMultiDict(OrderedMultiDict):
         else:
             # if the previous was skipped, go back to the cell that
             # skipped it
-            sprev = last[SPREV] if not (last[SPREV][SNEXT] is last) else last
+            sprev = last[SPREV] if (last[SPREV][SNEXT] is not last) else last
             cell = [last, root,
                     k, v,
                     sprev, root]
