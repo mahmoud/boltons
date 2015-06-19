@@ -399,56 +399,53 @@ def one(src, cmp=None):
             the_one = i
     return the_one
 
-def groupby(src, key=lambda x: x, keep=0):
+def join(iters, key=lambda x: x):
     """
     Description
     ===========
-    Iteration utility to group adjacent elements from an
-    iterator that share a common key
+    Iteration utility to join two or more iterators
+    sorted on a common key, very much like sql outer
+    join 
 
     Parameters
     ==========
-    src: an iterator or iterable object
-    key: a function that returns the key to group by from each
-    element in the iterator
-    keep: which elements to keep
-      - 0: all elements
-      - n < 0: last n elements
-      - n > 0: first n elements
+    iters: a list of two or more iterators sorted over 
+           the provided key function
+    key: a function that returns the key to join on,
+         and defaults to the identity function
 
     Returns
     =======
-    An iterator of lists with a list for each group
+    The outer join of two or more iterators
 
     Examples
     ========
-    >>> list(groupby((1,1,2,3,3,3,4)))
-    [[1, 1], [2], [3, 3, 3], [4]]
-
-    >>> list(groupby(([1,1],[10,2],[5,2],[1,2]), key=lambda x: x[1]))
-    [[[1, 1]], [[10, 2], [5, 2], [1, 2]]]
+    >>> list(join([range(5),range(2,7),range(6,9)]))
+    [(0, None, None), (1, None, None), (2, 2, None), (3, 3, None), (4, 4, None), (None, 5, None), (None, 6, 6), (None, None, 7), (None, None, 8)]
     """ 
 
-    if not is_iterable(src):
-        raise TypeError('expected an iterable')
+    try:
+        iters = [iter(i) for i in iters]
+    except:
+        raise TypeError('expected an iterable of iterables')
     if not callable(key):
         raise TypeError('expected callable key function')
 
-    if keep > 0: 
-        group_slice = slice(None,keep)
-    elif keep < 0: 
-        group_slice = slice(keep,None)
-    else: 
-        group_slice = slice(None)
+    vals = [None] * len(iters)
+    least = None
 
-    src = iter(src)
-    group = [src.next()]
-    for item in src:
-        if key(group[-1]) == key(item):
-            group.append(item)
-            group = group[group_slice]
-        else:
-            yield group
-            group = [item]
-    yield group
+    while True:
+        for i in xrange(len(vals)):
+            try:
+                if least == vals[i]:
+                    vals[i] = iters[i].next()
+            except StopIteration:
+                vals[i] = None
+
+        if all((v == None) for v in vals): break
+
+        least = min(key(v) for v in vals if (v != None))
+        rec = tuple((v if (key(v) == least) else None) for v in vals)
+
+        yield rec
 
