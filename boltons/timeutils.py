@@ -21,7 +21,7 @@ __all__ = ['total_seconds', 'parse_td', 'relative_time',
 
 def total_seconds(td):
     """For those with older versions of Python, a pure-Python
-    implementation of Python 2.7's :meth:`timedelta.total_seconds`.
+    implementation of Python 2.7's :meth:`datetime.timedelta.total_seconds`.
 
     Args:
         td (datetime.timedelta): The timedelta to convert to seconds.
@@ -36,6 +36,34 @@ def total_seconds(td):
     td_ds = td.seconds + (td.days * 86400)  # 24 * 60 * 60
     td_micro = td.microseconds + (td_ds * a_milli)
     return td_micro / a_milli
+
+
+_NONDIGIT_RE = re.compile('\D')
+
+
+def isoparse(iso_str):
+    """Parses the very limited subset of ISO8601 as returned by
+    :meth:`datetime.datetime.isoformat`.
+
+    >>> epoch_dt = datetime.datetime.utcfromtimestamp(0)
+    >>> iso_str = epoch_dt.isoformat()
+    >>> print(iso_str)
+    1970-01-01T00:00:00
+    >>> isoparse(iso_str)
+    datetime.datetime(1970, 1, 1, 0, 0)
+
+    >>> utcnow = datetime.datetime.utcnow()
+    >>> utcnow == isoparse(utcnow.isoformat())
+    True
+
+    For further datetime parsing, see the `iso8601`_ package for strict
+    ISO parsing and `dateutil`_ package for loose parsing and more.
+
+    .. _iso8601: https://pypi.python.org/pypi/iso8601
+    .. _dateutil: https://pypi.python.org/pypi/python-dateutil
+    """
+    dt_args = [int(p) for p in _NONDIGIT_RE.split(iso_str)]
+    return datetime.datetime(*dt_args)
 
 
 _BOUNDS = [(0, timedelta(seconds=1), 'second'),
