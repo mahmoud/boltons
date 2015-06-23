@@ -438,7 +438,7 @@ def join(iters, key=lambda x: x):
         for i in xrange(len(vals)):
             try:
                 if least == vals[i]:
-                    vals[i] = iters[i].next()
+                    vals[i] = next(iters[i])
             except StopIteration:
                 vals[i] = None
 
