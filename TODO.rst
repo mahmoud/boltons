@@ -6,13 +6,6 @@ iterutils
 
 - range() for floats
 
-
-timeutils
----------
-
-- parse an ISO8601 timestamp
-
-
 misc?
 -----
 
