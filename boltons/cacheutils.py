@@ -33,8 +33,9 @@ Learn more about `caching algorithms on Wikipedia
 
 # TODO: TimedLRI
 # TODO: support 0 max_size?
-__all__ = ['LRI', 'LRU']
+__all__ = ['LRI', 'LRU', 'ThresholdCache']
 
+import itertools
 from collections import deque
 
 try:
@@ -56,6 +57,10 @@ except ImportError:
     _MISSING = object()
     _KWARG_MARK = object()
 
+try:
+    xrange
+except NameError:
+    xrange = range
 
 PREV, NEXT, KEY, VALUE = range(4)   # names for the link fields
 DEFAULT_MAX_SIZE = 128
@@ -432,5 +437,135 @@ def cached(cache, typed=False):
     def cached_func_decorator(func):
         return CachedFunction(func, cache, typed=typed)
     return cached_func_decorator
+
+
+class ThresholdCounter(object):
+    """A **bounded** dict-like Mapping from keys to counts. The
+    ThresholdCounter automatically compacts after every (1 /
+    *threshold*) additions, maintaining exact counts for any keys
+    whose count represents at least a *threshold* ratio of the total
+    data.
+
+    >>> tc = ThresholdCounter(threshold=0.1)
+    >>> tc.add(1)
+    >>> tc.items()
+    [(1, 1)]
+    >>> tc.update([2] * 10)
+    >>> tc.get(1)
+    0
+    >>> tc.add(5)
+    >>> 5 in tc
+    True
+    >>> len(list(tc.elements()))
+    11
+
+    As you can see above, the API is kept similar to
+    collections.Counter. The most notable feature omissions being that
+    counted items cannot be set directly, uncounted, or removed, as
+    this would disrupt the math.
+
+    Use the ThresholdCounter when you need best-effort long-lived
+    counts for dynamically-keyed data. Without a bounded datastructure
+    such as this one, the dynamic keys often represent a memory leak
+    and can impact application reliability. The ThresholdCounter's
+    item replacement strategy can be thought of as *Amortized Least
+    Relevant*.
+
+    This algorithm is an implementation of the Lossy Counting
+    algorithm described in "Approximate Frequency Counts over Data
+    Streams" by Manku & Motwani. Hat tip to Kurt Rose for discovery
+    and initial implementation.
+    """
+    def __init__(self, threshold=0.001):
+        if not 0 < threshold < 1:
+            raise ValueError('expected threshold between 0 and 1, not: %r'
+                             % threshold)
+
+        self.total = 0
+        self._count_map = {}
+        self._threshold = threshold
+        self._thresh_count = int(1 / threshold)
+        self._cur_bucket = 1
+
+    @property
+    def threshold(self):
+        return self._threshold
+
+    def add(self, key):
+        self.total += 1
+        try:
+            self._count_map[key][0] += 1
+        except KeyError:
+            self._count_map[key] = [1, self._cur_bucket - 1]
+
+        if self.total % self._thresh_count == 0:
+            self._count_map = dict([(k, v) for k, v in self._count_map.items()
+                                    if sum(v) > self._cur_bucket])
+            self._cur_bucket += 1
+
+    def elements(self):
+        repeaters = itertools.starmap(itertools.repeat, self.iteritems())
+        return itertools.chain.from_iterable(repeaters)
+
+    def most_common(self, n=None):
+        if n <= 0:
+            return []
+        ret = sorted(self.iteritems(), key=lambda x: x[1][0], reverse=True)
+        if n is None or n >= len(ret):
+            return ret
+        return ret[:n]
+
+    def __getitem__(self, key):
+        return self._count_map[key][0]
+
+    def __len__(self):
+        return len(self._count_map)
+
+    def __contains__(self, key):
+        return key in self._count_map
+
+    def iterkeys(self):
+        return iter(self._count_map)
+
+    def keys(self):
+        return list(self.iterkeys())
+
+    def itervalues(self):
+        count_map = self._count_map
+        for k in count_map:
+            yield count_map[k][0]
+
+    def values(self):
+        return list(self.itervalues())
+
+    def iteritems(self):
+        count_map = self._count_map
+        for k in count_map:
+            yield (k, count_map[k][0])
+
+    def items(self):
+        return list(self.iteritems())
+
+    def get(self, key, default=0):
+        try:
+            return self[key]
+        except KeyError:
+            return default
+
+    def update(self, iterable, **kwargs):
+        """Like dict.update() but add counts instead of replacing them.
+
+        Source can be an iterable and a dictionary.
+        """
+        if iterable is not None:
+            if callable(getattr(iterable, 'iteritems', None)):
+                for key, count in iterable.iteritems():
+                    for i in xrange(count):
+                        self.add(key)
+            else:
+                for key in iterable:
+                    self.add(key)
+        if kwargs:
+            self.update(kwargs)
 
 # end cacheutils.py
