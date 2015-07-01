@@ -23,8 +23,12 @@ statistics are:
     subset of misses, so this number is always less than or equal to
     ``miss_count``.
 
+Additionally, ``cacheutils`` the cache-like bounded counter,
+:class:`ThresholdCounter`.
+
 Learn more about `caching algorithms on Wikipedia
 <https://en.wikipedia.org/wiki/Cache_algorithms#Examples>`_.
+
 """
 
 # TODO: clarify soft_miss_count. is it for .get and .set_default or is
@@ -33,7 +37,7 @@ Learn more about `caching algorithms on Wikipedia
 
 # TODO: TimedLRI
 # TODO: support 0 max_size?
-__all__ = ['LRI', 'LRU', 'ThresholdCache']
+__all__ = ['LRI', 'LRU', 'cached', 'ThresholdCache']
 
 import itertools
 from collections import deque
@@ -98,7 +102,7 @@ class LRU(dict):
     (3, 1, 1)
 
     Other than the size-limiting caching behavior and statistics,
-    ``LRU`` acts like its parent class, the built-in Python dict.
+    ``LRU`` acts like its parent class, the built-in Python :class:`dict`.
     """
     def __init__(self, max_size=DEFAULT_MAX_SIZE, values=None,
                  on_miss=None):
@@ -444,7 +448,9 @@ class ThresholdCounter(object):
     ThresholdCounter automatically compacts after every (1 /
     *threshold*) additions, maintaining exact counts for any keys
     whose count represents at least a *threshold* ratio of the total
-    data.
+    data. In other words, if a particular key is not present in the
+    ThresholdCounter, its count represents less than *threshold* of
+    the total data.
 
     >>> tc = ThresholdCounter(threshold=0.1)
     >>> tc.add(1)
@@ -460,22 +466,27 @@ class ThresholdCounter(object):
     11
 
     As you can see above, the API is kept similar to
-    collections.Counter. The most notable feature omissions being that
-    counted items cannot be set directly, uncounted, or removed, as
-    this would disrupt the math.
+    :class:`collections.Counter`. The most notable feature omissions
+    being that counted items cannot be set directly, uncounted, or
+    removed, as this would disrupt the math.
 
     Use the ThresholdCounter when you need best-effort long-lived
     counts for dynamically-keyed data. Without a bounded datastructure
     such as this one, the dynamic keys often represent a memory leak
     and can impact application reliability. The ThresholdCounter's
-    item replacement strategy can be thought of as *Amortized Least
-    Relevant*.
+    item replacement strategy is fully deterministic and can be
+    thought of as *Amortized Least Relevant*. The absolute upper bound
+    of keys it will store is *(2/threshold)*, but realistically
+    *(1/threshold)* is expected for uniformly random datastreams, and
+    one or two orders of magnitude better for real-world data.
 
     This algorithm is an implementation of the Lossy Counting
     algorithm described in "Approximate Frequency Counts over Data
     Streams" by Manku & Motwani. Hat tip to Kurt Rose for discovery
     and initial implementation.
+
     """
+    # TODO: hit_count/miss_count?
     def __init__(self, threshold=0.001):
         if not 0 < threshold < 1:
             raise ValueError('expected threshold between 0 and 1, not: %r'
@@ -492,6 +503,11 @@ class ThresholdCounter(object):
         return self._threshold
 
     def add(self, key):
+        """Increment the count of *key* by 1, automatically adding it if it
+        does not exist.
+
+        Cache compaction is triggered every *1/threshold* additions.
+        """
         self.total += 1
         try:
             self._count_map[key][0] += 1
@@ -502,18 +518,48 @@ class ThresholdCounter(object):
             self._count_map = dict([(k, v) for k, v in self._count_map.items()
                                     if sum(v) > self._cur_bucket])
             self._cur_bucket += 1
+        return
 
     def elements(self):
+        """Return an iterator of all the common elements tracked by the
+        counter. Yields each key as many times as it has been seen.
+        """
         repeaters = itertools.starmap(itertools.repeat, self.iteritems())
         return itertools.chain.from_iterable(repeaters)
 
     def most_common(self, n=None):
+        """Get the top *n* keys and counts as tuples. If *n* is omitted,
+        returns all the pairs.
+        """
         if n <= 0:
             return []
         ret = sorted(self.iteritems(), key=lambda x: x[1][0], reverse=True)
         if n is None or n >= len(ret):
             return ret
         return ret[:n]
+
+    def get_common_count(self):
+        """Get the sum of counts for keys exceeding the configured data
+        threshold.
+        """
+        return sum([count for count, _ in self._count_map.itervalues()])
+
+    def get_uncommon_count(self):
+        """Get the sum of counts for keys that were culled because the
+        associated counts represented less than the configured
+        threshold. The long-tail counts.
+        """
+        return self.total - self.get_common_count()
+
+    def get_commonality(self):
+        """Get a float representation of the effective count accuracy. The
+        higher the number, the less uniform the keys being added, and
+        the higher accuracy and efficiency of the ThresholdCounter.
+
+        If a stronger measure of data cardinality is required,
+        consider using hyperloglog.
+        """
+        return float(self.get_common_count()) / self.total
 
     def __getitem__(self, key):
         return self._count_map[key][0]
@@ -547,15 +593,18 @@ class ThresholdCounter(object):
         return list(self.iteritems())
 
     def get(self, key, default=0):
+        "Get count for *key*, defaulting to 0."
         try:
             return self[key]
         except KeyError:
             return default
 
     def update(self, iterable, **kwargs):
-        """Like dict.update() but add counts instead of replacing them.
+        """Like dict.update() but add counts instead of replacing them, used
+        to add multiple items in one call.
 
-        Source can be an iterable and a dictionary.
+        Source can be an iterable of keys to add, or a mapping of keys
+        to integer counts.
         """
         if iterable is not None:
             if callable(getattr(iterable, 'iteritems', None)):

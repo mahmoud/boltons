@@ -39,6 +39,13 @@ values: the :func:`cached` function decorator.
 
 .. autofunction:: boltons.cacheutils.cached
 
-Similar functionality can be found in Python 3.4's :mod:`functools`
-module, though it is made for cache pluggability and does not support
-sharing the cache object across multiple functions.
+Similar functionality can be found in Python 3.4's
+:func:`functools.lru_cache` decorator, but the functools approach does
+not support the same cache strategy modification or sharing the cache
+object across multiple functions.
+
+Threshold-bounded Counting
+--------------------------
+
+.. autoclass:: boltons.cacheutils.ThresholdCounter
+   :members:
