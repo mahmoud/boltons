@@ -15,7 +15,7 @@ import datetime
 from datetime import timedelta
 
 
-__all__ = ['total_seconds', 'parse_td', 'relative_time',
+__all__ = ['total_seconds', 'isoparse', 'parse_td', 'relative_time',
            'decimal_relative_time']
 
 
