@@ -34,4 +34,4 @@ In the same vein as the feature-checking builtin, :func:`callable`.
 
 .. autofunction:: is_iterable
 .. autofunction:: is_scalar
-.. autofunction:: is_container
+.. autofunction:: is_collection
