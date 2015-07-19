@@ -412,3 +412,54 @@ def one(src, cmp=None):
                 return False
             the_one = i
     return the_one
+
+def join(iters, key=lambda x: x):
+    """
+    Description
+    ===========
+    Iteration utility to join two or more iterators
+    sorted on a common key, very much like sql outer
+    join 
+
+    Parameters
+    ==========
+    iters: a list of two or more iterators sorted over 
+           the provided key function
+    key: a function that returns the key to join on,
+         and defaults to the identity function
+
+    Returns
+    =======
+    The outer join of two or more iterators
+
+    Examples
+    ========
+    >>> list(join([range(5),range(2,7),range(6,9)]))
+    [(0, None, None), (1, None, None), (2, 2, None), (3, 3, None), (4, 4, None), (None, 5, None), (None, 6, 6), (None, None, 7), (None, None, 8)]
+    """ 
+
+    try:
+        iters = [iter(i) for i in iters]
+    except:
+        raise TypeError('expected an iterable of iterables')
+    if not callable(key):
+        raise TypeError('expected callable key function')
+
+    vals = [None] * len(iters)
+    least = None
+
+    while True:
+        for i in xrange(len(vals)):
+            try:
+                if least == vals[i]:
+                    vals[i] = next(iters[i])
+            except StopIteration:
+                vals[i] = None
+
+        if all((v == None) for v in vals): break
+
+        least = min(key(v) for v in vals if (v != None))
+        rec = tuple((v if (key(v) == least) else None) for v in vals)
+
+        yield rec
+
