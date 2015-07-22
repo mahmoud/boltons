@@ -544,8 +544,7 @@ class HTMLTextExtractor(HTMLParser):
         try:
             codepoint = htmlentitydefs.name2codepoint[name]
         except KeyError:
-            # likely not a real entity (possibly an unescaped part of a URL)
-            self.result.append(u'&' + name)
+            self.result.append(u'&' + name + u';')
         else:
             self.result.append(unichr(codepoint))
 
