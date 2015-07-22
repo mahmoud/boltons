@@ -24,15 +24,23 @@ jsonutils
 * jsonl ignore blank lines
 * jsonl add line number to error message
 
+strutils
+--------
+
+* itersplitlines (re.finditer with (?>\r\n|\n|\x0b|\f|\r|\x85|\x2028|\x2029) )
+
 misc?
 -----
 
 - Tracking proxy. An object that always succeeds for all operations, saving the call history.
+- Top/Bottom singletons (greater than and less than everything)
+
 
 cliutils
 --------
 
 - progress bar
+- confirmation prompt (e.g., "Question? (Y/n)")
 
 tbutils
 -------
