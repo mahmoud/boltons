@@ -128,6 +128,11 @@ class JSONLIterator(object):
         else:
             self._line_iter = iter(self._file_obj)
 
+    @property
+    def cur_byte_pos(self):
+        "A property representing where in the file the iterator is reading."
+        return self._file_obj.tell()
+
     def _align_to_newline(self):
         "Aligns the file object's position to the next newline."
         fo, bsize = self._file_obj, self._blocksize
@@ -179,3 +184,44 @@ class JSONLIterator(object):
             return obj
 
     __next__ = next
+
+
+if __name__ == '__main__':
+    def _main():
+        import sys
+        if '-h' in sys.argv or '--help' in sys.argv:
+            print('loads one or more JSON Line files for basic validation.')
+            return
+        verbose = False
+        if '-v' in sys.argv or '--verbose' in sys.argv:
+            verbose = True
+        file_count, obj_count = 0, 0
+        filenames = sys.argv[1:]
+        for filename in filenames:
+            if filename in ('-h', '--help', '-v', '--verbose'):
+                continue
+            file_count += 1
+            with open(filename, 'rb') as file_obj:
+                iterator = JSONLIterator(file_obj)
+                cur_obj_count = 0
+                while 1:
+                    try:
+                        next(iterator)
+                    except ValueError:
+                        print('error reading object #%s around byte %s in %s'
+                              % (cur_obj_count + 1, iterator.cur_byte_pos, filename))
+                        return
+                    except StopIteration:
+                        break
+                    obj_count += 1
+                    cur_obj_count += 1
+                    if verbose and obj_count and obj_count % 100 == 0:
+                        sys.stdout.write('.')
+                        if obj_count % 10000:
+                            sys.stdout.write('%s\n' % obj_count)
+        if verbose:
+            print('files checked: %s' % file_count)
+            print('objects loaded: %s' % obj_count)
+        return
+
+    _main()
