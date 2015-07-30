@@ -11,8 +11,8 @@ following are based on examples in itertools docs.
 """
 
 __all__ = ['is_iterable', 'is_scalar', 'split', 'split_iter', 'chunked',
-           'chunked_iter', 'windowed', 'windowed_iter', 'bucketize', 'partition',
-           'unique', 'unique_iter', 'one']
+           'chunked_iter', 'windowed', 'windowed_iter', 'bucketize',
+           'partition', 'unique', 'unique_iter', 'one', 'first']
 
 
 import itertools
@@ -412,3 +412,40 @@ def one(src, cmp=None):
                 return False
             the_one = i
     return the_one
+
+
+def first(iterable, default=None, key=None):
+    """Return first element of `iterable` that evaluates true, else return None
+    (or an optional default value).
+
+    >>> first([0, False, None, [], (), 42])
+    42
+
+    >>> first([0, False, None, [], ()]) is None
+    True
+
+    >>> first([0, False, None, [], ()], default='ohai')
+    'ohai'
+
+    >>> import re
+    >>> m = first(re.match(regex, 'abc') for regex in ['b.*', 'a(.*)'])
+    >>> m.group(1)
+    'bc'
+
+    The optional `key` argument specifies a one-argument predicate function
+    like that used for `filter()`.  The `key` argument, if supplied, must be
+    in keyword form.  For example:
+
+    >>> first([1, 1, 3, 4, 5], key=lambda x: x % 2 == 0)
+    4
+    """
+    if key is None:
+        for el in iterable:
+            if el:
+                return el
+    else:
+        for el in iterable:
+            if key(el):
+                return el
+
+    return default
