@@ -402,8 +402,8 @@ def one(src, cmp=None):
 
     See `Martín Gaitán's original repo`_ for further use cases.
 
-    .. Martín Gaitán's original repo: https://github.com/mgaitan/one
-    .. XOR: https://en.wikipedia.org/wiki/Exclusive_or
+    .. _Martín Gaitán's original repo: https://github.com/mgaitan/one
+    .. _XOR: https://en.wikipedia.org/wiki/Exclusive_or
     """
     the_one = False
     for i in src:

@@ -26,6 +26,8 @@ These functions operate on iterables, dividing into groups based on a given cond
 
 .. autofunction:: bucketize
 .. autofunction:: partition
+.. autofunction:: one
+
 
 Type Checks
 -----------
