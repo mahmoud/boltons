@@ -8,6 +8,7 @@ provided by ``strutils``.
 from __future__ import print_function
 
 import re
+import zlib
 import string
 import unicodedata
 import collections
@@ -25,8 +26,8 @@ except NameError:  # basestring not defined in Python 3
 
 __all__ = ['camel2under', 'under2camel', 'slugify', 'split_punct_ws',
            'unit_len', 'ordinalize', 'cardinalize', 'pluralize', 'singularize',
-           'asciify', 'strip_ansi', 'bytes2human',
-           'find_hashtags', 'a10n']  # 'StringBuffer']
+           'asciify', 'html2text', 'strip_ansi', 'bytes2human', 'find_hashtags',
+           'a10n', 'gunzip_bytes']  # 'StringBuffer']
 
 
 _punct_ws_str = string.punctuation + string.whitespace
@@ -564,3 +565,22 @@ def html2text(html):
     s = HTMLTextExtractor()
     s.feed(html)
     return s.get_text()
+
+
+_EMPTY_GZIP_BYTES = b'\x1f\x8b\x08\x089\xf3\xb9U\x00\x03empty\x00\x03\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+_NON_EMPTY_GZIP_BYTES = b'\x1f\x8b\x08\x08\xbc\xf7\xb9U\x00\x03not_empty\x00K\xaa,I-N\xcc\xc8\xafT\xe4\x02\x00\xf3nb\xbf\x0b\x00\x00\x00'
+
+
+def gunzip_bytes(bytestring):
+    """The :mod:`gzip` module is great if you have a file or file-like
+    object, but what if you just have bytes. StringIO is one
+    possibility, but it's often faster, easier, and simpler to just
+    use this one-liner. Use this tried-and-true utility function to
+    decompress gzip from bytes.
+
+    >>> ungzip_bytes(_EMPTY_GZIP_BYTES) == b''
+    True
+    >>> ungzip_bytes(_NON_EMPTY_GZIP_BYTES).rstrip() == b'bytesahoy!'
+    True
+    """
+    return zlib.decompress(bytestring, 16 + zlib.MAX_WBITS)
