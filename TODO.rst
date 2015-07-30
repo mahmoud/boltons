@@ -1,7 +1,11 @@
 TODO
 ====
 
-* ungzip string
+Breaking changes for 15.0
+-------------------------
+
+* change one() to have a default=None and switch "cmp" kwarg to "key"
+
 
 iterutils
 ---------
@@ -28,6 +32,7 @@ strutils
 --------
 
 * itersplitlines (re.finditer with (?>\r\n|\n|\x0b|\f|\r|\x85|\x2028|\x2029) )
+* ungzip string
 
 misc?
 -----
