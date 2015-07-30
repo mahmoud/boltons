@@ -4,7 +4,7 @@ builtins, but Boltons.
 Otherwise known as, "everyone's util.py," but cleaned up and
 tested.
 
-Contains over 125 BSD-licensed utility types and functions that can be
+Contains over 150 BSD-licensed utility types and functions that can be
 used as a package or independently. `Extensively documented on Read
 the Docs <http://boltons.readthedocs.org>`_.
 """
@@ -13,7 +13,7 @@ from setuptools import setup
 
 
 __author__ = 'Mahmoud Hashemi'
-__version__ = '0.6.5dev'
+__version__ = '0.6.5'
 __contact__ = 'mahmoudrhashemi@gmail.com'
 __url__ = 'https://github.com/mahmoud/boltons'
 __license__ = 'BSD'
