@@ -436,6 +436,9 @@ def first(iterable, default=None, key=None):
     >>> first([1, 1, 3, 4, 5], key=lambda x: x % 2 == 0)
     4
 
+    Contributed by Hynek Schlawack, author of `the original standalone module`_.
+
+    .. _the original standalone module: https://github.com/hynek/first
     """
     if key is None:
         for el in iterable:
