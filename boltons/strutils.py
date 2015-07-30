@@ -578,9 +578,9 @@ def gunzip_bytes(bytestring):
     use this one-liner. Use this tried-and-true utility function to
     decompress gzip from bytes.
 
-    >>> ungzip_bytes(_EMPTY_GZIP_BYTES) == b''
+    >>> gunzip_bytes(_EMPTY_GZIP_BYTES) == b''
     True
-    >>> ungzip_bytes(_NON_EMPTY_GZIP_BYTES).rstrip() == b'bytesahoy!'
+    >>> gunzip_bytes(_NON_EMPTY_GZIP_BYTES).rstrip() == b'bytesahoy!'
     True
     """
     return zlib.decompress(bytestring, 16 + zlib.MAX_WBITS)
