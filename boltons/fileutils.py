@@ -265,8 +265,9 @@ class AtomicSaver(object):
                 raise OSError(errno.EEXIST,
                               'Overwrite disabled and file already exists',
                               self.dest_path)
-        _, tmp_part_path = tempfile.mkstemp(dir=self.dest_dir,
-                                            text=self.text_mode)
+        tmp_fd, tmp_part_path = tempfile.mkstemp(dir=self.dest_dir,
+                                                 text=self.text_mode)
+        os.close(tmp_fd)
         try:
             _atomic_rename(tmp_part_path, self.part_path,
                            overwrite=self.overwrite_part)
@@ -282,6 +283,7 @@ class AtomicSaver(object):
         return self.part_file
 
     def __exit__(self, exc_type, exc_val, exc_tb):
+        self.part_file.close()
         if exc_type:
             if self.rm_part_on_exc:
                 try:
