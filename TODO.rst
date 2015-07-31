@@ -22,6 +22,13 @@ dictutils
   option too.
 - non-overwriting version of dict.update()
 
+fileutils
+---------
+
+* AtomicSaver: ditch mkstemp and use O_EXCL on the part file so that
+  multiple processes writing to the same part file will not get
+  interleaved writes
+
 jsonutils
 ---------
 
