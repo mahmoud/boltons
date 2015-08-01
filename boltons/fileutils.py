@@ -20,6 +20,7 @@ __all__ = ['mkdir_p', 'atomic_save', 'AtomicSaver', 'FilePerms',
 
 
 FULL_PERMS = 511  # 0777 that both Python 2 and 3 can digest
+USER_RW_ONLY_PERMS = 384  # 0600 that both Python 2 and 3 can digest
 _SINGLE_FULL_PERM = 7  # or 07 in Python 2
 try:
     basestring
@@ -181,6 +182,42 @@ class FilePerms(object):
         return ('%s(user=%r, group=%r, other=%r)'
                 % (cn, self.user, self.group, self.other))
 
+####
+
+
+_TEXT_OPENFLAGS = os.O_RDWR | os.O_CREAT | os.O_EXCL
+if hasattr(os, 'O_NOINHERIT'):
+    _TEXT_OPENFLAGS |= os.O_NOINHERIT
+if hasattr(os, 'O_NOFOLLOW'):
+    _TEXT_OPENFLAGS |= os.O_NOFOLLOW
+_BIN_OPENFLAGS = _TEXT_OPENFLAGS
+if hasattr(os, 'O_BINARY'):
+    _BIN_OPENFLAGS |= os.O_BINARY
+
+
+try:
+    import fcntl as fcntl
+except ImportError:
+    def set_cloexec(fd):
+        "Dummy set_cloexec for platforms without fcntl support"
+        pass
+else:
+    def set_cloexec(fd):
+        """Does a best-effort :func:`fcntl.fcntl` call to set a fd to be
+        automatically closed by any future child processes.
+
+        Implementation from the :mod:`tempfile` module.
+        """
+        try:
+            flags = fcntl.fcntl(fd, fcntl.F_GETFD, 0)
+        except IOError:
+            pass
+        else:
+            # flags read successfully, modify
+            flags |= fcntl.FD_CLOEXEC
+            fcntl.fcntl(fd, fcntl.F_SETFD, flags)
+        return
+
 
 def atomic_save(dest_path, **kwargs):
     """A convenient interface to the :class:`AtomicSaver` type. See the
@@ -216,23 +253,21 @@ class AtomicSaver(object):
             Defaults to ``True``.
         overwrite_partfile (bool): Whether to overwrite the *part_file*,
             should it exist at setup time. Defaults to ``True``.
-        open_func (callable): Function used to open the file. Override
-            this if you want to use :func:`codecs.open` or some other
-            alternative. Defaults to :func:`open()`.
-        open_kwargs (dict): Additional keyword arguments to pass to
-            *open_func*. Defaults to ``{}``.
     """
     # TODO: option to abort if target file modify date has changed
+    # TODO: precheck=True
+    # TODO: consequences of openflags RDWR vs mode 'w'?
+    # TODO: are cloexec etc. always desired (probably because O_EXCL)
     # since start?
     def __init__(self, dest_path, **kwargs):
         self.dest_path = dest_path
         self.overwrite = kwargs.pop('overwrite', True)
         self.overwrite_part = kwargs.pop('overwrite_partfile', True)
         self.part_filename = kwargs.pop('part_file', None)
+        self.part_file_perms = kwargs.pop('part_perms', USER_RW_ONLY_PERMS)
         self.text_mode = kwargs.pop('text_mode', False)  # for windows
         self.rm_part_on_exc = kwargs.pop('rm_part_on_exc', True)
-        self._open = kwargs.pop('open_func', open)
-        self._open_kwargs = kwargs.pop('open_kwargs', {})
+        self.buffering = kwargs.pop('buffering', -1)
         if kwargs:
             raise TypeError('unexpected kwargs: %r' % kwargs.keys)
 
@@ -243,8 +278,14 @@ class AtomicSaver(object):
         else:
             self.part_path = os.path.join(self.dest_dir, self.part_filename)
         self.mode = 'w+' if self.text_mode else 'w+b'
+        self.open_flags = _TEXT_OPENFLAGS if self.text_mode else _BIN_OPENFLAGS
 
         self.part_file = None
+
+    def _open_part_file(self):
+        fd = os.open(self.part_path, self.open_flags, self.part_file_perms)
+        set_cloexec(fd)
+        self.part_file = os.fdopen(fd, self.mode, self.buffering)
 
     def setup(self):
         """Called on context manager entry (the :keyword:`with` statement),
@@ -274,9 +315,10 @@ class AtomicSaver(object):
         except OSError:
             os.unlink(tmp_part_path)
             raise
+        else:
+            os.unlink(self.part_path)
 
-        self.part_file = self._open(self.part_path, self.mode,
-                                    **self._open_kwargs)
+        self._open_part_file()
 
     def __enter__(self):
         self.setup()
