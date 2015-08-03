@@ -1,12 +1,6 @@
 TODO
 ====
 
-Breaking changes for 15.0
--------------------------
-
-* change one() to have a default=None and switch "cmp" kwarg to "key"
-
-
 iterutils
 ---------
 

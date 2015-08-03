@@ -390,16 +390,14 @@ def one(src, default=None, key=None):
     >>> one((True, False, False))
     True
     >>> one((True, False, True))
-    False
     >>> one((0, 0, 'a'))
     'a'
     >>> one((0, False, None))
-    False
-    >>> one((True, True))
+    >>> one((True, True), default=False)
     False
     >>> bool(one(('', 1)))
     True
-    >>> one((10, 20, 30, 42), lambda i: i > 40)
+    >>> one((10, 20, 30, 42), key=lambda i: i > 40)
     42
 
     See `Martín Gaitán's original repo`_ for further use cases.
@@ -408,11 +406,11 @@ def one(src, default=None, key=None):
     .. _XOR: https://en.wikipedia.org/wiki/Exclusive_or
 
     """
-    the_one = False
+    the_one = default
     for i in src:
         if key(i) if key else i:
             if the_one:
-                return None
+                return default
             the_one = i
     return the_one
 
