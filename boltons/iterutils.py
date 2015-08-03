@@ -375,11 +375,13 @@ def unique_iter(src, key=None):
     return
 
 
-def one(src, cmp=None):
-    """Along the same lines as builtins, :func:`all` and :func:`any`,
-    ``one()`` returns the single object in the given iterable *src*
-    that evaluates to ``True``, as determined by callable *cmp*. If
-    unset, *cmp* defaults to :class:`bool`.
+def one(src, default=None, key=None):
+    """Along the same lines as builtins, :func:`all` and :func:`any`, and
+    similar to :func:`first`, ``one()`` returns the single object in
+    the given iterable *src* that evaluates to ``True``, as determined
+    by callable *key*. If unset, *key* defaults to :class:`bool`. If
+    no such objects are found, *default* is returned. If *default* is
+    not passed, ``None` is returned.
 
     If *src* has more than one object that evaluates to ``True``, or
     if there is no object that fulfills such condition, return
@@ -404,19 +406,20 @@ def one(src, cmp=None):
 
     .. _Martín Gaitán's original repo: https://github.com/mgaitan/one
     .. _XOR: https://en.wikipedia.org/wiki/Exclusive_or
+
     """
     the_one = False
     for i in src:
-        if cmp(i) if cmp else i:
+        if key(i) if key else i:
             if the_one:
-                return False
+                return None
             the_one = i
     return the_one
 
 
 def first(iterable, default=None, key=None):
     """Return first element of *iterable* that evaluates to ``True``, else
-    return ``None`` or optional *default*.
+    return ``None`` or optional *default*. Similar to :func:`one`.
 
     >>> first([0, False, None, [], (), 42])
     42
