@@ -138,11 +138,14 @@ def ordinalize(number, ext_only=False):
 
     """
     numstr = unicode(number)
-    rdig, ext = numstr[-1:], ''
+    rdig, ext = numstr[-2:], ''
     if not rdig:
         return ''
-    if rdig in string.digits:
-        ext = _ORDINAL_MAP.get(rdig, 'th')
+    if rdig[-1] in string.digits:
+        if len(rdig) == 2 and rdig[0] == '1':
+            ext = 'th'
+        else:
+            ext = _ORDINAL_MAP.get(rdig[-1], 'th')
     if ext_only:
         return ext
     else:
