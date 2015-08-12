@@ -15,6 +15,7 @@ dictutils
   indexes over the same data. Maybe automatically does a full-scan
   option too.
 - non-overwriting version of dict.update()
+- OMD.sortvalues(key=lambda x: x): sorts lists of values by user-provided key.
 
 fileutils
 ---------
