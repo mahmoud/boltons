@@ -135,17 +135,21 @@ def ordinalize(number, ext_only=False):
     3694839230th
     >>> print(ordinalize('hi'))
     hi
-
+    >>> print(ordinalize(1515))
+    1515th
     """
-    numstr = unicode(number)
-    rdig, ext = numstr[-2:], ''
-    if not rdig:
-        return ''
-    if rdig[-1] in string.digits:
-        if len(rdig) == 2 and rdig[0] == '1':
-            ext = 'th'
-        else:
-            ext = _ORDINAL_MAP.get(rdig[-1], 'th')
+    numstr, ext = unicode(number), ''
+    if numstr and numstr[-1] in string.digits:
+        try:
+            # first check for teens
+            if numstr[-2] == '1':
+                ext = 'th'
+            else:
+                # all other cases
+                ext = _ORDINAL_MAP.get(numstr[-1], 'th')
+        except IndexError:
+            # single digit numbers (will reach here based on [-2] above)
+            ext = _ORDINAL_MAP.get(numstr[-1], 'th')
     if ext_only:
         return ext
     else:
