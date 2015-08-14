@@ -339,6 +339,7 @@ class AtomicSaver(object):
         except OSError:
             if self.rm_part_on_exc:
                 os.unlink(self.part_path)
+            raise  # could not save destination file
         return
 
 
