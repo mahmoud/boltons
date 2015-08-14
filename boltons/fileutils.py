@@ -235,14 +235,12 @@ def _atomic_rename(path, new_path, overwrite=False):
 
 
 class AtomicSaver(object):
-    """``AtomicSaver`` is a configurable context manager that provides a
-    writable file which will be moved into place as long as no
-    exceptions are raised before it is closed. It returns a standard
-    Python :class:`file` object which can be closed explicitly or used
-    as a context manager (i.e., via the :keyword:`with`
-    statement). These "part files" are created in the same directory
-    as the destination path to ensure atomic move operations (i.e., no
-    cross-filesystem moves occur).
+    """``AtomicSaver`` is a configurable `context manager`_ that provides
+    a writable :class:`file` which will be moved into place as long as
+    no exceptions are raised within the context manager's block. These
+    "part files" are created in the same directory as the destination
+    path to ensure atomic move operations (i.e., no cross-filesystem
+    moves occur).
 
     Args:
         dest_path (str): The path where the completed file will be
@@ -267,6 +265,8 @@ class AtomicSaver(object):
             could be writing to the same part file.
         part_perms (int): Integer representation of file permissions
             of the short-lived part file.
+
+    .. _context manager: https://docs.python.org/2/reference/compound_stmts.html#with
     """
     # TODO: option to abort if target file modify date has changed since start?
     def __init__(self, dest_path, **kwargs):
