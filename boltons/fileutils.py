@@ -239,37 +239,47 @@ class AtomicSaver(object):
     writable file which will be moved into place as long as no
     exceptions are raised before it is closed. It returns a standard
     Python :class:`file` object which can be closed explicitly or used
-    as a context manager (i.e., via the :keyword:`with` statement).
+    as a context manager (i.e., via the :keyword:`with`
+    statement). These "part files" are created in the same directory
+    as the destination path to ensure atomic move operations (i.e., no
+    cross-filesystem moves occur).
 
     Args:
         dest_path (str): The path where the completed file will be
             written.
-
         overwrite (bool): Whether to overwrite the destination file if
             it exists at completion time. Defaults to ``True``.
         part_file (str): Name of the temporary *part_file*. Defaults
-            to *dest_path* + ``.part``
-        rm_part_on_exc (bool): Remove *part_file* on exception.
-            Defaults to ``True``.
-        overwrite_partfile (bool): Whether to overwrite the *part_file*,
-            should it exist at setup time. Defaults to ``True``.
+            to *dest_path* + ``.part``. Note that this argument is
+            just the filename, and not the full path of the part
+            file. Part files are always created in the same directory
+            as the destination path. Otherwise, saving may not be atomic.
+        rm_part_on_exc (bool): Remove *part_file* on exception cases.
+            Defaults to ``True``, but ``False`` can be useful for
+            recovery in some cases. Note that resumption is not
+            automatic and by default an :exc:`OSError` is raised if
+            the *part_file* exists.
+        overwrite_part (bool): Whether to overwrite the *part_file*,
+            should it exist at setup time. Defaults to ``False``,
+            which results in an :exc:`OSError` being raised on
+            pre-existing part files. Be careful of setting this to
+            ``True`` in situations when multiple threads or processes
+            could be writing to the same part file.
+        part_perms (int): Integer representation of file permissions
+            of the short-lived part file.
     """
-    # TODO: option to abort if target file modify date has changed
-    # TODO: precheck=True
-    # TODO: consequences of openflags RDWR vs mode 'w'?
-    # TODO: are cloexec etc. always desired (probably because O_EXCL)
-    # since start?
+    # TODO: option to abort if target file modify date has changed since start?
     def __init__(self, dest_path, **kwargs):
         self.dest_path = dest_path
         self.overwrite = kwargs.pop('overwrite', True)
-        self.overwrite_part = kwargs.pop('overwrite_partfile', True)
+        self.overwrite_part = kwargs.pop('overwrite_part', False)
         self.part_filename = kwargs.pop('part_file', None)
         self.part_file_perms = kwargs.pop('part_perms', USER_RW_ONLY_PERMS)
-        self.text_mode = kwargs.pop('text_mode', False)  # for windows
         self.rm_part_on_exc = kwargs.pop('rm_part_on_exc', True)
+        self.text_mode = kwargs.pop('text_mode', False)  # for windows
         self.buffering = kwargs.pop('buffering', -1)
         if kwargs:
-            raise TypeError('unexpected kwargs: %r' % kwargs.keys)
+            raise TypeError('unexpected kwargs: %r' % (kwargs.keys(),))
 
         self.dest_path = os.path.abspath(self.dest_path)
         self.dest_dir = os.path.dirname(self.dest_path)
@@ -306,18 +316,8 @@ class AtomicSaver(object):
                 raise OSError(errno.EEXIST,
                               'Overwrite disabled and file already exists',
                               self.dest_path)
-        tmp_fd, tmp_part_path = tempfile.mkstemp(dir=self.dest_dir,
-                                                 text=self.text_mode)
-        os.close(tmp_fd)
-        try:
-            _atomic_rename(tmp_part_path, self.part_path,
-                           overwrite=self.overwrite_part)
-        except OSError:
-            os.unlink(tmp_part_path)
-            raise
-        else:
+        if self.overwrite_part and os.path.lexists(self.part_path):
             os.unlink(self.part_path)
-
         self._open_part_file()
 
     def __enter__(self):
@@ -452,8 +452,7 @@ copytree = copy_tree  # alias for drop-in replacement of shutil
 
 
 if __name__ == '__main__':
-    pass
-    #with atomic_save('/tmp/final.txt') as f:
-    #    f.write('rofl')
-    #    raise ValueError('nope')
-    #    f.write('\n')
+    with atomic_save('/tmp/final.txt') as f:
+        f.write('rofl')
+        raise ValueError('nope')
+        f.write('\n')
