@@ -11,7 +11,6 @@ import re
 import stat
 import errno
 import fnmatch
-import tempfile
 from shutil import copy2, copystat, Error
 
 
@@ -266,7 +265,16 @@ class AtomicSaver(object):
         part_perms (int): Integer representation of file permissions
             of the short-lived part file.
 
+    Practically, the AtomicSaver serves a few purposes:
+
+      * Avoiding overwriting an existing, valid file with a partially
+        written one.
+      * Providing a reasonable guarantee that a part file only has one
+        writer at a time.
+      * Optional recovery of partial data in failure cases.
+
     .. _context manager: https://docs.python.org/2/reference/compound_stmts.html#with
+
     """
     # TODO: option to abort if target file modify date has changed since start?
     def __init__(self, dest_path, **kwargs):
