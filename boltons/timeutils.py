@@ -8,7 +8,7 @@ time.
 Additionally, timeutils provides a few basic utilities for working
 with timezones in Python. The Python :mod:`datetime` module's
 documentation describes how to create a
-:class:`datetime.datetime`-compatible :class:`datetime.tzinfo`
+:class:`~datetime.datetime`-compatible :class:`~datetime.tzinfo`
 subtype. It even provides a few examples.
 
 The following module defines usable forms of the timezones in those
@@ -28,7 +28,7 @@ from datetime import tzinfo, timedelta, datetime
 
 def total_seconds(td):
     """For those with older versions of Python, a pure-Python
-    implementation of Python 2.7's :meth:`datetime.timedelta.total_seconds`.
+    implementation of Python 2.7's :meth:`~datetime.timedelta.total_seconds`.
 
     Args:
         td (datetime.timedelta): The timedelta to convert to seconds.
@@ -43,6 +43,32 @@ def total_seconds(td):
     td_ds = td.seconds + (td.days * 86400)  # 24 * 60 * 60
     td_micro = td.microseconds + (td_ds * a_milli)
     return td_micro / a_milli
+
+
+def dt_to_timestamp(dt):
+    """Converts from a :class:`~datetime.datetime` object to an integer
+    timestamp, suitable interoperation with :func:`time.time` and
+    other `Epoch-based timestamps`.
+
+    .. _Epoch-based timestamps: https://en.wikipedia.org/wiki/Unix_time
+
+    >>> abs(round(time.time() - dt_to_timestamp(datetime.utcnow()), 2))
+    0.0
+
+    ``dt_to_timestamp`` supports both timezone-aware and naïve
+    :class:`~datetime.datetime` objects. Note that it assumes naïve
+    datetime objects are implied UTC, such as those generated with
+    :meth:`datetime.datetime.utcnow`. If your datetime objects are
+    local time, such as those generated with
+    :meth:`datetime.datetime.now`, first convert it with
+    :meth:`datetime.datetime.astimezone` and the :class:`LocalTZ`
+    tzinfo in this module, then pass it to ``dt_to_timestamp``.
+    """
+    if dt.tzinfo:
+        td = dt - EPOCH_AWARE
+    else:
+        td = dt - EPOCH_NAIVE
+    return total_seconds(td)
 
 
 _NONDIGIT_RE = re.compile('\D')
@@ -66,7 +92,7 @@ def isoparse(iso_str):
     For further datetime parsing, see the `iso8601`_ package for strict
     ISO parsing and `dateutil`_ package for loose parsing and more.
 
-    .. _ISO8601-formatted time strings: https://en.wikipedia.org/wiki/ISO_8601
+    .. _ISO8601-formatted time: https://en.wikipedia.org/wiki/ISO_8601
     .. _iso8601: https://pypi.python.org/pypi/iso8601
     .. _dateutil: https://pypi.python.org/pypi/python-dateutil
 
@@ -146,7 +172,7 @@ def _cardinalize_time_unit(unit, value):
 
 def decimal_relative_time(d, other=None, ndigits=0, cardinalize=True):
     """Get a tuple representing the relative time difference between two
-    :class:`datetime` objects or one :class:`datetime` and now.
+    :class:`~datetime.datetime` objects or one :class:`~datetime.datetime` and now.
 
     Args:
         d (datetime): The first datetime object.
@@ -190,8 +216,9 @@ def decimal_relative_time(d, other=None, ndigits=0, cardinalize=True):
 
 def relative_time(d, other=None, ndigits=0):
     """Get a string representation of the difference between two
-    :class:`datetime` objects or one :class:`datetime` and
-    now. Handles past and future times.
+    :class:`~datetime.datetime` objects or one
+    :class:`~datetime.datetime` and the current time. Handles past and
+    future times.
 
     Args:
         d (datetime): The first datetime object.
@@ -228,7 +255,7 @@ HOUR = timedelta(hours=1)
 
 class ConstantTZInfo(tzinfo):
     """
-    A :class:`datetime.tzinfo` subtype whose *offset* remains constant
+    A :class:`~datetime.tzinfo` subtype whose *offset* remains constant
     (no daylight savings).
 
     Args:
@@ -258,6 +285,8 @@ class ConstantTZInfo(tzinfo):
 
 
 UTC = ConstantTZInfo('UTC')
+EPOCH_AWARE = datetime.fromtimestamp(0, UTC)
+EPOCH_NAIVE = datetime.utcfromtimestamp(0)
 
 
 class LocalTZInfo(tzinfo):
