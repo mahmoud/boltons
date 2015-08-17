@@ -371,7 +371,7 @@ def iter_find_files(directory, patterns, ignored=None):
 
     >>> filenames = sorted(iter_find_files(_CUR_DIR, '*.py'))
     >>> filenames[-1].split('/')[-1]
-    'tzutils.py'
+    'typeutils.py'
 
     Or, Python files while ignoring emacs lockfiles:
 

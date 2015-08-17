@@ -58,7 +58,7 @@ a definite set of themes have emerged:
 
    1. :mod:`~boltons.queueutils` - `heapq docs`_
    2. :mod:`~boltons.iterutils` - `itertools docs`_
-   3. :mod:`~boltons.tzutils` - `datetime docs`_
+   3. :mod:`~boltons.timeutils` - `datetime docs`_
 
 2. Reimplementations and tweaks of the standard library:
 
