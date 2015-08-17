@@ -60,9 +60,10 @@ def dt_to_timestamp(dt):
     datetime objects are implied UTC, such as those generated with
     :meth:`datetime.datetime.utcnow`. If your datetime objects are
     local time, such as those generated with
-    :meth:`datetime.datetime.now`, first convert it with
-    :meth:`datetime.datetime.astimezone` and the :class:`LocalTZ`
-    tzinfo in this module, then pass it to ``dt_to_timestamp``.
+    :meth:`datetime.datetime.now`, first convert it using the
+    :meth:`datetime.datetime.replace` method with ``tzinfo=``
+    :class:`LocalTZ` object in this module, then pass the result of
+    that to ``dt_to_timestamp``.
     """
     if dt.tzinfo:
         td = dt - EPOCH_AWARE
