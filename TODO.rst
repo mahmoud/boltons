@@ -17,24 +17,11 @@ dictutils
 - non-overwriting version of dict.update()
 - OMD.sortvalues(key=lambda x: x): sorts lists of values by user-provided key.
 
-fileutils
----------
-
-* AtomicSaver: ditch mkstemp and use O_EXCL on the part file so that
-  multiple processes writing to the same part file will not get
-  interleaved writes
-
 jsonutils
 ---------
 
 * jsonl ignore blank lines
 * jsonl add line number to error message
-
-strutils
---------
-
-* itersplitlines (re.finditer with (?>\r\n|\n|\x0b|\f|\r|\x85|\x2028|\x2029) )
-* ungzip string
 
 misc?
 -----
