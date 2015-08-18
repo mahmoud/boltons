@@ -14,7 +14,7 @@ __all__ = ['is_iterable', 'is_scalar', 'split', 'split_iter', 'chunked',
            'chunked_iter', 'windowed', 'windowed_iter', 'bucketize',
            'partition', 'unique', 'unique_iter', 'one', 'first']
 
-
+import math
 import itertools
 
 try:
@@ -179,6 +179,7 @@ def chunked(src, size, count=None, **kw):
     else:
         return list(itertools.islice(chunk_iter, count))
 
+
 def chunked_iter(src, size, **kw):
     """Generates *size*-sized chunks from *src* iterable. Unless the
     optional *fill* keyword argument is provided, iterables not even
@@ -226,15 +227,20 @@ def chunked_iter(src, size, **kw):
         yield postprocess(cur_chunk)
     return
 
+
 def pairwise(src, count=None, **kw):
-    """Shortcut for calling chunked with size set to 2
+    """Convenience function for calling :func:`chunked` with *size* set to
+    2.
     """
     return chunked(src, 2, count, **kw)
 
+
 def pairwise_iter(src, **kw):
-    """Shortcut for calling chunked_iter with size set to 2
+    """Convenience function for calling :func:`chunked_iter` with *size*
+    set to 2.
     """
     return chunked_iter(src, 2, **kw)
+
 
 def windowed(src, size):
     """Returns tuples with exactly length *size*. If the iterable is
@@ -266,6 +272,35 @@ def windowed_iter(src, size):
     except StopIteration:
         return izip([])
     return izip(*tees)
+
+
+def frange(stop, start=None, step=1.0):
+    """A :func:`range` clone for float-based ranges.
+
+    >>> frange(5)
+    [0.0, 1.0, 2.0, 3.0, 4.0]
+    >>> frange(6, step=1.25)
+    [0.0, 1.25, 2.5, 3.75, 5.0]
+    >>> frange(100.5, 101.5, 0.25)
+    [100.5, 100.75, 101.0, 101.25]
+    >>> frange(5, 0)
+    []
+    >>> frange(5, 0, step=-1.25)
+    [5.0, 3.75, 2.5, 1.25]
+    """
+    if start is None:
+        start, stop = 0.0, stop * 1.0
+    else:
+        # swap when all args are used
+        stop, start = start * 1.0, stop * 1.0
+    count = int(math.ceil((stop - start) / step))
+    ret = [None] * count
+    if not ret:
+        return ret
+    ret[0] = start
+    for i in xrange(1, count):
+        ret[i] = ret[i - 1] + step
+    return ret
 
 
 def bucketize(src, key=None):
