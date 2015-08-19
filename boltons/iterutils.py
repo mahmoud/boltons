@@ -327,10 +327,30 @@ def frange(stop, start=None, step=1.0):
     return ret
 
 
+def backoff(start, stop, count=None, factor=2):
+    """Returns a list of geometrically-increasing floating-point numbers,
+    suitable for usage with `exponential backoff`_. Exactly like
+    :func:`backoff_iter`, but without the ``'repeat'`` option for
+    *count*. See :func:`backoff_iter` for more details.
+
+    .. _exponential backoff: https://en.wikipedia.org/wiki/Exponential_backoff
+
+    >>> backoff(1, 10)
+    [1.0, 2.0, 4.0, 8.0, 10.0]
+    """
+    if count == 'repeat':
+        raise ValueError("'repeat' supported in backoff_iter, not backoff")
+    return list(backoff_iter(start, stop, count=count, factor=factor))
+
+
 def backoff_iter(start, stop, count=None, factor=2):
-    """Generates a sequence of exponentially increasing numbers. Starts
-    with *start*, increasing by *factor* until *stop* is reached,
-    optionally stopping iteration once *count* numbers are yielded.
+    """Generates a sequence of geometrically-increasing floats, suitable
+    for usage with `exponential backoff`_. Starts with *start*,
+    increasing by *factor* until *stop* is reached, optionally
+    stopping iteration once *count* numbers are yielded. *factor*
+    defaults to 2.
+
+    .. _exponential backoff: https://en.wikipedia.org/wiki/Exponential_backoff
 
     >>> list(backoff_iter(1.0, 10.0, count=5))
     [1.0, 2.0, 4.0, 8.0, 10.0]
@@ -367,7 +387,7 @@ def backoff_iter(start, stop, count=None, factor=2):
         count = 1 + math.ceil(math.log(stop/start, factor))
     if count is not 'repeat' and count < 0:
         raise ValueError('count must be greater than 0, not %r' % count)
-    cur, i = start, 0
+    cur, i = float(start), 0
     while count is 'repeat' or i < count:
         yield cur
         i += 1
