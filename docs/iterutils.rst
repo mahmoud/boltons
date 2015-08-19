@@ -19,6 +19,10 @@ from the standard library.
 .. autofunction:: windowed
 .. autofunction:: windowed_iter
 
+.. autofunction:: backoff_iter
+.. autofunction:: frange
+.. autofunction:: xfrange
+
 Categorization
 --------------
 
