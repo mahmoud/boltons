@@ -385,10 +385,10 @@ def backoff_iter(start, stop, count=None, factor=2):
     stop = float(stop)
     if count is None:
         count = 1 + math.ceil(math.log(stop/start, factor))
-    if count is not 'repeat' and count < 0:
+    if count != 'repeat' and count < 0:
         raise ValueError('count must be greater than 0, not %r' % count)
     cur, i = float(start), 0
-    while count is 'repeat' or i < count:
+    while count == 'repeat' or i < count:
         yield cur
         i += 1
         if cur < stop:
