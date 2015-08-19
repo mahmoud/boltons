@@ -14,7 +14,7 @@ __all__ = ['is_iterable', 'is_scalar', 'split', 'split_iter', 'chunked',
            'chunked_iter', 'windowed', 'windowed_iter', 'bucketize',
            'partition', 'unique', 'unique_iter', 'one', 'first']
 
-
+import math
 import itertools
 
 try:
@@ -179,6 +179,7 @@ def chunked(src, size, count=None, **kw):
     else:
         return list(itertools.islice(chunk_iter, count))
 
+
 def chunked_iter(src, size, **kw):
     """Generates *size*-sized chunks from *src* iterable. Unless the
     optional *fill* keyword argument is provided, iterables not even
@@ -226,15 +227,20 @@ def chunked_iter(src, size, **kw):
         yield postprocess(cur_chunk)
     return
 
+
 def pairwise(src, count=None, **kw):
-    """Shortcut for calling chunked with size set to 2
+    """Convenience function for calling :func:`chunked` with *size* set to
+    2.
     """
     return chunked(src, 2, count, **kw)
 
+
 def pairwise_iter(src, **kw):
-    """Shortcut for calling chunked_iter with size set to 2
+    """Convenience function for calling :func:`chunked_iter` with *size*
+    set to 2.
     """
     return chunked_iter(src, 2, **kw)
+
 
 def windowed(src, size):
     """Returns tuples with exactly length *size*. If the iterable is
@@ -266,6 +272,130 @@ def windowed_iter(src, size):
     except StopIteration:
         return izip([])
     return izip(*tees)
+
+
+def xfrange(stop, start=None, step=1.0):
+    """Same as :func:`frange`, but generator-based instead of returning a
+    list.
+
+    >>> tuple(xfrange(1, 3, step=0.75))
+    (1.0, 1.75, 2.5)
+
+    See :func:`frange` for more details.
+    """
+    if not step:
+        raise ValueError('step must be non-zero')
+    if start is None:
+        start, stop = 0.0, stop * 1.0
+    else:
+        # swap when all args are used
+        stop, start = start * 1.0, stop * 1.0
+    cur = start
+    while cur < stop:
+        yield cur
+        cur += step
+
+
+def frange(stop, start=None, step=1.0):
+    """A :func:`range` clone for float-based ranges.
+
+    >>> frange(5)
+    [0.0, 1.0, 2.0, 3.0, 4.0]
+    >>> frange(6, step=1.25)
+    [0.0, 1.25, 2.5, 3.75, 5.0]
+    >>> frange(100.5, 101.5, 0.25)
+    [100.5, 100.75, 101.0, 101.25]
+    >>> frange(5, 0)
+    []
+    >>> frange(5, 0, step=-1.25)
+    [5.0, 3.75, 2.5, 1.25]
+    """
+    if not step:
+        raise ValueError('step must be non-zero')
+    if start is None:
+        start, stop = 0.0, stop * 1.0
+    else:
+        # swap when all args are used
+        stop, start = start * 1.0, stop * 1.0
+    count = int(math.ceil((stop - start) / step))
+    ret = [None] * count
+    if not ret:
+        return ret
+    ret[0] = start
+    for i in xrange(1, count):
+        ret[i] = ret[i - 1] + step
+    return ret
+
+
+def backoff(start, stop, count=None, factor=2):
+    """Returns a list of geometrically-increasing floating-point numbers,
+    suitable for usage with `exponential backoff`_. Exactly like
+    :func:`backoff_iter`, but without the ``'repeat'`` option for
+    *count*. See :func:`backoff_iter` for more details.
+
+    .. _exponential backoff: https://en.wikipedia.org/wiki/Exponential_backoff
+
+    >>> backoff(1, 10)
+    [1.0, 2.0, 4.0, 8.0, 10.0]
+    """
+    if count == 'repeat':
+        raise ValueError("'repeat' supported in backoff_iter, not backoff")
+    return list(backoff_iter(start, stop, count=count, factor=factor))
+
+
+def backoff_iter(start, stop, count=None, factor=2):
+    """Generates a sequence of geometrically-increasing floats, suitable
+    for usage with `exponential backoff`_. Starts with *start*,
+    increasing by *factor* until *stop* is reached, optionally
+    stopping iteration once *count* numbers are yielded. *factor*
+    defaults to 2.
+
+    .. _exponential backoff: https://en.wikipedia.org/wiki/Exponential_backoff
+
+    >>> list(backoff_iter(1.0, 10.0, count=5))
+    [1.0, 2.0, 4.0, 8.0, 10.0]
+    >>> list(backoff_iter(1.0, 10.0, count=8))
+    [1.0, 2.0, 4.0, 8.0, 10.0, 10.0, 10.0, 10.0]
+    >>> list(backoff_iter(0.25, 100.0, factor=10))
+    [0.25, 2.5, 25.0, 100.0]
+
+    A simplified usage example:
+
+    .. code-block:: python
+
+      for timeout in backoff_iter(0.25, 5.0):
+          try:
+              res = network_call()
+          except Exception as e:
+              log(e)
+              time.sleep(timeout)
+
+    An enhancement for large-scale systems would be to add variation
+    ("jitter") to the timeout value. This is done to avoid a
+    thundering herd on the receiving end of the network call.
+
+    Finally, for *count*, the special value ``'repeat'`` can be passed to
+    continue yielding indefinitely.
+
+    """
+    if start == 0:
+        raise ValueError('start must be >= 0, not %r' % start)
+    if not start < (start * factor):
+        raise ValueError('start * factor should be greater than start')
+    stop = float(stop)
+    if count is None:
+        count = 1 + math.ceil(math.log(stop/start, factor))
+    if count is not 'repeat' and count < 0:
+        raise ValueError('count must be greater than 0, not %r' % count)
+    cur, i = float(start), 0
+    while count is 'repeat' or i < count:
+        yield cur
+        i += 1
+        if cur < stop:
+            cur *= factor
+            if cur > stop:
+                cur = stop
+    return
 
 
 def bucketize(src, key=None):
@@ -375,11 +505,13 @@ def unique_iter(src, key=None):
     return
 
 
-def one(src, cmp=None):
-    """Along the same lines as builtins, :func:`all` and :func:`any`,
-    ``one()`` returns the single object in the given iterable *src*
-    that evaluates to ``True``, as determined by callable *cmp*. If
-    unset, *cmp* defaults to :class:`bool`.
+def one(src, default=None, key=None):
+    """Along the same lines as builtins, :func:`all` and :func:`any`, and
+    similar to :func:`first`, ``one()`` returns the single object in
+    the given iterable *src* that evaluates to ``True``, as determined
+    by callable *key*. If unset, *key* defaults to :class:`bool`. If
+    no such objects are found, *default* is returned. If *default* is
+    not passed, ``None` is returned.
 
     If *src* has more than one object that evaluates to ``True``, or
     if there is no object that fulfills such condition, return
@@ -388,35 +520,34 @@ def one(src, cmp=None):
     >>> one((True, False, False))
     True
     >>> one((True, False, True))
-    False
     >>> one((0, 0, 'a'))
     'a'
     >>> one((0, False, None))
-    False
-    >>> one((True, True))
+    >>> one((True, True), default=False)
     False
     >>> bool(one(('', 1)))
     True
-    >>> one((10, 20, 30, 42), lambda i: i > 40)
+    >>> one((10, 20, 30, 42), key=lambda i: i > 40)
     42
 
     See `Martín Gaitán's original repo`_ for further use cases.
 
     .. _Martín Gaitán's original repo: https://github.com/mgaitan/one
     .. _XOR: https://en.wikipedia.org/wiki/Exclusive_or
+
     """
-    the_one = False
+    the_one = default
     for i in src:
-        if cmp(i) if cmp else i:
+        if key(i) if key else i:
             if the_one:
-                return False
+                return default
             the_one = i
     return the_one
 
 
 def first(iterable, default=None, key=None):
     """Return first element of *iterable* that evaluates to ``True``, else
-    return ``None`` or optional *default*.
+    return ``None`` or optional *default*. Similar to :func:`one`.
 
     >>> first([0, False, None, [], (), 42])
     42

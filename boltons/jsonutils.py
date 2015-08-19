@@ -172,7 +172,7 @@ class JSONLIterator(object):
         the end of the file (or beginning, if ``reverse`` was set to ``True``.
         """
         while 1:
-            line = next(self._line_iter)
+            line = next(self._line_iter).lstrip()
             if not line:
                 continue
             try:

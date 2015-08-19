@@ -104,4 +104,3 @@ Section listing
    tbutils
    timeutils
    typeutils
-   tzutils

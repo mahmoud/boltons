@@ -11,7 +11,6 @@ import re
 import stat
 import errno
 import fnmatch
-import tempfile
 from shutil import copy2, copystat, Error
 
 
@@ -20,6 +19,7 @@ __all__ = ['mkdir_p', 'atomic_save', 'AtomicSaver', 'FilePerms',
 
 
 FULL_PERMS = 511  # 0777 that both Python 2 and 3 can digest
+USER_RW_ONLY_PERMS = 384  # 0600 that both Python 2 and 3 can digest
 _SINGLE_FULL_PERM = 7  # or 07 in Python 2
 try:
     basestring
@@ -181,6 +181,42 @@ class FilePerms(object):
         return ('%s(user=%r, group=%r, other=%r)'
                 % (cn, self.user, self.group, self.other))
 
+####
+
+
+_TEXT_OPENFLAGS = os.O_RDWR | os.O_CREAT | os.O_EXCL
+if hasattr(os, 'O_NOINHERIT'):
+    _TEXT_OPENFLAGS |= os.O_NOINHERIT
+if hasattr(os, 'O_NOFOLLOW'):
+    _TEXT_OPENFLAGS |= os.O_NOFOLLOW
+_BIN_OPENFLAGS = _TEXT_OPENFLAGS
+if hasattr(os, 'O_BINARY'):
+    _BIN_OPENFLAGS |= os.O_BINARY
+
+
+try:
+    import fcntl as fcntl
+except ImportError:
+    def set_cloexec(fd):
+        "Dummy set_cloexec for platforms without fcntl support"
+        pass
+else:
+    def set_cloexec(fd):
+        """Does a best-effort :func:`fcntl.fcntl` call to set a fd to be
+        automatically closed by any future child processes.
+
+        Implementation from the :mod:`tempfile` module.
+        """
+        try:
+            flags = fcntl.fcntl(fd, fcntl.F_GETFD, 0)
+        except IOError:
+            pass
+        else:
+            # flags read successfully, modify
+            flags |= fcntl.FD_CLOEXEC
+            fcntl.fcntl(fd, fcntl.F_SETFD, flags)
+        return
+
 
 def atomic_save(dest_path, **kwargs):
     """A convenient interface to the :class:`AtomicSaver` type. See the
@@ -198,43 +234,60 @@ def _atomic_rename(path, new_path, overwrite=False):
 
 
 class AtomicSaver(object):
-    """``AtomicSaver`` is a configurable context manager that provides a
-    writable file which will be moved into place as long as no
-    exceptions are raised before it is closed. It returns a standard
-    Python :class:`file` object which can be closed explicitly or used
-    as a context manager (i.e., via the :keyword:`with` statement).
+    """``AtomicSaver`` is a configurable `context manager`_ that provides
+    a writable :class:`file` which will be moved into place as long as
+    no exceptions are raised within the context manager's block. These
+    "part files" are created in the same directory as the destination
+    path to ensure atomic move operations (i.e., no cross-filesystem
+    moves occur).
 
     Args:
         dest_path (str): The path where the completed file will be
             written.
-
         overwrite (bool): Whether to overwrite the destination file if
             it exists at completion time. Defaults to ``True``.
         part_file (str): Name of the temporary *part_file*. Defaults
-            to *dest_path* + ``.part``
-        rm_part_on_exc (bool): Remove *part_file* on exception.
-            Defaults to ``True``.
-        overwrite_partfile (bool): Whether to overwrite the *part_file*,
-            should it exist at setup time. Defaults to ``True``.
-        open_func (callable): Function used to open the file. Override
-            this if you want to use :func:`codecs.open` or some other
-            alternative. Defaults to :func:`open()`.
-        open_kwargs (dict): Additional keyword arguments to pass to
-            *open_func*. Defaults to ``{}``.
+            to *dest_path* + ``.part``. Note that this argument is
+            just the filename, and not the full path of the part
+            file. Part files are always created in the same directory
+            as the destination path. Otherwise, saving may not be atomic.
+        rm_part_on_exc (bool): Remove *part_file* on exception cases.
+            Defaults to ``True``, but ``False`` can be useful for
+            recovery in some cases. Note that resumption is not
+            automatic and by default an :exc:`OSError` is raised if
+            the *part_file* exists.
+        overwrite_part (bool): Whether to overwrite the *part_file*,
+            should it exist at setup time. Defaults to ``False``,
+            which results in an :exc:`OSError` being raised on
+            pre-existing part files. Be careful of setting this to
+            ``True`` in situations when multiple threads or processes
+            could be writing to the same part file.
+        part_perms (int): Integer representation of file permissions
+            of the short-lived part file.
+
+    Practically, the AtomicSaver serves a few purposes:
+
+      * Avoiding overwriting an existing, valid file with a partially
+        written one.
+      * Providing a reasonable guarantee that a part file only has one
+        writer at a time.
+      * Optional recovery of partial data in failure cases.
+
+    .. _context manager: https://docs.python.org/2/reference/compound_stmts.html#with
+
     """
-    # TODO: option to abort if target file modify date has changed
-    # since start?
+    # TODO: option to abort if target file modify date has changed since start?
     def __init__(self, dest_path, **kwargs):
         self.dest_path = dest_path
         self.overwrite = kwargs.pop('overwrite', True)
-        self.overwrite_part = kwargs.pop('overwrite_partfile', True)
+        self.overwrite_part = kwargs.pop('overwrite_part', False)
         self.part_filename = kwargs.pop('part_file', None)
-        self.text_mode = kwargs.pop('text_mode', False)  # for windows
+        self.part_file_perms = kwargs.pop('part_perms', USER_RW_ONLY_PERMS)
         self.rm_part_on_exc = kwargs.pop('rm_part_on_exc', True)
-        self._open = kwargs.pop('open_func', open)
-        self._open_kwargs = kwargs.pop('open_kwargs', {})
+        self.text_mode = kwargs.pop('text_mode', False)  # for windows
+        self.buffering = kwargs.pop('buffering', -1)
         if kwargs:
-            raise TypeError('unexpected kwargs: %r' % kwargs.keys)
+            raise TypeError('unexpected kwargs: %r' % (kwargs.keys(),))
 
         self.dest_path = os.path.abspath(self.dest_path)
         self.dest_dir = os.path.dirname(self.dest_path)
@@ -243,8 +296,14 @@ class AtomicSaver(object):
         else:
             self.part_path = os.path.join(self.dest_dir, self.part_filename)
         self.mode = 'w+' if self.text_mode else 'w+b'
+        self.open_flags = _TEXT_OPENFLAGS if self.text_mode else _BIN_OPENFLAGS
 
         self.part_file = None
+
+    def _open_part_file(self):
+        fd = os.open(self.part_path, self.open_flags, self.part_file_perms)
+        set_cloexec(fd)
+        self.part_file = os.fdopen(fd, self.mode, self.buffering)
 
     def setup(self):
         """Called on context manager entry (the :keyword:`with` statement),
@@ -265,18 +324,9 @@ class AtomicSaver(object):
                 raise OSError(errno.EEXIST,
                               'Overwrite disabled and file already exists',
                               self.dest_path)
-        tmp_fd, tmp_part_path = tempfile.mkstemp(dir=self.dest_dir,
-                                                 text=self.text_mode)
-        os.close(tmp_fd)
-        try:
-            _atomic_rename(tmp_part_path, self.part_path,
-                           overwrite=self.overwrite_part)
-        except OSError:
-            os.unlink(tmp_part_path)
-            raise
-
-        self.part_file = self._open(self.part_path, self.mode,
-                                    **self._open_kwargs)
+        if self.overwrite_part and os.path.lexists(self.part_path):
+            os.unlink(self.part_path)
+        self._open_part_file()
 
     def __enter__(self):
         self.setup()
@@ -297,6 +347,7 @@ class AtomicSaver(object):
         except OSError:
             if self.rm_part_on_exc:
                 os.unlink(self.part_path)
+            raise  # could not save destination file
         return
 
 
@@ -320,7 +371,7 @@ def iter_find_files(directory, patterns, ignored=None):
 
     >>> filenames = sorted(iter_find_files(_CUR_DIR, '*.py'))
     >>> filenames[-1].split('/')[-1]
-    'tzutils.py'
+    'typeutils.py'
 
     Or, Python files while ignoring emacs lockfiles:
 
@@ -410,8 +461,7 @@ copytree = copy_tree  # alias for drop-in replacement of shutil
 
 
 if __name__ == '__main__':
-    pass
-    #with atomic_save('/tmp/final.txt') as f:
-    #    f.write('rofl')
-    #    raise ValueError('nope')
-    #    f.write('\n')
+    with atomic_save('/tmp/final.txt') as f:
+        f.write('rofl')
+        raise ValueError('nope')
+        f.write('\n')
