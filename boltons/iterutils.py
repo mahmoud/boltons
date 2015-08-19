@@ -327,6 +327,40 @@ def frange(stop, start=None, step=1.0):
     return ret
 
 
+def backoff_iter(start, stop, count=None, factor=2):
+    """Generates a sequence of exponentially increasing numbers. Starts
+    with *start*, increasing by *factor* until *stop* is reached,
+    optionally stopping once *count* numbers are yielded.
+
+    >>> list(backoff_iter(1.0, 10.0, count=5))
+    [1.0, 2.0, 4.0, 8.0, 10.0]
+    >>> list(backoff_iter(1.0, 10.0, count=8))
+    [1.0, 2.0, 4.0, 8.0, 10.0, 10.0, 10.0, 10.0]
+    >>> list(backoff_iter(0.1, 100.0, factor=10))
+    [0.1, 1.0, 10.0, 100.0]
+
+    For *count*, the special value ``'repeat'`` can also be passed to
+    continue yielding indefinitely.
+    """
+    if start == 0:
+        raise ValueError('start must be >= 0, not %r' % start)
+    if not start < (start * factor):
+        raise ValueError('start * factor should be greater than start')
+    if count is None:
+        count = 1 + math.ceil(math.log(stop/start, factor))
+    if count is not 'repeat' and count < 0:
+        raise ValueError('count must be greater than 0, not %r' % count)
+    cur, stop, i = start, stop * 1.0, 0
+    while count is 'repeat' or i < count:
+        yield cur
+        i += 1
+        if cur < stop:
+            cur *= factor
+            if cur > stop:
+                cur = stop
+    return
+
+
 def bucketize(src, key=None):
     """Group values in the *src* iterable by the value returned by *key*,
     which defaults to :class:`bool`, grouping values by
