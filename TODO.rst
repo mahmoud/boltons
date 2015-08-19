@@ -1,12 +1,6 @@
 TODO
 ====
 
-iterutils
----------
-
-- range() for floats
-- [x]range() with exponential increase (for easy backoffs)
-
 dictutils
 ---------
 
