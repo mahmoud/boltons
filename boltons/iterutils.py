@@ -348,7 +348,9 @@ def backoff_iter(start, stop, count=None, factor=2):
     for usage with `exponential backoff`_. Starts with *start*,
     increasing by *factor* until *stop* is reached, optionally
     stopping iteration once *count* numbers are yielded. *factor*
-    defaults to 2.
+    defaults to 2. In general retrying with properly-configured
+    backoff creates a better-behaved component for a larger service
+    ecosystem.
 
     .. _exponential backoff: https://en.wikipedia.org/wiki/Exponential_backoff
 
@@ -366,6 +368,7 @@ def backoff_iter(start, stop, count=None, factor=2):
       for timeout in backoff_iter(0.25, 5.0):
           try:
               res = network_call()
+              break
           except Exception as e:
               log(e)
               time.sleep(timeout)
