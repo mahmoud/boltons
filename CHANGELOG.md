@@ -1,5 +1,5 @@
-Changelog
-=========
+boltons Changelog
+=================
 
 Since February 20, 2013 there have been 13 releases and 615 commits for
 an average of one 47-commit release every 2.5 months.
@@ -21,7 +21,6 @@ features added:
   * Merged tzutils into timeutils
   * fileutils.AtomicSaver rewrite and redoc
   * -teens support for strutils.ordinalize()
-  * fix up one() tests for new first-like API. pop TODO for one()
   * made iterutils.one consistent with iterutils.first
 
 
@@ -29,14 +28,10 @@ features added:
 -----
 *(July 31, 2015)*
 
-fix atomic saving open-file issue for Windows
+Fix atomic saving open-file issue for Windows.
 
-  * add a note on AtomicSaver
-  * proposed solution for #45
-  * fix gunzip_bytes doctest
+  * Patch for AtomicSaver on Windows. Full rewrite comes in 15.0.0.
   * gunzip_bytes for decompressing a gzip bytestring
-  * adding hynek's credit
-  * docstring tweaks for first
 
 
 0.6.5
