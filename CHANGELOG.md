@@ -65,100 +65,46 @@ testing
 -----
 *(May 10, 2015)*
 
-fixed multiline exception message handling in ParsedException. added
-mathutils. adding a tentative version of sockutils. fix LRU.popitem. fix
+Fixed multiline exception message handling in ParsedException. added
+mathutils. adding a tentative version of socketutils. fix LRU.popitem. fix
 OMD.__eq__.
 
-  * fix a bug where __eq__ would fail with non-iterable objects of
-    comparison
-  * `LRU.popitem` should return a key value pair
-  * Ignore Vim swap files
-  * Correct typo in mathutils.ceil docstring.
-  * Update function names in mathutils.rst.
-  * refactoring ceil and floor to be simpler, more like stdlib. also
-    modifying the respective tests. discussion on issue #36
-  * shorter mathutils heading to make for a nicer TOC
-  * update architecture statement after reflection on recent pull
-    requests post-release
-  * various docstring formatting tweaks for to mathutils
-  * Ceil/floor function re-implementation using bisect. Corrections and
-    updates to unittests and documentation.
-  * Unittests for mathutils.py prepared for ceil/floor function re-
-    implementation.
-  * Minor edit to doctests in mathutils.py for readability (spacing
-    between arguments).
-  * Refactored ceil/floor function name and signature. Updated docs
-    accordingly.
-  * Add mathutils to index.rst.
-  * New module for math utilities. Includes alternative ceiling/floor
-    functions.
-  * fixing last of sockutils test issues
-  * think i got the rest of the bytes nonsense squared
-  * sockutils: convert a vast majority of literals to explicit bytes
-    literals (b'')
-  * sockutils: switch all the print statements to print calls; compiling
-    in python3.4
-  * sockutils: fix an undefined variable, an unused variable, add an
-    encoding line, and some minor formatting changes
-  * Exception message should not start with whitespace
+  * Fix a bug where dictutils.OrderedMultiDict's __eq__ would fail
+    with non-iterable objects of comparison
+  * Fixed `LRU.popitem` to return a key value pair
+  * Added mathutils with mathutils.ceil and mathutils.floor
+    implementations that can search a fixed set of choices using the
+    bisect module.
+  * Fix excutils.ParsedException so exception message would not start
+    with whitespace
   * Fix multiline exception messages
-  * Update sockutils.py
-  * initial commit of BufferedSocket and NetstringSocket
+  * Adding socketutils.BufferedSocket and socketutils.NetstringSocket
 
 
 0.6.3
 -----
 *(April 20, 2015)*
 
-add typeutils, remove compat.py, make ParsedException work with eval()ed
+Add typeutils, remove compat.py, make ParsedException work with eval()ed
 code
 
-  * a bit more robust for when tracebacks get cut off
-  * Oops, broke last-line-eval-like tracebacks
   * Properly parse tracebacks with missing source.  Resolves #30
-  * put a link to the PyPI in the README
-  * tweak the docs for get_all_subclasses
-  * add a note about the sentinel
-  * moved make_sentinel into typeutils and deleted the confusing compat
-    module
-  * adding typeutils docs
-  * fixing issubclass on pypy and making get_all_subclasses recurse
-    properly and return a list
-  * tweaks to issubclass
-  * remove portions of typeutils as discussed in #15
-  * classutils -> typeutils
-  * windowed() -> windowed in index
-  * read the docs has google analytics support built in!
-  * adding a bit of the old (i,s,o,g,r,a,m) to the docs
-  * enhance iterutils.one docs
-  * classutils: Can't use set literals, sigh py2.6 compat
-  * classutils.get_all_subclasses: Make doctest less fragile
-  * classutils: python3 compat (fix print functions)
-  * classutils: New module with utils based on classes, types and
-    instances
-  * defining __all__
-  * added function one
-  * updating the setup.py description
-  * add python versions to index.rst
-  * adding github stars to docs menu
-  * add python versions to README
-  * removing six dep in requirements-test.txt
-  * trying out travis 2.6
-
+  * Tweak the docs for typeutils.get_all_subclasses
+  * Moved typeutils.make_sentinel into typeutils and removed the
+    confusing compat module
+  * Add in typeutils with modifications per the caveats of #15
+  * Added function iterutils.one
 
 0.6.2
 -----
 *(April 11, 2015)*
 
-add partial_ordering, fix LRU repr and addition behavior
+Add partial_ordering, fix LRU repr and addition behavior
 
-  * enhanced partial_ordering docs, added doctest from #19
-  * fixes #21 - self.root was not being correctly updated, so the list
-    never rotated out entries!
-  * fix LRU repr reversal, fixes #20
-  * funcutils: Add partial_ordering(), decorator similar to
+  * Add funcutils.partial_ordering(), decorator similar to
     functools.total_ordering()
-
+  * Fixed cacheutils.LRU's behavior per #21
+  * Fix cacheutils.LRU repr reversal, fixes #20
 
 0.6.0
 -----
