@@ -20,7 +20,7 @@ features added:
   * timeutils.dt_to_timestamp, per the long-lived PR #13.
   * Merged tzutils into timeutils
   * fileutils.AtomicSaver rewrite and redoc
-  * -teens support for strutils.ordinalize()
+  * -teens support for strutils.ordinalize
   * made iterutils.one consistent with iterutils.first
 
 
@@ -31,7 +31,7 @@ features added:
 Fix atomic saving open-file issue for Windows.
 
   * Patch for AtomicSaver on Windows. Full rewrite comes in 15.0.0.
-  * gunzip_bytes for decompressing a gzip bytestring
+  * strutils.gunzip_bytes for decompressing a gzip bytestring
 
 
 0.6.5
@@ -42,60 +42,23 @@ BufferedSocket work, html2text, pairwise shortcut, is_container, plural
 typo fix, timeutils.isoparse, cacheutils.ThresholdCounter, and lots of
 testing
 
-  * quick TODO for 15.0
-  * Add first function
-  * expose iterutils.one docs
-  * thought better of the html2text behavior and reverted
-  * add some ideas to the TODO
-  * adding jsonl verification __main__ to jsonutils
-  * name change per discussion in #40
-  * had some more boltons ideas
-  * adding isoparse to docs
-  * updated ThresholdCounter with a bunch of functionality and docs
-  * idea added to TODO
-  * adding first implementation of ThresholdCounter to cacheutils
-  * a more realistic heuristic for html2text
-  * pop the isoparse TODO item
-  * adding isoparse to timeutils
-  * minor rephrasing (not is -> is not)
-  * indeces -> indices, fixes #41, thanks pts!
-  * new is_container function
-  * adding tbutils tests, fixing a small formatting bug in ExceptionInfo
-    that added an extra 'builtins.' for builtin exceptions under python
-    3
-  * adding tableutils tests
-  * super basic strutils tests
-  * add basic statsutils tests
-  * setutils tests
-  * queueutils tests
-  * disable gcutils time checking, too variable
-  * namedutils tests, fix a namedutils pickles issue, add an __all__ to
-    namedutils
-  * adding listutils tests, removing main block from listutils
-  * adding jsonutils tests
-  * remove gcutils __main__ block
-  * some basic gcutils tests
-  * use functions instead of lambdas for documentation
-  * create shortcuts for pairwise chunks since pairs (key/val) are
-    common
-  * adding py26 to tox
-  * one last 2.6 fix, guess I should get 2.6 running locally, eh?
-  * 2.6 fixes
-  * adding funcutils tests and making CachedInstancePartial Py3 friendly
-    without breaking PyPy.
-  * adding formatutils tests and making formatutils Python 3 compatible
-  * adding FilePerms tests
-  * adding the remainder of basic cacheutils tests
-  * fixing a dictutils bug that didn't show up when I last tox'd?
-  * adding OMD tests to the repertoire
-  * add socketutils test to the growing testing suite, removing the
-    redundant code from socketutils itself
-  * in keeping with the trend of preferring builtin names for boltons,
-    sockutils becomes socketutils
-  * test module naming
-  * add a basic HTML text extractor/tag stripper
-  * add some initial notes on the BufferedSocket featureset
-  * renaming recv_all to recv_size
+  * Add iterutils.first function
+  * Add cacheutils.ThresholdCounter
+  * Add JSONL verification to jsonutils
+  * Add timeutils.isoparse
+  * Add strutils.html2text and strutils.HTMLTextExtractor
+  * Fix strutils.pluralize (indeces -> indices, per #41)
+  * Add iterutils.is_container function
+  * Fixed a small formatting bug in ExceptionInfo that added an extra
+    'builtins.' for builtin exceptions under python 3
+  * Added tests for many modules
+  * Create iterutils.pairwise shortcuts for pairwise chunks since
+    pairs (key/val) are common
+  * Additional 2.6 compatibility and tests
+  * Fixed CachedInstancePartial to be Python 3 friendly without breaking
+    PyPy.
+  * Made formatutils Python 3 compatible
+  * Rename sockutils to socketutils and other changes
 
 
 0.6.4
@@ -437,7 +400,6 @@ updated tbutils, JSONL support, initial cacheutils, atomic writer,
 hashtags
 
   * add a couple files to the tests directory
-  * commit a longstanding idea to TODO
   * change the way exceptions are parsed out of tracebacks
   * raw string for regex pattern, rephrase comment
   * guard against linecache non-safety
@@ -624,12 +586,10 @@ add a ton of stuff, tbutils, namedlist, and much more
     like manual reordering for eventual optimization
   * TODO: fix linecache
   * traceback utils, first draft
-  * add some todos
   * add strip_ansi() (need to make a cliutils or something)
   * add ansi strip task
   * mess with list tuning
   * add ordinalize()
-  * add a couple TODOs
   * expose stats functions at the package level
   * add __all__ to statsutils
   * add more stats docs and doctests
@@ -714,9 +674,7 @@ add a ton of stuff, tbutils, namedlist, and much more
   * initial rough draft of IndexedSet with a short docstring and a bunch
     of fixes already (still not workin tho)
   * add dictutils (OrderedMultiDict)
-  * add a TODO
   * a bit of packaging
-  * a couple todos/notes
   * it was a long time coming, but I'm finally halfway happy with this
     wrapped exception
   * docs tweak on unique_iter
