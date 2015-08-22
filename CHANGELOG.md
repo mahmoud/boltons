@@ -13,15 +13,15 @@ from the first wave addressed and closed. tzutils merged into
 timeutils. AtomicSaver approach and API much improved. Several other
 features added:
 
-  * iterutils.backoff and iterutils.backoff_iter for exponential backoff
-  * iterutils.frange and iterutils.xfrange for floating point range generation
-  * Slightly more permissive jsonutils.JSONLIterator blank line ignoring
-  * strutils.iter_splitlines for lazily getting lines from a larger string
-  * timeutils.dt_to_timestamp, per the long-lived PR #13.
+  * [iterutils.backoff][iterutils.backoff] and [iterutils.backoff_iter][iterutils.backoff_iter] for exponential backoff
+  * [iterutils.frange][iterutils.frange] and [iterutils.xfrange][iterutils.xfrange] for floating point range generation
+  * Slightly more permissive [jsonutils.JSONLIterator][jsonutils.JSONLIterator] blank line ignoring
+  * [strutils.iter_splitlines][strutils.iter_splitlines] for lazily getting lines from a larger string
+  * [timeutils.dt_to_timestamp][timeutils.dt_to_timestamp], per the long-lived PR [#13][i13].
   * Merged tzutils into timeutils
-  * fileutils.AtomicSaver rewrite and redoc
-  * -teens support for strutils.ordinalize
-  * made iterutils.one consistent with iterutils.first
+  * [fileutils.AtomicSaver][fileutils.AtomicSaver] rewrite and redoc
+  * -teens support for [strutils.ordinalize][strutils.ordinalize]
+  * made [iterutils.one][iterutils.one] consistent with [iterutils.first][iterutils.first]
 
 
 0.6.6
@@ -31,7 +31,7 @@ features added:
 Fix atomic saving open-file issue for Windows.
 
   * Patch for AtomicSaver on Windows. Full rewrite comes in 15.0.0.
-  * strutils.gunzip_bytes for decompressing a gzip bytestring
+  * [strutils.gunzip_bytes][strutils.gunzip_bytes] for decompressing a gzip bytestring
 
 
 0.6.5
@@ -39,20 +39,20 @@ Fix atomic saving open-file issue for Windows.
 *(July 30, 2015)*
 
 BufferedSocket work, html2text, pairwise shortcut, is_container, plural
-typo fix, timeutils.isoparse, cacheutils.ThresholdCounter, and lots of
+typo fix, [timeutils.isoparse][timeutils.isoparse], [cacheutils.ThresholdCounter][cacheutils.ThresholdCounter], and lots of
 testing
 
-  * Add iterutils.first function
-  * Add cacheutils.ThresholdCounter
+  * Add [iterutils.first][iterutils.first] function
+  * Add [cacheutils.ThresholdCounter][cacheutils.ThresholdCounter]
   * Add JSONL verification to jsonutils
-  * Add timeutils.isoparse
-  * Add strutils.html2text and strutils.HTMLTextExtractor
-  * Fix strutils.pluralize (indeces -> indices, per #41)
-  * Add iterutils.is_container function
-  * Fixed a small formatting bug in tbutils.ExceptionInfo that added
+  * Add [timeutils.isoparse][timeutils.isoparse]
+  * Add [strutils.html2text][strutils.html2text] and [strutils.HTMLTextExtractor][strutils.HTMLTextExtractor]
+  * Fix [strutils.pluralize][strutils.pluralize] (indeces -> indices, per [#41][i41])
+  * Add [iterutils.is_container][iterutils.is_container] function
+  * Fixed a small formatting bug in [tbutils.ExceptionInfo][tbutils.ExceptionInfo] that added
     an extra 'builtins.' for builtin exceptions under python 3
   * Added tests for many modules
-  * Create iterutils.pairwise shortcuts for pairwise chunks since
+  * Create [iterutils.pairwise][iterutils.pairwise] shortcuts for pairwise chunks since
     pairs (key/val) are common
   * Additional 2.6 compatibility and tests
   * Fixed CachedInstancePartial to be Python 3 friendly without breaking
@@ -69,16 +69,16 @@ Fixed multiline exception message handling in ParsedException. added
 mathutils. adding a tentative version of socketutils. fix LRU.popitem. fix
 OMD.__eq__.
 
-  * Fix a bug where dictutils.OrderedMultiDict's __eq__ would fail
+  * Fix a bug where [dictutils.OrderedMultiDict][dictutils.OrderedMultiDict]'s __eq__ would fail
     with non-iterable objects of comparison
   * Fixed `LRU.popitem` to return a key value pair
-  * Added mathutils with mathutils.ceil and mathutils.floor
+  * Added mathutils with [mathutils.ceil][mathutils.ceil] and [mathutils.floor][mathutils.floor]
     implementations that can search a fixed set of choices using the
     bisect module.
-  * Fix excutils.ParsedException so exception message would not start
+  * Fix [excutils.ParsedException][excutils.ParsedException] so exception message would not start
     with whitespace
   * Fix multiline exception messages
-  * Adding socketutils.BufferedSocket and socketutils.NetstringSocket
+  * Adding [socketutils.BufferedSocket][socketutils.BufferedSocket] and [socketutils.NetstringSocket][socketutils.NetstringSocket]
 
 
 0.6.3
@@ -88,12 +88,12 @@ OMD.__eq__.
 Add typeutils, remove compat.py, make ParsedException work with eval()ed
 code
 
-  * Properly parse tracebacks with missing source.  Resolves #30
-  * Tweak the docs for typeutils.get_all_subclasses
-  * Moved typeutils.make_sentinel into typeutils and removed the
+  * Properly parse tracebacks with missing source.  Resolves [#30][i30]
+  * Tweak the docs for [typeutils.get_all_subclasses][typeutils.get_all_subclasses]
+  * Moved [typeutils.make_sentinel][typeutils.make_sentinel] into typeutils and removed the
     confusing compat module
-  * Add in typeutils with modifications per the caveats of #15
-  * Added function iterutils.one
+  * Add in typeutils with modifications per the caveats of [#15][i15]
+  * Added function [iterutils.one][iterutils.one]
 
 0.6.2
 -----
@@ -101,10 +101,10 @@ code
 
 Add partial_ordering, fix LRU repr and addition behavior
 
-  * Add funcutils.partial_ordering(), decorator similar to
+  * Add [funcutils.partial_ordering][funcutils.partial_ordering](), decorator similar to
     functools.total_ordering()
-  * Fixed cacheutils.LRU's behavior per #21
-  * Fix cacheutils.LRU repr reversal, fixes #20
+  * Fixed [cacheutils.LRU][cacheutils.LRU]'s behavior per [#21][i21]
+  * Fix [cacheutils.LRU][cacheutils.LRU] repr reversal, fixes [#20][i20]
 
 0.6.0
 -----
@@ -117,9 +117,9 @@ Python 3 support and several community bugfixes. Docs clarifications, too.
     2.7, 3.4, and PyPy.
   * clarify TracebackInfo.from_current() method gap, per user 'dl__'
     here: http://www.reddit.com/r/Python/comments/321d3o/boltons_over_100_python_utilities/
-  * Fix the cacheutils.cached decorator, adding a sanity test, fixes #12
+  * Fix the [cacheutils.cached][cacheutils.cached] decorator, adding a sanity test, fixes [#12][i12]
   * Fix bytes2human when builtin zip returns iterators
-  * Simplified logic of iterutils.chunked
+  * Simplified logic of [iterutils.chunked][iterutils.chunked]
 
 0.5.1
 -----
@@ -129,10 +129,10 @@ A lot of bugfixes and Python 2.6 and PyPy compatibility changes thanks
 to community contributions and encouragement.
 
   * Corrected cases where OMD was not exactly a dropin for OrderedDict
-  * conditional availability of gcutils.get_all based on pypy or cpython, also
-    gcutils.is_tracked was added in 2.7, so making gcutils.get_all work with 2.6
+  * conditional availability of [gcutils.get_all][gcutils.get_all] based on pypy or cpython, also
+    [gcutils.is_tracked][gcutils.is_tracked] was added in 2.7, so making [gcutils.get_all][gcutils.get_all] work with 2.6
   * Made namedutils backwards compatibilty for python 2.6 best effort
-  * Fix invalid part_path usage in fileutils.AtomicSaver
+  * Fix invalid part_path usage in [fileutils.AtomicSaver][fileutils.AtomicSaver]
 
 0.5.0
 -----
@@ -142,18 +142,18 @@ First publicly released version. The major focus of this release was
 docs, docstrings, and Read The Docs.
 
   * Cleared out __init__ module for maximum independence
-  * making statsutils.median use _get_quantile and add statsutils.trimean
-  * Switching the statsutils.Stats type to be more sorted-data oriented, since it's
+  * making [statsutils.median][statsutils.median] use _get_quantile and add [statsutils.trimean][statsutils.trimean]
+  * Switching the [statsutils.Stats][statsutils.Stats] type to be more sorted-data oriented, since it's
     only for offline analysis of unordered data
   * Made consistent multi-line string formats, as well as usage of the
     term 'builtin' vs 'built-in' (noun vs adjective)
   * Instrumented LRI with stats tracking
-  * Made timeutils.decimal_relative_time cardinalization optional
+  * Made [timeutils.decimal_relative_time][timeutils.decimal_relative_time] cardinalization optional
   * Removed timeutils dependency on strutils
-  * Made tbutils.TracebackInfo classmethods work with no arguments.
-  * Renamed ParsedTB to tbutils.ParsedException
-  * Made dictutils.OMD .get()/.getlist() semantics more consistent.
-  * finalizing .todict() and adding .sorted() to the dictutils.OMD
+  * Made [tbutils.TracebackInfo][tbutils.TracebackInfo] classmethods work with no arguments.
+  * Renamed ParsedTB to [tbutils.ParsedException][tbutils.ParsedException]
+  * Made [dictutils.OMD][dictutils.OMD] .get()/.getlist() semantics more consistent.
+  * finalizing .todict() and adding .sorted() to the [dictutils.OMD][dictutils.OMD]
   * Removed osutils and adding a note about utils in general
   * Made cacheutils more consistent between LRU and LRI, adding some
     cacheutils docs
@@ -168,9 +168,9 @@ docs, docstrings, and Read The Docs.
 
 Mostly a dictutils API update (addlist), but also gcutils.
 
-  * dictutils.OMD: split out addlist() from add(), removing the multi
+  * [dictutils.OMD][dictutils.OMD]: split out addlist() from add(), removing the multi
     kwarg
-  * adding gcutils with gcutils.GCToggler and gc.get_all
+  * adding gcutils with [gcutils.GCToggler][gcutils.GCToggler] and gc.get_all
 
 
 0.4.1
@@ -191,10 +191,10 @@ hashtags
 
   * tbutils: Changed the way exceptions are parsed out of tracebacks
   * tbutils: Guard against potential linecache issues
-  * Defined/implemented iterutils.windowed_iter corner case behavior
-  * Added from_path to fileutils.FilePerms
-  * Adding strutils.find_hashtags
-  * Add ignore patterns to fileutils.iter_find_files
+  * Defined/implemented [iterutils.windowed_iter][iterutils.windowed_iter] corner case behavior
+  * Added from_path to [fileutils.FilePerms][fileutils.FilePerms]
+  * Adding [strutils.find_hashtags][strutils.find_hashtags]
+  * Add ignore patterns to [fileutils.iter_find_files][fileutils.iter_find_files]
 
 
 0.3.0
@@ -210,13 +210,13 @@ added in this release.
     convenience method for ExceptionInfo -> default exception print,
     also need to add more docstrings.
   * adding initial jsonutils with JSONL support
-  * added cacheutils.LRU
-  * added timeutils.parse_timedelta
+  * added [cacheutils.LRU][cacheutils.LRU]
+  * added [timeutils.parse_timedelta][timeutils.parse_timedelta]
   * fixing iteritems with multi=False in the
-    dictutils.OrderedMultiDict (should return first key, but last
+    [dictutils.OrderedMultiDict][dictutils.OrderedMultiDict] (should return first key, but last
     value not first)
-  * debugutils: add pdb excepthook and debugutils.pdb_on_signal
-  * add fileutils.mkdir_p
+  * debugutils: add pdb excepthook and [debugutils.pdb_on_signal][debugutils.pdb_on_signal]
+  * add [fileutils.mkdir_p][fileutils.mkdir_p]
   * tableutils: add maxlen to table text stuff
   * fix date citation for gob's
   * adding pure-Python implementation of Gob's algorithm
@@ -265,10 +265,10 @@ added in this release.
   * fix reverse; missing yield from!
   * add initial table biz
   * add get_counts
-  * add dictutils.OrderedMultiDict.get_inverted() for those handy reverse lookups
+  * add [dictutils.OrderedMultiDict.get_inverted][dictutils.OrderedMultiDict.get_inverted]() for those handy reverse lookups
   * break out skip list to FastIter OMD + bench
-  * add strutils.a10n()
-  * fix a bug in dictutils.OrderedMultiDict's .add()
+  * add [strutils.a10n][strutils.a10n]()
+  * fix a bug in [dictutils.OrderedMultiDict][dictutils.OrderedMultiDict]'s .add()
   * adding initial reimplementation of OMD
   * adding some tests to dictutils
   * update boltons formatutils to match what's goin on in lithoxyl
@@ -381,5 +381,70 @@ added in this release.
   * bucketize and bucketize_bool, with docs
   * add examples to chunked and chunked_iter
   * update split() docs with more examples.
-  * iterutils.chunked_iter and iterutils.chunked
-  * iterutils.split and iterutils.split_iter work
+  * [iterutils.chunked_iter][iterutils.chunked_iter] and [iterutils.chunked][iterutils.chunked]
+  * [iterutils.split][iterutils.split] and [iterutils.split_iter][iterutils.split_iter] work
+
+
+
+[cacheutils.LRU]: http://boltons.readthedocs.org/en/latest/cacheutils.html#boltons.cacheutils.LRU
+[cacheutils.ThresholdCounter]: http://boltons.readthedocs.org/en/latest/cacheutils.html#boltons.cacheutils.ThresholdCounter
+[cacheutils.cached]: http://boltons.readthedocs.org/en/latest/cacheutils.html#boltons.cacheutils.cached
+[debugutils.pdb_on_signal]: http://boltons.readthedocs.org/en/latest/debugutils.html#boltons.debugutils.pdb_on_signal
+[dictutils.OMD]: http://boltons.readthedocs.org/en/latest/dictutils.html#boltons.dictutils.OMD
+[dictutils.OrderedMultiDict]: http://boltons.readthedocs.org/en/latest/dictutils.html#boltons.dictutils.OrderedMultiDict
+[dictutils.OrderedMultiDict.get_inverted]: http://boltons.readthedocs.org/en/latest/dictutils.html#boltons.dictutils.OrderedMultiDict.get_inverted
+[excutils.ParsedException]: http://boltons.readthedocs.org/en/latest/excutils.html#boltons.excutils.ParsedException
+[fileutils.AtomicSaver]: http://boltons.readthedocs.org/en/latest/fileutils.html#boltons.fileutils.AtomicSaver
+[fileutils.FilePerms]: http://boltons.readthedocs.org/en/latest/fileutils.html#boltons.fileutils.FilePerms
+[fileutils.iter_find_files]: http://boltons.readthedocs.org/en/latest/fileutils.html#boltons.fileutils.iter_find_files
+[fileutils.mkdir_p]: http://boltons.readthedocs.org/en/latest/fileutils.html#boltons.fileutils.mkdir_p
+[funcutils.partial_ordering]: http://boltons.readthedocs.org/en/latest/funcutils.html#boltons.funcutils.partial_ordering
+[gcutils.GCToggler]: http://boltons.readthedocs.org/en/latest/gcutils.html#boltons.gcutils.GCToggler
+[gcutils.get_all]: http://boltons.readthedocs.org/en/latest/gcutils.html#boltons.gcutils.get_all
+[gcutils.is_tracked]: http://boltons.readthedocs.org/en/latest/gcutils.html#boltons.gcutils.is_tracked
+[i12]: https://github.com/mahmoud/boltons/issues/12
+[i13]: https://github.com/mahmoud/boltons/issues/13
+[i15]: https://github.com/mahmoud/boltons/issues/15
+[i20]: https://github.com/mahmoud/boltons/issues/20
+[i21]: https://github.com/mahmoud/boltons/issues/21
+[i30]: https://github.com/mahmoud/boltons/issues/30
+[i41]: https://github.com/mahmoud/boltons/issues/41
+[iterutils.backoff]: http://boltons.readthedocs.org/en/latest/iterutils.html#boltons.iterutils.backoff
+[iterutils.backoff_iter]: http://boltons.readthedocs.org/en/latest/iterutils.html#boltons.iterutils.backoff_iter
+[iterutils.chunked]: http://boltons.readthedocs.org/en/latest/iterutils.html#boltons.iterutils.chunked
+[iterutils.chunked_iter]: http://boltons.readthedocs.org/en/latest/iterutils.html#boltons.iterutils.chunked_iter
+[iterutils.first]: http://boltons.readthedocs.org/en/latest/iterutils.html#boltons.iterutils.first
+[iterutils.frange]: http://boltons.readthedocs.org/en/latest/iterutils.html#boltons.iterutils.frange
+[iterutils.is_container]: http://boltons.readthedocs.org/en/latest/iterutils.html#boltons.iterutils.is_container
+[iterutils.one]: http://boltons.readthedocs.org/en/latest/iterutils.html#boltons.iterutils.one
+[iterutils.pairwise]: http://boltons.readthedocs.org/en/latest/iterutils.html#boltons.iterutils.pairwise
+[iterutils.split]: http://boltons.readthedocs.org/en/latest/iterutils.html#boltons.iterutils.split
+[iterutils.split_iter]: http://boltons.readthedocs.org/en/latest/iterutils.html#boltons.iterutils.split_iter
+[iterutils.windowed_iter]: http://boltons.readthedocs.org/en/latest/iterutils.html#boltons.iterutils.windowed_iter
+[iterutils.xfrange]: http://boltons.readthedocs.org/en/latest/iterutils.html#boltons.iterutils.xfrange
+[jsonutils.JSONLIterator]: http://boltons.readthedocs.org/en/latest/jsonutils.html#boltons.jsonutils.JSONLIterator
+[mathutils.ceil]: http://boltons.readthedocs.org/en/latest/mathutils.html#boltons.mathutils.ceil
+[mathutils.floor]: http://boltons.readthedocs.org/en/latest/mathutils.html#boltons.mathutils.floor
+[socketutils.BufferedSocket]: http://boltons.readthedocs.org/en/latest/socketutils.html#boltons.socketutils.BufferedSocket
+[socketutils.NetstringSocket]: http://boltons.readthedocs.org/en/latest/socketutils.html#boltons.socketutils.NetstringSocket
+[statsutils.Stats]: http://boltons.readthedocs.org/en/latest/statsutils.html#boltons.statsutils.Stats
+[statsutils.median]: http://boltons.readthedocs.org/en/latest/statsutils.html#boltons.statsutils.median
+[statsutils.trimean]: http://boltons.readthedocs.org/en/latest/statsutils.html#boltons.statsutils.trimean
+[strutils.HTMLTextExtractor]: http://boltons.readthedocs.org/en/latest/strutils.html#boltons.strutils.HTMLTextExtractor
+[strutils.a10n]: http://boltons.readthedocs.org/en/latest/strutils.html#boltons.strutils.a10n
+[strutils.find_hashtags]: http://boltons.readthedocs.org/en/latest/strutils.html#boltons.strutils.find_hashtags
+[strutils.gunzip_bytes]: http://boltons.readthedocs.org/en/latest/strutils.html#boltons.strutils.gunzip_bytes
+[strutils.html2text]: http://boltons.readthedocs.org/en/latest/strutils.html#boltons.strutils.html2text
+[strutils.iter_splitlines]: http://boltons.readthedocs.org/en/latest/strutils.html#boltons.strutils.iter_splitlines
+[strutils.ordinalize]: http://boltons.readthedocs.org/en/latest/strutils.html#boltons.strutils.ordinalize
+[strutils.pluralize]: http://boltons.readthedocs.org/en/latest/strutils.html#boltons.strutils.pluralize
+[tbutils.ExceptionInfo]: http://boltons.readthedocs.org/en/latest/tbutils.html#boltons.tbutils.ExceptionInfo
+[tbutils.ParsedException]: http://boltons.readthedocs.org/en/latest/tbutils.html#boltons.tbutils.ParsedException
+[tbutils.TracebackInfo]: http://boltons.readthedocs.org/en/latest/tbutils.html#boltons.tbutils.TracebackInfo
+[timeutils.decimal_relative_time]: http://boltons.readthedocs.org/en/latest/timeutils.html#boltons.timeutils.decimal_relative_time
+[timeutils.dt_to_timestamp]: http://boltons.readthedocs.org/en/latest/timeutils.html#boltons.timeutils.dt_to_timestamp
+[timeutils.isoparse]: http://boltons.readthedocs.org/en/latest/timeutils.html#boltons.timeutils.isoparse
+[timeutils.parse_timedelta]: http://boltons.readthedocs.org/en/latest/timeutils.html#boltons.timeutils.parse_timedelta
+[typeutils.get_all_subclasses]: http://boltons.readthedocs.org/en/latest/typeutils.html#boltons.typeutils.get_all_subclasses
+[typeutils.make_sentinel]: http://boltons.readthedocs.org/en/latest/typeutils.html#boltons.typeutils.make_sentinel
+
