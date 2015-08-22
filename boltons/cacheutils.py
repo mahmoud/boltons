@@ -261,8 +261,8 @@ class LRI(dict):
 
     *on_miss* is a callable that accepts the missing key (as opposed
     to :class:`collections.defaultdict`'s "default_factory", which
-    accepts no arguments.) Also note that, unlike the :class:`LRU`,
-    the ``LRI`` is not yet instrumented with statistics tracking.
+    accepts no arguments.) Also note that, like the :class:`LRU`,
+    the ``LRI`` is instrumented with statistics tracking.
 
     >>> cap_cache = LRI(max_size=2)
     >>> cap_cache['a'], cap_cache['b'] = 'A', 'B'

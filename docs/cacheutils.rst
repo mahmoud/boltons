@@ -20,11 +20,11 @@ Least-Recently Used (LRU)
 -------------------------
 
 The :class:`LRU` is the more advanced cache, but it's still quite
-simple. When it reaches capacity, it replaces the least-recently used
-item. This strategy makes the LRU a more effective cache than the LRI
-for a wide variety of applications, but also entails more operations
-for all of its APIs, especially reads. Unlike the :class:`LRI`, the
-LRU has threadsafety built in.
+simple. When it reaches capacity, a new insertion replaces the
+least-recently used item. This strategy makes the LRU a more effective
+cache than the LRI for a wide variety of applications, but also
+entails more operations for all of its APIs, especially reads. Unlike
+the :class:`LRI`, the LRU has threadsafety built in.
 
 .. autoclass:: boltons.cacheutils.LRU
    :members:
