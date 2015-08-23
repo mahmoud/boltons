@@ -22,11 +22,12 @@ including:
 
 And that's just a small selection. As of |today|, ``boltons`` is
 |b_type_count| types and |b_func_count| functions spread across
-|b_mod_count| modules.
+|b_mod_count| modules. See what's new by `checking the CHANGELOG`_.
 
 .. counts are appx 50, 75, and 23, respectively, as of initial docs writing
 
 .. _the standard library: https://docs.python.org/2.7/library/index.html
+.. _checking the CHANGELOG: https://github.com/mahmoud/boltons/blob/master/CHANGELOG.md
 
 Installation and Integration
 ----------------------------

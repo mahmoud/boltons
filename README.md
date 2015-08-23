@@ -15,9 +15,11 @@ in the same spirit as — and yet conspicuously missing from —
 
 Boltons is tested against Python 2.6, 2.7, 3.4, and
 PyPy. [Full and extensive docs are available on Read The Docs.][rtd]
+See what's new [by checking the CHANGELOG][changelog].
 
 [stdlib]: https://docs.python.org/2.7/library/index.html
 [rtd]: https://boltons.readthedocs.org/en/latest/
+[changelog]: https://github.com/mahmoud/boltons/blob/master/CHANGELOG.md
 
 [atomic]: https://boltons.readthedocs.org/en/latest/fileutils.html#boltons.fileutils.atomic_save
 [omd]: https://boltons.readthedocs.org/en/latest/dictutils.html#boltons.dictutils.OrderedMultiDict
