@@ -167,14 +167,19 @@ class OrderedMultiDict(dict):
         """Add an iterable of values underneath a specific key, preserving
         any values already under that key.
 
+        >>> omd = OrderedMultiDict([('a', -1)])
+        >>> omd.addlist('a', range(3))
+        >>> omd
+        OrderedMultiDict([('a', -1), ('a', 0), ('a', 1), ('a', 2)])
+
         Called ``addlist`` for consistency with :meth:`getlist`, but
         tuples and other sequences and iterables work.
         """
         self_insert = self._insert
-        values_extend = super(OrderedMultiDict, self).setdefault(k, []).extend
+        values = super(OrderedMultiDict, self).setdefault(k, [])
         for subv in v:
             self_insert(k, subv)
-            values_extend(v)
+        values.extend(v)
 
     def get(self, k, default=None):
         """Return the value for key *k* if present in the dictionary, else
@@ -439,9 +444,9 @@ class OrderedMultiDict(dict):
         function, optionally reversed.
 
         Args:
-            key (callable): A callable to determine the s ort key of
-             each element. The callable should expect an **item**
-             (key-value pair tuple).
+            key (callable): A callable to determine the sort key of
+              each element. The callable should expect an **item**
+              (key-value pair tuple).
             reverse (bool): Set to ``True`` to reverse the ordering.
 
         >>> omd = OrderedMultiDict(zip(range(3), range(3)))
