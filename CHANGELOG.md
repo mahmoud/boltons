@@ -4,6 +4,21 @@ boltons Changelog
 Since February 20, 2013 there have been 13 releases and 615 commits for
 an average of one 47-commit release every 2.5 months.
 
+15.0.1
+------
+*(August 27, 2015)*
+
+* Added
+  [OrderedMultiDict.sortedvalues()][OrderedMultiDict.sortedvalues],
+  which returns a copy of the OMD with sublists within a keyspace
+  sorted.
+* Fixing a bug in
+  [dictutils.OrderedMultiDict][dictutils.OrderedMultiDict]'s addlist
+  method that caused values to be added multiple times.
+* Fixing a [iterutils.backoff][iterutils.backoff] string identity check
+
+[OrderedMultiDict.sortedvalues]: http://boltons.readthedocs.org/en/latest/dictutils.html#boltons.dictutils.OrderedMultiDict.sortedvalues
+
 15.0.0
 ------
 *(August 19, 2015)*
@@ -447,4 +462,3 @@ added in this release.
 [timeutils.parse_timedelta]: http://boltons.readthedocs.org/en/latest/timeutils.html#boltons.timeutils.parse_timedelta
 [typeutils.get_all_subclasses]: http://boltons.readthedocs.org/en/latest/typeutils.html#boltons.typeutils.get_all_subclasses
 [typeutils.make_sentinel]: http://boltons.readthedocs.org/en/latest/typeutils.html#boltons.typeutils.make_sentinel
-
