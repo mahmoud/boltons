@@ -463,6 +463,48 @@ class OrderedMultiDict(dict):
         cls = self.__class__
         return cls(sorted(self.iteritems(), key=key, reverse=reverse))
 
+    def sortedvalues(self, key=None, reverse=False):
+        """Returns a copy of the :class:`OrderedMultiDict` with the same keys
+        in the same order as the original OMD, but the values within
+        each keyspace have been sorted according to *key* and
+        *reverse*.
+
+        Args:
+            key (callable): A single-argument callable to determine
+              the sort key of each element. The callable should expect
+              an **item** (key-value pair tuple).
+            reverse (bool): Set to ``True`` to reverse the ordering.
+
+        >>> omd = OrderedMultiDict()
+        >>> omd.addlist('even', [6, 2])
+        >>> omd.addlist('odd', [1, 5])
+        >>> omd.add('even', 4)
+        >>> omd.add('odd', 3)
+        >>> somd = omd.sortedvalues()
+        >>> somd.getlist('even')
+        [2, 4, 6]
+        >>> somd.keys(multi=True) == omd.keys(multi=True)
+        True
+        >>> omd == somd
+        False
+        >>> somd
+        OrderedMultiDict([('even', 2), ('even', 4), ('odd', 1), ('odd', 3), ('even', 6), ('odd', 5)])
+
+        As demonstrated above, contents and key order are
+        retained. Only value order changes.
+        """
+        try:
+            superself_iteritems = super(OrderedMultiDict, self).iteritems()
+        except AttributeError:
+            superself_iteritems = super(OrderedMultiDict, self).items()
+        # (not reverse) because they pop off in reverse order for reinsertion
+        sorted_val_map = dict([(k, sorted(v, key=key, reverse=(not reverse)))
+                               for k, v in superself_iteritems])
+        ret = self.__class__()
+        for k in self.iterkeys(multi=True):
+            ret.add(k, sorted_val_map[k].pop())
+        return ret
+
     def inverted(self):
         """Returns a new :class:`OrderedMultiDict` with values and keys
         swapped, like creating dictionary transposition or reverse
