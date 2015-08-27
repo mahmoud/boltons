@@ -159,9 +159,8 @@ class OrderedMultiDict(dict):
         """Add a single value *v* under a key *k*. Existing values under *k*
         are preserved.
         """
-        self_insert = self._insert
         values = super(OrderedMultiDict, self).setdefault(k, [])
-        self_insert(k, v)
+        self._insert(k, v)
         values.append(v)
 
     def addlist(self, k, v):
@@ -172,10 +171,10 @@ class OrderedMultiDict(dict):
         tuples and other sequences and iterables work.
         """
         self_insert = self._insert
-        values = super(OrderedMultiDict, self).setdefault(k, [])
+        values_extend = super(OrderedMultiDict, self).setdefault(k, []).extend
         for subv in v:
             self_insert(k, subv)
-            values.extend(v)
+            values_extend(v)
 
     def get(self, k, default=None):
         """Return the value for key *k* if present in the dictionary, else
