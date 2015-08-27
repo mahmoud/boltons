@@ -1,8 +1,8 @@
 boltons Changelog
 =================
 
-Since February 20, 2013 there have been 13 releases and 615 commits for
-an average of one 47-commit release every 2.5 months.
+Since February 20, 2013 there have been 14 releases and 632 commits for
+an average of one 45-commit release every 2.3 months.
 
 15.0.1
 ------
