@@ -181,6 +181,45 @@ def test_poplast():
         assert omd.poplast() == items[-1][-1]
 
 
+def test_pop():
+    omd = OMD()
+    omd.add('even', 0)
+    omd.add('odd', 1)
+    omd.add('even', 2)
+
+    assert omd.pop('odd') == 1
+    assert omd.pop('odd', 99) == 99
+    try:
+        omd.pop('odd')
+        import pdb;pdb.set_trace()
+        assert False
+    except KeyError:
+        pass
+
+    assert len(omd) == 1
+    assert len(omd.items(multi=True)) == 2
+
+
+def test_pop_all():
+    omd = OMD()
+    omd.add('even', 0)
+    omd.add('odd', 1)
+    omd.add('even', 2)
+
+    assert omd.popall('odd') == [1]
+    assert len(omd) == 1
+    try:
+        omd.popall('odd')
+        assert False
+    except KeyError:
+        pass
+    assert omd.popall('odd', None) is None
+
+    assert omd.popall('even') == [0, 2]
+    assert len(omd) == 0
+    assert omd.popall('nope', None) is None
+
+
 def test_reversed():
     try:
         from collections import OrderedDict

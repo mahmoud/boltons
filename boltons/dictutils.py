@@ -328,18 +328,24 @@ class OrderedMultiDict(dict):
         inserted value. Raises :exc:`KeyError` if the key is not
         present and no *default* is provided.
         """
-        return self.popall(k, default)[-1]
+        try:
+            return self.popall(k)[-1]
+        except KeyError:
+            if default is _MISSING:
+                raise KeyError(k)
+        return default
 
     def popall(self, k, default=_MISSING):
         """Remove all values under key *k*, returning them in the form of
         a list. Raises :exc:`KeyError` if the key is not present and no
         *default* is provided.
         """
-        if super(OrderedMultiDict, self).__contains__(k):
+        super_self = super(OrderedMultiDict, self)
+        if super_self.__contains__(k):
             self._remove_all(k)
         if default is _MISSING:
-            return super(OrderedMultiDict, self).pop(k)
-        return super(OrderedMultiDict, self).pop(k, default)
+            return super_self.pop(k)
+        return super_self.pop(k, default)
 
     def poplast(self, k=_MISSING, default=_MISSING):
         """Remove and return the most-recently inserted value under the key
