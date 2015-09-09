@@ -215,8 +215,8 @@ class OrderedMultiDict(dict):
         information.
         """
         if not super(OrderedMultiDict, self).__contains__(k):
-            self[k] = [] if default is _MISSING else [default]
-        return default
+            self[k] = None if default is _MISSING else default
+        return self[k]
 
     def copy(self):
         "Return a shallow copy of the dictionary."

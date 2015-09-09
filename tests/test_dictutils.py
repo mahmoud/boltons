@@ -199,3 +199,13 @@ def test_reversed():
         omd.add(i, i)
     r100 = list(reversed(r100))
     assert list(reversed(omd)) == r100
+
+
+def test_default():
+    omd = OMD()
+    empty_list = []
+    x = omd.setdefault('1', empty_list)
+    assert x is empty_list
+    y = omd.setdefault('2')
+    assert y is None
+    assert omd.setdefault('1', None) is empty_list
