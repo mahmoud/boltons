@@ -1,8 +1,22 @@
 boltons Changelog
 =================
 
-Since February 20, 2013 there have been 14 releases and 632 commits for
-an average of one 45-commit release every 2.3 months.
+Since February 20, 2013 there have been 15 releases and 638 commits for
+an average of one 42-commit release every 2.2 months.
+
+15.0.2
+------
+*(September 9, 2015)*
+
+a couple [dictutils.OMD][dictutils.OMD] fixes to
+[dictutils.OMD.pop][dictutils.OMD.pop] and
+[dictutils.OMD.popall][dictutils.OMD.popall] to make them consistent
+with the docstrings. and the accompanying tests of course.
+
+* fix [dictutils.OMD.setdefault][dictutils.OMD.setdefault] to default
+to None and not empty list, per documentation (and add a test to the
+same effect)
+
 
 15.0.1
 ------
@@ -406,6 +420,9 @@ added in this release.
 [cacheutils.cached]: http://boltons.readthedocs.org/en/latest/cacheutils.html#boltons.cacheutils.cached
 [debugutils.pdb_on_signal]: http://boltons.readthedocs.org/en/latest/debugutils.html#boltons.debugutils.pdb_on_signal
 [dictutils.OMD]: http://boltons.readthedocs.org/en/latest/dictutils.html#boltons.dictutils.OMD
+[dictutils.OMD.pop]: http://boltons.readthedocs.org/en/latest/dictutils.html#boltons.dictutils.OrderedMultiDict.pop
+[dictutils.OMD.popall]: http://boltons.readthedocs.org/en/latest/dictutils.html#boltons.dictutils.OrderedMultiDict.popall
+[dictutils.OMD.setdefault]: http://boltons.readthedocs.org/en/latest/dictutils.html#boltons.dictutils.OrderedMultiDict.setdefault
 [dictutils.OrderedMultiDict]: http://boltons.readthedocs.org/en/latest/dictutils.html#boltons.dictutils.OrderedMultiDict
 [dictutils.OrderedMultiDict.get_inverted]: http://boltons.readthedocs.org/en/latest/dictutils.html#boltons.dictutils.OrderedMultiDict.get_inverted
 [excutils.ParsedException]: http://boltons.readthedocs.org/en/latest/excutils.html#boltons.excutils.ParsedException
