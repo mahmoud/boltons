@@ -239,6 +239,13 @@ def test_reversed():
     r100 = list(reversed(r100))
     assert list(reversed(omd)) == r100
 
+    omd = OMD()
+    assert list(reversed(omd)) == list(reversed(omd.keys()))
+    for i in range(20):
+        for j in range(i):
+            omd.add(i, i)
+    assert list(reversed(omd)) == list(reversed(omd.keys()))
+
 
 def test_default():
     omd = OMD()
