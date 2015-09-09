@@ -247,7 +247,7 @@ def test_reversed():
     assert list(reversed(omd)) == list(reversed(omd.keys()))
 
 
-def test_default():
+def test_setdefault():
     omd = OMD()
     empty_list = []
     x = omd.setdefault('1', empty_list)
