@@ -584,3 +584,95 @@ def first(iterable, default=None, key=None):
                 return el
 
     return default
+
+
+from collections import Mapping, Sequence
+
+try:
+    from typeutils import make_sentinel
+    _POP = make_sentinel('_POP')
+except ImportError:
+    _POP = object()
+
+
+def remap(root, handle_item=None, handle_push=None, handle_pop=None):
+    # TODO: documentation
+    # TODO: recursive structure handling
+    if not is_collection(root):
+        return root
+
+    if not handle_item:
+        def handle_item(key, value):  # TODO: include parent?
+            # print 'handle_item(%r, %r)' % (key, value)
+            return key, value
+    elif not callable(handle_item):
+        raise TypeError('handle_item expected callable, not: %r' % handle_item)
+
+    if not handle_push:
+        def handle_push(key, iterable):
+            # print 'handle_push(%r, %r)' % (key, iterable)
+            if isinstance(iterable, Mapping):
+                return iterable.items()
+            elif isinstance(iterable, Sequence):
+                return list(enumerate(iterable))
+            else:
+                return False
+    elif not callable(handle_push):
+        raise TypeError('handle_push expected callable, not: %r' % handle_push)
+
+    if not handle_pop:
+        def handle_pop(new_items, iterable):
+            # print 'handle_pop(%r, %r)' % (new_items, iterable)
+            if isinstance(iterable, Mapping):
+                ret = iterable.__class__(new_items)
+            elif isinstance(iterable, Sequence):
+                ret = iterable.__class__([v for i, v in new_items])
+            else:
+                raise RuntimeError('unexpected iterable type: %r'
+                                   % type(iterable))
+            return ret
+    elif not callable(handle_pop):
+        raise TypeError('handle_pop expected callable, not: %r' % handle_pop)
+
+    stack = [(None, root)]
+    new_items_stack = []
+    while stack:
+        # print '   s:', stack
+        key, value = stack.pop()
+        if key is _POP:
+            key, old_value = value
+            value = handle_pop(new_items_stack.pop(), old_value)
+            if not new_items_stack:
+                continue
+        elif is_collection(value):
+            new_items = handle_push(key, value)
+            if new_items is not False:
+                # traverse unless False is explicitly passed
+                # TODO: typecheck?
+                #    raise TypeError('handle_push must return a sequence of
+                #                    ' key/value items')
+                new_items_stack.append([])
+                stack.append((_POP, (key, value)))
+                if new_items:
+                    stack.extend(reversed(new_items))
+                continue
+        handled_item = handle_item(key, value)
+        new_items_stack[-1].append(handled_item)
+        # if handled_item is None:  # is False?
+        #    continue
+        #    raise TypeError('expected (key, value) from handle_item(),'
+        #                    ' not: %r' % handled_item)
+    return value
+
+
+if __name__ == '__main__':
+    from pprint import pprint
+
+    orig = {"a": "b", "c": [1, 2]}
+    orig = [{1: 2}, {"a": "b", "c": [1, 2, {"cat": "dog"}]}]
+    pprint(orig)
+    rm = remap(orig)
+    pprint(rm)
+
+    pprint(remap({'a': 1, 'b': object(), 'c': {'d': set()}},
+                 lambda k, v: (k.upper(), v)))
