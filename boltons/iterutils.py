@@ -640,6 +640,7 @@ def remap(root,
         raise TypeError('handle_pop expected callable, not: %r' % handle_pop)
 
     stack = [(None, root)]
+    registry = {}
     new_items_stack = []
     while stack:
         # print '   s:', stack
@@ -649,7 +650,9 @@ def remap(root,
             value = handle_pop(new_items_stack.pop(), old_value)
             if not new_items_stack:
                 continue
-        elif is_collection(value):
+            else:
+                registry.pop(id(old_value))
+        elif is_collection(value) and id(value) not in registry:
             new_items = handle_push(key, value)
             if new_items is not False:
                 # traverse unless False is explicitly passed
@@ -657,6 +660,7 @@ def remap(root,
                 #    raise TypeError('handle_push must return a sequence of
                 #                    ' key/value items')
                 new_items_stack.append([])
+                registry[id(value)] = new_items_stack[-1]
                 stack.append((_POP, (key, value)))
                 if new_items:
                     stack.extend(reversed(new_items))

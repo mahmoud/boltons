@@ -80,3 +80,12 @@ class TestRemap(object):
             remap([], handle_push='test')
         with pytest.raises(TypeError):
             remap([], handle_pop='test')
+
+    def test_selfref(self):
+        selfref = range(4)
+        selfref.append(selfref)
+        assert selfref == remap(selfref)
+
+        selfref2 = {}
+        selfref2['self'] = selfref2
+        assert selfref2 == remap(selfref2)
