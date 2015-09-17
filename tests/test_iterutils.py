@@ -81,7 +81,14 @@ class TestRemap(object):
         with pytest.raises(TypeError):
             remap([], handle_pop='test')
 
-    def test_selfref(self):
+    def _test_sub_selfref(self):
+        coll = [0, 1, 2, 3]
+        sub = []
+        sub.append(sub)
+        coll.append(sub)
+        assert coll == remap(coll)
+
+    def _test_root_selfref(self):
         selfref = [0, 1, 2, 3]
         selfref.append(selfref)
         assert selfref == remap(selfref)
@@ -89,3 +96,10 @@ class TestRemap(object):
         selfref2 = {}
         selfref2['self'] = selfref2
         assert selfref2 == remap(selfref2)
+
+    def test_duperef(self):
+        val = ['hello']
+        duperef = [val, val]
+        remapped = remap(duperef)
+        assert remapped[0] is remapped[1]
+        assert remapped[0] is not duperef[0]

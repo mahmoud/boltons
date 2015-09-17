@@ -591,8 +591,10 @@ from collections import Mapping, Sequence, ItemsView
 try:
     from typeutils import make_sentinel
     _POP = make_sentinel('_POP')
+    _MARKER = make_sentinel('_MARKER')
 except ImportError:
     _POP = object()
+    _MARKER = object()
 
 
 def default_handle_item(key, value):
@@ -622,6 +624,10 @@ def default_handle_pop(new_items, iterable):
     return ret
 
 
+class _marker(object):
+    pass
+
+
 def remap(root,
           handle_item=default_handle_item,
           handle_push=default_handle_push,
@@ -632,6 +638,8 @@ def remap(root,
     # new_items, new_parent, old_parent
     if not is_collection(root):
         return root
+        # TODO: handle_item or raise?
+        # if handle_item, what to do if the value is dropped? None?
     if not callable(handle_item):
         raise TypeError('handle_item expected callable, not: %r' % handle_item)
     if not callable(handle_push):
@@ -641,6 +649,7 @@ def remap(root,
 
     stack = [(None, root)]
     registry = {}
+    marker_registry = {}
     new_items_stack = []
     while stack:
         # print '   s:', stack
@@ -651,8 +660,10 @@ def remap(root,
             if not new_items_stack:
                 continue
             else:
-                registry.pop(id(old_value))
-        elif is_collection(value) and id(value) not in registry:
+                registry[id(old_value)] = value
+        elif id(value) in registry:
+            value = registry[id(value)]
+        elif is_collection(value):
             new_items = handle_push(key, value)
             if new_items is not False:
                 # traverse unless False is explicitly passed
@@ -660,7 +671,7 @@ def remap(root,
                 #    raise TypeError('handle_push must return a sequence of
                 #                    ' key/value items')
                 new_items_stack.append([])
-                registry[id(value)] = new_items_stack[-1]
+                registry[id(value)] = _MARKER
                 stack.append((_POP, (key, value)))
                 if new_items:
                     stack.extend(reversed(list(new_items)))
@@ -675,3 +686,11 @@ def remap(root,
         #                    ' not: %r' % handled_item)
         new_items_stack[-1].append(handled_item)
     return value
+
+
+"""The marker approach to solving self-reference problems in remap
+won't work because we can't rely on handle_pop returning a
+traversable, mutable object. We may know that the marker is in the
+items going into handle_pop but there's no guarantee it's not being
+filtered out or being made otherwise inaccessible for other reasons.
+"""
