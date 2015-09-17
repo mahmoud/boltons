@@ -586,7 +586,7 @@ def first(iterable, default=None, key=None):
     return default
 
 
-from collections import Mapping, Sequence
+from collections import Mapping, Sequence, ItemsView
 
 try:
     from typeutils import make_sentinel
@@ -603,9 +603,9 @@ def default_handle_item(key, value):
 def default_handle_push(key, iterable):
     # print 'handle_push(%r, %r)' % (key, iterable)
     if isinstance(iterable, Mapping):
-        return iterable.items()
+        return ItemsView(iterable)
     elif isinstance(iterable, Sequence):
-        return list(enumerate(iterable))
+        return enumerate(iterable)
     else:
         return False
 
@@ -663,7 +663,7 @@ def remap(root,
                 registry[id(value)] = new_items_stack[-1]
                 stack.append((_POP, (key, value)))
                 if new_items:
-                    stack.extend(reversed(new_items))
+                    stack.extend(reversed(list(new_items)))
                 continue
         handled_item = handle_item(key, value)
         if handled_item is False:

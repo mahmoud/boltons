@@ -69,7 +69,7 @@ class TestRemap(object):
         assert orig['c']['d'] == remapped['C']['D']
 
     def test_item_drop(self):
-        orig = range(10)
+        orig = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
         even_items = remap(orig, lambda k, v: not (v % 2))
         assert even_items == [0, 2, 4, 6, 8]
 
@@ -82,7 +82,7 @@ class TestRemap(object):
             remap([], handle_pop='test')
 
     def test_selfref(self):
-        selfref = range(4)
+        selfref = [0, 1, 2, 3]
         selfref.append(selfref)
         assert selfref == remap(selfref)
 
