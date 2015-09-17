@@ -703,7 +703,11 @@ On the other hand, having handle_push return the new parent instance
 before it's populated is a pretty workable solution. The division of
 labor stays clear and handle_pop still has some override powers. Also
 note that only mutable structures can have self references (unless
-getting really nasty with the Python C API).
+getting really nasty with the Python C API). The downside is that
+handle_push must do a bit more work and in the case of immutable
+collections, the new collection is discarded, as a new one has to be
+created from scratch by handle_pop. The code is still pretty clear
+overall.
 
 Not that remap is supposed to be a speed demon, but here are some
 thoughts on performance. Memorywise, the registry grows linearly with
