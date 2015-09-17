@@ -586,15 +586,13 @@ def first(iterable, default=None, key=None):
     return default
 
 
-from collections import Mapping, Sequence, ItemsView
+from collections import Mapping, Sequence, Set, ItemsView
 
 try:
     from typeutils import make_sentinel
     _POP = make_sentinel('_POP')
-    _MARKER = make_sentinel('_MARKER')
 except ImportError:
     _POP = object()
-    _MARKER = object()
 
 
 def default_handle_item(key, value):
@@ -605,27 +603,36 @@ def default_handle_item(key, value):
 def default_handle_push(key, iterable):
     # print 'handle_push(%r, %r)' % (key, iterable)
     if isinstance(iterable, Mapping):
-        return ItemsView(iterable)
+        return iterable.__class__(), ItemsView(iterable)
     elif isinstance(iterable, Sequence):
-        return enumerate(iterable)
-    else:
-        return False
+        return iterable.__class__(), enumerate(iterable)
+    elif isinstance(iterable, Set):
+        return iterable.__class__(), enumerate(iterable)
+    return iterable, False
 
 
-def default_handle_pop(new_items, iterable):
+def default_handle_pop(new_items, new_collection, old_collection):
     # print 'handle_pop(%r, %r)' % (new_items, iterable)
-    if isinstance(iterable, Mapping):
-        ret = iterable.__class__(new_items)
-    elif isinstance(iterable, Sequence):
-        ret = iterable.__class__([v for i, v in new_items])
+    # TODO: handle mutable vs immutable
+    ret = new_collection
+    if isinstance(new_collection, Mapping):
+        new_collection.update(new_items)
+    elif isinstance(new_collection, Sequence):
+        vals = [v for i, v in new_items]
+        try:
+            new_collection.extend(vals)
+        except AttributeError:
+            ret = new_collection.__class__(vals)  # tuples
+    elif isinstance(new_collection, Set):
+        vals = [v for i, v in new_items]
+        try:
+            new_collection.update(new_items)
+        except AttributeError:
+            ret = new_collection.__class__(vals)  # frozensets
     else:
         raise RuntimeError('unexpected iterable type: %r'
-                           % type(iterable))
+                           % type(new_collection))
     return ret
-
-
-class _marker(object):
-    pass
 
 
 def remap(root,
@@ -633,9 +640,6 @@ def remap(root,
           handle_push=default_handle_push,
           handle_pop=default_handle_pop):
     # TODO: documentation
-    # TODO: handle structures that contain themselves
-    # TODO: handle_push return new parent, handle_pop receive
-    # new_items, new_parent, old_parent
     if not is_collection(root):
         return root
         # TODO: handle_item or raise?
@@ -649,30 +653,31 @@ def remap(root,
 
     stack = [(None, root)]
     registry = {}
-    marker_registry = {}
     new_items_stack = []
     while stack:
-        # print '   s:', stack
         key, value = stack.pop()
+        id_value = id(value)
         if key is _POP:
-            key, old_value = value
-            value = handle_pop(new_items_stack.pop(), old_value)
+            key, new_coll, old_coll = value
+            value = handle_pop(new_items_stack.pop(), new_coll, old_coll)
+            registry[id(old_coll)] = value
             if not new_items_stack:
                 continue
-            else:
-                registry[id(old_value)] = value
-        elif id(value) in registry:
-            value = registry[id(value)]
+        elif id_value in registry:
+            value = registry[id_value]
         elif is_collection(value):
-            new_items = handle_push(key, value)
+            res = handle_push(key, value)
+            try:
+                new_collection, new_items = res
+            except TypeError:
+                raise TypeError('handle_push should return a tuple of'
+                                ' (new_collection, items_iterator), not: %r'
+                                % res)
+            registry[id_value] = new_collection
             if new_items is not False:
                 # traverse unless False is explicitly passed
-                # TODO: typecheck?
-                #    raise TypeError('handle_push must return a sequence of
-                #                    ' key/value items')
                 new_items_stack.append([])
-                registry[id(value)] = _MARKER
-                stack.append((_POP, (key, value)))
+                stack.append((_POP, (key, new_collection, value)))
                 if new_items:
                     stack.extend(reversed(list(new_items)))
                 continue
@@ -693,4 +698,22 @@ won't work because we can't rely on handle_pop returning a
 traversable, mutable object. We may know that the marker is in the
 items going into handle_pop but there's no guarantee it's not being
 filtered out or being made otherwise inaccessible for other reasons.
+
+On the other hand, having handle_push return the new parent instance
+before it's populated is a pretty workable solution. The division of
+labor stays clear and handle_pop still has some override powers. Also
+note that only mutable structures can have self references (unless
+getting really nasty with the Python C API).
+
+Not that remap is supposed to be a speed demon, but here are some
+thoughts on performance. Memorywise, the registry grows linearly with
+the number of collections. The stack of course grows in proportion to
+the depth of the data. Many intermediate lists are created, but for
+most data list comprehensions are much faster than generators (and
+generator expressions). The ABC isinstance checks are going to be dog
+slow. As soon as a couple large enough use case cross my desk, I'll be
+sure to profile and optimize. It's not a question of if isinstance+ABC
+is slow, it's which pragmatic alternative passes tests while being
+faster.
+
 """
