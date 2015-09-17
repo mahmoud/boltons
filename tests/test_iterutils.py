@@ -1,4 +1,6 @@
 
+import pytest
+
 from boltons.iterutils import first, remap
 
 
@@ -70,3 +72,11 @@ class TestRemap(object):
         orig = range(10)
         even_items = remap(orig, lambda k, v: not (v % 2))
         assert even_items == [0, 2, 4, 6, 8]
+
+    def test_noncallables(self):
+        with pytest.raises(TypeError):
+            remap([], handle_item='test')
+        with pytest.raises(TypeError):
+            remap([], handle_push='test')
+        with pytest.raises(TypeError):
+            remap([], handle_pop='test')
