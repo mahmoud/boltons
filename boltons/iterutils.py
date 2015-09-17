@@ -660,6 +660,10 @@ def remap(root, handle_item=None, handle_push=None, handle_pop=None):
                     stack.extend(reversed(new_items))
                 continue
         handled_item = handle_item(key, value)
+        if handled_item is False:
+            continue  # drop
+        elif handled_item is True:
+            handled_item = (key, value)
         new_items_stack[-1].append(handled_item)
         # if handled_item is None:  # is False?
         #    continue

@@ -65,3 +65,8 @@ class TestRemap(object):
         assert orig['a'] == remapped['A']
         assert orig['b'] == remapped['B']
         assert orig['c']['d'] == remapped['C']['D']
+
+    def test_item_drop(self):
+        orig = range(10)
+        even_items = remap(orig, lambda k, v: not (v % 2))
+        assert even_items == [0, 2, 4, 6, 8]
