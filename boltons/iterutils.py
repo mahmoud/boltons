@@ -597,7 +597,10 @@ except ImportError:
 
 def remap(root, handle_item=None, handle_push=None, handle_pop=None):
     # TODO: documentation
-    # TODO: recursive structure handling
+    # TODO: handle structures that contain themselves
+    # TODO: handle_push return new parent, handle_pop receive
+    # new_items, new_parent, old_parent
+
     if not is_collection(root):
         return root
 
@@ -663,16 +666,3 @@ def remap(root, handle_item=None, handle_push=None, handle_pop=None):
         #    raise TypeError('expected (key, value) from handle_item(),'
         #                    ' not: %r' % handled_item)
     return value
-
-
-if __name__ == '__main__':
-    from pprint import pprint
-
-    orig = {"a": "b", "c": [1, 2]}
-    orig = [{1: 2}, {"a": "b", "c": [1, 2, {"cat": "dog"}]}]
-    pprint(orig)
-    rm = remap(orig)
-    pprint(rm)
-
-    pprint(remap({'a': 1, 'b': object(), 'c': {'d': set()}},
-                 lambda k, v: (k.upper(), v)))

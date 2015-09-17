@@ -1,4 +1,5 @@
-from boltons.iterutils import first
+
+from boltons.iterutils import first, remap
 
 
 isbool = lambda x: isinstance(x, bool)
@@ -42,3 +43,25 @@ class TestFirst(object):
         assert first(l, key=odd) == 3
         assert first(l, key=even) == 0
         assert first(l, key=is_meaning_of_life) is None
+
+
+class TestRemap(object):
+    def test_basic_clone(self):
+        orig = {"a": "b", "c": [1, 2]}
+        assert orig == remap(orig)
+
+        orig2 = [{1: 2}, {"a": "b", "c": [1, 2, {"cat": "dog"}]}]
+        assert orig2 == remap(orig2)
+
+    def test_empty(self):
+        assert [] == remap([])
+        assert {} == remap({})
+        obj = object()
+        assert obj is remap(obj)
+
+    def test_basic_upper(self):
+        orig = {'a': 1, 'b': object(), 'c': {'d': set()}}
+        remapped = remap(orig, lambda k, v: (k.upper(), v))
+        assert orig['a'] == remapped['A']
+        assert orig['b'] == remapped['B']
+        assert orig['c']['d'] == remapped['C']['D']
