@@ -49,6 +49,10 @@ class TestFirst(object):
 
 
 class TestRemap(object):
+    # TODO: test enter return (prepopulated_collection, False)
+    # TODO: test which counts the number of visit calls
+    # TODO: test namedtuples and other immutable containers
+
     def test_basic_clone(self):
         orig = {"a": "b", "c": [1, 2]}
         assert orig == remap(orig)
@@ -122,9 +126,6 @@ class TestRemap(object):
         remapped = remap(root, key_to_lower, reraise_visit=False)
         assert remapped['a'] == 'b'
         assert remapped[1] == 2
-
-    # TODO: test enter return (prepopulated_collection, False)
-    # TODO: test which counts the number of visit calls
 
     def test_drop_nones(self):
         orig = {'a': 1, 'b': None, 'c': [3, None, 4, None]}

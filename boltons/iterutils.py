@@ -617,26 +617,25 @@ def default_enter(key, value):
     return value, False
 
 
-def default_exit(new_items, new_collection, old_collection):
-    # print('exit(%r, %r, %r)' % (new_items, new_collection, old_collection))
-    ret = new_collection
-    if isinstance(new_collection, Mapping):
-        new_collection.update(new_items)
-    elif isinstance(new_collection, Sequence):
+def default_exit(new_items, new_parent, old_parent):
+    # print('exit(%r, %r, %r)' % (new_items, new_parent, old_collection))
+    ret = new_parent
+    if isinstance(new_parent, Mapping):
+        new_parent.update(new_items)
+    elif isinstance(new_parent, Sequence):
         vals = [v for i, v in new_items]
         try:
-            new_collection.extend(vals)
+            new_parent.extend(vals)
         except AttributeError:
-            ret = new_collection.__class__(vals)  # tuples
-    elif isinstance(new_collection, Set):
+            ret = new_parent.__class__(vals)  # tuples
+    elif isinstance(new_parent, Set):
         vals = [v for i, v in new_items]
         try:
-            new_collection.update(new_items)
+            new_parent.update(new_items)
         except AttributeError:
-            ret = new_collection.__class__(vals)  # frozensets
+            ret = new_parent.__class__(vals)  # frozensets
     else:
-        raise RuntimeError('unexpected iterable type: %r'
-                           % type(new_collection))
+        raise RuntimeError('unexpected iterable type: %r' % type(new_parent))
     return ret
 
 
@@ -645,6 +644,7 @@ def remap(root, visit=default_visit, enter=default_enter, exit=default_exit,
     # TODO: documentation
     # TODO: enter() returns preopulated collection
     # TODO: enter() takes a fully-qualified key (aka path)
+    # TODO: enter() return (False, items) to continue traverse but cancel copy?
     if not callable(visit):
         raise TypeError('visit expected callable, not: %r' % visit)
     if not callable(enter):
@@ -659,9 +659,9 @@ def remap(root, visit=default_visit, enter=default_enter, exit=default_exit,
         key, value = stack.pop()
         id_value = id(value)
         if key is _EXIT:
-            key, new_coll, old_coll = value
-            id_value = id(old_coll)
-            value = exit(new_items_stack.pop(), new_coll, old_coll)
+            key, new_parent, old_parent = value
+            id_value = id(old_parent)
+            value = exit(new_items_stack.pop(), new_parent, old_parent)
             registry[id_value] = value
             if not new_items_stack:
                 continue
@@ -670,16 +670,16 @@ def remap(root, visit=default_visit, enter=default_enter, exit=default_exit,
         else:
             res = enter(key, value)
             try:
-                new_collection, new_items = res
+                new_parent, new_items = res
             except TypeError:
                 # TODO: handle False?
-                raise TypeError('enter should return a tuple (new_collection,'
+                raise TypeError('enter should return a tuple of (new_parent,'
                                 ' items_iterator), not: %r' % res)
             if new_items is not False:
                 # traverse unless False is explicitly passed
-                registry[id_value] = new_collection
+                registry[id_value] = new_parent
                 new_items_stack.append([])
-                stack.append((_EXIT, (key, new_collection, value)))
+                stack.append((_EXIT, (key, new_parent, value)))
                 if new_items:
                     stack.extend(reversed(list(new_items)))
                 continue
