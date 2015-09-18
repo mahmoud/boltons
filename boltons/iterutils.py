@@ -596,24 +596,30 @@ except ImportError:
 
 
 def default_handle_item(key, value):
-    # print 'handle_item(%r, %r)' % (key, value)
+    # print('handle_item(%r, %r)' % (key, value))
     return key, value
 
 
-def default_handle_push(key, iterable):
-    # print 'handle_push(%r, %r)' % (key, iterable)
-    if isinstance(iterable, Mapping):
-        return iterable.__class__(), ItemsView(iterable)
-    elif isinstance(iterable, Sequence):
-        return iterable.__class__(), enumerate(iterable)
-    elif isinstance(iterable, Set):
-        return iterable.__class__(), enumerate(iterable)
-    return iterable, False
+def default_handle_push(key, value):
+    # print('handle_push(%r, %r)' % (key, value))
+    try:
+        iter(value)
+    except TypeError:
+        return value, False
+    if isinstance(value, basestring):
+        return value, False
+    elif isinstance(value, Mapping):
+        return value.__class__(), ItemsView(value)
+    elif isinstance(value, Sequence):
+        return value.__class__(), enumerate(value)
+    elif isinstance(value, Set):
+        return value.__class__(), enumerate(value)
+    return value, False
 
 
 def default_handle_pop(new_items, new_collection, old_collection):
-    # print 'handle_pop(%r, %r)' % (new_items, iterable)
-    # TODO: handle mutable vs immutable
+    # print('handle_pop(%r, %r, %r)'
+    #       % (new_items, new_collection, old_collection))
     ret = new_collection
     if isinstance(new_collection, Mapping):
         new_collection.update(new_items)
@@ -635,15 +641,15 @@ def default_handle_pop(new_items, new_collection, old_collection):
     return ret
 
 
+# from debugutils import pdb_on_signal
+# pdb_on_signal()
+
+
 def remap(root,
           handle_item=default_handle_item,
           handle_push=default_handle_push,
           handle_pop=default_handle_pop):
     # TODO: documentation
-    if not is_collection(root):
-        return root
-        # TODO: handle_item or raise?
-        # if handle_item, what to do if the value is dropped? None?
     if not callable(handle_item):
         raise TypeError('handle_item expected callable, not: %r' % handle_item)
     if not callable(handle_push):
@@ -659,23 +665,25 @@ def remap(root,
         id_value = id(value)
         if key is _POP:
             key, new_coll, old_coll = value
+            id_value = id(old_coll)
             value = handle_pop(new_items_stack.pop(), new_coll, old_coll)
-            registry[id(old_coll)] = value
+            registry[id_value] = value
             if not new_items_stack:
                 continue
         elif id_value in registry:
             value = registry[id_value]
-        elif is_collection(value):
+        else:
             res = handle_push(key, value)
             try:
                 new_collection, new_items = res
             except TypeError:
+                # TODO: handle False?
                 raise TypeError('handle_push should return a tuple of'
                                 ' (new_collection, items_iterator), not: %r'
                                 % res)
-            registry[id_value] = new_collection
             if new_items is not False:
                 # traverse unless False is explicitly passed
+                registry[id_value] = new_collection
                 new_items_stack.append([])
                 stack.append((_POP, (key, new_collection, value)))
                 if new_items:
@@ -689,7 +697,10 @@ def remap(root,
         # TODO: typecheck?
         #    raise TypeError('expected (key, value) from handle_item(),'
         #                    ' not: %r' % handled_item)
-        new_items_stack[-1].append(handled_item)
+        try:
+            new_items_stack[-1].append(handled_item)
+        except IndexError:
+            raise TypeError('expected remappable root, not: %r' % root)
     return value
 
 

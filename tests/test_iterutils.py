@@ -58,8 +58,12 @@ class TestRemap(object):
     def test_empty(self):
         assert [] == remap([])
         assert {} == remap({})
+        assert set() == remap(set())
+
+    def test_unremappable(self):
         obj = object()
-        assert obj is remap(obj)
+        with pytest.raises(TypeError):
+            remap(obj)
 
     def test_basic_upper(self):
         orig = {'a': 1, 'b': object(), 'c': {'d': set()}}
