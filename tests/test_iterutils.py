@@ -112,5 +112,15 @@ class TestRemap(object):
         assert remapped[0] is remapped[1]
         assert remapped[0] is not duperef[0]
 
+    def test_reraise_visit(self):
+        root = {'A': 'b', 1: 2}
+        key_to_lower = lambda k, v: (k.lower(), v)
+        with pytest.raises(AttributeError):
+            remap(root, key_to_lower)
+
+        remapped = remap(root, key_to_lower, reraise_visit=False)
+        assert remapped['a'] == 'b'
+        assert remapped[1] == 2
+
     # TODO: test enter return (prepopulated_collection, False)
     # TODO: test which counts the number of visit calls
