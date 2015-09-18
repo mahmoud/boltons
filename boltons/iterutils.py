@@ -590,18 +590,18 @@ from collections import Mapping, Sequence, Set, ItemsView
 
 try:
     from typeutils import make_sentinel
-    _POP = make_sentinel('_POP')
+    _EXIT = make_sentinel('_EXIT')
 except ImportError:
-    _POP = object()
+    _EXIT = object()
 
 
-def default_handle_item(key, value):
-    # print('handle_item(%r, %r)' % (key, value))
+def default_visit(key, value):
+    # print('visit(%r, %r)' % (key, value))
     return key, value
 
 
-def default_handle_push(key, value):
-    # print('handle_push(%r, %r)' % (key, value))
+def default_enter(key, value):
+    # print('enter(%r, %r)' % (key, value))
     try:
         iter(value)
     except TypeError:
@@ -617,9 +617,8 @@ def default_handle_push(key, value):
     return value, False
 
 
-def default_handle_pop(new_items, new_collection, old_collection):
-    # print('handle_pop(%r, %r, %r)'
-    #       % (new_items, new_collection, old_collection))
+def default_exit(new_items, new_collection, old_collection):
+    # print('exit(%r, %r, %r)' % (new_items, new_collection, old_collection))
     ret = new_collection
     if isinstance(new_collection, Mapping):
         new_collection.update(new_items)
@@ -641,22 +640,15 @@ def default_handle_pop(new_items, new_collection, old_collection):
     return ret
 
 
-# from debugutils import pdb_on_signal
-# pdb_on_signal()
-
-
-def remap(root,
-          handle_item=default_handle_item,
-          handle_push=default_handle_push,
-          handle_pop=default_handle_pop,
-          reraise=True):
+def remap(root, visit=default_visit, enter=default_enter, exit=default_exit,
+          reraise_visit=True):
     # TODO: documentation
-    if not callable(handle_item):
-        raise TypeError('handle_item expected callable, not: %r' % handle_item)
-    if not callable(handle_push):
-        raise TypeError('handle_push expected callable, not: %r' % handle_push)
-    if not callable(handle_pop):
-        raise TypeError('handle_pop expected callable, not: %r' % handle_pop)
+    if not callable(visit):
+        raise TypeError('visit expected callable, not: %r' % visit)
+    if not callable(enter):
+        raise TypeError('enter expected callable, not: %r' % enter)
+    if not callable(exit):
+        raise TypeError('exit expected callable, not: %r' % exit)
 
     stack = [(None, root)]
     registry = {}
@@ -664,66 +656,65 @@ def remap(root,
     while stack:
         key, value = stack.pop()
         id_value = id(value)
-        if key is _POP:
+        if key is _EXIT:
             key, new_coll, old_coll = value
             id_value = id(old_coll)
-            value = handle_pop(new_items_stack.pop(), new_coll, old_coll)
+            value = exit(new_items_stack.pop(), new_coll, old_coll)
             registry[id_value] = value
             if not new_items_stack:
                 continue
         elif id_value in registry:
             value = registry[id_value]
         else:
-            res = handle_push(key, value)
+            res = enter(key, value)
             try:
                 new_collection, new_items = res
             except TypeError:
                 # TODO: handle False?
-                raise TypeError('handle_push should return a tuple of'
-                                ' (new_collection, items_iterator), not: %r'
-                                % res)
+                raise TypeError('enter should return a tuple (new_collection,'
+                                ' items_iterator), not: %r' % res)
             if new_items is not False:
                 # traverse unless False is explicitly passed
                 registry[id_value] = new_collection
                 new_items_stack.append([])
-                stack.append((_POP, (key, new_collection, value)))
+                stack.append((_EXIT, (key, new_collection, value)))
                 if new_items:
                     stack.extend(reversed(list(new_items)))
                 continue
         try:
-            handled_item = handle_item(key, value)
+            visited_item = visit(key, value)
         except:
-            if reraise:
+            if reraise_visit:
                 raise
-            handled_item = True
-        if handled_item is False:
+            visited_item = True
+        if visited_item is False:
             continue  # drop
-        elif handled_item is True:
-            handled_item = (key, value)
+        elif visited_item is True:
+            visited_item = (key, value)
         # TODO: typecheck?
-        #    raise TypeError('expected (key, value) from handle_item(),'
-        #                    ' not: %r' % handled_item)
+        #    raise TypeError('expected (key, value) from visit(),'
+        #                    ' not: %r' % visited_item)
         try:
-            new_items_stack[-1].append(handled_item)
+            new_items_stack[-1].append(visited_item)
         except IndexError:
             raise TypeError('expected remappable root, not: %r' % root)
     return value
 
 
 """The marker approach to solving self-reference problems in remap
-won't work because we can't rely on handle_pop returning a
+won't work because we can't rely on exit returning a
 traversable, mutable object. We may know that the marker is in the
-items going into handle_pop but there's no guarantee it's not being
+items going into exit but there's no guarantee it's not being
 filtered out or being made otherwise inaccessible for other reasons.
 
-On the other hand, having handle_push return the new parent instance
+On the other hand, having enter return the new parent instance
 before it's populated is a pretty workable solution. The division of
-labor stays clear and handle_pop still has some override powers. Also
+labor stays clear and exit still has some override powers. Also
 note that only mutable structures can have self references (unless
 getting really nasty with the Python C API). The downside is that
-handle_push must do a bit more work and in the case of immutable
+enter must do a bit more work and in the case of immutable
 collections, the new collection is discarded, as a new one has to be
-created from scratch by handle_pop. The code is still pretty clear
+created from scratch by exit. The code is still pretty clear
 overall.
 
 Not that remap is supposed to be a speed demon, but here are some
@@ -736,5 +727,12 @@ slow. As soon as a couple large enough use case cross my desk, I'll be
 sure to profile and optimize. It's not a question of if isinstance+ABC
 is slow, it's which pragmatic alternative passes tests while being
 faster.
+
+TODO Examples:
+
+  * sort all lists
+  * normalize all keys
+  * convert all dicts to OrderedDicts
+  * drop all Nones
 
 """

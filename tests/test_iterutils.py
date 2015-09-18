@@ -79,11 +79,11 @@ class TestRemap(object):
 
     def test_noncallables(self):
         with pytest.raises(TypeError):
-            remap([], handle_item='test')
+            remap([], visit='test')
         with pytest.raises(TypeError):
-            remap([], handle_push='test')
+            remap([], enter='test')
         with pytest.raises(TypeError):
-            remap([], handle_pop='test')
+            remap([], exit='test')
 
     def test_sub_selfref(self):
         coll = [0, 1, 2, 3]
@@ -112,5 +112,5 @@ class TestRemap(object):
         assert remapped[0] is remapped[1]
         assert remapped[0] is not duperef[0]
 
-    # TODO: test handle_push return (prepopulated_collection, False)
-    # TODO: test which counts the number of handle_item calls
+    # TODO: test enter return (prepopulated_collection, False)
+    # TODO: test which counts the number of visit calls
