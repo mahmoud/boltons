@@ -1,7 +1,9 @@
 
+from collections import OrderedDict
+
 import pytest
 
-from boltons.iterutils import first, remap
+from boltons.iterutils import first, remap, default_enter, default_exit
 
 
 isbool = lambda x: isinstance(x, bool)
@@ -124,3 +126,59 @@ class TestRemap(object):
 
     # TODO: test enter return (prepopulated_collection, False)
     # TODO: test which counts the number of visit calls
+
+    def test_drop_nones(self):
+        orig = {'a': 1, 'b': None, 'c': [3, None, 4, None]}
+        ref = {'a': 1, 'c': [3, 4]}
+        drop_none = lambda k, v: v is not None
+        remapped = remap(orig, visit=drop_none)
+        assert remapped == ref
+
+        orig = [None] * 100
+        remapped = remap(orig, drop_none)
+        assert not remapped
+
+    def test_dict_to_odict(self):
+        def enter(key, value):
+            if isinstance(value, dict):
+                return OrderedDict(), sorted(value.items())
+            return default_enter(key, value)
+
+        orig = [{'title': 'Wild Palms',
+                 'ratings': {1: 1, 2: 3, 3: 5, 4: 6, 5: 3}},
+                {'title': 'Twin Peaks',
+                 'ratings': {1: 3, 2: 2, 3: 8, 4: 12, 5: 15}}]
+        remapped = remap(orig, enter=enter)
+        assert remapped == orig
+
+        assert isinstance(remapped[0], OrderedDict)
+        assert isinstance(remapped[0]['ratings'], OrderedDict)
+        assert isinstance(remapped[1], OrderedDict)
+        assert isinstance(remapped[1]['ratings'], OrderedDict)
+
+    def test_sort_all_lists(self):
+        def exit(new_items, new_parent, old_parent):
+            ret = default_exit(new_items, new_parent, old_parent)
+            if isinstance(ret, list):
+                ret.sort()
+            return ret
+
+        orig = [[[7, 0, 7],
+                 [7, 2, 7],
+                 [7, 7, 7],
+                 [7, 3, 7]],
+                [[3, 8, 0],
+                 [3, 2, 0],
+                 [3, 1, 9],
+                 [3, 5, 0]]]
+        ref = [[[0, 2, 3],
+                [0, 3, 5],
+                [0, 3, 8],
+                [1, 3, 9]],
+               [[0, 7, 7],
+                [2, 7, 7],
+                [3, 7, 7],
+                [7, 7, 7]]]
+
+        remapped = remap(orig, exit=exit)
+        assert remapped == ref

@@ -643,6 +643,8 @@ def default_exit(new_items, new_collection, old_collection):
 def remap(root, visit=default_visit, enter=default_enter, exit=default_exit,
           reraise_visit=True):
     # TODO: documentation
+    # TODO: enter() returns preopulated collection
+    # TODO: enter() takes a fully-qualified key (aka path)
     if not callable(visit):
         raise TypeError('visit expected callable, not: %r' % visit)
     if not callable(enter):
