@@ -648,7 +648,8 @@ def default_handle_pop(new_items, new_collection, old_collection):
 def remap(root,
           handle_item=default_handle_item,
           handle_push=default_handle_push,
-          handle_pop=default_handle_pop):
+          handle_pop=default_handle_pop,
+          reraise=True):
     # TODO: documentation
     if not callable(handle_item):
         raise TypeError('handle_item expected callable, not: %r' % handle_item)
@@ -689,7 +690,12 @@ def remap(root,
                 if new_items:
                     stack.extend(reversed(list(new_items)))
                 continue
-        handled_item = handle_item(key, value)
+        try:
+            handled_item = handle_item(key, value)
+        except:
+            if reraise:
+                raise
+            handled_item = True
         if handled_item is False:
             continue  # drop
         elif handled_item is True:
