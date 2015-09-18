@@ -1,9 +1,8 @@
 
-from collections import OrderedDict
-
 import pytest
 
 from boltons.iterutils import first, remap, default_enter, default_exit
+from boltons.dictutils import OMD
 
 
 isbool = lambda x: isinstance(x, bool)
@@ -138,10 +137,10 @@ class TestRemap(object):
         remapped = remap(orig, drop_none)
         assert not remapped
 
-    def test_dict_to_odict(self):
+    def test_dict_to_omd(self):
         def enter(key, value):
             if isinstance(value, dict):
-                return OrderedDict(), sorted(value.items())
+                return OMD(), sorted(value.items())
             return default_enter(key, value)
 
         orig = [{'title': 'Wild Palms',
@@ -151,10 +150,10 @@ class TestRemap(object):
         remapped = remap(orig, enter=enter)
         assert remapped == orig
 
-        assert isinstance(remapped[0], OrderedDict)
-        assert isinstance(remapped[0]['ratings'], OrderedDict)
-        assert isinstance(remapped[1], OrderedDict)
-        assert isinstance(remapped[1]['ratings'], OrderedDict)
+        assert isinstance(remapped[0], OMD)
+        assert isinstance(remapped[0]['ratings'], OMD)
+        assert isinstance(remapped[1], OMD)
+        assert isinstance(remapped[1]['ratings'], OMD)
 
     def test_sort_all_lists(self):
         def exit(new_items, new_parent, old_parent):
