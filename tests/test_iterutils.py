@@ -181,3 +181,28 @@ class TestRemap(object):
 
         remapped = remap(orig, exit=exit)
         assert remapped == ref
+
+    def test_collector_pattern(self):
+        all_interests = set()
+
+        def enter(key, value):
+            try:
+                all_interests.update(value['interests'])
+            except:
+                pass
+            return default_enter(key, value)
+
+        orig = [{'name': 'Kate',
+                 'interests': ['theater', 'manga'],
+                 'dads': [{'name': 'Chris',
+                           'interests': ['biking', 'python']}]},
+                {'name': 'Avery',
+                 'interests': ['museums', 'pears'],
+                 'dads': [{'name': 'Kurt',
+                           'interests': ['python', 'recursion']}]}]
+
+        ref = set(['python', 'recursion', 'biking', 'museums',
+                   'pears', 'theater', 'manga'])
+
+        remap(orig, enter=enter)
+        assert all_interests == ref
