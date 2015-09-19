@@ -210,16 +210,50 @@ class TestRemap(object):
         assert all_interests == ref
 
     def test_path(self):
+        path_map = {}
+
+        # test visit's path
+        target_str = 'test'
+        orig = [[[target_str]]]
+        ref_path = (0, 0, 0)
+
+        def visit(path, key, value):
+            if value is target_str:
+                path_map['target_str'] = path + (key,)
+            return key, value
+
+        remapped = remap(orig, visit=visit)
+
+        assert remapped == orig
+        assert path_map['target_str'] == ref_path
+
+        # test enter's path
         target_obj = object()
         orig = {'a': {'b': {'c': {'d': ['e', target_obj, 'f']}}}}
-        path_map = {'target_obj': None}
+        ref_path = ('a', 'b', 'c', 'd', 1)
 
         def enter(path, key, value):
             if value is target_obj:
                 path_map['target_obj'] = path + (key,)
             return default_enter(path, key, value)
 
-        remap(orig, enter=enter)
+        remapped = remap(orig, enter=enter)
 
-        assert path_map['target_obj'] == ('a', 'b', 'c', 'd', 1)
-        # TODO: test path from exit callback
+        assert remapped == orig
+        assert path_map['target_obj'] == ref_path
+
+        # test exit's path
+        target_set = frozenset([1, 7, 3, 8])
+        orig = [0, 1, 2, [3, 4, [5, target_set]]]
+        ref_path = (3, 2, 1)
+
+        # TODO: reverse order of new_items, new_parent
+        def exit(path, key, old_parent, new_items, new_parent):
+            if old_parent is target_set:
+                path_map['target_set'] = path + (key,)
+            return default_exit(path, key, old_parent, new_items, new_parent)
+
+        remapped = remap(orig, exit=exit)
+
+        assert remapped == orig
+        assert path_map['target_set'] == ref_path
