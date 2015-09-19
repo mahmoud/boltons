@@ -18,9 +18,10 @@ from the standard library.
 .. autofunction:: pairwise_iter
 .. autofunction:: windowed
 .. autofunction:: windowed_iter
-
 .. autofunction:: backoff
 .. autofunction:: backoff_iter
+.. autofunction:: unique
+.. autofunction:: unique_iter
 .. autofunction:: frange
 .. autofunction:: xfrange
 
