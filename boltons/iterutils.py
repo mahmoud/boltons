@@ -737,4 +737,27 @@ TODO Examples:
   * convert all dicts to OrderedDicts
   * drop all Nones
 
+## Remap design principles
+
+Nested structures are common. Virtually all compact Python iterative
+interaction is flat (list comprehensions, map/filter, generator
+expressions, itertools, even other iterutils). remap is a succinct
+solution to both quick and dirty data wrangling, as well as expressive
+functional interaction with nested structures.
+
+* visit() should be able to handle 80% of my pragmatic use cases, and
+  the argument/return signature should be similarly pragmatic.
+* enter()/exit() are for more advanced use cases and the signature can
+  be more complex.
+* 95%+ of applications should be covered by passing in only one
+  callback.
+* Roundtripping should be the default. Don't repeat the faux pas of
+  HTMLParser where, despite the nice SAX-like interface, it is
+  impossible (or very difficult) to regenerate the input. Roundtripped
+  results compare as equal, realistically somewhere between copy.copy
+  and copy.deepcopy.
+* Leave streaming for another day. Generators can be handy, but the
+  vast majority of data is of easily manageable size. Besides, there's
+  no such thing as a streamable dictionary.
+
 """
