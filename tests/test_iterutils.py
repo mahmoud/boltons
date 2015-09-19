@@ -139,10 +139,10 @@ class TestRemap(object):
         assert not remapped
 
     def test_dict_to_omd(self):
-        def enter(key, value):
+        def enter(path, key, value):
             if isinstance(value, dict):
                 return OMD(), sorted(value.items())
-            return default_enter(key, value)
+            return default_enter(path, key, value)
 
         orig = [{'title': 'Wild Palms',
                  'ratings': {1: 1, 2: 3, 3: 5, 4: 6, 5: 3}},
@@ -157,8 +157,9 @@ class TestRemap(object):
         assert isinstance(remapped[1]['ratings'], OMD)
 
     def test_sort_all_lists(self):
-        def exit(new_items, new_parent, old_parent):
-            ret = default_exit(new_items, new_parent, old_parent)
+        def exit(path, key, old_parent, new_items, new_parent):
+            # NB: in this case, I'd normally use *a, **kw
+            ret = default_exit(path, key, old_parent, new_items, new_parent)
             if isinstance(ret, list):
                 ret.sort()
             return ret
@@ -186,12 +187,12 @@ class TestRemap(object):
     def test_collector_pattern(self):
         all_interests = set()
 
-        def enter(key, value):
+        def enter(path, key, value):
             try:
                 all_interests.update(value['interests'])
             except:
                 pass
-            return default_enter(key, value)
+            return default_enter(path, key, value)
 
         orig = [{'name': 'Kate',
                  'interests': ['theater', 'manga'],
@@ -207,3 +208,17 @@ class TestRemap(object):
 
         remap(orig, enter=enter)
         assert all_interests == ref
+
+    def test_path(self):
+        target_obj = object()
+        orig = {'a': {'b': {'c': {'d': ['e', target_obj, 'f']}}}}
+        path_map = {'target_obj': None}
+
+        def enter(path, key, value):
+            if value is target_obj:
+                path_map['target_obj'] = path + (key,)
+            return default_enter(path, key, value)
+
+        remap(orig, enter=enter)
+
+        assert path_map['target_obj'] == ('a', 'b', 'c', 'd', 1)

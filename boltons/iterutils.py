@@ -600,7 +600,7 @@ def default_visit(key, value):
     return key, value
 
 
-def default_enter(key, value):
+def default_enter(path, key, value):
     # print('enter(%r, %r)' % (key, value))
     try:
         iter(value)
@@ -617,7 +617,7 @@ def default_enter(key, value):
     return value, False
 
 
-def default_exit(new_items, new_parent, old_parent):
+def default_exit(path, key, old_parent, new_items, new_parent):
     # print('exit(%r, %r, %r)' % (new_items, new_parent, old_collection))
     ret = new_parent
     if isinstance(new_parent, Mapping):
@@ -643,7 +643,6 @@ def remap(root, visit=default_visit, enter=default_enter, exit=default_exit,
           reraise_visit=True):
     # TODO: documentation
     # TODO: enter() returns preopulated collection
-    # TODO: enter() takes a fully-qualified key (aka path)
     # TODO: enter() return (False, items) to continue traverse but cancel copy?
     if not callable(visit):
         raise TypeError('visit expected callable, not: %r' % visit)
@@ -652,8 +651,8 @@ def remap(root, visit=default_visit, enter=default_enter, exit=default_exit,
     if not callable(exit):
         raise TypeError('exit expected callable, not: %r' % exit)
 
-    stack = [(None, root)]
-    registry = {}
+    # TODO: check for registry leakage
+    path, registry, stack = (), {}, [(None, root)]
     new_items_stack = []
     while stack:
         key, value = stack.pop()
@@ -661,14 +660,16 @@ def remap(root, visit=default_visit, enter=default_enter, exit=default_exit,
         if key is _EXIT:
             key, new_parent, old_parent = value
             id_value = id(old_parent)
-            value = exit(new_items_stack.pop(), new_parent, old_parent)
+            path, new_items = new_items_stack.pop()
+            value = exit(path, key, old_parent, new_items, new_parent)
             registry[id_value] = value
             if not new_items_stack:
                 continue
         elif id_value in registry:
             value = registry[id_value]
         else:
-            res = enter(key, value)
+            # print(path, key)
+            res = enter(path, key, value)
             try:
                 new_parent, new_items = res
             except TypeError:
@@ -678,7 +679,9 @@ def remap(root, visit=default_visit, enter=default_enter, exit=default_exit,
             if new_items is not False:
                 # traverse unless False is explicitly passed
                 registry[id_value] = new_parent
-                new_items_stack.append([])
+                new_items_stack.append((path, []))
+                if value is not root:
+                    path += (key,)
                 stack.append((_EXIT, (key, new_parent, value)))
                 if new_items:
                     stack.extend(reversed(list(new_items)))
@@ -697,7 +700,7 @@ def remap(root, visit=default_visit, enter=default_enter, exit=default_exit,
         #    raise TypeError('expected (key, value) from visit(),'
         #                    ' not: %r' % visited_item)
         try:
-            new_items_stack[-1].append(visited_item)
+            new_items_stack[-1][1].append(visited_item)
         except IndexError:
             raise TypeError('expected remappable root, not: %r' % root)
     return value
