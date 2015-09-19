@@ -617,8 +617,9 @@ def default_enter(path, key, value):
     return value, False
 
 
-def default_exit(path, key, old_parent, new_items, new_parent):
-    # print('exit(%r, %r, %r)' % (new_items, new_parent, old_collection))
+def default_exit(path, key, old_parent, new_parent, new_items):
+    # print('exit(%r, %r, %r, %r, %r)'
+    #       % (path, key, old_parent, new_parent, new_items))
     ret = new_parent
     if isinstance(new_parent, Mapping):
         new_parent.update(new_items)
@@ -660,7 +661,7 @@ def remap(root, visit=default_visit, enter=default_enter, exit=default_exit,
             key, new_parent, old_parent = value
             id_value = id(old_parent)
             path, new_items = new_items_stack.pop()
-            value = exit(path, key, old_parent, new_items, new_parent)
+            value = exit(path, key, old_parent, new_parent, new_items)
             registry[id_value] = value
             if not new_items_stack:
                 continue

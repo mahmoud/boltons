@@ -157,9 +157,9 @@ class TestRemap(object):
         assert isinstance(remapped[1]['ratings'], OMD)
 
     def test_sort_all_lists(self):
-        def exit(path, key, old_parent, new_items, new_parent):
+        def exit(path, key, old_parent, new_parent, new_items):
             # NB: in this case, I'd normally use *a, **kw
-            ret = default_exit(path, key, old_parent, new_items, new_parent)
+            ret = default_exit(path, key, old_parent, new_parent, new_items)
             if isinstance(ret, list):
                 ret.sort()
             return ret
@@ -248,10 +248,10 @@ class TestRemap(object):
         ref_path = (3, 2, 1)
 
         # TODO: reverse order of new_items, new_parent
-        def exit(path, key, old_parent, new_items, new_parent):
+        def exit(path, key, old_parent, new_parent, new_items):
             if old_parent is target_set:
                 path_map['target_set'] = path + (key,)
-            return default_exit(path, key, old_parent, new_items, new_parent)
+            return default_exit(path, key, old_parent, new_parent, new_items)
 
         remapped = remap(orig, exit=exit)
 
