@@ -651,7 +651,6 @@ def remap(root, visit=default_visit, enter=default_enter, exit=default_exit,
     if not callable(exit):
         raise TypeError('exit expected callable, not: %r' % exit)
 
-    # TODO: check for registry leakage
     path, registry, stack = (), {}, [(None, root)]
     new_items_stack = []
     while stack:
