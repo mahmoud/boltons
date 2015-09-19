@@ -686,19 +686,23 @@ def remap(root, visit=default_visit, enter=default_enter, exit=default_exit,
                 if new_items:
                     stack.extend(reversed(list(new_items)))
                 continue
-        try:
-            visited_item = visit(path, key, value)
-        except:
-            if reraise_visit:
-                raise
-            visited_item = True
-        if visited_item is False:
-            continue  # drop
-        elif visited_item is True:
+        if visit is default_visit:
+            # avoid function call overhead by inlining identity operation
             visited_item = (key, value)
-        # TODO: typecheck?
-        #    raise TypeError('expected (key, value) from visit(),'
-        #                    ' not: %r' % visited_item)
+        else:
+            try:
+                visited_item = visit(path, key, value)
+            except:
+                if reraise_visit:
+                    raise
+                visited_item = True
+            if visited_item is False:
+                continue  # drop
+            elif visited_item is True:
+                visited_item = (key, value)
+            # TODO: typecheck?
+            #    raise TypeError('expected (key, value) from visit(),'
+            #                    ' not: %r' % visited_item)
         try:
             new_items_stack[-1][1].append(visited_item)
         except IndexError:
