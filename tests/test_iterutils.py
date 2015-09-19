@@ -72,14 +72,14 @@ class TestRemap(object):
 
     def test_basic_upper(self):
         orig = {'a': 1, 'b': object(), 'c': {'d': set()}}
-        remapped = remap(orig, lambda k, v: (k.upper(), v))
+        remapped = remap(orig, lambda p, k, v: (k.upper(), v))
         assert orig['a'] == remapped['A']
         assert orig['b'] == remapped['B']
         assert orig['c']['d'] == remapped['C']['D']
 
     def test_item_drop(self):
         orig = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
-        even_items = remap(orig, lambda k, v: not (v % 2))
+        even_items = remap(orig, lambda p, k, v: not (v % 2))
         assert even_items == [0, 2, 4, 6, 8]
 
     def test_noncallables(self):
@@ -119,7 +119,7 @@ class TestRemap(object):
 
     def test_reraise_visit(self):
         root = {'A': 'b', 1: 2}
-        key_to_lower = lambda k, v: (k.lower(), v)
+        key_to_lower = lambda p, k, v: (k.lower(), v)
         with pytest.raises(AttributeError):
             remap(root, key_to_lower)
 
@@ -130,7 +130,7 @@ class TestRemap(object):
     def test_drop_nones(self):
         orig = {'a': 1, 'b': None, 'c': [3, None, 4, None]}
         ref = {'a': 1, 'c': [3, 4]}
-        drop_none = lambda k, v: v is not None
+        drop_none = lambda p, k, v: v is not None
         remapped = remap(orig, visit=drop_none)
         assert remapped == ref
 
@@ -222,3 +222,4 @@ class TestRemap(object):
         remap(orig, enter=enter)
 
         assert path_map['target_obj'] == ('a', 'b', 'c', 'd', 1)
+        # TODO: test path from exit callback

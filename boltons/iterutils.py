@@ -595,8 +595,8 @@ except ImportError:
     _EXIT = object()
 
 
-def default_visit(key, value):
-    # print('visit(%r, %r)' % (key, value))
+def default_visit(path, key, value):
+    # print('visit(%r, %r, %r)' % (path, key, value))
     return key, value
 
 
@@ -687,7 +687,7 @@ def remap(root, visit=default_visit, enter=default_enter, exit=default_exit,
                     stack.extend(reversed(list(new_items)))
                 continue
         try:
-            visited_item = visit(key, value)
+            visited_item = visit(path, key, value)
         except:
             if reraise_visit:
                 raise
