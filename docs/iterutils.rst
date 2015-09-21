@@ -23,6 +23,17 @@ present in the standard library.
 .. autofunction:: unique
 .. autofunction:: unique_iter
 
+Nested
+------
+
+Nested structures are common. Virtually all compact Python iterative
+interaction is flat (list comprehensions, map/filter, generator
+expressions, itertools, even other iterutils). These functions make
+working with nested iterables and other containers as succinct and
+powerful as Python itself.
+
+.. autofunction:: remap
+
 Numeric
 -------
 
