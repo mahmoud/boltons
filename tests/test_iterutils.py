@@ -282,3 +282,29 @@ class TestRemap(object):
         remapped = remap(orig, exit=exit)
         assert (remapped['Star Trek']['TNG']['review_length']
                 < remapped['Star Trek']['DS9']['review_length'])
+
+    def test_prepop(self):
+        """Demonstrating normalization and ID addition through prepopulating
+        the objects wth an enter callback.
+        """
+        base_obj = {'name': None,
+                    'rank': None,
+                    'id': 1}
+
+        def enter(path, key, value):
+            new_parent, new_items = default_enter(path, key, value)
+            try:
+                new_parent.update(base_obj)
+                base_obj['id'] += 1
+            except:
+                pass
+            return new_parent, new_items
+
+        orig = [{'name': 'Firefox', 'rank': 1},
+                {'name': 'Chrome', 'rank': 2},
+                {'name': 'IE'}]
+        ref = [{'name': 'Firefox', 'rank': 1, 'id': 1},
+               {'name': 'Chrome', 'rank': 2, 'id': 2},
+               {'name': 'IE', 'rank': None, 'id': 3}]
+        remapped = remap(orig, enter=enter)
+        assert remapped == ref
