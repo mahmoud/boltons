@@ -117,98 +117,6 @@ class TestRemap(object):
         assert remapped[0] is remapped[1]
         assert remapped[0] is not duperef[0]
 
-    def test_reraise_visit(self):
-        root = {'A': 'b', 1: 2}
-        key_to_lower = lambda p, k, v: (k.lower(), v)
-        with pytest.raises(AttributeError):
-            remap(root, key_to_lower)
-
-        remapped = remap(root, key_to_lower, reraise_visit=False)
-        assert remapped['a'] == 'b'
-        assert remapped[1] == 2
-
-    def test_drop_nones(self):
-        orig = {'a': 1, 'b': None, 'c': [3, None, 4, None]}
-        ref = {'a': 1, 'c': [3, 4]}
-        drop_none = lambda p, k, v: v is not None
-        remapped = remap(orig, visit=drop_none)
-        assert remapped == ref
-
-        orig = [None] * 100
-        remapped = remap(orig, drop_none)
-        assert not remapped
-
-    def test_dict_to_omd(self):
-        def enter(path, key, value):
-            if isinstance(value, dict):
-                return OMD(), sorted(value.items())
-            return default_enter(path, key, value)
-
-        orig = [{'title': 'Wild Palms',
-                 'ratings': {1: 1, 2: 3, 3: 5, 4: 6, 5: 3}},
-                {'title': 'Twin Peaks',
-                 'ratings': {1: 3, 2: 2, 3: 8, 4: 12, 5: 15}}]
-        remapped = remap(orig, enter=enter)
-        assert remapped == orig
-
-        assert isinstance(remapped[0], OMD)
-        assert isinstance(remapped[0]['ratings'], OMD)
-        assert isinstance(remapped[1], OMD)
-        assert isinstance(remapped[1]['ratings'], OMD)
-
-    def test_sort_all_lists(self):
-        def exit(path, key, old_parent, new_parent, new_items):
-            # NB: in this case, I'd normally use *a, **kw
-            ret = default_exit(path, key, old_parent, new_parent, new_items)
-            if isinstance(ret, list):
-                ret.sort()
-            return ret
-
-        orig = [[[7, 0, 7],
-                 [7, 2, 7],
-                 [7, 7, 7],
-                 [7, 3, 7]],
-                [[3, 8, 0],
-                 [3, 2, 0],
-                 [3, 1, 9],
-                 [3, 5, 0]]]
-        ref = [[[0, 2, 3],
-                [0, 3, 5],
-                [0, 3, 8],
-                [1, 3, 9]],
-               [[0, 7, 7],
-                [2, 7, 7],
-                [3, 7, 7],
-                [7, 7, 7]]]
-
-        remapped = remap(orig, exit=exit)
-        assert remapped == ref
-
-    def test_collector_pattern(self):
-        all_interests = set()
-
-        def enter(path, key, value):
-            try:
-                all_interests.update(value['interests'])
-            except:
-                pass
-            return default_enter(path, key, value)
-
-        orig = [{'name': 'Kate',
-                 'interests': ['theater', 'manga'],
-                 'dads': [{'name': 'Chris',
-                           'interests': ['biking', 'python']}]},
-                {'name': 'Avery',
-                 'interests': ['museums', 'pears'],
-                 'dads': [{'name': 'Kurt',
-                           'interests': ['python', 'recursion']}]}]
-
-        ref = set(['python', 'recursion', 'biking', 'museums',
-                   'pears', 'theater', 'manga'])
-
-        remap(orig, enter=enter)
-        assert all_interests == ref
-
     def test_path(self):
         path_map = {}
 
@@ -257,3 +165,120 @@ class TestRemap(object):
 
         assert remapped == orig
         assert path_map['target_set'] == ref_path
+
+    def test_reraise_visit(self):
+        root = {'A': 'b', 1: 2}
+        key_to_lower = lambda p, k, v: (k.lower(), v)
+        with pytest.raises(AttributeError):
+            remap(root, key_to_lower)
+
+        remapped = remap(root, key_to_lower, reraise_visit=False)
+        assert remapped['a'] == 'b'
+        assert remapped[1] == 2
+
+    def test_drop_nones(self):
+        orig = {'a': 1, 'b': None, 'c': [3, None, 4, None]}
+        ref = {'a': 1, 'c': [3, 4]}
+        drop_none = lambda p, k, v: v is not None
+        remapped = remap(orig, visit=drop_none)
+        assert remapped == ref
+
+        orig = [None] * 100
+        remapped = remap(orig, drop_none)
+        assert not remapped
+
+    def test_dict_to_omd(self):
+        def enter(path, key, value):
+            if isinstance(value, dict):
+                return OMD(), sorted(value.items())
+            return default_enter(path, key, value)
+
+        orig = [{'title': 'Wild Palms',
+                 'ratings': {1: 1, 2: 3, 3: 5, 4: 6, 5: 3}},
+                {'title': 'Twin Peaks',
+                 'ratings': {1: 3, 2: 2, 3: 8, 4: 12, 5: 15}}]
+        remapped = remap(orig, enter=enter)
+        assert remapped == orig
+
+        assert isinstance(remapped[0], OMD)
+        assert isinstance(remapped[0]['ratings'], OMD)
+        assert isinstance(remapped[1], OMD)
+        assert isinstance(remapped[1]['ratings'], OMD)
+
+    def test_sort_all_lists(self):
+        def exit(path, key, old_parent, new_parent, new_items):
+            # NB: in this case, I'd normally use *a, **kw
+            ret = default_exit(path, key, old_parent, new_parent, new_items)
+            if isinstance(ret, list):
+                ret.sort()
+            return ret
+
+        # NB: Airplane model numbers (Boeing and Airbus)
+        orig = [[[7, 0, 7],
+                 [7, 2, 7],
+                 [7, 7, 7],
+                 [7, 3, 7]],
+                [[3, 8, 0],
+                 [3, 2, 0],
+                 [3, 1, 9],
+                 [3, 5, 0]]]
+        ref = [[[0, 2, 3],
+                [0, 3, 5],
+                [0, 3, 8],
+                [1, 3, 9]],
+               [[0, 7, 7],
+                [2, 7, 7],
+                [3, 7, 7],
+                [7, 7, 7]]]
+
+        remapped = remap(orig, exit=exit)
+        assert remapped == ref
+
+    def test_collector_pattern(self):
+        all_interests = set()
+
+        def enter(path, key, value):
+            try:
+                all_interests.update(value['interests'])
+            except:
+                pass
+            return default_enter(path, key, value)
+
+        orig = [{'name': 'Kate',
+                 'interests': ['theater', 'manga'],
+                 'dads': [{'name': 'Chris',
+                           'interests': ['biking', 'python']}]},
+                {'name': 'Avery',
+                 'interests': ['museums', 'pears'],
+                 'dads': [{'name': 'Kurt',
+                           'interests': ['python', 'recursion']}]}]
+
+        ref = set(['python', 'recursion', 'biking', 'museums',
+                   'pears', 'theater', 'manga'])
+
+        remap(orig, enter=enter)
+        assert all_interests == ref
+
+    def test_add_length(self):
+        def exit(path, key, old_parent, new_parent, new_items):
+            ret = default_exit(path, key, old_parent, new_parent, new_items)
+            try:
+                ret['review_length'] = len(ret['review'])
+            except:
+                pass
+            return ret
+
+        orig = {'Star Trek':
+                {'TNG': {'stars': 10,
+                         'review': "Episodic AND deep. <3 Data."},
+                 'DS9': {'stars': 8.5,
+                         'review': "Like TNG, but with a story and no Data."},
+                 'ENT': {'stars': None,
+                         'review': "Can't review what you can't watch."}},
+                'Babylon 5': {'stars': 6,
+                              'review': "Sophomoric, like a bitter laugh."},
+                'Dr. Who': {'stars': None,
+                            'review': "800 episodes is too many to review."}}
+        remapped = remap(orig, exit=exit)
+        assert (remapped['Star Trek']['TNG']['review_length']
+                < remapped['Star Trek']['DS9']['review_length'])
