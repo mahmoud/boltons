@@ -639,7 +639,7 @@ def default_exit(path, key, old_parent, new_parent, new_items):
 
 
 def remap(root, visit=default_visit, enter=default_enter, exit=default_exit,
-          reraise_visit=True):
+          **kwargs):
     """The remap ("recursive map") function is used to traverse and
     transform nested structures. Lists, tuples, sets, and dictionaries
     are just a few of the data structures commonly nested into
@@ -726,13 +726,15 @@ def remap(root, visit=default_visit, enter=default_enter, exit=default_exit,
 
     """
     # TODO: enter() return (False, items) to continue traverse but cancel copy?
-    # TODO: reraise_visit to kwarg only
     if not callable(visit):
         raise TypeError('visit expected callable, not: %r' % visit)
     if not callable(enter):
         raise TypeError('enter expected callable, not: %r' % enter)
     if not callable(exit):
         raise TypeError('exit expected callable, not: %r' % exit)
+    reraise_visit = kwargs.pop('reraise_visit', True)
+    if kwargs:
+        raise TypeError('unexpected keyword arguments: %r' % kwargs.keys())
 
     path, registry, stack = (), {}, [(None, root)]
     new_items_stack = []
