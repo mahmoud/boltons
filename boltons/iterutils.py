@@ -659,6 +659,9 @@ def remap(root, visit=default_visit, enter=default_enter, exit=default_exit,
 
     Notice how both Nones have been removed despite the nesting in the
     dictionary. Not bad for a one-liner, and that's just the beginning.
+    See `this remap cookbook`_ for more delicious recipes.
+
+    .. _this remap cookbook: http://sedimental.org/remap_nested_data_multitool_for_python.html
 
     remap takes four main arguments: the object to traverse and three
     optional callables which determine how the remapped object will be
@@ -719,12 +722,14 @@ def remap(root, visit=default_visit, enter=default_enter, exit=default_exit,
     passing more than one function.
 
     When passing *enter* and *exit*, it's common and easiest to build
-    on the default behavior. Simply ``from boltons.iterutils import
+    on the default behavior. Simply add ``from boltons.iterutils import
     default_enter`` (or ``default_exit``), and have your enter/exit
     function call the default behavior before or after your custom
-    logic.
+    logic. See `this example`_.
 
+    .. _this example: http://sedimental.org/remap_nested_data_multitool_for_python.html#sort_all_lists
     """
+    # TODO: improve argument formatting in sphinx doc
     # TODO: enter() return (False, items) to continue traverse but cancel copy?
     if not callable(visit):
         raise TypeError('visit expected callable, not: %r' % visit)
@@ -792,62 +797,6 @@ def remap(root, visit=default_visit, enter=default_enter, exit=default_exit,
             raise TypeError('expected remappable root, not: %r' % root)
     return value
 
-
-"""The marker approach to solving self-reference problems in remap
-won't work because we can't rely on exit returning a
-traversable, mutable object. We may know that the marker is in the
-items going into exit but there's no guarantee it's not being
-filtered out or being made otherwise inaccessible for other reasons.
-
-On the other hand, having enter return the new parent instance
-before it's populated is a pretty workable solution. The division of
-labor stays clear and exit still has some override powers. Also
-note that only mutable structures can have self references (unless
-getting really nasty with the Python C API). The downside is that
-enter must do a bit more work and in the case of immutable
-collections, the new collection is discarded, as a new one has to be
-created from scratch by exit. The code is still pretty clear
-overall.
-
-Not that remap is supposed to be a speed demon, but here are some
-thoughts on performance. Memorywise, the registry grows linearly with
-the number of collections. The stack of course grows in proportion to
-the depth of the data. Many intermediate lists are created, but for
-most data list comprehensions are much faster than generators (and
-generator expressions). The ABC isinstance checks are going to be dog
-slow. As soon as a couple large enough use case cross my desk, I'll be
-sure to profile and optimize. It's not a question of if isinstance+ABC
-is slow, it's which pragmatic alternative passes tests while being
-faster.
-
-TODO Examples:
-
-  * sort all lists
-  * normalize all keys
-  * convert all dicts to OrderedDicts
-  * drop all Nones
-
-## Remap design principles
-
-Nested structures are common. Virtually all compact Python iterative
-interaction is flat (list comprehensions, map/filter, generator
-expressions, itertools, even other iterutils). remap is a succinct
-solution to both quick and dirty data wrangling, as well as expressive
-functional interaction with nested structures.
-
-* visit() should be able to handle 80% of my pragmatic use cases, and
-  the argument/return signature should be similarly pragmatic.
-* enter()/exit() are for more advanced use cases and the signature can
-  be more complex.
-* 95%+ of applications should be covered by passing in only one
-  callback.
-* Roundtripping should be the default. Don't repeat the faux pas of
-  HTMLParser where, despite the nice SAX-like interface, it is
-  impossible (or very difficult) to regenerate the input. Roundtripped
-  results compare as equal, realistically somewhere between copy.copy
-  and copy.deepcopy.
-* Leave streaming for another day. Generators can be handy, but the
-  vast majority of data is of easily manageable size. Besides, there's
-  no such thing as a streamable dictionary.
-
-"""
+# TODO: get_path/set_path
+# TODO: recollect()
+# TODO: reiter()
