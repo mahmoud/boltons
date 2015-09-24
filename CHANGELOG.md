@@ -1,8 +1,17 @@
 boltons Changelog
 =================
 
-Since February 20, 2013 there have been 15 releases and 638 commits for
-an average of one 42-commit release every 2.2 months.
+Since February 20, 2013 there have been 16 releases and 675 commits for
+an average of one 42-commit release every 2.1 months.
+
+15.1.0
+------
+*(September 23, 2015)*
+
+Reached the first release version of
+[iterutils.remap][iterutils.remap](), fully tested and
+documented. Also a couple of tweaks to expose the
+[iterutils.unique][iterutils.unique] docs.
 
 15.0.2
 ------
@@ -450,8 +459,10 @@ added in this release.
 [iterutils.is_container]: http://boltons.readthedocs.org/en/latest/iterutils.html#boltons.iterutils.is_container
 [iterutils.one]: http://boltons.readthedocs.org/en/latest/iterutils.html#boltons.iterutils.one
 [iterutils.pairwise]: http://boltons.readthedocs.org/en/latest/iterutils.html#boltons.iterutils.pairwise
+[iterutils.remap]: http://boltons.readthedocs.org/en/latest/iterutils.html#boltons.iterutils.remap
 [iterutils.split]: http://boltons.readthedocs.org/en/latest/iterutils.html#boltons.iterutils.split
 [iterutils.split_iter]: http://boltons.readthedocs.org/en/latest/iterutils.html#boltons.iterutils.split_iter
+[iterutils.unique]: http://boltons.readthedocs.org/en/latest/iterutils.html#boltons.iterutils.unique
 [iterutils.windowed_iter]: http://boltons.readthedocs.org/en/latest/iterutils.html#boltons.iterutils.windowed_iter
 [iterutils.xfrange]: http://boltons.readthedocs.org/en/latest/iterutils.html#boltons.iterutils.xfrange
 [jsonutils.JSONLIterator]: http://boltons.readthedocs.org/en/latest/jsonutils.html#boltons.jsonutils.JSONLIterator
