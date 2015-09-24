@@ -120,10 +120,14 @@ intersphinx_mapping = {'python': ('https://docs.python.org/2.7', None)}
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 on_rtd = os.environ.get('READTHEDOCS', None) == 'True'
-if not on_rtd: # only import and set the theme if we're building docs locally
+
+if on_rtd:
+    html_theme = 'default'
+else: # only import and set the theme if we're building docs locally
     import sphinx_rtd_theme
     html_theme = 'sphinx_rtd_theme'
-    html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
+    html_theme_path = ['_themes', sphinx_rtd_theme.get_html_theme_path()]
+
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
@@ -135,10 +139,10 @@ if not on_rtd: # only import and set the theme if we're building docs locally
 
 # TEMP: see https://github.com/rtfd/readthedocs.org/issues/1692
 # Add RTD Theme Path.
-if 'html_theme_path' in globals():
-    html_theme_path.append('/home/docs/checkouts/readthedocs.org/readthedocs/templates/sphinx')
-else:
-    html_theme_path = ['_themes', '/home/docs/checkouts/readthedocs.org/readthedocs/templates/sphinx']
+#if 'html_theme_path' in globals():
+#    html_theme_path.append('/home/docs/checkouts/readthedocs.org/readthedocs/templates/sphinx')
+#else:
+#    html_theme_path = ['_themes', '/home/docs/checkouts/readthedocs.org/readthedocs/templates/sphinx']
 
 # The name for this set of Sphinx documents.  If None, it defaults to
 # "<project> v<release> documentation".
