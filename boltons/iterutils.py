@@ -664,7 +664,7 @@ def remap(root, visit=default_visit, enter=default_enter, exit=default_exit,
     dictionary. Not bad for a one-liner, and that's just the beginning.
     See `this remap cookbook`_ for more delicious recipes.
 
-    .. _this remap cookbook: http://sedimental.org/remap_nested_data_multitool_for_python.html
+    .. _this remap cookbook: http://sedimental.org/remap.html
 
     remap takes four main arguments: the object to traverse and three
     optional callables which determine how the remapped object will be
@@ -730,7 +730,7 @@ def remap(root, visit=default_visit, enter=default_enter, exit=default_exit,
     function call the default behavior before or after your custom
     logic. See `this example`_.
 
-    .. _this example: http://sedimental.org/remap_nested_data_multitool_for_python.html#sort_all_lists
+    .. _this example: http://sedimental.org/remap.html#sort_all_lists
     """
     # TODO: improve argument formatting in sphinx doc
     # TODO: enter() return (False, items) to continue traverse but cancel copy?
