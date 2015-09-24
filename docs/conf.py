@@ -117,6 +117,8 @@ intersphinx_mapping = {'python': ('https://docs.python.org/2.7', None)}
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
+from pprint import pprint
+pprint(os.environ)  # tmp
 on_rtd = os.environ.get('READTHEDOCS', None) == 'True'
 if not on_rtd: # only import and set the theme if we're building docs locally
     import sphinx_rtd_theme
