@@ -98,8 +98,8 @@ project = u'boltons'
 copyright = u'2015, Mahmoud Hashemi'
 author = u'Mahmoud Hashemi'
 
-version = '15.0'
-release = '15.0.0'
+version = '15.1'
+release = '15.1.0'
 
 if os.name != 'nt':
     today_fmt = '%B %e, %Y'
