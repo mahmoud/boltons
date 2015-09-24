@@ -19,6 +19,8 @@ including:
     :mod:`~boltons.iterutils`
   * A full-featured :class:`~boltons.tbutils.TracebackInfo` type, for
     representing stack traces, in :mod:`~boltons.tbutils`
+  * Recursive mapping for nested data transforms, with :func:`remap
+    <boltons.iterutils.remap>`
 
 And that's just a small selection. As of |today|, ``boltons`` is
 |b_type_count| types and |b_func_count| functions spread across
