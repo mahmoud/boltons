@@ -597,6 +597,9 @@ def default_visit(path, key, value):
     # print('visit(%r, %r, %r)' % (path, key, value))
     return key, value
 
+# enable the extreme: monkeypatching iterutils with a different default_visit
+_orig_default_visit = default_visit
+
 
 def default_enter(path, key, value):
     # print('enter(%r, %r)' % (key, value))
@@ -774,7 +777,7 @@ def remap(root, visit=default_visit, enter=default_enter, exit=default_exit,
                 if new_items:
                     stack.extend(reversed(list(new_items)))
                 continue
-        if visit is default_visit:
+        if visit is _orig_default_visit:
             # avoid function call overhead by inlining identity operation
             visited_item = (key, value)
         else:
