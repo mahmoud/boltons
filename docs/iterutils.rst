@@ -26,11 +26,11 @@ present in the standard library.
 Nested
 ------
 
-Nested structures are common. Virtually all compact Python iterative
-interaction is flat (list comprehensions, map/filter, generator
-expressions, itertools, even other iterutils). These functions make
-working with nested iterables and other containers as succinct and
-powerful as Python itself.
+Nested data structures are common. Yet virtually all of Python's
+compact iteration tools work with flat data: list comprehensions,
+map/filter, generator expressions, itertools, even other
+iterutils. These functions make working with nested iterables and
+other containers as succinct and powerful as Python itself.
 
 .. autofunction:: remap
 
