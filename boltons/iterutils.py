@@ -730,7 +730,12 @@ def remap(root, visit=default_visit, enter=default_enter, exit=default_exit,
     function call the default behavior before or after your custom
     logic. See `this example`_.
 
+    Duplicate and self-referential objects (aka reference loops) are
+    automatically handled internally, `as shown here`_.
+
     .. _this example: http://sedimental.org/remap.html#sort_all_lists
+    .. _as shown here: http://sedimental.org/remap.html#corner_cases
+
     """
     # TODO: improve argument formatting in sphinx doc
     # TODO: enter() return (False, items) to continue traverse but cancel copy?
