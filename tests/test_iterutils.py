@@ -7,6 +7,7 @@ from boltons.iterutils import (first,
                                default_enter,
                                default_exit,
                                get_path)
+from boltons.namedutils import namedtuple
 
 
 isbool = lambda x: isinstance(x, bool)
@@ -120,6 +121,26 @@ class TestRemap(object):
         remapped = remap(duperef)
         assert remapped[0] is remapped[1]
         assert remapped[0] is not duperef[0]
+
+    def test_namedtuple(self):
+        """TODO: this fails right now because namedtuples' __new__ is
+        overridden to accept arguments. remap's default_enter tries
+        to create an empty namedtuple and gets a TypeError.
+
+        Could make it so that immutable types actually don't create a
+        blank new parent and instead use the old_parent as a
+        placeholder, creating a new one at exit-time from the value's
+        __class__ (how default_exit works now). But even then it would
+        have to *args in the values, as namedtuple constructors don't
+        take an iterable.
+        """
+
+        Point = namedtuple('Point', 'x y')
+        point_map = {'origin': [Point(0, 0)]}
+
+        with pytest.raises(TypeError):
+            remapped = remap(point_map)
+            assert isinstance(remapped['origin'][0], Point)
 
     def test_path(self):
         path_map = {}
