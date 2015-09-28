@@ -1,8 +1,12 @@
 
 import pytest
 
-from boltons.iterutils import first, remap, default_enter, default_exit
 from boltons.dictutils import OMD
+from boltons.iterutils import (first,
+                               remap,
+                               default_enter,
+                               default_exit,
+                               get_path)
 
 
 isbool = lambda x: isinstance(x, bool)
@@ -308,3 +312,19 @@ class TestRemap(object):
                {'name': 'IE', 'rank': None, 'id': 3}]
         remapped = remap(orig, enter=enter)
         assert remapped == ref
+
+
+class TestGetPath(object):
+    def test_depth_one(self):
+        root = ['test']
+        assert get_path(root, (0,)) == 'test'
+        assert get_path(root, '0') == 'test'
+
+        root = {'key': 'value'}
+        assert get_path(root, ('key',)) == 'value'
+        assert get_path(root, 'key') == 'value'
+
+    def test_depth_two(self):
+        root = {'key': ['test']}
+        assert get_path(root, ('key', 0)) == 'test'
+        assert get_path(root, 'key.0') == 'test'

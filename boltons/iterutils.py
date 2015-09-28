@@ -20,9 +20,11 @@ from collections import Mapping, Sequence, Set, ItemsView
 
 try:
     from typeutils import make_sentinel
+    _UNSET = make_sentinel('_UNSET')
     _REMAP_EXIT = make_sentinel('_REMAP_EXIT')
 except ImportError:
     _REMAP_EXIT = object()
+    _UNSET = object()
 
 try:
     from itertools import izip
@@ -805,6 +807,77 @@ def remap(root, visit=default_visit, enter=default_enter, exit=default_exit,
             raise TypeError('expected remappable root, not: %r' % root)
     return value
 
+
+class PathAccessError(KeyError, IndexError, TypeError):
+    # TODO: could maybe get fancy with an isinstance
+    def __init__(self, exc, seg, path):
+        self.exc = exc
+        self.seg = seg
+        self.path = path
+
+    def __repr__(self):
+        cn = self.__class__.__name__
+        return '%s(%r, %r, %r)' % (cn, self.exc, self.seg, self.path)
+
+    def __str__(self):
+        return ('could not access %r from path %r, got error: %r'
+                % (self.seg, self.path, self.exc))
+
+
+def get_path(root, path, default=_UNSET):
+    """EAFP is great, but the error message on this isn't:
+
+    var_key = 'last_key'
+    x['key'][-1]['other_key'][var_key]
+
+    One of get_path's chief aims is to have a good exception that is
+    better than a plain old KeyError: 'missing_key'
+    """
+    # TODO: integrate default
+    # TODO: listify kwarg? to allow indexing into sets
+    # TODO: raise better error on not iterable?
+    try:
+        path = path.split('.')
+    except AttributeError:
+        pass
+    cur = root
+    for seg in path:
+        try:
+            cur = cur[seg]
+        except (KeyError, IndexError) as exc:
+            raise PathAccessError(exc, seg, path)
+        except TypeError:
+            # either string index in a list, or a parent that
+            # doesn't support indexing
+            try:
+                seg = int(seg)
+                cur = cur[seg]
+            except (KeyError, IndexError, TypeError):
+                raise PathAccessError(exc, seg, path)
+    return cur
+
 # TODO: get_path/set_path
 # TODO: recollect()
 # TODO: reiter()
+
+"""
+May actually be faster to do an isinstance check for a str path
+
+$ python -m timeit -s "x = [1]" "x[0]"
+10000000 loops, best of 3: 0.0207 usec per loop
+$ python -m timeit -s "x = [1]" "try: x[0] \nexcept: pass"
+10000000 loops, best of 3: 0.029 usec per loop
+$ python -m timeit -s "x = [1]" "try: x[1] \nexcept: pass"
+1000000 loops, best of 3: 0.315 usec per loop
+# setting up try/except is fast, only around 0.01us
+# actually triggering the exception takes almost 10x as long
+
+$ python -m timeit -s "x = [1]" "isinstance(x, basestring)"
+10000000 loops, best of 3: 0.141 usec per loop
+$ python -m timeit -s "x = [1]" "isinstance(x, str)"
+10000000 loops, best of 3: 0.131 usec per loop
+$ python -m timeit -s "x = [1]" "try: x.split('.')\n except: pass"
+1000000 loops, best of 3: 0.443 usec per loop
+$ python -m timeit -s "x = [1]" "try: x.split('.') \nexcept AttributeError: pass"
+1000000 loops, best of 3: 0.544 usec per loop
+"""
