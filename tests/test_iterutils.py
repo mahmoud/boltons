@@ -54,8 +54,6 @@ class TestFirst(object):
 
 
 class TestRemap(object):
-    # TODO: test enter return (prepopulated_collection, False)
-    # TODO: test which counts the number of visit calls
     # TODO: test namedtuples and other immutable containers
 
     def test_basic_clone(self):
@@ -180,7 +178,6 @@ class TestRemap(object):
         orig = [0, 1, 2, [3, 4, [5, target_set]]]
         ref_path = (3, 2, 1)
 
-        # TODO: reverse order of new_items, new_parent
         def exit(path, key, old_parent, new_parent, new_items):
             if old_parent is target_set:
                 path_map['target_set'] = path + (key,)
