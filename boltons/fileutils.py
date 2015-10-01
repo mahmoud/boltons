@@ -263,7 +263,9 @@ class AtomicSaver(object):
             ``True`` in situations when multiple threads or processes
             could be writing to the same part file.
         part_perms (int): Integer representation of file permissions
-            of the short-lived part file.
+            of the short-lived part file. Defaults to the file
+            permissions of the destination file, if it exists, otherwise
+            0600.
 
     Practically, the AtomicSaver serves a few purposes:
 
@@ -282,7 +284,7 @@ class AtomicSaver(object):
         self.overwrite = kwargs.pop('overwrite', True)
         self.overwrite_part = kwargs.pop('overwrite_part', False)
         self.part_filename = kwargs.pop('part_file', None)
-        self.part_file_perms = kwargs.pop('part_perms', USER_RW_ONLY_PERMS)
+        self.part_file_perms = kwargs.pop('part_perms', None)
         self.rm_part_on_exc = kwargs.pop('rm_part_on_exc', True)
         self.text_mode = kwargs.pop('text_mode', False)  # for windows
         self.buffering = kwargs.pop('buffering', -1)
@@ -301,6 +303,13 @@ class AtomicSaver(object):
         self.part_file = None
 
     def _open_part_file(self):
+        if self.part_file_perms is None:
+            try:
+                stat_res = os.stat(self.dest_path)
+                self.part_file_perms = stat.S_IMODE(stat_res.st_mode)
+            except (OSError, IOError):
+                self.part_file_perms = USER_RW_ONLY_PERMS
+
         fd = os.open(self.part_path, self.open_flags, self.part_file_perms)
         set_cloexec(fd)
         self.part_file = os.fdopen(fd, self.mode, self.buffering)
@@ -463,5 +472,4 @@ copytree = copy_tree  # alias for drop-in replacement of shutil
 if __name__ == '__main__':
     with atomic_save('/tmp/final.txt') as f:
         f.write('rofl')
-        raise ValueError('nope')
         f.write('\n')
