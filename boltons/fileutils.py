@@ -19,6 +19,7 @@ __all__ = ['mkdir_p', 'atomic_save', 'AtomicSaver', 'FilePerms',
 
 
 FULL_PERMS = 511  # 0777 that both Python 2 and 3 can digest
+RW_PERMS = 438
 USER_RW_ONLY_PERMS = 384  # 0600 that both Python 2 and 3 can digest
 _SINGLE_FULL_PERM = 7  # or 07 in Python 2
 try:
@@ -244,6 +245,12 @@ class AtomicSaver(object):
     Args:
         dest_path (str): The path where the completed file will be
             written.
+        dest_perms (int): Integer representation of file permissions
+            of the destination file. Defaults are, when overwriting,
+            to carry over permissions from the previous file, or if
+            the file did not exist, default to read-write permissions,
+            respecting the user's configured `umask`_, usually
+            resulting in octal 644 or 664.
         overwrite (bool): Whether to overwrite the destination file if
             it exists at completion time. Defaults to ``True``.
         part_file (str): Name of the temporary *part_file*. Defaults
@@ -263,9 +270,8 @@ class AtomicSaver(object):
             ``True`` in situations when multiple threads or processes
             could be writing to the same part file.
         part_perms (int): Integer representation of file permissions
-            of the short-lived part file. Defaults to the file
-            permissions of the destination file, if it exists, otherwise
-            0600.
+            of the short-lived part file. Defaults to owner read/write
+            (octal 600). Pass ``None`` to use umask.
 
     Practically, the AtomicSaver serves a few purposes:
 
@@ -276,6 +282,7 @@ class AtomicSaver(object):
       * Optional recovery of partial data in failure cases.
 
     .. _context manager: https://docs.python.org/2/reference/compound_stmts.html#with
+    .. _umask: https://en.wikipedia.org/wiki/Umask
 
     """
     # TODO: option to abort if target file modify date has changed since start?
@@ -284,7 +291,8 @@ class AtomicSaver(object):
         self.overwrite = kwargs.pop('overwrite', True)
         self.overwrite_part = kwargs.pop('overwrite_part', False)
         self.part_filename = kwargs.pop('part_file', None)
-        self.part_file_perms = kwargs.pop('part_perms', None)
+        self.part_file_perms = kwargs.pop('part_perms', USER_RW_ONLY_PERMS)
+        self.dest_file_perms = kwargs.pop('dest_perms', None)
         self.rm_part_on_exc = kwargs.pop('rm_part_on_exc', True)
         self.text_mode = kwargs.pop('text_mode', False)  # for windows
         self.buffering = kwargs.pop('buffering', -1)
@@ -301,16 +309,20 @@ class AtomicSaver(object):
         self.open_flags = _TEXT_OPENFLAGS if self.text_mode else _BIN_OPENFLAGS
 
         self.part_file = None
+        self._umask_perms = None
+        self._prev_dest_perms = None
 
     def _open_part_file(self):
-        if self.part_file_perms is None:
-            try:
-                stat_res = os.stat(self.dest_path)
-                self.part_file_perms = stat.S_IMODE(stat_res.st_mode)
-            except (OSError, IOError):
-                self.part_file_perms = USER_RW_ONLY_PERMS
+        try:
+            stat_res = os.stat(self.dest_path)
+            self._prev_dest_perms = stat.S_IMODE(stat_res.st_mode)
+        except (OSError, IOError):
+            self._prev_dest_perms = None
 
-        fd = os.open(self.part_path, self.open_flags, self.part_file_perms)
+        fd = os.open(self.part_path, self.open_flags, RW_PERMS)
+        self._umask_perms = stat.S_IMODE(os.stat(self.part_path).st_mode)
+        if self.part_file_perms is not None:
+            os.chmod(self.part_path, self.part_file_perms)
         set_cloexec(fd)
         self.part_file = os.fdopen(fd, self.mode, self.buffering)
 
@@ -337,6 +349,13 @@ class AtomicSaver(object):
             os.unlink(self.part_path)
         self._open_part_file()
 
+        if self.dest_file_perms is None:
+            if self._prev_dest_perms is not None:
+                self.dest_file_perms = self._prev_dest_perms
+            else:
+                self.dest_file_perms = self._umask_perms
+        return
+
     def __enter__(self):
         self.setup()
         return self.part_file
@@ -357,6 +376,10 @@ class AtomicSaver(object):
             if self.rm_part_on_exc:
                 os.unlink(self.part_path)
             raise  # could not save destination file
+
+        # set permissions on destination file
+        # self.dest_file_perms comes from the args or self.setup()
+        os.chmod(self.dest_path, self.dest_file_perms)
         return
 
 
@@ -471,5 +494,5 @@ copytree = copy_tree  # alias for drop-in replacement of shutil
 
 if __name__ == '__main__':
     with atomic_save('/tmp/final.txt') as f:
-        f.write('rofl')
+        f.write('lmao')
         f.write('\n')
