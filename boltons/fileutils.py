@@ -258,20 +258,21 @@ class AtomicSaver(object):
             just the filename, and not the full path of the part
             file. Part files are always created in the same directory
             as the destination path. Otherwise, saving may not be atomic.
-        rm_part_on_exc (bool): Remove *part_file* on exception cases.
-            Defaults to ``True``, but ``False`` can be useful for
-            recovery in some cases. Note that resumption is not
-            automatic and by default an :exc:`OSError` is raised if
-            the *part_file* exists.
+        part_perms (int): Integer representation of file permissions
+            of the short-lived part file. Defaults to owner read/write
+            (octal 600). Explicitly pass ``None`` to use `umask`_ as in
+            *dest_perms*.
         overwrite_part (bool): Whether to overwrite the *part_file*,
             should it exist at setup time. Defaults to ``False``,
             which results in an :exc:`OSError` being raised on
             pre-existing part files. Be careful of setting this to
             ``True`` in situations when multiple threads or processes
             could be writing to the same part file.
-        part_perms (int): Integer representation of file permissions
-            of the short-lived part file. Defaults to owner read/write
-            (octal 600). Pass ``None`` to use umask.
+        rm_part_on_exc (bool): Remove *part_file* on exception cases.
+            Defaults to ``True``, but ``False`` can be useful for
+            recovery in some cases. Note that resumption is not
+            automatic and by default an :exc:`OSError` is raised if
+            the *part_file* exists.
 
     Practically, the AtomicSaver serves a few purposes:
 
