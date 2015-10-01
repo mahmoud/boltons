@@ -245,29 +245,29 @@ class AtomicSaver(object):
     Args:
         dest_path (str): The path where the completed file will be
             written.
+        overwrite (bool): Whether to overwrite the destination file if
+            it exists at completion time. Defaults to ``True``.
         dest_perms (int): Integer representation of file permissions
             of the destination file. Defaults are, when overwriting,
             to carry over permissions from the previous file, or if
             the file did not exist, default to read-write permissions,
             respecting the user's configured `umask`_, usually
             resulting in octal 644 or 664.
-        overwrite (bool): Whether to overwrite the destination file if
-            it exists at completion time. Defaults to ``True``.
         part_file (str): Name of the temporary *part_file*. Defaults
             to *dest_path* + ``.part``. Note that this argument is
             just the filename, and not the full path of the part
             file. Part files are always created in the same directory
             as the destination path. Otherwise, saving may not be atomic.
-        part_perms (int): Integer representation of file permissions
-            of the short-lived part file. Defaults to owner read/write
-            (octal 600). Explicitly pass ``None`` to use `umask`_ as in
-            *dest_perms*.
         overwrite_part (bool): Whether to overwrite the *part_file*,
             should it exist at setup time. Defaults to ``False``,
             which results in an :exc:`OSError` being raised on
             pre-existing part files. Be careful of setting this to
             ``True`` in situations when multiple threads or processes
             could be writing to the same part file.
+        part_perms (int): Integer representation of file permissions
+            of the short-lived part file. Defaults to owner read/write
+            (octal 600). Explicitly pass ``None`` to use `umask`_ as in
+            *dest_perms*.
         rm_part_on_exc (bool): Remove *part_file* on exception cases.
             Defaults to ``True``, but ``False`` can be useful for
             recovery in some cases. Note that resumption is not
