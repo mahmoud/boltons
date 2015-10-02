@@ -1,2 +1,4 @@
 py==1.4.26
 pytest==2.7.0
+tox==1.9.2
+virtualenv==12.1.1
