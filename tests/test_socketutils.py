@@ -13,21 +13,29 @@ from boltons.socketutils import (NetstringSocket,
 def netstring_server(server_socket):
     "A basic netstring server loop, supporting a few operations"
     running = True
-    while running:
-        clientsock, addr = server_socket.accept()
-        client = NetstringSocket(clientsock)
-        while 1:
-            request = client.read_ns()
-            if request == b'close':
-                clientsock.close()
-                break
-            elif request == b'shutdown':
-                running = False
-                break
-            elif request == b'reply4k':
-                client.write_ns(b'a' * 4096)
-            elif request == b'ping':
-                client.write_ns(b'pong')
+    try:
+        while running:
+            clientsock, addr = server_socket.accept()
+            client = NetstringSocket(clientsock)
+            while 1:
+                request = client.read_ns()
+                if request == b'close':
+                    clientsock.close()
+                    break
+                elif request == b'shutdown':
+                    running = False
+                    break
+                elif request == b'reply4k':
+                    client.write_ns(b'a' * 4096)
+                elif request == b'ping':
+                    client.write_ns(b'pong')
+                elif request == b'reply128k':
+                    client.setmaxsize(128 * 1024)
+                    client.write_ns(b'huge' * 32 * 1024)  # 128kb
+                    client.setmaxsize(32768)  # back to default
+    except Exception as e:
+        print(b'netstring_server exiting with error: %r' % e)
+        raise
     return
 
 
@@ -69,6 +77,14 @@ def test_socketutils_netstring():
         raise Exception('read from closed socket')
     except ConnectionClosed:
         print("raised ConnectionClosed correctly")
+
+    # test big messages
+    client = client_connect()
+    client.setmaxsize(128 * 1024)
+    client.write_ns(b'reply128k')
+    res = client.read_ns()
+    assert len(res) == (128 * 1024)
+    client.write_ns(b'close')
 
     # test that read timeouts work
     client = client_connect()

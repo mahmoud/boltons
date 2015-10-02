@@ -149,17 +149,20 @@ class BufferedSocket(object):
             timeout = self.timeout
         if flags:
             raise ValueError("flags not supported")
-        self.sbuf = [b''.join(self.sbuf) + data]
+        sbuf = self.sbuf
+        sbuf.append(data)
+        if len(sbuf) > 1:
+            sbuf[:] = [b''.join(sbuf)]
         self.sock.settimeout(timeout)
         start = time.time()
         try:
-            while self.sbuf[0]:
-                sent = self.sock.send(data)
-                self.sbuf[0] = self.sbuf[0][sent:]
+            while sbuf[0]:
+                sent = self.sock.send(sbuf[0])
+                sbuf[0] = sbuf[0][sent:]
                 self.sock.settimeout(timeout - (time.time() - start))
         except socket.timeout:
             raise Timeout(
-                timeout, "{0} bytes unsent".format(len(self.sbuf[0])))
+                timeout, "{0} bytes unsent".format(len(sbuf[0])))
 
     sendall = send
 
