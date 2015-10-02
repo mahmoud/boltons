@@ -321,11 +321,16 @@ class AtomicSaver(object):
             self._prev_dest_perms = None
 
         fd = os.open(self.part_path, self.open_flags, RW_PERMS)
-        self._umask_perms = stat.S_IMODE(os.stat(self.part_path).st_mode)
-        if self.part_file_perms is not None:
-            os.chmod(self.part_path, self.part_file_perms)
         set_cloexec(fd)
         self.part_file = os.fdopen(fd, self.mode, self.buffering)
+        try:
+            self._umask_perms = stat.S_IMODE(os.stat(self.part_path).st_mode)
+            if self.part_file_perms is not None:
+                os.chmod(self.part_path, self.part_file_perms)
+        except (OSError, IOError):
+            self.part_file.close()
+            raise
+        return
 
     def setup(self):
         """Called on context manager entry (the :keyword:`with` statement),
