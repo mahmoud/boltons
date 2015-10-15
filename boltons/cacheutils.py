@@ -16,27 +16,23 @@ statistics are:
     the cache
   * ``miss_count`` - the number of times a key has been absent and/or
     fetched by the cache
-
   * ``soft_miss_count`` - the number of times a key has been absent,
     but a default has been provided by the caller, as with
     :meth:`dict.get` and :meth:`dict.setdefault`. Soft misses are a
     subset of misses, so this number is always less than or equal to
     ``miss_count``.
 
-Additionally, ``cacheutils`` the cache-like bounded counter,
-:class:`ThresholdCounter`.
+Additionally, ``cacheutils`` provides :class:`ThresholdCounter`, a
+cache-like bounded counter useful for online statistics collection.
 
 Learn more about `caching algorithms on Wikipedia
 <https://en.wikipedia.org/wiki/Cache_algorithms#Examples>`_.
 
 """
 
-# TODO: clarify soft_miss_count. is it for .get and .set_default or is
-# it for when on_miss provides a value. also, should on_miss itself be
-# allowed to raise a KeyError
-
 # TODO: TimedLRI
 # TODO: support 0 max_size?
+
 __all__ = ['LRI', 'LRU', 'cached', 'ThresholdCache']
 
 import itertools
