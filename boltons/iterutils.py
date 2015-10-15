@@ -810,6 +810,7 @@ def remap(root, visit=default_visit, enter=default_enter, exit=default_exit,
 
 class PathAccessError(KeyError, IndexError, TypeError):
     # TODO: could maybe get fancy with an isinstance
+    # TODO: should accept an idx argument
     def __init__(self, exc, seg, path):
         self.exc = exc
         self.seg = seg
@@ -829,6 +830,7 @@ def get_path(root, path, default=_UNSET):
 
     var_key = 'last_key'
     x['key'][-1]['other_key'][var_key]
+    KeyError: 'last_key'
 
     One of get_path's chief aims is to have a good exception that is
     better than a plain old KeyError: 'missing_key'
@@ -836,10 +838,8 @@ def get_path(root, path, default=_UNSET):
     # TODO: integrate default
     # TODO: listify kwarg? to allow indexing into sets
     # TODO: raise better error on not iterable?
-    try:
+    if isinstance(path, basestring):
         path = path.split('.')
-    except AttributeError:
-        pass
     cur = root
     for seg in path:
         try:
