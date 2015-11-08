@@ -37,12 +37,13 @@ The four `Standardized moments`_ are:
 
 For more information check out `the Moment article on Wikipedia`_.
 
-.. _moment: http://en.wikipedia.org/wiki/Moment_(mathematics)
-.. _Standardied moments: https://en.wikipedia.org/wiki/Standardized_moment
+.. _moment: https://en.wikipedia.org/wiki/Moment_(mathematics)
+.. _Standardized moments: https://en.wikipedia.org/wiki/Standardized_moment
 .. _Mean: https://en.wikipedia.org/wiki/Mean
 .. _Variance: https://en.wikipedia.org/wiki/Variance
 .. _Skewness: https://en.wikipedia.org/wiki/Skewness
 .. _Kurtosis: https://en.wikipedia.org/wiki/Kurtosis
+.. _the Moment article on Wikipedia: https://en.wikipedia.org/wiki/Moment_(mathematics)
 
 Keep in mind that while these moments can give a bit more insight into
 the shape and distribution of data, they do not guarantee a complete
@@ -67,6 +68,7 @@ dilemma. ``statsutils`` also includes several robust statistical methods:
 .. _Trimean: https://en.wikipedia.org/wiki/Trimean
 .. _Median Absolute Deviation: https://en.wikipedia.org/wiki/Median_absolute_deviation
 .. _Trimming: https://en.wikipedia.org/wiki/Trimmed_estimator
+
 
 Online and Offline Statistics
 -----------------------------

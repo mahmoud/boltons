@@ -17,6 +17,8 @@ try:
 except NameError:
     # Python 3
     make_method = lambda desc, obj, obj_type: MethodType(desc, obj)
+    basestring = (str, bytes)  # Python 3 compat
+
 
 
 def get_module_callables(mod, ignore=None):
