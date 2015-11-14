@@ -1,6 +1,11 @@
 TODO
 ====
 
+cacheutils
+----------
+
+- counting dictionary (with sys.modules example)
+
 dictutils
 ---------
 

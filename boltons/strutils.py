@@ -27,7 +27,7 @@ except NameError:  # basestring not defined in Python 3
 __all__ = ['camel2under', 'under2camel', 'slugify', 'split_punct_ws',
            'unit_len', 'ordinalize', 'cardinalize', 'pluralize', 'singularize',
            'asciify', 'html2text', 'strip_ansi', 'bytes2human', 'find_hashtags',
-           'a10n', 'gunzip_bytes']  # 'StringBuffer']
+           'a10n', 'gunzip_bytes', 'iter_splitlines']  # 'StringBuffer']
 
 
 _punct_ws_str = string.punctuation + string.whitespace
