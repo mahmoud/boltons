@@ -352,6 +352,10 @@ class Stats(object):
         return self._get_quantile(self._get_sorted_data(), q)
 
     def get_zscore(self, value):
+        """Get the z-score for *value* in the group. If the standard deviation
+        is 0, 0 inf or -inf will be returned to indicate whether the value is
+        equal to, greater than or below the group's mean.
+        """
         mean = self.mean
         if self.std_dev == 0:
             if value == mean:
