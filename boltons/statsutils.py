@@ -351,6 +351,17 @@ class Stats(object):
             raise ValueError('expected q between 0.0 and 1.0, not %r' % q)
         return self._get_quantile(self._get_sorted_data(), q)
 
+    def get_zscore(self, value):
+        mean = self.mean
+        if self.std_dev == 0:
+            if value == mean:
+                return 0
+            if value > mean:
+                return float('inf')
+            if value < mean:
+                return float('-inf')
+        return (float(value) - mean) / self.std_dev
+
     def trim_relative(self, amount=0.15):
         """A utility function used to cut a proportion of values off each end
         of a list of values. This has the effect of limiting the
