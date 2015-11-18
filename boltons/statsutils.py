@@ -156,7 +156,10 @@ class Stats(object):
 
     def clear_cache(self):
         for attr_name in self._prop_attr_names:
-            delattr(self, getattr(self.__class__, attr_name).internal_name)
+            attr_name = getattr(self.__class__, attr_name).internal_name
+            if not hasattr(self, attr_name):
+                continue
+            delattr(self, attr_name)
 
     def _calc_mean(self):
         """
