@@ -156,7 +156,10 @@ class Stats(object):
 
     def clear_cache(self):
         for attr_name in self._prop_attr_names:
-            delattr(self, getattr(self.__class__, attr_name).internal_name)
+            attr_name = getattr(self.__class__, attr_name).internal_name
+            if not hasattr(self, attr_name):
+                continue
+            delattr(self, attr_name)
 
     def _calc_mean(self):
         """
@@ -347,6 +350,21 @@ class Stats(object):
         if not 0.0 <= q <= 1.0:
             raise ValueError('expected q between 0.0 and 1.0, not %r' % q)
         return self._get_quantile(self._get_sorted_data(), q)
+
+    def get_zscore(self, value):
+        """Get the z-score for *value* in the group. If the standard deviation
+        is 0, 0 inf or -inf will be returned to indicate whether the value is
+        equal to, greater than or below the group's mean.
+        """
+        mean = self.mean
+        if self.std_dev == 0:
+            if value == mean:
+                return 0
+            if value > mean:
+                return float('inf')
+            if value < mean:
+                return float('-inf')
+        return (float(value) - mean) / self.std_dev
 
     def trim_relative(self, amount=0.15):
         """A utility function used to cut a proportion of values off each end
