@@ -1,4 +1,5 @@
 docs/_build
+tmp.py
 
 *.py[cod]
 
