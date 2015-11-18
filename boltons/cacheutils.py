@@ -39,7 +39,7 @@ import itertools
 from collections import deque
 
 try:
-    from _thread import RLock
+    from threading import RLock
 except:
     class RLock(object):
         'Dummy reentrant lock for builds without threads'
