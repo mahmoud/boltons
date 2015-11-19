@@ -1,8 +1,38 @@
 boltons Changelog
 =================
 
-Since February 20, 2013 there have been 16 releases and 675 commits for
-an average of one 42-commit release every 2.1 months.
+Changelog
+=========
+
+Since February 20, 2013 there have been 17 releases and 714 commits for
+an average of one 42-commit release every 8.4 weeks.
+
+15.1.1
+------
+*(November 18, 2015)*
+
+A lot of bugfixes and docfixes in 15.1.1.
+
+updated AtomicSaver for better permissions handling, update
+BufferedSocket message sending, beta version of iterutils.get_path,
+several docs fixes, Stats zscore and cache bugfix, and an LRU refactor
+with significantly improved behavior and code factoring.
+
+  * Updated [fileutils.AtomicSaver][fileutils.AtomicSaver] handling of
+    filesystem permissions to be simpler and more secure. This also
+    merges `dest_perms` and `part_perms` arguments to AtomicSaver and
+    atomic_save.
+  * Fix large message sending with [socketutils.BufferedSocket][socketutils.BufferedSocket]
+  * [strutils.iter_splitlines][strutils.iter_splitlines] is now in the docs.
+  * [cacheutils][cacheutils]: now imports RLock from the right place for python 2
+  * [statsutils][statsutils]: Only `delattr` when `hasattr` in
+    [Stats.clear_cache][statsutils.Stats.clearcache]
+  * [statsutils.Stats][statsutils.Stats]: Add
+    [Stats.get_zscore][statsutils.Stats.get_zscore] to support
+    calculating the [z-score][zscore] (see also: t-statistic)
+  * [cacheutils.LRU][cacheutils.LRU]: Massive refactor of the backing
+    linked list for better handling of duplicate data in the
+    cache. More aggressive locking and better `__eq__`
 
 15.1.0
 ------
@@ -423,7 +453,7 @@ added in this release.
   * [iterutils.split][iterutils.split] and [iterutils.split_iter][iterutils.split_iter] work
 
 
-
+[cacheutils]: http://boltons.readthedocs.org/en/latest/cacheutils.html
 [cacheutils.LRU]: http://boltons.readthedocs.org/en/latest/cacheutils.html#boltons.cacheutils.LRU
 [cacheutils.ThresholdCounter]: http://boltons.readthedocs.org/en/latest/cacheutils.html#boltons.cacheutils.ThresholdCounter
 [cacheutils.cached]: http://boltons.readthedocs.org/en/latest/cacheutils.html#boltons.cacheutils.cached
@@ -470,7 +500,10 @@ added in this release.
 [mathutils.floor]: http://boltons.readthedocs.org/en/latest/mathutils.html#boltons.mathutils.floor
 [socketutils.BufferedSocket]: http://boltons.readthedocs.org/en/latest/socketutils.html#boltons.socketutils.BufferedSocket
 [socketutils.NetstringSocket]: http://boltons.readthedocs.org/en/latest/socketutils.html#boltons.socketutils.NetstringSocket
+[statsutils]: http://boltons.readthedocs.org/en/latest/statsutils.html
 [statsutils.Stats]: http://boltons.readthedocs.org/en/latest/statsutils.html#boltons.statsutils.Stats
+[statsutils.Stats.clearcache]: http://boltons.readthedocs.org/en/latest/statsutils.html#boltons.statsutils.Stats.clear_cache
+[statsutils.Stats.get_zscore]: http://boltons.readthedocs.org/en/latest/statsutils.html#boltons.statsutils.Stats.get_zscore
 [statsutils.median]: http://boltons.readthedocs.org/en/latest/statsutils.html#boltons.statsutils.median
 [statsutils.trimean]: http://boltons.readthedocs.org/en/latest/statsutils.html#boltons.statsutils.trimean
 [strutils.HTMLTextExtractor]: http://boltons.readthedocs.org/en/latest/strutils.html#boltons.strutils.HTMLTextExtractor
@@ -490,3 +523,4 @@ added in this release.
 [timeutils.parse_timedelta]: http://boltons.readthedocs.org/en/latest/timeutils.html#boltons.timeutils.parse_timedelta
 [typeutils.get_all_subclasses]: http://boltons.readthedocs.org/en/latest/typeutils.html#boltons.typeutils.get_all_subclasses
 [typeutils.make_sentinel]: http://boltons.readthedocs.org/en/latest/typeutils.html#boltons.typeutils.make_sentinel
+[zscore]: https://en.wikipedia.org/wiki/Standard_score
