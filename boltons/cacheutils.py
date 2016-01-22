@@ -134,15 +134,15 @@ class LRU(dict):
         self._link_lookup = {}
         self._anchor = anchor
 
-    def print_ll(self):
+    def _print_ll(self):
         link = self._anchor
-        print '***'
+        print('***')
         while True:
             print(link[KEY], link[VALUE])
             link = link[NEXT]
             if link is self._anchor:
                 break
-        print '***'
+        print('***')
         return
 
     def _get_link_and_move_to_front_of_ll(self, key):
