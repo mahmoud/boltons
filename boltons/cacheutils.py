@@ -134,6 +134,17 @@ class LRU(dict):
         self._link_lookup = {}
         self._anchor = anchor
 
+    def print_ll(self):
+        link = self._anchor
+        print '***'
+        while True:
+            print(link[KEY], link[VALUE])
+            link = link[NEXT]
+            if link is self._anchor:
+                break
+        print '***'
+        return
+
     def _get_link_and_move_to_front_of_ll(self, key):
         # find what will become the newest link. this may raise a
         # KeyError, which is useful to __getitem__ and __setitem__
@@ -148,7 +159,7 @@ class LRU(dict):
         anchor = self._anchor
         second_newest = anchor[PREV]
         second_newest[NEXT] = anchor[PREV] = newest
-        newest[PREV] = newest
+        newest[PREV] = second_newest
         newest[NEXT] = anchor
         return newest
 

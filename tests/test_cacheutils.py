@@ -21,7 +21,7 @@ def test_lri():
     assert len(bc) == 10
 
 
-def test_lru():
+def test_lru_basic():
     lru = LRU(max_size=1)
     repr(lru)                   # sanity
 
@@ -89,6 +89,48 @@ def test_lru():
 
 
 def test_lru_with_dupes():
-    lru = LRU(max_size=2)
+    SIZE = 2
+    lru = LRU(max_size=SIZE)
     for i in [0, 0, 1, 1, 2, 2]:
         lru[i] = i
+        assert _test_linkage(lru._anchor, SIZE + 1), 'linked list invalid'
+
+
+def test_lru_with_dupes_2():
+    "From Issue #55, h/t github.com/mt"
+    SIZE = 3
+    lru = LRU(max_size=SIZE)
+    keys = ['A', 'A', 'B', 'A', 'C', 'B', 'D', 'E']
+    for i, k in enumerate(keys):
+        lru[k] = 'HIT'
+        assert _test_linkage(lru._anchor, SIZE + 1), 'linked list invalid'
+
+    return
+
+
+def _test_linkage(dll, max_count=10000, prev_idx=0, next_idx=1):
+    """A function to test basic invariants of doubly-linked lists (with
+    links made of Python lists).
+
+    1. Test that the list is not longer than a certain length
+    2. That the forward links (indicated by `next_idx`) correspond to
+    the backward links (indicated by `prev_idx`).
+
+    The `dll` parameter is the root/anchor link of the list.
+    """
+    start = cur = dll
+    i = 0
+    prev = None
+    while 1:
+        if i > max_count:
+            raise Exception("did not return to anchor link after %r rounds"
+                            % max_count)
+        if prev is not None and cur is start:
+            break
+        prev = cur
+        cur = cur[next_idx]
+        if cur[prev_idx] is not prev:
+            raise Exception('prev_idx does not point to prev at i = %r' % i)
+        i += 1
+
+    return True
