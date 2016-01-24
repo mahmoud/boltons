@@ -2,7 +2,7 @@ boltons Changelog
 =================
 
 Since February 20, 2013 there have been 18 releases and 721 commits for
-an average of one 42-commit release every 8.4 weeks.
+an average of one 40-commit release every 8.4 weeks.
 
 16.0.0
 ------
@@ -519,6 +519,7 @@ added in this release.
 [strutils.find_hashtags]: http://boltons.readthedocs.org/en/latest/strutils.html#boltons.strutils.find_hashtags
 [strutils.gunzip_bytes]: http://boltons.readthedocs.org/en/latest/strutils.html#boltons.strutils.gunzip_bytes
 [strutils.html2text]: http://boltons.readthedocs.org/en/latest/strutils.html#boltons.strutils.html2text
+[strutils.indent]: http://boltons.readthedocs.org/en/latest/strutils.html#boltons.strutils.indent
 [strutils.iter_splitlines]: http://boltons.readthedocs.org/en/latest/strutils.html#boltons.strutils.iter_splitlines
 [strutils.ordinalize]: http://boltons.readthedocs.org/en/latest/strutils.html#boltons.strutils.ordinalize
 [strutils.pluralize]: http://boltons.readthedocs.org/en/latest/strutils.html#boltons.strutils.pluralize
