@@ -27,7 +27,7 @@ except NameError:  # basestring not defined in Python 3
 __all__ = ['camel2under', 'under2camel', 'slugify', 'split_punct_ws',
            'unit_len', 'ordinalize', 'cardinalize', 'pluralize', 'singularize',
            'asciify', 'html2text', 'strip_ansi', 'bytes2human', 'find_hashtags',
-           'a10n', 'gunzip_bytes', 'iter_splitlines']  # 'StringBuffer']
+           'a10n', 'gunzip_bytes', 'iter_splitlines', 'indent']  # 'StringBuffer']
 
 
 _punct_ws_str = string.punctuation + string.whitespace
@@ -627,3 +627,19 @@ def iter_splitlines(text):
     if tail:
         yield tail
     return
+
+
+def indent(text, margin, newline='\n', key=bool):
+    """The missing counterpart to the built-in :func:`textwrap.dedent`.
+
+    Args:
+        text (str): The text to indent.
+        margin (str): The string to prepend to each line.
+        newline (str): The newline used to rejoin the lines (default: \\n)
+        key (callable): Called on each line to determine whether to
+          indent it. Default: :class:`bool`, to ensure that empty lines do
+          not get whitespace added.
+    """
+    indented_lines = [(margin + line if key(line) else line)
+                      for line in iter_splitlines(text)]
+    return newline.join(indented_lines)
