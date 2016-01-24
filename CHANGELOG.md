@@ -1,11 +1,19 @@
 boltons Changelog
 =================
 
-Changelog
-=========
-
-Since February 20, 2013 there have been 17 releases and 714 commits for
+Since February 20, 2013 there have been 18 releases and 721 commits for
 an average of one 42-commit release every 8.4 weeks.
+
+16.0.0
+------
+
+One important fix and one small but handy string function.
+
+* Fixed an [LRU][cacheutils.LRU] bug related to the 15.1.1
+  refactor. Also enhanced LRU testing with doubly-linked list
+  invariant enforcement.
+* Added [strutils.indent][strutils.indent], the counterpart to
+  [textwrap.dedent](https://docs.python.org/2/library/textwrap.html#textwrap.dedent).
 
 15.1.1
 ------
