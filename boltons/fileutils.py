@@ -490,6 +490,74 @@ def copy_tree(src, dst, symlinks=False, ignore=None):
 copytree = copy_tree  # alias for drop-in replacement of shutil
 
 
+try:
+    file
+except NameError:
+    file = object
+
+
+# like open(os.devnull) but with even fewer side effects
+class DummyFile(file):
+    # TODO: raise ValueErrors on closed for all methods?
+    # TODO: enforce read/write
+    def __init__(self, path, mode='r', buffering=None):
+        self.name = path
+        self.mode = mode
+        self.closed = False
+        self.errors = None
+        self.isatty = False
+        self.encoding = None
+        self.newlines = None
+        self.softspace = 0
+
+    def close(self):
+        self.closed = True
+
+    def fileno(self):
+        return -1
+
+    def flush(self):
+        return
+
+    def next(self):
+        raise StopIteration()
+
+    def read(self, size=0):
+        return ''
+
+    def readline(self, size=0):
+        return ''
+
+    def readlines(self, size=0):
+        return []
+
+    def seek(self):
+        return
+
+    def tell(self):
+        return 0
+
+    def truncate(self):
+        return
+
+    def write(self, string):
+        return
+
+    def writelines(self, list_of_strings):
+        return
+
+    def __next__(self):
+        raise StopIteration()
+
+    def __enter__(self):
+        if self.closed:
+            raise ValueError('I/O operation on a closed file')
+        return
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        return
+
+
 if __name__ == '__main__':
     with atomic_save('/tmp/final.txt') as f:
         f.write('rofl')
