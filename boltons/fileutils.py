@@ -517,33 +517,51 @@ class DummyFile(file):
         return -1
 
     def flush(self):
+        if self.closed:
+            raise ValueError('I/O operation on a closed file')
         return
 
     def next(self):
         raise StopIteration()
 
     def read(self, size=0):
+        if self.closed:
+            raise ValueError('I/O operation on a closed file')
         return ''
 
     def readline(self, size=0):
+        if self.closed:
+            raise ValueError('I/O operation on a closed file')
         return ''
 
     def readlines(self, size=0):
+        if self.closed:
+            raise ValueError('I/O operation on a closed file')
         return []
 
     def seek(self):
+        if self.closed:
+            raise ValueError('I/O operation on a closed file')
         return
 
     def tell(self):
+        if self.closed:
+            raise ValueError('I/O operation on a closed file')
         return 0
 
     def truncate(self):
+        if self.closed:
+            raise ValueError('I/O operation on a closed file')
         return
 
     def write(self, string):
+        if self.closed:
+            raise ValueError('I/O operation on a closed file')
         return
 
     def writelines(self, list_of_strings):
+        if self.closed:
+            raise ValueError('I/O operation on a closed file')
         return
 
     def __next__(self):
