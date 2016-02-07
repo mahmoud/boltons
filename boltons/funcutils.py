@@ -35,7 +35,7 @@ def get_module_callables(mod, ignore=None):
             continue
         try:
             attr = getattr(mod, attr_name)
-        except:
+        except Exception:
             continue
         try:
             attr_mod_name = attr.__module__
@@ -72,7 +72,7 @@ def dir_dict(obj, raise_exc=False):
     for k in dir(obj):
         try:
             ret[k] = getattr(obj, k)
-        except:
+        except Exception:
             if raise_exc:
                 raise
     return ret

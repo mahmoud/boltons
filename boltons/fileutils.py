@@ -368,7 +368,7 @@ class AtomicSaver(object):
             if self.rm_part_on_exc:
                 try:
                     os.unlink(self.part_path)
-                except:
+                except Exception:
                     pass
             return
         try:

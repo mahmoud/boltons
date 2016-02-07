@@ -177,7 +177,7 @@ class JSONLIterator(object):
                 continue
             try:
                 obj = json.loads(line)
-            except:
+            except Exception:
                 if not self.ignore_errors:
                     raise
                 continue

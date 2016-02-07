@@ -394,7 +394,7 @@ class ExceptionInfo(object):
         try:
             len_frames = len(self.tb_info.frames)
             last_frame = ', last=%r' % (self.tb_info.frames[-1],)
-        except:
+        except Exception:
             len_frames = 0
             last_frame = ''
         args = (cn, self.exc_type, self.exc_msg, len_frames, last_frame)
@@ -445,7 +445,7 @@ class ContextualCallpoint(Callpoint):
         DL, lineno = _DeferredLine, self.lineno
         try:
             module_globals = self.line.module_globals
-        except:
+        except Exception:
             module_globals = None
         start_line = max(0, lineno - pivot)
         pre_lines = [DL(self.module_path, ln, module_globals)
@@ -461,7 +461,7 @@ class ContextualCallpoint(Callpoint):
         for k, v in f_locals.items():
             try:
                 local_reprs[k] = repr(v)
-            except:
+            except Exception:
                 surrogate = '<unprintable %s object>' % type(v).__name__
                 local_reprs[k] = surrogate
         return

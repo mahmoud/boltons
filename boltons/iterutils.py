@@ -790,7 +790,7 @@ def remap(root, visit=default_visit, enter=default_enter, exit=default_exit,
         else:
             try:
                 visited_item = visit(path, key, value)
-            except:
+            except Exception:
                 if reraise_visit:
                     raise
                 visited_item = True

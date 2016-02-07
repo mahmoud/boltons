@@ -27,7 +27,7 @@ from itertools import islice
 from collections import Sequence, Mapping, MutableSequence
 try:
     string_types, integer_types = (str, unicode), (int, long)
-except:
+except Exception:
     # Python 3 compat
     unicode = str
     string_types, integer_types = (str, bytes), (int,)
@@ -62,10 +62,10 @@ __all__ = ['Table']
 def to_text(obj, maxlen=None):
     try:
         text = unicode(obj)
-    except:
+    except Exception:
         try:
             text = unicode(repr(obj))
-        except:
+        except Exception:
             text = unicode(object.__repr__(obj))
     if maxlen and len(text) > maxlen:
         text = text[:maxlen - 3] + '...'
@@ -120,7 +120,7 @@ class ObjectInputType(InputType):
             # an object's __dict__ could technically have non-string keys
             try:
                 val = getattr(obj, attr)
-            except:
+            except Exception:
                 # seen on greenlet: `run` shows in dir() but raises
                 # AttributeError. Also properties misbehave.
                 continue
@@ -134,7 +134,7 @@ class ObjectInputType(InputType):
         for h in headers:
             try:
                 values.append(getattr(obj, h))
-            except:
+            except Exception:
                 values.append(None)
         return values
 

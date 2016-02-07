@@ -40,7 +40,7 @@ from collections import deque
 
 try:
     from threading import RLock
-except:
+except Exception:
     class RLock(object):
         'Dummy reentrant lock for builds without threads'
         def __enter__(self):

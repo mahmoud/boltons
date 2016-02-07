@@ -102,7 +102,7 @@ class BufferedSocket(object):
             raise Timeout(
                 timeout, 'read {0} bytes without finding symbol {1}'.format(
                     recvd, marker))
-        except:  # in case of error, retain data read so far in buffer
+        except Exception:  # in case of error, retain data read so far in buffer
             self.rbuf = b''.join(chunks)
             raise
         val, _, self.rbuf = nxt.partition(marker)
@@ -133,7 +133,7 @@ class BufferedSocket(object):
             self.rbuf = b''.join(chunks)
             raise Timeout(
                 timeout, 'read {0} of {1} bytes'.format(total_bytes, size))
-        except:  # in case of error, retain data read so far in buffer
+        except Exception:  # in case of error, retain data read so far in buffer
             self.rbuf = b''.join(chunks)
             raise
         extra_bytes = total_bytes - size
