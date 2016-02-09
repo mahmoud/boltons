@@ -846,13 +846,13 @@ def get_path(root, path, default=_UNSET):
             cur = cur[seg]
         except (KeyError, IndexError) as exc:
             raise PathAccessError(exc, seg, path)
-        except TypeError:
+        except TypeError as exc:
             # either string index in a list, or a parent that
             # doesn't support indexing
             try:
                 seg = int(seg)
                 cur = cur[seg]
-            except (KeyError, IndexError, TypeError):
+            except (ValueError, KeyError, IndexError, TypeError):
                 raise PathAccessError(exc, seg, path)
     return cur
 
