@@ -236,12 +236,13 @@ class Table(object):
     # _html_tfoot, _html_tfoot_close = '<tfoot>', '</tfoot>'
     _html_table_tag, _html_table_tag_close = '<table>', '</table>'
 
-    def __init__(self, data=None, headers=_MISSING):
+    def __init__(self, data=None, headers=_MISSING, metadata=None):
         if headers is _MISSING:
             headers = []
             if data:
                 headers, data = list(data[0]), islice(data, 1, None)
         self.headers = headers or []
+        self.metadata = metadata or {}
         self._data = []
         self._width = 0
 
@@ -392,7 +393,8 @@ class Table(object):
             return '%s(%r)' % (cn, self._data)
 
     def to_html(self, orientation=None, wrapped=True,
-                with_headers=True, with_newlines=True, max_depth=1):
+                with_headers=True, with_newlines=True,
+                with_metadata=True, max_depth=1):
         """Render this Table to HTML. Configure the structure of Table
         HTML by subclassing and overriding ``_html_*`` class
         attributes.
@@ -417,6 +419,17 @@ class Table(object):
         """
         lines = []
         headers = []
+        if with_metadata and self.metadata:
+            metadata_table = Table.from_data(self.metadata,
+                                             max_depth=max_depth)
+            metadata_html = metadata_table.to_html(with_headers=True,
+                                                   with_newlines=with_newlines,
+                                                   with_metadata=False,
+                                                   max_depth=max_depth)
+            if with_metadata != 'bottom':
+                lines.append(metadata_html)
+                lines.append('<br />')
+
         if with_headers and self.headers:
             headers.extend(self.headers)
             headers.extend([None] * (self._width - len(self.headers)))
@@ -435,6 +448,10 @@ class Table(object):
         else:
             raise ValueError("expected one of 'auto', 'vertical', or"
                              " 'horizontal', not %r" % orientation)
+        if with_metadata and self.metadata and with_metadata == 'bottom':
+            lines.append('<br />')
+            lines.append(metadata_html)
+
         if wrapped:
             lines.append(self._html_table_tag_close)
         sep = '\n' if with_newlines else ''
