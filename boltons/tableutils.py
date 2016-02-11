@@ -279,35 +279,39 @@ class Table(object):
         return
 
     @classmethod
-    def from_dict(cls, data, headers=_MISSING, max_depth=1):
+    def from_dict(cls, data, headers=_MISSING, max_depth=1, metadata=None):
         """Create a Table from a :class:`dict`. Operates the same as
         :meth:`from_data`, but forces interpretation of the data as a
         Mapping.
         """
         return cls.from_data(data=data, headers=headers,
-                             max_depth=max_depth, _data_type=DictInputType())
+                             max_depth=max_depth, _data_type=DictInputType(),
+                             metadata=metadata)
 
     @classmethod
-    def from_list(cls, data, headers=_MISSING, max_depth=1):
+    def from_list(cls, data, headers=_MISSING, max_depth=1, metadata=None):
         """Create a Table from a :class:`list`. Operates the same as
         :meth:`from_data`, but forces the interpretation of the data
         as a Sequence.
         """
         return cls.from_data(data=data, headers=headers,
-                             max_depth=max_depth, _data_type=ListInputType())
+                             max_depth=max_depth, _data_type=ListInputType(),
+                             metadata=metadata)
 
     @classmethod
-    def from_object(cls, data, headers=_MISSING, max_depth=1):
+    def from_object(cls, data, headers=_MISSING, max_depth=1, metadata=None):
         """Create a Table from an :class:`object`. Operates the same as
         :meth:`from_data`, but forces the interpretation of the data
         as an object. May be useful for some :class:`dict` and
         :class:`list` subtypes.
         """
         return cls.from_data(data=data, headers=headers,
-                             max_depth=max_depth, _data_type=ObjectInputType())
+                             max_depth=max_depth, _data_type=ObjectInputType(),
+                             metadata=metadata)
 
     @classmethod
-    def from_data(cls, data, headers=_MISSING, max_depth=1, _data_type=None):
+    def from_data(cls, data, headers=_MISSING, max_depth=1, **kwargs):
+
         """Create a Table from any supported data, heuristically
         selecting how to represent the data in Table format.
 
@@ -329,12 +333,16 @@ class Table(object):
         # TODO: seen/cycle detection/reuse ?
         # maxdepth follows the same behavior as find command
         # i.e., it doesn't work if max_depth=0 is passed in
+        metadata = kwargs.pop('metadata', None)
+        _data_type = kwargs.pop('_data_type', None)
+
         if max_depth < 1:
-            return cls(headers=headers)  # return data instead?
+            # return data instead?
+            return cls(headers=headers, metadata=metadata)
         is_seq = isinstance(data, Sequence)
         if is_seq:
             if not data:
-                return cls(headers=headers)
+                return cls(headers=headers, metadata=metadata)
             to_check = data[0]
             if not _data_type:
                 for it in cls._input_types:
@@ -349,7 +357,7 @@ class Table(object):
             if type(data) in _DNR:
                 # hmm, got scalar data.
                 # raise an exception or make an exception, nahmsayn?
-                return Table([[data]], headers=headers)
+                return cls([[data]], headers=headers, metadata=metadata)
             to_check = data
         if not _data_type:
             for it in cls._input_types:
@@ -377,7 +385,7 @@ class Table(object):
                                                       max_depth=new_max_depth)
                     except UnsupportedData:
                         continue
-        return cls(entries, headers=headers)
+        return cls(entries, headers=headers, metadata=metadata)
 
     def __len__(self):
         return len(self._data)
@@ -394,7 +402,7 @@ class Table(object):
 
     def to_html(self, orientation=None, wrapped=True,
                 with_headers=True, with_newlines=True,
-                with_metadata=True, max_depth=1):
+                with_metadata=False, max_depth=1):
         """Render this Table to HTML. Configure the structure of Table
         HTML by subclassing and overriding ``_html_*`` class
         attributes.
@@ -410,12 +418,17 @@ class Table(object):
             with_newlines (bool): Set to ``True`` if output should
                 include added newlines to make the HTML more
                 readable. Default ``False``.
+            with_metadata (bool/str): Set to ``True`` if output should
+                be preceded with a Table of preset metadata, if it
+                exists. Set to special value ``'bottom'`` if the
+                metadata Table HTML should come *after* the main HTML output.
             max_depth (int): Indicate how deeply to nest HTML tables
                 before simply reverting to :func:`repr`-ing the nested
                 data.
 
         Returns:
             A text string of the HTML of the rendered table.
+
         """
         lines = []
         headers = []
