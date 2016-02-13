@@ -101,7 +101,7 @@ class DictInputType(InputType):
         return isinstance(obj, Mapping)
 
     def guess_headers(self, obj):
-        return obj.keys()
+        return sorted(obj.keys())
 
     def get_entry(self, obj, headers):
         return [obj.get(h) for h in headers]
