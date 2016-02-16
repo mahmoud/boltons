@@ -414,6 +414,23 @@ def asciify(text, ignore=False):
         return ret
 
 
+def is_ascii(text, ignore=False):
+    """Check if a unicode or bytestring, *text*, is composed of ascii
+    characters only.
+
+    Args:
+        text (str or unicode): The string to be checked.
+        ignore (bool): Configures final encoding to ignore remaining
+            unasciified unicode instead of replacing it.
+
+    >>> is_ascii('Beyoncé')
+    False
+    >>> is_ascii('Beyonce')
+    True
+    """
+    return asciify(text, ignore) == text
+
+
 class DeaccenterDict(dict):
     "A small caching dictionary for deaccenting."
     def __missing__(self, key):
