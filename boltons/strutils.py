@@ -8,6 +8,7 @@ provided by ``strutils``.
 from __future__ import print_function
 
 import re
+import uuid
 import zlib
 import string
 import unicodedata
@@ -643,3 +644,25 @@ def indent(text, margin, newline='\n', key=bool):
     indented_lines = [(margin + line if key(line) else line)
                       for line in iter_splitlines(text)]
     return newline.join(indented_lines)
+
+
+def is_uuid(my_uuid, version=4):
+    """ Check the argument is either a valid UUID object or string.
+
+    >>> is_uuid('e682ccca-5a4c-4ef2-9711-73f9ad1e15ea')
+    True
+    >>> is_uuid('0221f0d9-d4b9-11e5-a478-10ddb1c2feb9')
+    False
+    >>> is_uuid('0221f0d9-d4b9-11e5-a478-10ddb1c2feb9', version=1)
+    True
+    """
+    if not isinstance(my_uuid, (basestring, uuid.UUID)):
+        return False
+    if not isinstance(my_uuid, uuid.UUID):
+        try:
+            my_uuid = uuid.UUID(my_uuid)
+        except (TypeError, ValueError):
+            return False
+    if version and my_uuid.version != int(version):
+        return False
+    return True
