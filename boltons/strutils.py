@@ -408,21 +408,31 @@ def asciify(text, ignore=False):
         return ret
 
 
-def is_ascii(text, ignore=False):
+def is_ascii(text):
     """Check if a unicode or bytestring, *text*, is composed of ascii
-    characters only.
+    characters only. Raises :exc:`ValueError` if argument is not text.
 
     Args:
         text (str or unicode): The string to be checked.
-        ignore (bool): Configures final encoding to ignore remaining
-            unasciified unicode instead of replacing it.
 
     >>> is_ascii('Beyoncé')
     False
     >>> is_ascii('Beyonce')
     True
     """
-    return asciify(text, ignore) == text
+    if isinstance(text, unicode):
+        try:
+            text.encode('ascii')
+        except UnicodeEncodeError:
+            return False
+    elif isinstance(text, bytes):
+        try:
+            text.decode('ascii')
+        except UnicodeDecodeError:
+            return False
+    else:
+        raise ValueError('expected text or bytes, not %r' % type(text))
+    return True
 
 
 class DeaccenterDict(dict):
