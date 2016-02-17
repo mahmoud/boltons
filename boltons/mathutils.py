@@ -59,11 +59,20 @@ def floor(x, options=None):
 
 
 def precision(number):
-    """ Return the maximum precision of the fractional part of a number. """
+    """ Return the maximum precision of the fractional part of a number.
+
+    Precision is extracted from the fractional part only.
+
+    >>> precision('0.110')
+    2
+    >>> precision('1.0')
+    0
+    >>> precision('10000')
+    0
+    """
     if not isinstance(number, Decimal):
         number = Decimal(str(number))
     decimal_tuple = number.normalize().as_tuple()
-    # Precision is extracted from the fractional part only.
     if decimal_tuple.exponent >= 0:
         return 0
     return abs(decimal_tuple.exponent)
