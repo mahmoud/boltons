@@ -19,7 +19,7 @@ try:
     from HTMLParser import HTMLParser
     import htmlentitydefs
 except NameError:  # basestring not defined in Python 3
-    unicode, str, bytes, basestring = str, bytes, bytes, str
+    unicode, str, bytes, basestring = str, bytes, bytes, (str, bytes)
     unichr = chr
     from html.parser import HTMLParser
     from html import entities as htmlentitydefs
@@ -667,8 +667,12 @@ def indent(text, margin, newline='\n', key=bool):
     return newline.join(indented_lines)
 
 
-def is_uuid(my_uuid, version=4):
-    """ Check the argument is either a valid UUID object or string.
+def is_uuid(obj, version=4):
+    """Check the argument is either a valid UUID object or string.
+
+    Args:
+        obj (object): The test target. Strings and UUID objects supported.
+        version (int): The target UUID version, set to 0 to skip version check.
 
     >>> is_uuid('e682ccca-5a4c-4ef2-9711-73f9ad1e15ea')
     True
@@ -677,13 +681,11 @@ def is_uuid(my_uuid, version=4):
     >>> is_uuid('0221f0d9-d4b9-11e5-a478-10ddb1c2feb9', version=1)
     True
     """
-    if not isinstance(my_uuid, (basestring, uuid.UUID)):
-        return False
-    if not isinstance(my_uuid, uuid.UUID):
+    if not isinstance(obj, uuid.UUID):
         try:
-            my_uuid = uuid.UUID(my_uuid)
+            obj = uuid.UUID(obj)
         except (TypeError, ValueError):
             return False
-    if version and my_uuid.version != int(version):
+    if version and obj.version != int(version):
         return False
     return True
