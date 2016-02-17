@@ -389,15 +389,9 @@ def asciify(text, ignore=False):
         ignore (bool): Configures final encoding to ignore remaining
             unasciified unicode instead of replacing it.
 
-    # TODO: repr under Py3k
-    # >>> asciify('Beyoncé')
-    # 'Beyonce'
-
     >>> asciify('Beyoncé') == b'Beyonce'
     True
-
     """
-    # TODO: Python 3 compliance.
     try:
         try:
             return text.encode('ascii')
