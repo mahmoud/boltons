@@ -16,6 +16,7 @@ __all__ = ['is_iterable', 'is_scalar', 'split', 'split_iter', 'chunked',
 
 import math
 import itertools
+import random
 from collections import Mapping, Sequence, Set, ItemsView
 
 try:
@@ -336,7 +337,7 @@ def frange(stop, start=None, step=1.0):
     return ret
 
 
-def backoff(start, stop, count=None, factor=2):
+def backoff(start, stop, count=None, factor=2, jitter=lambda x:x):
     """Returns a list of geometrically-increasing floating-point numbers,
     suitable for usage with `exponential backoff`_. Exactly like
     :func:`backoff_iter`, but without the ``'repeat'`` option for
@@ -349,10 +350,10 @@ def backoff(start, stop, count=None, factor=2):
     """
     if count == 'repeat':
         raise ValueError("'repeat' supported in backoff_iter, not backoff")
-    return list(backoff_iter(start, stop, count=count, factor=factor))
+    return list(backoff_iter(start, stop, count=count, factor=factor, jitter=jitter))
 
 
-def backoff_iter(start, stop, count=None, factor=2):
+def backoff_iter(start, stop, count=None, factor=2, jitter=lambda x:x):
     """Generates a sequence of geometrically-increasing floats, suitable
     for usage with `exponential backoff`_. Starts with *start*,
     increasing by *factor* until *stop* is reached, optionally
@@ -401,13 +402,19 @@ def backoff_iter(start, stop, count=None, factor=2):
         raise ValueError('count must be greater than 0, not %r' % count)
     cur, i = float(start), 0
     while count == 'repeat' or i < count:
-        yield cur
+        yield jitter(cur)
         i += 1
         if cur < stop:
             cur *= factor
             if cur > stop:
                 cur = stop
     return
+
+
+def full_jitter(cur, base=0):
+    """Pick a random float between base and the current backoff value.
+    """
+    return random.uniform(base, cur)
 
 
 def bucketize(src, key=None):
