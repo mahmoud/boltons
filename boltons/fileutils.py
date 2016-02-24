@@ -237,7 +237,7 @@ def path_to_unicode(path):
 if os.name == 'nt':
     import ctypes
     from ctypes import c_wchar_p
-    from ctypes import DWORD, LPVOID
+    from ctypes.wintypes import DWORD, LPVOID
 
     _ReplaceFile = ctypes.windll.kernel32.ReplaceFile
     _ReplaceFile.argtypes = [c_wchar_p, c_wchar_p, c_wchar_p,
@@ -250,14 +250,18 @@ if os.name == 'nt':
         res = _ReplaceFile(c_wchar_p(new_path), c_wchar_p(path),
                            None, 0, None, None)
         if not res:
-            raise OSError('failed to replace %r with %r' % (path, new_path))
+            raise OSError('failed to replace %r with %r' % (new_path, path))
         return
 
     def atomic_rename(path, new_path, overwrite=False):
-        if overwrite:
-            replace(path, new_path)
-        else:
+        try:
             os.rename(path, new_path)
+        except WindowsError as we:
+            if overwrite and we.winerror == 183:
+                # already exists, atomic replace
+                replace(path, new_path)
+            else:
+                raise
         return
 else:
     # os.replace does the same thing on unix
