@@ -346,3 +346,44 @@ class TestGetPath(object):
         root = {'key': ['test']}
         assert get_path(root, ('key', 0)) == 'test'
         assert get_path(root, 'key.0') == 'test'
+
+
+def test_backoff():
+    from boltons.iterutils import backoff, backoff_iter
+
+    assert backoff(1, 16) == [1.0, 2.0, 4.0, 8.0, 16.0]
+    assert backoff(1, 1) == [1.0]
+    assert backoff(2, 15) == [2.0, 4.0, 8.0, 15.0]
+
+    fives = []
+    for val in backoff_iter(5, 5, count='repeat'):
+        fives.append(val)
+        if len(fives) >= 1000:
+            break
+    assert fives == [5] * 1000
+
+
+def test_backoff_jitter():
+    from boltons.iterutils import backoff
+
+    start, stop = 1, 256
+
+    unjittered = backoff(start, stop)
+    jittered = backoff(start, stop, jitter=True)
+
+    assert len(unjittered) == len(jittered)
+    assert [u >= j for u, j in zip(unjittered, jittered)]
+
+    neg_jittered = backoff(start, stop, jitter=-0.01)
+
+    assert len(unjittered) == len(neg_jittered)
+    assert [u <= j for u, j in zip(unjittered, neg_jittered)]
+
+    o_jittered = backoff(start, stop, jitter=-0.0)
+    assert len(unjittered) == len(o_jittered)
+    assert [u == j for u, j in zip(unjittered, o_jittered)]
+
+    nonconst_jittered = backoff(stop, stop, count=5, jitter=True)
+    assert len(nonconst_jittered) == 5
+    # no two should be equal realistically
+    assert len(set(nonconst_jittered)) == 5

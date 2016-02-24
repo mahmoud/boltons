@@ -15,6 +15,7 @@ __all__ = ['is_iterable', 'is_scalar', 'split', 'split_iter', 'chunked',
            'partition', 'unique', 'unique_iter', 'one', 'first']
 
 import math
+import random
 import itertools
 from collections import Mapping, Sequence, Set, ItemsView
 
@@ -336,7 +337,7 @@ def frange(stop, start=None, step=1.0):
     return ret
 
 
-def backoff(start, stop, count=None, factor=2):
+def backoff(start, stop, count=None, factor=2.0, jitter=False):
     """Returns a list of geometrically-increasing floating-point numbers,
     suitable for usage with `exponential backoff`_. Exactly like
     :func:`backoff_iter`, but without the ``'repeat'`` option for
@@ -349,10 +350,11 @@ def backoff(start, stop, count=None, factor=2):
     """
     if count == 'repeat':
         raise ValueError("'repeat' supported in backoff_iter, not backoff")
-    return list(backoff_iter(start, stop, count=count, factor=factor))
+    return list(backoff_iter(start, stop, count=count,
+                             factor=factor, jitter=jitter))
 
 
-def backoff_iter(start, stop, count=None, factor=2):
+def backoff_iter(start, stop, count=None, factor=2.0, jitter=False):
     """Generates a sequence of geometrically-increasing floats, suitable
     for usage with `exponential backoff`_. Starts with *start*,
     increasing by *factor* until *stop* is reached, optionally
@@ -382,16 +384,34 @@ def backoff_iter(start, stop, count=None, factor=2):
               log(e)
               time.sleep(timeout)
 
-    An enhancement for large-scale systems would be to add variation
-    ("jitter") to the timeout value. This is done to avoid a
-    thundering herd on the receiving end of the network call.
+    An enhancement for large-scale systems would be to add variation,
+    or *jitter*, to timeout values. This is done to avoid a thundering
+    herd on the receiving end of the network call.
 
     Finally, for *count*, the special value ``'repeat'`` can be passed to
     continue yielding indefinitely.
 
+    Args:
+
+        start (float): Positive number for baseline.
+        stop (float): Positive number for maximum.
+        count (int): Number of steps before stopping
+            iteration. Defaults to the number of steps between *start* and
+            *stop*. Pass the string, `'repeat'`, to continue iteration
+            indefinitely.
+        factor (float): Rate of exponential increase. Defaults to `2.0`,
+            e.g., `[1, 2, 4, 8, 16]`.
+        jitter (float): A factor between `-1.0` and `1.0`, used to
+            uniformly randomize and thus spread out timeouts in a distributed
+            system, avoiding rhythm effects. Positive values use the base
+            backoff curve as a maximum, negative values use the curve as a
+            minimum. Set to 1.0 or `True` for a jitter approximating
+            Ethernet's time-tested backoff solution. Defaults to `False`.
+
     """
-    if start == 0:
-        raise ValueError('start must be >= 0, not %r' % start)
+    # TODO: if start is 0, use factor for second round onward
+    if start <= 0:
+        raise ValueError('start must be > 0, not %r' % start)
     if not start < (start * factor):
         raise ValueError('start * factor should be greater than start')
     stop = float(stop)
@@ -399,9 +419,18 @@ def backoff_iter(start, stop, count=None, factor=2):
         count = 1 + math.ceil(math.log(stop/start, factor))
     if count != 'repeat' and count < 0:
         raise ValueError('count must be greater than 0, not %r' % count)
+    if jitter:
+        jitter = float(jitter)
+        if not (-1.0 <= jitter <= 1.0):
+            raise ValueError('expected jitter -1 <= j <= 1, not: %r' % jitter)
+
     cur, i = float(start), 0
     while count == 'repeat' or i < count:
-        yield cur
+        if not jitter:
+            cur_ret = cur
+        elif jitter:
+            cur_ret = cur - (cur * jitter * random.random())
+        yield cur_ret
         i += 1
         if cur < stop:
             cur *= factor
