@@ -504,6 +504,8 @@ added in this release.
   * [iterutils.split][iterutils.split] and [iterutils.split_iter][iterutils.split_iter] work
 
 
+[os.replace]: https://docs.python.org/3/library/os.html#os.replace
+
 [cacheutils]: http://boltons.readthedocs.org/en/latest/cacheutils.html
 [cacheutils.LRU]: http://boltons.readthedocs.org/en/latest/cacheutils.html#boltons.cacheutils.LRU
 [cacheutils.ThresholdCounter]: http://boltons.readthedocs.org/en/latest/cacheutils.html#boltons.cacheutils.ThresholdCounter
@@ -541,6 +543,7 @@ added in this release.
 [iterutils.chunked]: http://boltons.readthedocs.org/en/latest/iterutils.html#boltons.iterutils.chunked
 [iterutils.chunked_iter]: http://boltons.readthedocs.org/en/latest/iterutils.html#boltons.iterutils.chunked_iter
 [iterutils.first]: http://boltons.readthedocs.org/en/latest/iterutils.html#boltons.iterutils.first
+[iterutils.backoff]: http://boltons.readthedocs.org/en/latest/iterutils.html#boltons.iterutils.backoff
 [iterutils.frange]: http://boltons.readthedocs.org/en/latest/iterutils.html#boltons.iterutils.frange
 [iterutils.is_container]: http://boltons.readthedocs.org/en/latest/iterutils.html#boltons.iterutils.is_container
 [iterutils.one]: http://boltons.readthedocs.org/en/latest/iterutils.html#boltons.iterutils.one
@@ -573,6 +576,8 @@ added in this release.
 [strutils.pluralize]: http://boltons.readthedocs.org/en/latest/strutils.html#boltons.strutils.pluralize
 [strutils.is_ascii]: http://boltons.readthedocs.org/en/latest/strutils.html#boltons.strutils.is_ascii
 [strutils.is_uuid]: http://boltons.readthedocs.org/en/latest/strutils.html#boltons.strutils.is_uuid
+[tableutils]: http://boltons.readthedocs.org/en/latest/tableutils.html
+[tableutils.Table]: http://boltons.readthedocs.org/en/latest/tableutils.html#boltons.tableutils.Table
 [tbutils.ExceptionInfo]: http://boltons.readthedocs.org/en/latest/tbutils.html#boltons.tbutils.ExceptionInfo
 [tbutils.ParsedException]: http://boltons.readthedocs.org/en/latest/tbutils.html#boltons.tbutils.ParsedException
 [tbutils.TracebackInfo]: http://boltons.readthedocs.org/en/latest/tbutils.html#boltons.tbutils.TracebackInfo
