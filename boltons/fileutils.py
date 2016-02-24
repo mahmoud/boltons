@@ -244,7 +244,18 @@ if os.name == 'nt':
                              DWORD, LPVOID, LPVOID]
 
     def replace(path, new_path):
-        # like os.replace, but actually more atomic
+        # like os.replace, but actually more atomic because it uses
+        # ReplaceFile and not MoveFileEx
+        try:
+            # ReplaceFile fails if the dest file does not exist, so
+            # first try to rename it into position
+            os.rename(path, new_path)
+        except WindowsError as we:
+            if we.errno == errno.EEXIST:
+                pass  # continue with the ReplaceFile logic below
+            else:
+                raise
+
         path = path_to_unicode(path)
         new_path = path_to_unicode(new_path)
         res = _ReplaceFile(c_wchar_p(new_path), c_wchar_p(path),
@@ -254,14 +265,10 @@ if os.name == 'nt':
         return
 
     def atomic_rename(path, new_path, overwrite=False):
-        try:
+        if overwrite:
+            replace(path, new_path)
+        else:
             os.rename(path, new_path)
-        except WindowsError as we:
-            if overwrite and we.winerror == 183:
-                # already exists, atomic replace
-                replace(path, new_path)
-            else:
-                raise
         return
 else:
     # os.replace does the same thing on unix
