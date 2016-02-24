@@ -243,13 +243,12 @@ if os.name == 'nt':
     _ReplaceFile.argtypes = [c_wchar_p, c_wchar_p, c_wchar_p,
                              DWORD, LPVOID, LPVOID]
 
-    def replace(path, new_path):
-        # like os.replace, but actually more atomic because it uses
-        # ReplaceFile and not MoveFileEx
+    def replace(src, dst):
+        # argument names match stdlib docs, docstring below
         try:
             # ReplaceFile fails if the dest file does not exist, so
             # first try to rename it into position
-            os.rename(path, new_path)
+            os.rename(src, dst)
             return
         except WindowsError as we:
             if we.errno == errno.EEXIST:
@@ -257,34 +256,46 @@ if os.name == 'nt':
             else:
                 raise
 
-        path = path_to_unicode(path)
-        new_path = path_to_unicode(new_path)
-        res = _ReplaceFile(c_wchar_p(new_path), c_wchar_p(path),
+        src = path_to_unicode(src)
+        dst = path_to_unicode(dst)
+        res = _ReplaceFile(c_wchar_p(dst), c_wchar_p(src),
                            None, 0, None, None)
         if not res:
-            raise OSError('failed to replace %r with %r' % (new_path, path))
+            raise OSError('failed to replace %r with %r' % (dst, src))
         return
 
-    def atomic_rename(path, new_path, overwrite=False):
+    def atomic_rename(src, dst, overwrite=False):
+        "Rename *src* to *dst*, replacing *dst* if *overwrite is True"
         if overwrite:
-            replace(path, new_path)
+            replace(src, dst)
         else:
-            os.rename(path, new_path)
+            os.rename(src, dst)
         return
 else:
-    # os.replace does the same thing on unix
-    replace = os.rename  # cross compat
+    # wrapper func for cross compat + docs
+    def replace(src, dst):
+        # os.replace does the same thing on unix
+        return os.rename(src, dst)
 
-    def atomic_rename(path, new_path, overwrite=False):
+    def atomic_rename(src, dst, overwrite=False):
+        "Rename *src* to *dst*, replacing *dst* if *overwrite is True"
         if overwrite:
-            os.rename(path, new_path)
+            os.rename(src, dst)
         else:
-            os.link(path, new_path)
-            os.unlink(path)
+            os.link(src, dst)
+            os.unlink(dst)
         return
 
 
 _atomic_rename = atomic_rename  # backwards compat
+
+replace.__doc__ = """Similar to :func:`os.replace` in Python 3.3+,
+this function will atomically create or replace the file at path
+*dst* with the file at path *src*.
+
+On Windows, this function uses the ReplaceFile API for maximum
+possible atomicity on a range of filesystems.
+"""
 
 
 class AtomicSaver(object):
