@@ -23,7 +23,7 @@ Also, a couple new strutils, and
   * More comprehensive [iterutils.backoff][iterutils.backoff] argument checking/validation
   * [fileutils.replace][fileutils.replace] and
     [fileutils.atomic_rename][fileutils.atomic_rename] are now public
-    functions in [fileutils][fileutils] with cross-platform implementations
+    functions in [fileutils][fileutils] with cross-platform implementations ([discussion here](https://github.com/mahmoud/boltons/issues/60))
   * [tableutils.Table][tableutils.Table]s have a metadata argument and
     attribute for miscellaneous metadata.
   * [strutils.is_ascii][strutils.is_ascii] and
