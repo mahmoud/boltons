@@ -1,8 +1,51 @@
 boltons Changelog
 =================
 
-Since February 20, 2013 there have been 18 releases and 721 commits for
-an average of one 40-commit release every 8.4 weeks.
+Since February 20, 2013 there have been 20 releases and 753 commits for
+an average of one 37-commit release every 8.2 weeks.
+
+16.1.0
+------
+*(February 10, 2016)*
+
+The centerpiece of this release is highly improved Windows support for
+[fileutils.atomic_save][fileutils.atomic_save] via
+[ReplaceFile](https://msdn.microsoft.com/en-us/library/windows/desktop/aa365512%28v=vs.85%29.aspx)
+system call. This functionality is also made available directly via
+[fileutils.replace][fileutils.replace], which is akin to Python 3.3+'s
+[os.replace][os.replace], except that that has arguably poorer
+behavior and atomicity.
+
+Also, a couple new strutils, and
+[itertools.backoff][itertools.backoff] grew a jitter argument.
+
+  * [iterutils.backoff][iterutils.backoff] now supports start=0
+  * More comprehensive [iterutils.backoff][iterutils.backoff] argument checking/validation
+  * [fileutils.replace][fileutils.replace] and
+    [fileutils.atomic_rename][fileutils.atomic_rename] are now public
+    functions in [fileutils][fileutils] with cross-platform implementations
+  * [tableutils.Table][tableutils.Table]s have a metadata argument and
+    attribute for miscellaneous metadata.
+  * [strutils.is_ascii][strutils.is_ascii] and
+    [strutils.is_uuid][strutils.is_uuid]: About as straightforward as
+    they are handy.
+  * Tox testing improvements
+
+
+16.0.1
+------
+*(January 24, 2016)*
+
+DummyFile, Table.metadata, better exception handling, and in-progress
+iterutils.get_path
+
+  * Small format fix in [iterutils.one][iterutils.one] for None
+  * Initial implementation of
+    [fileutils.DummyFile][fileutils.DummyFile], which allows for easy
+    no-op file handling without restructuring code. Sort of like a
+    dummy RLock for systems without threading, if you've seen those.
+  * avoid catching BaseException in all boltons
+  * better error handling in iterutils.get_path
 
 16.0.0
 ------
@@ -473,10 +516,15 @@ added in this release.
 [dictutils.OrderedMultiDict]: http://boltons.readthedocs.org/en/latest/dictutils.html#boltons.dictutils.OrderedMultiDict
 [dictutils.OrderedMultiDict.get_inverted]: http://boltons.readthedocs.org/en/latest/dictutils.html#boltons.dictutils.OrderedMultiDict.get_inverted
 [excutils.ParsedException]: http://boltons.readthedocs.org/en/latest/excutils.html#boltons.excutils.ParsedException
+[fileutils]: http://boltons.readthedocs.org/en/latest/fileutils.html
+[fileutils.replace]: http://boltons.readthedocs.org/en/latest/fileutils.html#boltons.fileutils.replace
+[fileutils.atomic_rename]: http://boltons.readthedocs.org/en/latest/fileutils.html#boltons.fileutils.atomic_rename
+[fileutils.atomic_save]: http://boltons.readthedocs.org/en/latest/fileutils.html#boltons.fileutils.atomic_save
 [fileutils.AtomicSaver]: http://boltons.readthedocs.org/en/latest/fileutils.html#boltons.fileutils.AtomicSaver
 [fileutils.FilePerms]: http://boltons.readthedocs.org/en/latest/fileutils.html#boltons.fileutils.FilePerms
 [fileutils.iter_find_files]: http://boltons.readthedocs.org/en/latest/fileutils.html#boltons.fileutils.iter_find_files
 [fileutils.mkdir_p]: http://boltons.readthedocs.org/en/latest/fileutils.html#boltons.fileutils.mkdir_p
+[fileutils.DummyFile]: http://boltons.readthedocs.org/en/latest/fileutils.html#boltons.fileutils.DummyFile
 [funcutils.partial_ordering]: http://boltons.readthedocs.org/en/latest/funcutils.html#boltons.funcutils.partial_ordering
 [gcutils.GCToggler]: http://boltons.readthedocs.org/en/latest/gcutils.html#boltons.gcutils.GCToggler
 [gcutils.get_all]: http://boltons.readthedocs.org/en/latest/gcutils.html#boltons.gcutils.get_all
@@ -523,6 +571,8 @@ added in this release.
 [strutils.iter_splitlines]: http://boltons.readthedocs.org/en/latest/strutils.html#boltons.strutils.iter_splitlines
 [strutils.ordinalize]: http://boltons.readthedocs.org/en/latest/strutils.html#boltons.strutils.ordinalize
 [strutils.pluralize]: http://boltons.readthedocs.org/en/latest/strutils.html#boltons.strutils.pluralize
+[strutils.is_ascii]: http://boltons.readthedocs.org/en/latest/strutils.html#boltons.strutils.is_ascii
+[strutils.is_uuid]: http://boltons.readthedocs.org/en/latest/strutils.html#boltons.strutils.is_uuid
 [tbutils.ExceptionInfo]: http://boltons.readthedocs.org/en/latest/tbutils.html#boltons.tbutils.ExceptionInfo
 [tbutils.ParsedException]: http://boltons.readthedocs.org/en/latest/tbutils.html#boltons.tbutils.ParsedException
 [tbutils.TracebackInfo]: http://boltons.readthedocs.org/en/latest/tbutils.html#boltons.tbutils.TracebackInfo

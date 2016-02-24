@@ -29,6 +29,10 @@ at hand has completed. And that's exactly what :func:`atomic_save` and
 
 .. autoclass:: boltons.fileutils.AtomicSaver
 
+.. autofunction:: boltons.fileutils.atomic_rename
+
+.. autofunction:: boltons.fileutils.replace
+
 File Permissions
 ----------------
 
@@ -40,3 +44,9 @@ on permission-related accidents when working with files from Python
 code.
 
 .. autoclass:: boltons.fileutils.FilePerms
+
+
+Miscellaneous
+-------------
+
+.. autoclass:: boltons.fileutils.DummyFile
