@@ -348,12 +348,16 @@ class TestGetPath(object):
         assert get_path(root, 'key.0') == 'test'
 
 
-def test_backoff():
-    from boltons.iterutils import backoff, backoff_iter
+def test_backoff_basic():
+    from boltons.iterutils import backoff
 
     assert backoff(1, 16) == [1.0, 2.0, 4.0, 8.0, 16.0]
     assert backoff(1, 1) == [1.0]
     assert backoff(2, 15) == [2.0, 4.0, 8.0, 15.0]
+
+
+def test_backoff_repeat():
+    from boltons.iterutils import backoff_iter
 
     fives = []
     for val in backoff_iter(5, 5, count='repeat'):
@@ -361,6 +365,31 @@ def test_backoff():
         if len(fives) >= 1000:
             break
     assert fives == [5] * 1000
+
+
+def test_backoff_zero_start():
+    from boltons.iterutils import backoff
+
+    assert backoff(0, 16) == [0.0, 1.0, 2.0, 4.0, 8.0, 16.0]
+    assert backoff(0, 15) == [0.0, 1.0, 2.0, 4.0, 8.0, 15.0]
+
+    slow_backoff = [round(x, 2) for x in backoff(0, 2.9, factor=1.2)]
+    assert slow_backoff == [0.0, 1.0, 1.2, 1.44, 1.73, 2.07, 2.49, 2.9]
+
+
+def test_backoff_validation():
+    from boltons.iterutils import backoff
+
+    with pytest.raises(ValueError):
+        backoff(8, 2)
+    with pytest.raises(ValueError):
+        backoff(1, 0)
+    with pytest.raises(ValueError):
+        backoff(-1, 10)
+    with pytest.raises(ValueError):
+        backoff(2, 8, factor=0)
+    with pytest.raises(ValueError):
+        backoff(2, 8, jitter=20)
 
 
 def test_backoff_jitter():
