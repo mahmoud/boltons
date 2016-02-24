@@ -17,7 +17,7 @@ system call. This functionality is also made available directly via
 behavior and atomicity.
 
 Also, a couple new strutils, and
-[itertools.backoff][itertools.backoff] grew a jitter argument.
+[iterutils.backoff][iterutils.backoff] grew a jitter argument.
 
   * [iterutils.backoff][iterutils.backoff] now supports start=0
   * More comprehensive [iterutils.backoff][iterutils.backoff] argument checking/validation
