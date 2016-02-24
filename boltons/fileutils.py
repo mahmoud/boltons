@@ -8,6 +8,7 @@ from __future__ import print_function
 
 import os
 import re
+import sys
 import stat
 import errno
 import fnmatch
@@ -24,7 +25,8 @@ _SINGLE_FULL_PERM = 7  # or 07 in Python 2
 try:
     basestring
 except NameError:
-    basestring = (str, bytes)  # Python 3 compat
+    unicode = str  # Python 3 compat
+    basestring = (str, bytes)
 
 
 def mkdir_p(path):
@@ -225,12 +227,52 @@ def atomic_save(dest_path, **kwargs):
     return AtomicSaver(dest_path, **kwargs)
 
 
-def _atomic_rename(path, new_path, overwrite=False):
-    if overwrite:
-        os.rename(path, new_path)
-    else:
-        os.link(path, new_path)
-        os.unlink(path)
+def path_to_unicode(path):
+    if isinstance(path, unicode):
+        return path
+    encoding = sys.getfilesystemencoding() or sys.getdefaultencoding()
+    return path.decode(encoding)
+
+
+if os.name == 'nt':
+    import ctypes
+    from ctypes import c_wchar_p
+    from ctypes import DWORD, LPVOID
+
+    _ReplaceFile = ctypes.windll.kernel32.ReplaceFile
+    _ReplaceFile.argtypes = [c_wchar_p, c_wchar_p, c_wchar_p,
+                             DWORD, LPVOID, LPVOID]
+
+    def replace(path, new_path):
+        # like os.replace, but actually more atomic
+        path = path_to_unicode(path)
+        new_path = path_to_unicode(new_path)
+        res = _ReplaceFile(c_wchar_p(new_path), c_wchar_p(path),
+                           None, 0, None, None)
+        if not res:
+            raise OSError('failed to replace %r with %r' % (path, new_path))
+        return
+
+    def atomic_rename(path, new_path, overwrite=False):
+        if overwrite:
+            replace(path, new_path)
+        else:
+            os.rename(path, new_path)
+        return
+else:
+    # os.replace does the same thing on unix
+    replace = os.rename  # cross compat
+
+    def atomic_rename(path, new_path, overwrite=False):
+        if overwrite:
+            os.rename(path, new_path)
+        else:
+            os.link(path, new_path)
+            os.unlink(path)
+        return
+
+
+_atomic_rename = atomic_rename  # backwards compat
 
 
 class AtomicSaver(object):
@@ -372,7 +414,7 @@ class AtomicSaver(object):
                     pass
             return
         try:
-            _atomic_rename(self.part_path, self.dest_path,
+            atomic_rename(self.part_path, self.dest_path,
                            overwrite=self.overwrite)
         except OSError:
             if self.rm_part_on_exc:
