@@ -250,6 +250,7 @@ if os.name == 'nt':
             # ReplaceFile fails if the dest file does not exist, so
             # first try to rename it into position
             os.rename(path, new_path)
+            return
         except WindowsError as we:
             if we.errno == errno.EEXIST:
                 pass  # continue with the ReplaceFile logic below
@@ -426,10 +427,13 @@ class AtomicSaver(object):
             return
         try:
             atomic_rename(self.part_path, self.dest_path,
-                           overwrite=self.overwrite)
+                          overwrite=self.overwrite)
         except OSError:
             if self.rm_part_on_exc:
-                os.unlink(self.part_path)
+                try:
+                    os.unlink(self.part_path)
+                except Exception:
+                    pass  # already reraising another error
             raise  # could not save destination file
         return
 
