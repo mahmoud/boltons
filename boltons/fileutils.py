@@ -423,7 +423,7 @@ class AtomicSaver(object):
                 try:
                     os.unlink(self.part_path)
                 except Exception:
-                    pass
+                    pass  # avoid masking original error
             return
         try:
             atomic_rename(self.part_path, self.dest_path,
@@ -433,7 +433,7 @@ class AtomicSaver(object):
                 try:
                     os.unlink(self.part_path)
                 except Exception:
-                    pass  # already reraising another error
+                    pass  # avoid masking original error
             raise  # could not save destination file
         return
 
