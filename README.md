@@ -57,9 +57,11 @@ Then, [thanks to PyPI][boltons_pypi], dozens of boltons are just an import away:
 ```
 
 However, due to the nature of utilities, application developers might
-want to consider other options. Boltons is pure-Python and has no
-dependencies. See the [Integration][integration] section of the docs
-for more details.
+want to consider other options, including vendorization of individual
+modules into a project. Boltons is pure-Python and has no
+dependencies. If the whole project is too big, each module is
+independent, and can be copied directly into a project. See the
+[Integration][integration] section of the docs for more details.
 
 [boltons_pypi]: https://pypi.python.org/pypi/boltons
 [integration]: https://boltons.readthedocs.org/en/latest/architecture.html#integration
