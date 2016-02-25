@@ -2,7 +2,7 @@
 
 *boltons should be builtins.*
 
-**Boltons** is a set of over 100 BSD-licensed, pure-Python utilities
+**Boltons** is a set of over 160 BSD-licensed, pure-Python utilities
 in the same spirit as — and yet conspicuously missing from —
 [the standard library][stdlib], including:
 
@@ -14,7 +14,7 @@ in the same spirit as — and yet conspicuously missing from —
     in [tbutils][tbutils]
 
 Boltons is tested against Python 2.6, 2.7, 3.4, and
-PyPy. [Full and extensive docs are available on Read The Docs.][rtd]
+PyPy. **[Full and extensive docs are available on Read The Docs.][rtd]**
 See what's new [by checking the CHANGELOG][changelog].
 
 [stdlib]: https://docs.python.org/2.7/library/index.html
