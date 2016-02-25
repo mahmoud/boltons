@@ -10,7 +10,7 @@ in the same spirit as — and yet conspicuously missing from —
   * A highly-optimized [OrderedMultiDict][omd], in [dictutils][dictutils]
   * *Two* types of [PriorityQueue][pq], in [queueutils][queueutils]
   * [Chunked][chunked] and [windowed][windowed] iteration, in [iterutils][iterutils]
-  * Recursive data structure iteration and merging, with [iterutils.remap][iterutils.remap]
+  * Recursive data structure [iteration and merging][remap], with [iterutils.remap][iterutils.remap]
   * Exponential backoff functionality, including jitter, through [iterutils.backoff][iterutils.backoff]
   * A full-featured [TracebackInfo][tbinfo] type, for representing stack traces,
     in [tbutils][tbutils]
@@ -39,6 +39,7 @@ Boltons is tested against Python 2.6, 2.7, 3.4, and PyPy.
 [iterutils.backoff]: http://boltons.readthedocs.org/en/latest/iterutils.html#boltons.iterutils.backoff
 [tbutils]: https://boltons.readthedocs.org/en/latest/tbutils.html#module-boltons.tbutils
 
+[remap]: http://sedimental.org/remap.html
 
 ## Installation
 
