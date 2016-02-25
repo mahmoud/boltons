@@ -258,8 +258,9 @@ if os.name == 'nt':
 
         src = path_to_unicode(src)
         dst = path_to_unicode(dst)
-        res = _ReplaceFile(c_wchar_p(dst), c_wchar_p(src),
-                           None, 0, None, None)
+        bak = dst + u'.bak'
+        res = _ReplaceFile(c_wchar_p(dst), c_wchar_p(src), c_wchar_p(bak),
+                           0, None, None)
         if not res:
             raise OSError('failed to replace %r with %r' % (dst, src))
         return
