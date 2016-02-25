@@ -13,8 +13,9 @@ The centerpiece of this release is highly improved Windows support for
 [ReplaceFile](https://msdn.microsoft.com/en-us/library/windows/desktop/aa365512%28v=vs.85%29.aspx)
 system call. This functionality is also made available directly via
 [fileutils.replace][fileutils.replace], which is akin to Python 3.3+'s
-[os.replace][os.replace], except that that has arguably poorer
-behavior and atomicity.
+[os.replace][os.replace], except that `os.replace`'s approach has
+[arguably poorer behavior and atomicity](http://stupidpythonideas.blogspot.com/2014/07/getting-atomic-writes-right.html)
+compared to `fileutils.replace`.
 
 Also, a couple new strutils, and
 [iterutils.backoff][iterutils.backoff] grew a jitter argument.
