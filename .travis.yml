@@ -1,8 +1,11 @@
 language: python
+sudo: false
+cache: pip
 python:
   - "2.6"
   - "2.7"
   - "3.4"
+  - "3.5"
   - "pypy"
 
 install: "pip install -r requirements-test.txt"
