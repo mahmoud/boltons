@@ -700,7 +700,7 @@ def is_uuid(obj, version=4):
     if not isinstance(obj, uuid.UUID):
         try:
             obj = uuid.UUID(obj)
-        except (TypeError, ValueError):
+        except (TypeError, ValueError, AttributeError):
             return False
     if version and obj.version != int(version):
         return False
