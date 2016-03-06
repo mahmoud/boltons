@@ -59,9 +59,22 @@ given condition.
 
 .. autofunction:: bucketize
 .. autofunction:: partition
+
+Reduction
+---------
+
+:func:`reduce` is a powerful function, but it is also very open-ended
+and not always the most readable. The standard library recognized this
+with the addition of :func:`sum`, :func:`all`, and :func:`any`. All
+these functions take a basic operator (``+``, ``and``, and ``or``) and
+use the operator to turn an iterable into a single value.
+
+Functions in this category follow that same spirit, turning iterables
+like lists into single values:
+
 .. autofunction:: one
 .. autofunction:: first
-
+.. autofunction:: same
 
 Type Checks
 -----------
