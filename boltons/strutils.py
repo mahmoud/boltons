@@ -242,26 +242,41 @@ def _match_case(master, disciple):
 
 
 # Singular to plural map of irregular pluralizations
-_IRR_S2P = {'alumnus': 'alumni', 'analysis': 'analyses', 'antenna': 'antennae',
-            'appendix': 'appendices', 'axis': 'axes', 'bacterium': 'bacteria',
-            'basis': 'bases', 'beau': 'beaux', 'bureau': 'bureaus',
-            'cactus': 'cacti', 'child': 'children', 'corpus': 'corpora',
-            'crisis': 'crises', 'criterion': 'criteria',
+_IRR_S2P = {'addendum': 'addenda', 'alga': 'algae', 'alumna': 'alumnae',
+            'alumnus': 'alumni', 'analysis': 'analyses', 'antenna': 'antennae',
+            'appendix': 'appendices', 'axis': 'axes', 'bacillus': 'bacilli',
+            'bacterium': 'bacteria', 'basis': 'bases', 'beau': 'beaux',
+            'bison': 'bison', 'bureau': 'bureaus', 'cactus': 'cacti',
+            'calf': 'calves', 'child': 'children', 'corps': 'corps',
+            'corpus': 'corpora', 'crisis': 'crises', 'criterion': 'criteria',
             'curriculum': 'curricula', 'datum': 'data', 'deer': 'deer',
-            'diagnosis': 'diagnoses', 'ellipsis': 'ellipses', 'fish': 'fish',
-            'focus': 'foci', 'foot': 'feet', 'formula': 'formulae',
+            'diagnosis': 'diagnoses', 'die': 'dice', 'dwarf': 'dwarves',
+            'echo': 'echoes', 'elf': 'elves', 'ellipsis': 'ellipses',
+            'embargo': 'embargoes', 'emphasis': 'emphases', 'erratum': 'errata',
+            'fireman': 'firemen', 'fish': 'fish', 'focus': 'foci',
+            'foot': 'feet', 'formula': 'formulae', 'formula': 'formulas',
             'fungus': 'fungi', 'genus': 'genera', 'goose': 'geese',
-            'hypothesis': 'hypotheses', 'index': 'indices', 'louse': 'lice',
-            'man': 'men', 'matrix': 'matrices', 'means': 'means',
-            'medium': 'media', 'memorandum': 'memoranda', 'mouse': 'mice',
-            'nebula': 'nebulae', 'nucleus': 'nuclei', 'oasis': 'oases',
-            'offspring': 'offspring', 'ox': 'oxen', 'paralysis': 'paralyses',
-            'parenthesis': 'parentheses', 'phenomenon': 'phenomena',
-            'radius': 'radii', 'series': 'series', 'sheep': 'sheep',
-            'species': 'species', 'stimulus': 'stimuli', 'stratum': 'strata',
-            'synopsis': 'synopses', 'synthesis': 'syntheses',
-            'tableau': 'tableaux', 'thesis': 'theses', 'tooth': 'teeth',
-            'vertebra': 'vertebrae', 'vita': 'vitae', 'woman': 'women'}
+            'half': 'halves', 'hero': 'heroes', 'hippopotamus': 'hippopotami',
+            'hoof': 'hooves', 'hypothesis': 'hypotheses', 'index': 'indices',
+            'knife': 'knives', 'leaf': 'leaves', 'life': 'lives',
+            'loaf': 'loaves', 'louse': 'lice', 'man': 'men',
+            'matrix': 'matrices', 'means': 'means', 'medium': 'media',
+            'memorandum': 'memoranda', 'millennium': 'milennia', 'moose': 'moose',
+            'mosquito': 'mosquitoes', 'mouse': 'mice', 'nebula': 'nebulae',
+            'neurosis': 'neuroses', 'nucleus': 'nuclei', 'oasis': 'oases',
+            'octopus': 'octopi', 'offspring': 'offspring', 'ovum': 'ova',
+            'ox': 'oxen', 'paralysis': 'paralyses', 'parenthesis': 'parentheses',
+            'person': 'people', 'phenomenon': 'phenomena', 'potato': 'potatoes',
+            'radius': 'radii', 'scarf': 'scarves', 'scissors': 'scissors',
+            'self': 'selves', 'series': 'series', 'sheep': 'sheep',
+            'shelf': 'shelves', 'species': 'species', 'stimulus': 'stimuli',
+            'stratum': 'strata', 'syllabus': 'syllabi', 'symposium': 'symposia',
+            'synopsis': 'synopses', 'synthesis': 'syntheses', 'tableau': 'tableaux',
+            'that': 'those', 'thesis': 'theses', 'thief': 'thieves',
+            'this': 'these', 'tomato': 'tomatoes', 'tooth': 'teeth',
+            'torpedo': 'torpedoes', 'vertebra': 'vertebrae', 'veto': 'vetoes',
+            'vita': 'vitae', 'watch': 'watches', 'wife': 'wives',
+            'wolf': 'wolves', 'woman': 'women'}
 
 
 # Reverse index of the above
@@ -685,7 +700,7 @@ def is_uuid(obj, version=4):
     if not isinstance(obj, uuid.UUID):
         try:
             obj = uuid.UUID(obj)
-        except (TypeError, ValueError):
+        except (TypeError, ValueError, AttributeError):
             return False
     if version and obj.version != int(version):
         return False
