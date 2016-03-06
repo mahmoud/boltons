@@ -630,11 +630,11 @@ def first(iterable, default=None, key=None):
 
 
 def same(iterable, ref=_UNSET):
-    """``same()`` returns ``True`` when all values in an iterable are
+    """``same()`` returns ``True`` when all values in *iterable* are
     equal to one another, or optionally a reference value,
     *ref*. Similar to :func:`all` and :func:`any` in that it evaluates
-    an iterable and returns a :class:`bool`. `same()` returns True for
-    empty iterables.
+    an iterable and returns a :class:`bool`. ``same()`` returns
+    ``True`` for empty iterables.
 
     >>> same([])
     True
@@ -648,6 +648,7 @@ def same(iterable, ref=_UNSET):
     True
     >>> same([[], []], ref='test')
     False
+
     """
     iterator = iter(iterable)
     if ref is _UNSET:
