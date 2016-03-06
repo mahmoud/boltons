@@ -629,6 +629,38 @@ def first(iterable, default=None, key=None):
     return default
 
 
+def same(iterable, ref=_UNSET):
+    """``same()`` returns ``True`` when all values in an iterable are
+    equal to one another, or optionally a reference value,
+    *ref*. Similar to :func:`all` and :func:`any` in that it evaluates
+    an iterable and returns a :class:`bool`. `same()` returns True for
+    empty iterables.
+
+    >>> same([])
+    True
+    >>> same([1])
+    True
+    >>> same(['a', 'a', 'a'])
+    True
+    >>> same(range(20))
+    False
+    >>> same([[], []])
+    True
+    >>> same([[], []], ref='test')
+    False
+    """
+    iterator = iter(iterable)
+    if ref is _UNSET:
+        try:
+            ref = next(iterator)
+        except StopIteration:
+            return True  # those that were there were all equal
+    for val in iterator:
+        if val != ref:
+            return False  # short circuit on first unequal value
+    return True
+
+
 def default_visit(path, key, value):
     # print('visit(%r, %r, %r)' % (path, key, value))
     return key, value
