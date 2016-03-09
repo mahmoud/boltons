@@ -714,14 +714,16 @@ def remap(root, visit=default_visit, enter=default_enter, exit=default_exit,
           **kwargs):
     """The remap ("recursive map") function is used to traverse and
     transform nested structures. Lists, tuples, sets, and dictionaries
-    are just a few of the data structures commonly nested into
-    heterogenous tree-like structures that are ubiquitous in
-    programming. Unfortunately, Python's built-in ways to compactly
-    manipulate collections are flat. For instance, list comprehensions
-    may be fast and succinct, but they don't recurse, making it
-    tedious to quickly apply changes to real-world data.
+    are just a few of the data structures nested into heterogenous
+    tree-like structures that are so common in programming.
+    Unfortunately, Python's built-in ways to manipulate collections
+    are almost all flat. List comprehensions may be fast and succinct,
+    but they do not recurse, making it tedious to apply quick changes
+    or complex transforms to real-world data.
 
-    Here's an example of removing all None-valued items from the data:
+    remap goes where list comprehensions cannot.
+
+    Here's an example of removing all Nones from some data:
 
     >>> from pprint import pprint
     >>> reviews = {'Star Trek': {'TNG': 10, 'DS9': 8.5, 'ENT': None},
