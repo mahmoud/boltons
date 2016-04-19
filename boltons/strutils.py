@@ -8,6 +8,7 @@ provided by ``strutils``.
 from __future__ import print_function
 
 import re
+import sys
 import uuid
 import zlib
 import string
@@ -29,7 +30,7 @@ __all__ = ['camel2under', 'under2camel', 'slugify', 'split_punct_ws',
            'unit_len', 'ordinalize', 'cardinalize', 'pluralize', 'singularize',
            'asciify', 'is_ascii', 'is_uuid', 'html2text', 'strip_ansi',
            'bytes2human', 'find_hashtags', 'a10n', 'gunzip_bytes',
-           'iter_splitlines', 'indent']
+           'iter_splitlines', 'indent', 'escape_shell_args', 'args2cmd', 'args2sh']
 
 
 _punct_ws_str = string.punctuation + string.whitespace
@@ -69,10 +70,6 @@ def slugify(text, delim='_', lower=True, ascii=False):
 
     >>> slugify('First post! Hi!!!!~1    ')
     'first_post_hi_1'
-
-    # TODO: repr under Py3k
-    # >>> slugify("Kurt Gödel's pretty cool.", ascii=True)
-    # 'kurt_goedel_s_pretty_cool'
 
     >>> slugify("Kurt Gödel's pretty cool.", ascii=True) == \
         b'kurt_goedel_s_pretty_cool'
@@ -705,3 +702,145 @@ def is_uuid(obj, version=4):
     if version and obj.version != int(version):
         return False
     return True
+
+
+def escape_shell_args(args, sep=' ', style=None):
+    """Returns an escaped version of each string in *args*, according to
+    *style*.
+
+    Args:
+        args (list): A list of arguments to escape and join together
+        sep (str): The separator used to join the escaped arguments.
+        style (str): The style of escaping to use. Can be one of
+          ``cmd`` or ``sh``, geared toward Windows and Linux/BSD/etc.,
+          respectively. If *style* is ``None``, then it is picked
+          according to the system platform.
+
+    See :func:`args2cmd` and :func:`args2sh` for details and example
+    output for each style.
+    """
+    if not style:
+        style = 'cmd' if sys.platform == 'win32' else 'sh'
+
+    if style == 'sh':
+        return args2sh(args, sep=sep)
+    elif style == 'cmd':
+        return args2cmd(args, sep=sep)
+
+    raise ValueError("style expected one of 'cmd' or 'sh', not %r" % style)
+
+
+_find_sh_unsafe = re.compile(r'[^a-zA-Z0-9_@%+=:,./-]').search
+
+
+def args2sh(args, sep=' '):
+    """Return a shell-escaped string version of *args*, separated by
+    *sep*, based on the rules of sh, bash, and other shells in the
+    Linux/BSD/MacOS ecosystem.
+
+    >>> print(args2sh(['aa', '[bb]', "cc'cc", 'dd"dd']))
+    aa '[bb]' 'cc'"'"'cc' 'dd"dd'
+
+    As you can see, arguments with no special characters are not
+    escaped, arguments with special characters are quoted with single
+    quotes, and single quotes themselves are quoted with double
+    quotes. Double quotes are handled like any other special
+    character.
+
+    Based on code from the :mod:`pipes`/:mod:`shlex` modules. Also
+    note that :mod:`shlex` has functions to split and parse strings
+    escaped in this manner.
+    """
+    ret_list = []
+
+    for arg in args:
+        if not arg:
+            ret_list.append("''")
+            continue
+        if _find_sh_unsafe(arg) is None:
+            ret_list.append(arg)
+            continue
+        # use single quotes, and put single quotes into double quotes
+        # the string $'b is then quoted as '$'"'"'b'
+        ret_list.append("'" + arg.replace("'", "'\"'\"'") + "'")
+
+    return ' '.join(ret_list)
+
+
+def args2cmd(args, sep=' '):
+    r"""Return a shell-escaped string version of *args*, separated by
+    *sep*, using the same rules as the Microsoft C runtime.
+
+    >>> print(args2cmd(['aa', '[bb]', "cc'cc", 'dd"dd']))
+    aa [bb] cc'cc dd\"dd
+
+    As you can see, escaping is through backslashing and not quoting,
+    and double quotes are the only special character. See the comment
+    in the code for more details. Based on internal code from the
+    :mod:`subprocess` module.
+
+    """
+    # technique description from subprocess below
+    """
+    1) Arguments are delimited by white space, which is either a
+       space or a tab.
+
+    2) A string surrounded by double quotation marks is
+       interpreted as a single argument, regardless of white space
+       contained within.  A quoted string can be embedded in an
+       argument.
+
+    3) A double quotation mark preceded by a backslash is
+       interpreted as a literal double quotation mark.
+
+    4) Backslashes are interpreted literally, unless they
+       immediately precede a double quotation mark.
+
+    5) If backslashes immediately precede a double quotation mark,
+       every pair of backslashes is interpreted as a literal
+       backslash.  If the number of backslashes is odd, the last
+       backslash escapes the next double quotation mark as
+       described in rule 3.
+
+    See http://msdn.microsoft.com/en-us/library/17w5ykft.aspx
+    or search http://msdn.microsoft.com for
+    "Parsing C++ Command-Line Arguments"
+    """
+    result = []
+    needquote = False
+    for arg in args:
+        bs_buf = []
+
+        # Add a space to separate this argument from the others
+        if result:
+            result.append(' ')
+
+        needquote = (" " in arg) or ("\t" in arg) or not arg
+        if needquote:
+            result.append('"')
+
+        for c in arg:
+            if c == '\\':
+                # Don't know if we need to double yet.
+                bs_buf.append(c)
+            elif c == '"':
+                # Double backslashes.
+                result.append('\\' * len(bs_buf)*2)
+                bs_buf = []
+                result.append('\\"')
+            else:
+                # Normal char
+                if bs_buf:
+                    result.extend(bs_buf)
+                    bs_buf = []
+                result.append(c)
+
+        # Add remaining backslashes, if any.
+        if bs_buf:
+            result.extend(bs_buf)
+
+        if needquote:
+            result.extend(bs_buf)
+            result.append('"')
+
+    return ''.join(result)
