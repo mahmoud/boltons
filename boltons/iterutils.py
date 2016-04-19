@@ -234,18 +234,36 @@ def chunked_iter(src, size, **kw):
     return
 
 
-def pairwise(src, count=None, **kw):
-    """Convenience function for calling :func:`chunked` with *size* set to
-    2.
+def pairwise(src):
+    """Convenience function for calling :func:`windowed` on *src*, with
+    *size* set to 2.
+
+    >>> pairwise(range(5))
+    [(0, 1), (1, 2), (2, 3), (3, 4)]
+    >>> pairwise([])
+    []
+
+    The number of pairs is always one less than the number of elements
+    in the iterable passed in, except on empty inputs, which returns
+    an empty list.
     """
-    return chunked(src, 2, count, **kw)
+    return windowed(src, 2)
 
 
-def pairwise_iter(src, **kw):
-    """Convenience function for calling :func:`chunked_iter` with *size*
-    set to 2.
+def pairwise_iter(src):
+    """Convenience function for calling :func:`windowed_iter` on *src*,
+    with *size* set to 2.
+
+    >>> list(pairwise_iter(range(5)))
+    [(0, 1), (1, 2), (2, 3), (3, 4)]
+    >>> list(pairwise_iter([]))
+    []
+
+    The number of pairs is always one less than the number of elements
+    in the iterable passed in, or zero, when *src* is empty.
+
     """
-    return chunked_iter(src, 2, **kw)
+    return windowed_iter(src, 2)
 
 
 def windowed(src, size):
