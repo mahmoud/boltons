@@ -30,7 +30,8 @@ __all__ = ['camel2under', 'under2camel', 'slugify', 'split_punct_ws',
            'unit_len', 'ordinalize', 'cardinalize', 'pluralize', 'singularize',
            'asciify', 'is_ascii', 'is_uuid', 'html2text', 'strip_ansi',
            'bytes2human', 'find_hashtags', 'a10n', 'gunzip_bytes',
-           'iter_splitlines', 'indent', 'escape_shell_args', 'args2cmd', 'args2sh']
+           'iter_splitlines', 'indent', 'escape_shell_args',
+           'args2cmd', 'args2sh']
 
 
 _punct_ws_str = string.punctuation + string.whitespace
@@ -670,7 +671,7 @@ def indent(text, margin, newline='\n', key=bool):
     Args:
         text (str): The text to indent.
         margin (str): The string to prepend to each line.
-        newline (str): The newline used to rejoin the lines (default: \\n)
+        newline (str): The newline used to rejoin the lines (default: ``\\n``)
         key (callable): Called on each line to determine whether to
           indent it. Default: :class:`bool`, to ensure that empty lines do
           not get whitespace added.
