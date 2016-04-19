@@ -748,8 +748,8 @@ def args2sh(args, sep=' '):
     character.
 
     Based on code from the :mod:`pipes`/:mod:`shlex` modules. Also
-    note that :mod:`shlex` has functions to split and parse strings
-    escaped in this manner.
+    note that :mod:`shlex` and :mod:`argparse` have functions to split
+    and parse strings escaped in this manner.
     """
     ret_list = []
 
