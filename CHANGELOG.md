@@ -1,12 +1,52 @@
 boltons Changelog
 =================
 
-Since February 20, 2013 there have been 20 releases and 753 commits for
-an average of one 37-commit release every 8.2 weeks.
+Since February 20, 2013 there have been 22 releases and 795 commits for
+an average of one 36-commit release every 7.6 weeks.
+
+16.2.0
+------
+*(April 18, 2016)*
+
+adding shell args escaper-joiners to strutils (escape_shell_args,
+args2cmd, args2sh) as well as a rare breaking fix to
+[iterutils.pairwise][iterutils.pairwise].
+
+  * Argument joiners, functions to join command line arguments in
+    context-appropriate ways:
+    * [strutils.escape_shell_args][strutils.escape_shell_args]
+    * [strutils.args2cmd][strutils.args2cmd]
+    * [strutils.args2sh][strutils.args2sh]
+  * BREAKING: finally fixing
+    [iterutils.pairwise][iterutils.pairwise]. pairwise used to call to
+    `chunked`, now it calls to `windowed`. `pairwise([1, 2, 3, 4])` no
+    longer returns `[(1, 2), (3, 4)]`. Instead, it returns
+    `[(1, 2), (2, 3), (3, 4)]`, which is what I always mean when I say
+    pairwise, but not what the original contributor implemented.
+  * Adding a universal wheel distribution option!
+
+16.1.1
+------
+*(March 6, 2016)*
+
+Added [iterutils.same][iterutils.same], improvement of Windows
+[fileutils.AtomicSaver][fileutils.AtomicSaver] behavior for old
+filesystems, bugfix on [strutils.is_uuid][strutils.is_uuid], expansion
+of [strutils.pluralize][strutils.pluralize], new trove classifiers and
+docs improvements!
+
+  * [fileutils.replace][fileutils.replace]: use bak file option for
+    win32 ReplaceFile for slightly better corner case coverage on less
+    featureful filesystems
+  * [strutils.pluralize][strutils.pluralize]: Add more irregular plurals
+  * [strutils.is_uuid][strutils.is_uuid]: Catch un-parsable UUIDs.
+  * [iterutils.same][iterutils.same]: Return `True` when all values in
+    iterable are the same.
+
 
 16.1.0
 ------
-*(February 10, 2016)*
+*(February 24, 2016)*
 
 The centerpiece of this release is highly improved Windows support for
 [fileutils.atomic_save][fileutils.atomic_save] via
@@ -549,6 +589,7 @@ added in this release.
 [iterutils.is_container]: http://boltons.readthedocs.org/en/latest/iterutils.html#boltons.iterutils.is_container
 [iterutils.one]: http://boltons.readthedocs.org/en/latest/iterutils.html#boltons.iterutils.one
 [iterutils.pairwise]: http://boltons.readthedocs.org/en/latest/iterutils.html#boltons.iterutils.pairwise
+[iterutils.same]: http://boltons.readthedocs.org/en/latest/iterutils.html#boltons.iterutils.same
 [iterutils.remap]: http://boltons.readthedocs.org/en/latest/iterutils.html#boltons.iterutils.remap
 [iterutils.split]: http://boltons.readthedocs.org/en/latest/iterutils.html#boltons.iterutils.split
 [iterutils.split_iter]: http://boltons.readthedocs.org/en/latest/iterutils.html#boltons.iterutils.split_iter
@@ -568,6 +609,9 @@ added in this release.
 [statsutils.trimean]: http://boltons.readthedocs.org/en/latest/statsutils.html#boltons.statsutils.trimean
 [strutils.HTMLTextExtractor]: http://boltons.readthedocs.org/en/latest/strutils.html#boltons.strutils.HTMLTextExtractor
 [strutils.a10n]: http://boltons.readthedocs.org/en/latest/strutils.html#boltons.strutils.a10n
+[strutils.args2cmd]: http://boltons.readthedocs.org/en/latest/strutils.html#boltons.strutils.args2cmd
+[strutils.args2sh]: http://boltons.readthedocs.org/en/latest/strutils.html#boltons.strutils.args2sh
+[strutils.escape_shell_args]: http://boltons.readthedocs.org/en/latest/strutils.html#boltons.strutils.escape_shell_args
 [strutils.find_hashtags]: http://boltons.readthedocs.org/en/latest/strutils.html#boltons.strutils.find_hashtags
 [strutils.gunzip_bytes]: http://boltons.readthedocs.org/en/latest/strutils.html#boltons.strutils.gunzip_bytes
 [strutils.html2text]: http://boltons.readthedocs.org/en/latest/strutils.html#boltons.strutils.html2text
