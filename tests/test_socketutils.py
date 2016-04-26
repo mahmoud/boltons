@@ -34,7 +34,7 @@ def netstring_server(server_socket):
                     client.write_ns(b'huge' * 32 * 1024)  # 128kb
                     client.setmaxsize(32768)  # back to default
     except Exception as e:
-        print(b'netstring_server exiting with error: %r' % e)
+        print(u'netstring_server exiting with error: %r' % e)
         raise
     return
 

@@ -13,6 +13,7 @@ try:
 except ImportError:
     _UNSET = object()
 
+
 DEFAULT_TIMEOUT = 10  # 10 seconds
 DEFAULT_MAXBYTES = 32 * 1024  # 32kb
 
@@ -105,13 +106,13 @@ class BufferedSocket(object):
                     offset += len(marker)  # include marker in the return
                     break
         except socket.timeout:
-            self.rbuf = str(recvd)
+            self.rbuf = bytes(recvd)
             raise Timeout(timeout,
                           'read {0} bytes without finding marker: {1}'.format(len(self.rbuf), marker))
         except Exception:
-            self.rbuf = str(recvd)
+            self.rbuf = bytes(recvd)
             raise
-        val, self.rbuf = str(recvd[:offset]), str(recvd[offset:])
+        val, self.rbuf = bytes(recvd[:offset]), bytes(recvd[offset:])
         return val
 
     def recv_size(self, size, timeout=_UNSET):
