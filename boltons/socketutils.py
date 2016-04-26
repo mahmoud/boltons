@@ -90,7 +90,10 @@ class BufferedSocket(object):
                 if maxbytes is not None and len(recvd) >= maxbytes:
                     raise NotFound(marker, len(recvd))
                 if timeout:
-                    sock.settimeout(timeout - (time.time() - start))
+                    cur_timeout = timeout - (time.time() - start)
+                    if cur_timeout <= 0.0:
+                        raise socket.timeout()
+                    sock.settimeout(cur_timeout)
                 nxt = sock.recv(maxbytes)
                 if not nxt:
                     raise ConnectionClosed(
@@ -126,7 +129,11 @@ class BufferedSocket(object):
                 if total_bytes >= size:
                     break
                 chunks.append(nxt)
-                self.sock.settimeout(timeout - (time.time() - start))
+                if timeout:
+                    cur_timeout = timeout - (time.time() - start)
+                    if cur_timeout <= 0.0:
+                        raise socket.timeout()
+                    self.sock.settimeout(cur_timeout)
                 nxt = self.sock.recv(size - total_bytes)
             else:
                 raise ConnectionClosed(
@@ -136,7 +143,7 @@ class BufferedSocket(object):
             self.rbuf = b''.join(chunks)
             raise Timeout(
                 timeout, 'read {0} of {1} bytes'.format(total_bytes, size))
-        except Exception:  # in case of error, retain data read so far in buffer
+        except Exception:  # in case of error, retain data in buffer
             self.rbuf = b''.join(chunks)
             raise
         extra_bytes = total_bytes - size
@@ -146,7 +153,6 @@ class BufferedSocket(object):
             last, self.rbuf = nxt, b''
         chunks.append(last)
         return b''.join(chunks)
-
 
     def send(self, data, flags=0, timeout=_UNSET):
         if timeout is _UNSET:
@@ -164,7 +170,10 @@ class BufferedSocket(object):
                 sent = self.sock.send(sbuf[0])
                 sbuf[0] = sbuf[0][sent:]
                 if timeout:
-                    self.sock.settimeout(timeout - (time.time() - start))
+                    cur_timeout = timeout - (time.time() - start)
+                    if cur_timeout <= 0.0:
+                        raise socket.timeout()
+                    self.sock.settimeout(cur_timeout)
         except socket.timeout:
             raise Timeout(
                 timeout, "{0} bytes unsent".format(len(sbuf[0])))
