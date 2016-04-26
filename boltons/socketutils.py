@@ -80,33 +80,36 @@ class BufferedSocket(object):
             maxbytes = self.maxbytes
         if timeout is _UNSET:
             timeout = self.timeout
-        chunks = []
-        recvd = 0
+        recvd = bytearray(self.rbuf)
+        start = time.time()
+        sock = self.sock
+        if not timeout:  # covers None (no timeout) and 0 (nonblocking)
+            sock.settimeout(timeout)
         try:
-            start = time.time()
-            self.sock.settimeout(timeout)
-            nxt = self.rbuf or self.sock.recv(maxbytes)
-            while nxt and marker not in nxt:
-                chunks.append(nxt)
-                recvd += len(nxt)
-                if maxbytes is not None and recvd >= maxbytes:
-                    raise NotFound(marker, recvd)
-                self.sock.settimeout(timeout - (time.time() - start))
-                nxt = self.sock.recv(maxbytes)
-            if not nxt:
-                raise ConnectionClosed(
-                    'connection closed after reading {0} bytes without'
-                    ' finding symbol {1}'.format(recvd, marker))
+            while 1:
+                if maxbytes is not None and len(recvd) >= maxbytes:
+                    raise NotFound(marker, len(recvd))
+                if timeout:
+                    sock.settimeout(timeout - (time.time() - start))
+                nxt = sock.recv(maxbytes)
+                if not nxt:
+                    raise ConnectionClosed(
+                        'connection closed after reading {0} bytes without'
+                        ' finding symbol {1}'.format(len(recvd), marker))
+                recvd.extend(nxt)
+                offset = recvd.find(marker, -len(nxt) - len(marker))
+                if offset >= 0:
+                    offset += len(marker)  # include marker in the return
+                    break
         except socket.timeout:
-            self.rbuf = b''.join(chunks)
-            raise Timeout(
-                timeout, 'read {0} bytes without finding symbol {1}'.format(
-                    recvd, marker))
-        except Exception:  # in case of error, retain data read so far in buffer
-            self.rbuf = b''.join(chunks)
+            self.rbuf = str(recvd)
+            raise Timeout(timeout,
+                          'read {0} bytes without finding marker: {1}'.format(len(self.rbuf), marker))
+        except Exception:
+            self.rbuf = str(recvd)
             raise
-        val, _, self.rbuf = nxt.partition(marker)
-        return b''.join(chunks) + val
+        val, self.rbuf = str(recvd[:offset]), str(recvd[offset:])
+        return val
 
     def recv_size(self, size, timeout=_UNSET):
         'read off of socket until size bytes have been read'
@@ -144,6 +147,7 @@ class BufferedSocket(object):
         chunks.append(last)
         return b''.join(chunks)
 
+
     def send(self, data, flags=0, timeout=_UNSET):
         if timeout is _UNSET:
             timeout = self.timeout
@@ -159,7 +163,8 @@ class BufferedSocket(object):
             while sbuf[0]:
                 sent = self.sock.send(sbuf[0])
                 sbuf[0] = sbuf[0][sent:]
-                self.sock.settimeout(timeout - (time.time() - start))
+                if timeout:
+                    self.sock.settimeout(timeout - (time.time() - start))
         except socket.timeout:
             raise Timeout(
                 timeout, "{0} bytes unsent".format(len(sbuf[0])))
@@ -218,7 +223,8 @@ class NetstringSocket(object):
         if timeout is _UNSET:
             timeout = self.timeout
         # start = time.time()
-        size = int(self.bsock.recv_until(b':', self.timeout, self.maxlensize))
+        size_pref = self.bsock.recv_until(b':', self.timeout, self.maxlensize)
+        size = int(size_pref[:-1])  # netstrings must start with "size:"
         if size > self.maxsize:
             raise NetstringMessageTooLong(size, self.maxsize)
         payload = self.bsock.recv_size(size)
