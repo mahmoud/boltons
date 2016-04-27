@@ -106,7 +106,7 @@ def test_socketutils_netstring():
     except NetstringMessageTooLong:
         print("raised MessageTooLong correctly")
     try:
-        client.bsock.recv_until(b'b', maxbytes=4096)
+        client.bsock.recv_until(b'b', maxsize=4096)
         raise Exception('recv_until did not raise NotFound')
     except NotFound:
         print("raised NotFound correctly")
