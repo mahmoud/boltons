@@ -1,4 +1,34 @@
 # -*- coding: utf-8 -*-
+"""At its heart, Python can be viewed as an extension of the C
+programming language. Springing from the most popular systems
+programming language has made Python itself a great language for
+systems programming. One key to success in this domain is Python's
+very serviceable :mod:`socket` module and its :class:`socket.socket`
+type.
+
+The `socketutils` module provides natural next steps to the `socket`
+builtin: straightforward, tested building blocks for higher-level
+protocols.
+
+The :class:`BufferedSocket` wraps an ordinary socket, but provides a
+layer of buffering for both sending and receiving. This is vital for
+building any higher level protocols on sockets, especially on the part
+of the receiver. The Bufferedsocket enables receiving until the next
+relevant token, or up to a certain size. It also provides size
+limiting, as well as timeouts that are compatible with multiple
+concurrency paradigms.
+
+This module also provides the :class:`NetstringSocket`, a pure-Python
+implementation of the Netstring protocol, built on the
+:class:`BufferedSocket`.
+
+Special thanks to `Kurt Rose`_ for his original authorship and all his
+contributions on this module.
+
+.. _Kurt Rose: https://github.com/doublereedkurt
+
+"""
+
 
 import time
 import socket
@@ -26,6 +56,16 @@ class BufferedSocket(object):
     caller is prepared to handle the EWOULDBLOCK exceptions. Much like
     the built-in socket, the BufferedSocket is not intrinsically
     threadsafe for higher-level protocols.
+
+    Args:
+        sock (socket): The connected socket to be wrapped.
+        timeout (float): The default timeout for sends and recvs, in seconds.
+        maxsize (int): The default maximum number of bytes to be received
+            into the buffer before it is considered full and raises an
+            exception.
+
+    *timeout* and *maxsize* can both be overridden on specific socket
+    operations.
     """
     # TODO: recv_close()  # receive until socket closed
     def __init__(self, sock,
@@ -34,19 +74,31 @@ class BufferedSocket(object):
         self.sock.settimeout(None)
         self.rbuf = b''
         self.sbuf = []
-        self.timeout = timeout
-        self.maxsize = maxsize
+        self.timeout = float(timeout)
+        self.maxsize = int(maxsize)
 
     def fileno(self):
+        """Returns the file descriptor of the underlying socket. Raises an
+        exception if the underlying socket is closed.
+        """
         return self.sock.fileno()
 
     def settimeout(self, timeout):
+        "Set the default timeout for future operations, in float seconds."
         self.timeout = timeout
 
     def setmaxsize(self, maxsize):
+        """
+        Set the default maximum buffer size for future operations,
+        in integer of bytes. Does not truncate the current buffer.
+        """
         self.maxsize = maxsize
 
     def recv(self, size, flags=0, timeout=_UNSET):
+        """Perform a single socket recv operation, receiving **up to** *size*
+        bytes. If the operation does not complete in *timeout*
+        seconds, a :exc:`socket.timeout` is raised.
+        """
         if timeout is _UNSET:
             timeout = self.timeout
         if flags:
@@ -63,15 +115,34 @@ class BufferedSocket(object):
         self.rbuf = b''
         return data
 
-    def peek(self, n, timeout=_UNSET):
-        'peek n bytes from the socket and keep them in the buffer'
-        if len(self.rbuf) >= n:
-            return self.rbuf[:n]
-        data = self.recv_size(n, timeout=timeout)
+    def peek(self, size, timeout=_UNSET):
+        """Peek *size* bytes from the socket and keep them in the buffer.
+
+        Args:
+            size (int): The exact number of bytes to peek at
+            timeout (float): The timeout for this operation. Can be 0 for
+                nonblocking and None for no timeout. Defaults to the value
+                set in the constructor of BufferedSocket.
+        """
+        if len(self.rbuf) >= size:
+            return self.rbuf[:size]
+        data = self.recv_size(size, timeout=timeout)
         self.rbuf = data + self.rbuf
         return data
 
     def recv_until(self, marker, timeout=_UNSET, maxsize=_UNSET):
+        """Receive until *marker* is found, *timeout* is exceeded, or internal
+        buffer reaches *maxsize*.
+
+        Args:
+            marker (bytes): The byte or bytestring to be searched for
+                in the socket stream.
+            timeout (float): The timeout for this operation. Can be 0 for
+                nonblocking and None for no timeout. Defaults to the value
+                set in the constructor of BufferedSocket.
+            maxsize (int): The maximum size for the internal buffer.
+                Defaults to the value set in the constructor.
+        """
         'read off of socket until the marker is found'
         if maxsize is _UNSET:
             maxsize = self.maxsize
@@ -113,7 +184,20 @@ class BufferedSocket(object):
         return val
 
     def recv_size(self, size, timeout=_UNSET):
-        'read off of socket until size bytes have been read'
+        """read off of the internal buffer, then the socket until size bytes
+        have been read.
+
+        Args:
+            size (int): number of bytes to read before returning.
+            timeout (float): The timeout for this operation. Can be 0 for
+                nonblocking and None for no timeout. Defaults to the value
+                set in the constructor of BufferedSocket.
+
+        If the appropriate number of bytes cannot be fetched from the
+        buffer and socket before *timeout* expires, then a
+        :exc:`Timeout` will be raised. If the connection is closed, a
+        :exc:`ConnectionClosed` will be raised.
+        """
         if timeout is _UNSET:
             timeout = self.timeout
         chunks = []
@@ -154,10 +238,25 @@ class BufferedSocket(object):
         return b''.join(chunks)
 
     def send(self, data, flags=0, timeout=_UNSET):
+        """Send the contents of the internal send buffer, as well as *data*,
+        to the receiving end of the connection.
+
+        Args:
+            data (bytes): The bytes to send.
+            flags (int): Kept for API compatibility with sockets. Only
+                the default 0 is valid.
+            timeout (float): The timeout for this operation. Can be 0 for
+                nonblocking and None for no timeout. Defaults to the value
+                set in the constructor of BufferedSocket.
+
+        Will raise :exc:`Timeout` if the send operation fails to
+        complete before *timeout*.
+
+        """
         if timeout is _UNSET:
             timeout = self.timeout
         if flags:
-            raise ValueError("flags not supported")
+            raise ValueError("non-zero flags not supported")
         sbuf = self.sbuf
         sbuf.append(data)
         if len(sbuf) > 1:
@@ -179,9 +278,11 @@ class BufferedSocket(object):
     sendall = send
 
     def flush(self):
+        "Send the contents of the internal send buffer."
         self.send(b'')
 
     def buffer(self, data):
+        "Buffer *data* bytes for the next send operation."
         self.sbuf.append(data)
 
 
