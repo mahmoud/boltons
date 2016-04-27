@@ -40,6 +40,9 @@ class BufferedSocket(object):
         self.timeout = timeout
         self.maxbytes = maxbytes
 
+    def fileno(self):
+        return self.sock.fileno()
+
     def settimeout(self, timeout):
         self.timeout = timeout
 
@@ -47,7 +50,6 @@ class BufferedSocket(object):
         self.maxbytes = maxbytes
 
     def recv(self, size, flags=0, timeout=_UNSET):
-
         if timeout is _UNSET:
             timeout = self.timeout
         if flags:
@@ -74,9 +76,6 @@ class BufferedSocket(object):
 
     def recv_until(self, marker, timeout=_UNSET, maxbytes=_UNSET):
         'read off of socket until the marker is found'
-        if len(marker) != 1:
-            raise ValueError('expected marker to be a 1-byte string, not %r'
-                             % marker)
         if maxbytes is _UNSET:
             maxbytes = self.maxbytes
         if timeout is _UNSET:
@@ -89,7 +88,7 @@ class BufferedSocket(object):
         try:
             while 1:
                 if maxbytes is not None and len(recvd) >= maxbytes:
-                    raise NotFound(marker, len(recvd))
+                    raise NotFound(marker, len(recvd))  # check rbuf attr
                 if timeout:
                     cur_timeout = timeout - (time.time() - start)
                     if cur_timeout <= 0.0:
@@ -97,9 +96,9 @@ class BufferedSocket(object):
                     sock.settimeout(cur_timeout)
                 nxt = sock.recv(maxbytes)
                 if not nxt:
-                    raise ConnectionClosed(
-                        'connection closed after reading {0} bytes without'
-                        ' finding symbol {1}'.format(len(recvd), marker))
+                    msg = ('connection closed after reading %s bytes without'
+                           ' finding symbol: %r' % (len(recvd), marker))
+                    raise ConnectionClosed(msg)  # check the rbuf attr for more
                 recvd.extend(nxt)
                 offset = recvd.find(marker, -len(nxt) - len(marker))
                 if offset >= 0:
@@ -107,8 +106,9 @@ class BufferedSocket(object):
                     break
         except socket.timeout:
             self.rbuf = bytes(recvd)
-            raise Timeout(timeout,
-                          'read {0} bytes without finding marker: {1}'.format(len(self.rbuf), marker))
+            msg = ('read %s bytes without finding marker: %r'
+                   % (len(recvd), marker))
+            raise Timeout(timeout, msg)  # check the rbuf attr for more
         except Exception:
             self.rbuf = bytes(recvd)
             raise
@@ -137,14 +137,15 @@ class BufferedSocket(object):
                     self.sock.settimeout(cur_timeout)
                 nxt = self.sock.recv(size - total_bytes)
             else:
-                raise ConnectionClosed(
-                    'connection was closed after reading'
-                    ' {0} of {1} bytes'.format(total_bytes, size))
+                msg = ('connection closed after reading %s of %s requested'
+                       ' bytes' % (total_bytes, size))
+                raise ConnectionClosed(msg)  # check rbuf attribute for more
         except socket.timeout:
             self.rbuf = b''.join(chunks)
-            raise Timeout(
-                timeout, 'read {0} of {1} bytes'.format(total_bytes, size))
-        except Exception:  # in case of error, retain data in buffer
+            msg = 'read %s of %s bytes' % (total_bytes, size)
+            raise Timeout(timeout, msg)  # check rbuf attribute for more
+        except Exception:
+            # data is always retained, regardless of errors
             self.rbuf = b''.join(chunks)
             raise
         extra_bytes = total_bytes - size
@@ -176,8 +177,7 @@ class BufferedSocket(object):
                         raise socket.timeout()
                     self.sock.settimeout(cur_timeout)
         except socket.timeout:
-            raise Timeout(
-                timeout, "{0} bytes unsent".format(len(sbuf[0])))
+            raise Timeout(timeout, '%s bytes unsent' % len(sbuf[0]))
 
     sendall = send
 
@@ -198,18 +198,18 @@ class ConnectionClosed(Error):
 
 class Timeout(socket.timeout, Error):
     def __init__(self, timeout, extra=""):
-        if timeout is None:
-            super(Timeout, self).__init__('timed out ' + extra)
-        else:
-            super(Timeout, self).__init__(
-                'timed out after {0}ms '.format(timeout * 1e3) + extra)
+        msg = 'socket operation timed out'
+        if timeout is not None:
+            msg += ' after %sms' % (timeout * 1000)
+        if extra:
+            msg += '.' + extra
+        super(Timeout, self).__init__(msg)
 
 
 class NotFound(Error):
-    def __init__(self, symbol, bytes_read):
-        super(NotFound, self).__init__(
-            'read {0} bytes without finding symbol {1}'.format(
-                symbol, bytes_read))
+    def __init__(self, marker, bytes_read):
+        msg = 'read %s bytes without finding marker: %r' % (marker, bytes_read)
+        super(NotFound, self).__init__(msg)
 
 
 class NetstringSocket(object):
@@ -238,8 +238,8 @@ class NetstringSocket(object):
         if size > self.maxsize:
             raise NetstringMessageTooLong(size, self.maxsize)
         payload = self.bsock.recv_size(size)
-        assert self.bsock.recv(1) == b',', NetstringProtocolError(
-            "missing traililng ',' after netstring")
+        if self.bsock.recv(1) != b',':
+            raise NetstringProtocolError("expected trailing ',' after message")
         return payload
 
     def write_ns(self, payload):
@@ -256,5 +256,6 @@ class NetstringProtocolError(Error):
 
 class NetstringMessageTooLong(NetstringProtocolError):
     def __init__(self, size, maxsize):
-        super(NetstringMessageTooLong, self).__init__(
-            'netstring message length {0} > max {1}'.format(size, maxsize))
+        msg = ('netstring message length exceeds configured maxsize: %s > %s'
+               % (size, maxsize))
+        super(NetstringMessageTooLong, self).__init__(msg)
