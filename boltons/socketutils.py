@@ -6,7 +6,7 @@ systems programming. One key to success in this domain is Python's
 very serviceable :mod:`socket` module and its :class:`socket.socket`
 type.
 
-The `socketutils` module provides natural next steps to the `socket`
+The ``socketutils`` module provides natural next steps to the ``socket``
 builtin: straightforward, tested building blocks for higher-level
 protocols.
 
@@ -64,8 +64,13 @@ class BufferedSocket(object):
             into the buffer before it is considered full and raises an
             exception.
 
-    *timeout* and *maxsize* can both be overridden on specific socket
+    *timeout* and *maxsize* can both be overridden on individual socket
     operations.
+
+    All ``recv`` methods return bytestrings (:type:`bytes`) and can raise
+    :exc:`socket.error`. :exc:`Timeout`, :exc:`ConnectionClosed`, and
+    :exc:`NotFound` all inherit from :exc:`socket.error` and exist to
+    provide better error messages.
     """
     # TODO: recv_close()  # receive until socket closed
     def __init__(self, sock,
@@ -88,16 +93,25 @@ class BufferedSocket(object):
         self.timeout = timeout
 
     def setmaxsize(self, maxsize):
-        """
-        Set the default maximum buffer size for future operations,
-        in integer of bytes. Does not truncate the current buffer.
+        """Set the default maximum buffer size for future operations, in
+        integer of bytes. Does not truncate the current buffer.
         """
         self.maxsize = maxsize
 
     def recv(self, size, flags=0, timeout=_UNSET):
-        """Perform a single socket recv operation, receiving **up to** *size*
-        bytes. If the operation does not complete in *timeout*
-        seconds, a :exc:`socket.timeout` is raised.
+        """Returns **up to** *size* bytes, using the internal buffer before
+        performing a single :meth:`socket.recv` operation.
+
+        Args:
+            size (int): The maximum number of bytes to receive.
+            flags (int): Kept for API compatibility with sockets. Only
+                the default, ``0``, is valid.
+            timeout (float): The timeout for this operation. Can be 0 for
+                nonblocking and None for no timeout. Defaults to the value
+                set in the constructor of BufferedSocket.
+
+        If the operation does not complete in *timeout* seconds, a
+        :exc:`Timeout` is raised.
         """
         if timeout is _UNSET:
             timeout = self.timeout
@@ -108,7 +122,11 @@ class BufferedSocket(object):
             return data
         size -= len(self.rbuf)
         self.sock.settimeout(timeout)
-        data = self.rbuf + self.sock.recv(size)
+        try:
+            sock_data = self.sock.recv(size)
+        except socket.timeout:
+            raise Timeout(timeout)  # check the rbuf attr for more
+        data = self.rbuf + sock_data
         # don't empty buffer till after network communication is complete,
         # to avoid data loss on transient / retry-able errors (e.g. read
         # timeout)
@@ -116,13 +134,15 @@ class BufferedSocket(object):
         return data
 
     def peek(self, size, timeout=_UNSET):
-        """Peek *size* bytes from the socket and keep them in the buffer.
+        """Returns *size* bytes from the socket or internal buffer, if
+        available. Bytes are kept in the buffer.
 
         Args:
             size (int): The exact number of bytes to peek at
             timeout (float): The timeout for this operation. Can be 0 for
                 nonblocking and None for no timeout. Defaults to the value
                 set in the constructor of BufferedSocket.
+
         """
         if len(self.rbuf) >= size:
             return self.rbuf[:size]
@@ -184,8 +204,8 @@ class BufferedSocket(object):
         return val
 
     def recv_size(self, size, timeout=_UNSET):
-        """read off of the internal buffer, then the socket until size bytes
-        have been read.
+        """Read off of the internal buffer, then off the socket, until exactly
+        *size* bytes have been read.
 
         Args:
             size (int): number of bytes to read before returning.
