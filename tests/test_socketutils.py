@@ -12,7 +12,7 @@ from boltons.socketutils import (BufferedSocket,
 
 
 def test_short_lines():
-    for ms in (2, 4, 6, 1024):
+    for ms in (2, 4, 6, 1024, None):
         x, y = socket.socketpair()
         bs = BufferedSocket(x)
         y.sendall(b'1\n2\n3\n')
@@ -89,6 +89,18 @@ def test_socketutils_netstring():
         assert client.read_ns() == b'pong'
     dur = time.time() - s
     print("netstring ping-pong latency", dur, "ms")
+
+    s = time.time()
+    for i in range(1000):
+        client.write_ns(b'ping')
+    resps = []
+    for i in range(1000):
+        resps.append(client.read_ns())
+    e = time.time()
+    assert all([r == b'pong' for r in resps])
+    assert client.bsock.getrecvbuffer() == b''
+    dur = e - s
+    print("netstring pipelined ping-pong latency", dur, "ms")
 
     # tell the server to close the socket and then try a failure case
     client.write_ns(b'close')
