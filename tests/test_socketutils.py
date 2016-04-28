@@ -15,11 +15,11 @@ def test_short_lines():
     for ms in (2, 4, 6, 1024):
         x, y = socket.socketpair()
         bs = BufferedSocket(x)
-        y.sendall('1\n2\n3\n')
-        assert bs.recv_until('\n', maxsize=ms) == '1\n'
-        assert bs.recv_until('\n', maxsize=ms) == '2\n'
+        y.sendall(b'1\n2\n3\n')
+        assert bs.recv_until(b'\n', maxsize=ms) == b'1\n'
+        assert bs.recv_until(b'\n', maxsize=ms) == b'2\n'
         y.close()
-        assert bs.recv_close(maxsize=ms) == '3\n'
+        assert bs.recv_close(maxsize=ms) == b'3\n'
 
         try:
             bs.recv_size(1)
