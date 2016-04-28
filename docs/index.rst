@@ -19,14 +19,17 @@ including:
     :mod:`~boltons.iterutils`
   * A full-featured :class:`~boltons.tbutils.TracebackInfo` type, for
     representing stack traces, in :mod:`~boltons.tbutils`
+  * A lightweight :class:`UTC timezone <boltons.timeutils.UTC>`
+    available in :mod:`~boltons.timeutils`.
   * Recursive mapping for nested data transforms, with :func:`remap
     <boltons.iterutils.remap>`
 
 And that's just a small selection. As of |today|, ``boltons`` is
-|b_type_count| types and |b_func_count| functions spread across
+|b_type_count| types and |b_func_count| functions, spread across
 |b_mod_count| modules. See what's new by `checking the CHANGELOG`_.
 
 .. counts are appx 50, 75, and 23, respectively, as of initial docs writing
+.. in mid 2016, the counts are now 62, 112, and 25, respectively
 
 .. _the standard library: https://docs.python.org/2.7/library/index.html
 .. _checking the CHANGELOG: https://github.com/mahmoud/boltons/blob/master/CHANGELOG.md
@@ -41,14 +44,15 @@ Boltons can be added to a project in a few ways. There's the obvious one::
 Then dozens of boltons are just an import away::
 
   from boltons.cacheutils import LRU
-  my_cache = LRU()
+  lru_cache = LRU()
+  lru_cache['result'] = 'success'
 
 Due to the nature of utilities, application developers might want to
 consider other integration options. See the :ref:`Integration
 <arch_integration>` section of the architecture document for more
 details.
 
-Boltons is tested against Python 2.6, 2.7, 3.4, and PyPy.
+Boltons is tested against Python 2.6, 2.7, 3.4, 3.5, and PyPy.
 
 Third-party packages
 --------------------
