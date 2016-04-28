@@ -196,7 +196,7 @@ class BufferedSocket(object):
             if maxsize is _UNSET:
                 maxsize = self.maxsize
             try:
-                recvd = self.recv_size(maxsize, timeout)
+                recvd = self.recv_size(maxsize + 1, timeout)
             except ConnectionClosed:
                 ret, self.rbuf = self.rbuf, b''
             else:

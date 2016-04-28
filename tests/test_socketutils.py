@@ -12,20 +12,22 @@ from boltons.socketutils import (BufferedSocket,
 
 
 def test_short_lines():
-    x, y = socket.socketpair()
-    bs = BufferedSocket(x)
-    y.sendall('1\n2\n3\n')
-    assert bs.recv_until('\n') == '1\n'
-    assert bs.recv_until('\n') == '2\n'
-    y.close()
-    assert bs.recv_close() == '3\n'
+    for ms in (2, 4, 6, 1024):
+        x, y = socket.socketpair()
+        bs = BufferedSocket(x)
+        y.sendall('1\n2\n3\n')
+        assert bs.recv_until('\n', maxsize=ms) == '1\n'
+        assert bs.recv_until('\n', maxsize=ms) == '2\n'
+        y.close()
+        assert bs.recv_close(maxsize=ms) == '3\n'
 
-    try:
-        bs.recv_size(1)
-    except ConnectionClosed:
-        pass
-    else:
-        assert False, 'expected ConnectionClosed'
+        try:
+            bs.recv_size(1)
+        except ConnectionClosed:
+            pass
+        else:
+            assert False, 'expected ConnectionClosed'
+    return
 
 
 def netstring_server(server_socket):
