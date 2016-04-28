@@ -223,15 +223,21 @@ class BufferedSocket(object):
                 maxsize = self.maxsize
             if timeout is _UNSET:
                 timeout = self.timeout
+            sock = self.sock
             recvd = bytearray(self.rbuf)
             start = time.time()
-            sock = self.sock
+            find_offset_start = 0  # becomes a negative index below
             if not timeout:  # covers None (no timeout) and 0 (nonblocking)
                 sock.settimeout(timeout)
             try:
                 while 1:
-                    if maxsize is not None and len(recvd) >= maxsize:
+                    if maxsize is not None and len(recvd) > maxsize:
                         raise MessageTooLong(len(recvd), marker)  # check rbuf
+                    offset = recvd.find(marker, find_offset_start)
+                    if offset >= 0:
+                        offset += len(marker)  # include marker in the return
+                        break
+                    find_offset_start -= len(recvd) - len(marker)
                     if timeout:
                         cur_timeout = timeout - (time.time() - start)
                         if cur_timeout <= 0.0:
@@ -244,10 +250,6 @@ class BufferedSocket(object):
                                ' without finding symbol: %r' % args)
                         raise ConnectionClosed(msg)  # check the recv buffer
                     recvd.extend(nxt)
-                    offset = recvd.find(marker, -len(nxt) - len(marker))
-                    if offset >= 0:
-                        offset += len(marker)  # include marker in the return
-                        break
             except socket.timeout:
                 self.rbuf = bytes(recvd)
                 msg = ('read %s bytes without finding marker: %r'
