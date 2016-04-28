@@ -6,7 +6,7 @@ import threading
 from boltons.socketutils import (NetstringSocket,
                                  ConnectionClosed,
                                  NetstringMessageTooLong,
-                                 NotFound,
+                                 MessageTooLong,
                                  Timeout)
 
 
@@ -107,9 +107,9 @@ def test_socketutils_netstring():
         print("raised MessageTooLong correctly")
     try:
         client.bsock.recv_until(b'b', maxsize=4096)
-        raise Exception('recv_until did not raise NotFound')
-    except NotFound:
-        print("raised NotFound correctly")
+        raise Exception('recv_until did not raise MessageTooLong')
+    except MessageTooLong:
+        print("raised MessageTooLong correctly")
     assert client.bsock.recv_size(4097) == b'a' * 4096 + b','
     print('correctly maintained buffer after exception raised')
 
