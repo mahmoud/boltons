@@ -11,12 +11,12 @@ builtin: straightforward, tested building blocks for higher-level
 protocols.
 
 The :class:`BufferedSocket` wraps an ordinary socket, but provides a
-layer of buffering for both sending and receiving. This is vital for
-building any higher level protocols on sockets, especially on the part
-of the receiver. The Bufferedsocket enables receiving until the next
-relevant token, or up to a certain size. It also provides size
-limiting, as well as timeouts that are compatible with multiple
-concurrency paradigms.
+layer of buffering for both sending and receiving. This facilitates
+parsing messages from streams, which is necessary for virtually all
+protocols on TCP and UDS sockets in ``SOCK_STREAM`` mode. The
+Bufferedsocket enables receiving until the next relevant token, or up
+to a certain size. It also provides size limiting, as well as timeouts
+that are compatible with multiple concurrency paradigms.
 
 This module also provides the :class:`NetstringSocket`, a pure-Python
 implementation of the Netstring protocol, built on the
@@ -96,9 +96,9 @@ class BufferedSocket(object):
     for more information on how to use BufferedSockets with built-in
     sockets.
 
-    The BufferedSocket is threadsafe. Still, consider your protocol
-    before accessing a single socket from multiple threads.
-
+    The BufferedSocket is threadsafe, but consider the semantics of
+    your protocol before accessing a single socket from multiple
+    threads.
     """
     def __init__(self, sock,
                  timeout=DEFAULT_TIMEOUT, maxsize=DEFAULT_MAXSIZE):
@@ -145,7 +145,10 @@ class BufferedSocket(object):
                 set in the constructor of BufferedSocket.
 
         If the operation does not complete in *timeout* seconds, a
-        :exc:`Timeout` is raised.
+        :exc:`Timeout` is raised. Much like the built-in
+        :type:`socket.socket`, if this method returns an empty string,
+        then the socket is closed and recv buffer is empty. Further
+        calls to recv will raise :exc:`socket.error`.
         """
         with self.recv_lock:
             if timeout is _UNSET:
@@ -155,17 +158,14 @@ class BufferedSocket(object):
             if len(self.rbuf) >= size:
                 data, self.rbuf = self.rbuf[:size], self.rbuf[size:]
                 return data
-            size -= len(self.rbuf)
+            if self.rbuf:
+                ret, self.rbuf = self.rbuf, b''
+                return ret
             self.sock.settimeout(timeout)
             try:
-                sock_data = self.sock.recv(size)
+                data = self.sock.recv(size)
             except socket.timeout:
                 raise Timeout(timeout)  # check the rbuf attr for more
-            data = self.rbuf + sock_data
-            # don't empty buffer till after network communication is complete,
-            # to avoid data loss on transient / retry-able errors (e.g. read
-            # timeout)
-            self.rbuf = b''
         return data
 
     def peek(self, size, timeout=_UNSET):
