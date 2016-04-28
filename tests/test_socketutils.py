@@ -30,6 +30,30 @@ def test_short_lines():
     return
 
 
+def test_multibyte_delim():
+    delim = '\r\n'
+    small_one = b'1' + delim
+    big_two = b'2' * 2048 + delim
+    for ms in (3, 5, 1024, None):
+        x, y = socket.socketpair()
+        bs = BufferedSocket(x)
+
+        y.sendall(small_one)
+        y.sendall(big_two)
+
+        assert bs.recv_until(delim, maxsize=ms) == small_one
+        try:
+            assert bs.recv_until(delim, maxsize=ms) == big_two
+        except MessageTooLong:
+            if ms is None:
+                assert False, 'unexpected MessageTooLong'
+        else:
+            if ms is not None:
+                assert False, 'expected MessageTooLong'
+
+    return
+
+
 def netstring_server(server_socket):
     "A basic netstring server loop, supporting a few operations"
     running = True
