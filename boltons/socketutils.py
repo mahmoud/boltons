@@ -54,7 +54,7 @@ except ImportError:
 
 DEFAULT_TIMEOUT = 10  # 10 seconds
 DEFAULT_MAXSIZE = 32 * 1024  # 32kb
-_RECV_CLOSE_LARGE_MAXSIZE = 1024 ** 5  # 1PB
+_RECV_LARGE_MAXSIZE = 1024 ** 5  # 1PB
 
 
 class BufferedSocket(object):
@@ -206,7 +206,7 @@ class BufferedSocket(object):
             if maxsize is _UNSET:
                 maxsize = self.maxsize
             if maxsize is None:
-                maxsize = _RECV_CLOSE_LARGE_MAXSIZE
+                maxsize = _RECV_LARGE_MAXSIZE
             try:
                 recvd = self.recv_size(maxsize + 1, timeout)
             except ConnectionClosed:
@@ -233,6 +233,8 @@ class BufferedSocket(object):
         with self.recv_lock:
             if maxsize is _UNSET:
                 maxsize = self.maxsize
+            if maxsize is None:
+                maxsize = _RECV_LARGE_MAXSIZE
             if timeout is _UNSET:
                 timeout = self.timeout
             sock = self.sock
@@ -247,7 +249,7 @@ class BufferedSocket(object):
                     if offset >= 0:
                         offset += len(delimiter)  # include delimiter in return
                         break
-                    elif maxsize is not None and len(recvd) > maxsize:
+                    elif len(recvd) > maxsize:
                         raise MessageTooLong(len(recvd), delimiter)  # see buff
                     find_offset_start -= len(recvd) - len(delimiter)
                     if timeout:
