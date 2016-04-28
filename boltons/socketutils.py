@@ -54,6 +54,7 @@ except ImportError:
 
 DEFAULT_TIMEOUT = 10  # 10 seconds
 DEFAULT_MAXSIZE = 32 * 1024  # 32kb
+_RECV_CLOSE_LARGE_MAXSIZE = 1024 ** 5  # 1PB
 
 
 class BufferedSocket(object):
@@ -73,6 +74,8 @@ class BufferedSocket(object):
         maxsize (int): The default maximum number of bytes to be received
             into the buffer before it is considered full and raises an
             exception. Defaults to 32 kilobytes.
+        recvsize (int): The number of bytes to recv for every
+            lower-level :meth:`socket.recv` call. Defaults to *maxsize*.
 
     *timeout* and *maxsize* can both be overridden on individual socket
     operations.
@@ -99,15 +102,20 @@ class BufferedSocket(object):
     The BufferedSocket is threadsafe, but consider the semantics of
     your protocol before accessing a single socket from multiple
     threads.
+
     """
-    def __init__(self, sock,
-                 timeout=DEFAULT_TIMEOUT, maxsize=DEFAULT_MAXSIZE):
+    def __init__(self, sock, timeout=DEFAULT_TIMEOUT,
+                 maxsize=DEFAULT_MAXSIZE, recvsize=_UNSET):
         self.sock = sock
         self.sock.settimeout(None)
         self.rbuf = b''
         self.sbuf = []
         self.timeout = float(timeout)
         self.maxsize = int(maxsize)
+        if recvsize is _UNSET:
+            self._recvsize = self.maxsize
+        else:
+            self._recvsize = int(recvsize)
 
         self.send_lock = RLock()
         self.recv_lock = RLock()
@@ -165,14 +173,16 @@ class BufferedSocket(object):
                 return ret
             self.sock.settimeout(timeout)
             try:
-                data = self.sock.recv(size)
+                data = self.sock.recv(self._recvsize)
             except socket.timeout:
                 raise Timeout(timeout)  # check the rbuf attr for more
+            if len(data) > size:
+                data, self.rbuf = data[:size], data[size:]
         return data
 
     def peek(self, size, timeout=_UNSET):
-        """Returns *size* bytes from the socket or internal buffer, if
-        available. Bytes are kept in the buffer.
+        """Returns *size* bytes from the socket and/or internal buffer. Bytes
+        are kept in the buffer.
 
         Args:
             size (int): The exact number of bytes to peek at
@@ -195,6 +205,8 @@ class BufferedSocket(object):
         with self.recv_lock:
             if maxsize is _UNSET:
                 maxsize = self.maxsize
+            if maxsize is None:
+                maxsize = _RECV_CLOSE_LARGE_MAXSIZE
             try:
                 recvd = self.recv_size(maxsize + 1, timeout)
             except ConnectionClosed:
@@ -205,12 +217,12 @@ class BufferedSocket(object):
                 raise MessageTooLong(len(self.rbuf))  # check receive buffer
         return ret
 
-    def recv_until(self, marker, timeout=_UNSET, maxsize=_UNSET):
-        """Receive until *marker* is found, *timeout* is exceeded, or internal
+    def recv_until(self, delimiter, timeout=_UNSET, maxsize=_UNSET):
+        """Receive until *delimiter* is found, *timeout* is exceeded, or internal
         buffer reaches *maxsize*.
 
         Args:
-            marker (bytes): The byte or bytestring to be searched for
+            delimiter (bytes): The byte or bytestring to be searched for
                 in the socket stream.
             timeout (float): The timeout for this operation. Can be 0 for
                 nonblocking and None for no timeout. Defaults to the value
@@ -231,29 +243,29 @@ class BufferedSocket(object):
                 sock.settimeout(timeout)
             try:
                 while 1:
-                    if maxsize is not None and len(recvd) > maxsize:
-                        raise MessageTooLong(len(recvd), marker)  # check rbuf
-                    offset = recvd.find(marker, find_offset_start)
+                    offset = recvd.find(delimiter, find_offset_start, maxsize)
                     if offset >= 0:
-                        offset += len(marker)  # include marker in the return
+                        offset += len(delimiter)  # include delimiter in return
                         break
-                    find_offset_start -= len(recvd) - len(marker)
+                    elif maxsize is not None and len(recvd) > maxsize:
+                        raise MessageTooLong(len(recvd), delimiter)  # see buff
+                    find_offset_start -= len(recvd) - len(delimiter)
                     if timeout:
                         cur_timeout = timeout - (time.time() - start)
                         if cur_timeout <= 0.0:
                             raise socket.timeout()
                         sock.settimeout(cur_timeout)
-                    nxt = sock.recv(maxsize)
+                    nxt = sock.recv(self._recvsize)
                     if not nxt:
-                        args = (len(recvd), marker)
+                        args = (len(recvd), delimiter)
                         msg = ('connection closed after reading %s bytes'
                                ' without finding symbol: %r' % args)
                         raise ConnectionClosed(msg)  # check the recv buffer
                     recvd.extend(nxt)
             except socket.timeout:
                 self.rbuf = bytes(recvd)
-                msg = ('read %s bytes without finding marker: %r'
-                       % (len(recvd), marker))
+                msg = ('read %s bytes without finding delimiter: %r'
+                       % (len(recvd), delimiter))
                 raise Timeout(timeout, msg)  # check the recv buffer
             except Exception:
                 self.rbuf = bytes(recvd)
@@ -295,7 +307,7 @@ class BufferedSocket(object):
                         if cur_timeout <= 0.0:
                             raise socket.timeout()
                         self.sock.settimeout(cur_timeout)
-                    nxt = self.sock.recv(size - total_bytes)
+                    nxt = self.sock.recv(self._recvsize)
                 else:
                     msg = ('connection closed after reading %s of %s requested'
                            ' bytes' % (total_bytes, size))
@@ -398,15 +410,15 @@ class ConnectionClosed(Error):
 class MessageTooLong(Error):
     """Raised from :meth:`BufferedSocket.recv_until` and
     :meth:`BufferedSocket.recv_closed` when more than *maxsize* bytes are
-    read without encountering the marker or a closed connection,
+    read without encountering the delimiter or a closed connection,
     respectively.
     """
-    def __init__(self, bytes_read=None, marker=None):
+    def __init__(self, bytes_read=None, delimiter=None):
         msg = 'message exceeded maximum size'
         if bytes_read is not None:
             msg += '. %s bytes read' % (bytes_read,)
-        if marker is not None:
-            msg += '. Marker not found: %r' % (marker,)
+        if delimiter is not None:
+            msg += '. Delimiter not found: %r' % (delimiter,)
         super(MessageTooLong, self).__init__(msg)
 
 
