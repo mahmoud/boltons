@@ -32,15 +32,18 @@ def test_short_lines():
 
 def test_multibyte_delim():
     delim = '\r\n'
+    empty = b'' + delim
     small_one = b'1' + delim
     big_two = b'2' * 2048 + delim
     for ms in (3, 5, 1024, None):
         x, y = socket.socketpair()
         bs = BufferedSocket(x)
 
+        y.sendall(empty)
         y.sendall(small_one)
         y.sendall(big_two)
 
+        assert bs.recv_until(delim, maxsize=ms) == empty
         assert bs.recv_until(delim, maxsize=ms) == small_one
         try:
             assert bs.recv_until(delim, maxsize=ms) == big_two
@@ -51,6 +54,26 @@ def test_multibyte_delim():
             if ms is not None:
                 assert False, 'expected MessageTooLong'
 
+    return
+
+
+def test_split_delim():
+    delim = '\r\n'
+    first = b'1234\r'
+    second = b'\n5'
+
+    x, y = socket.socketpair()
+    bs = BufferedSocket(x)
+
+    y.sendall(first)
+    try:
+        bs.recv_until(delim, timeout=0.0001)
+    except Timeout:
+        pass
+    y.sendall(second)
+
+    assert bs.recv_until(delim) == b'1234\r\n'
+    assert bs.recv_size(1) == '5'
     return
 
 
