@@ -47,7 +47,7 @@ except Exception:
 
 try:
     from typeutils import make_sentinel
-    _UNSET = make_sentinel(var_name='_MISSING')
+    _UNSET = make_sentinel(var_name='_UNSET')
 except ImportError:
     _UNSET = object()
 
@@ -77,7 +77,7 @@ class BufferedSocket(object):
     *timeout* and *maxsize* can both be overridden on individual socket
     operations.
 
-    All ``recv`` methods return bytestrings (:type:`bytes`) and can
+    All ``recv`` methods return bytestrings (:class:`bytes`) and can
     raise :exc:`socket.error`. :exc:`Timeout`,
     :exc:`ConnectionClosed`, and :exc:`MessageTooLong` all inherit
     from :exc:`socket.error` and exist to provide better error
@@ -87,7 +87,7 @@ class BufferedSocket(object):
 
     BufferedSocket does not replace the built-in socket by any
     means. While the overlapping parts of the API are kept parallel to
-    the built-in :type:`socket.socket`, BufferedSocket does not
+    the built-in :class:`socket.socket`, BufferedSocket does not
     inherit from socket, and most socket functionality is only
     available on the underlying socket. :meth:`socket.getpeername`,
     :meth:`socket.getsockname`, :meth:`socket.fileno`, and others are
@@ -113,12 +113,12 @@ class BufferedSocket(object):
         self.recv_lock = RLock()
 
     def settimeout(self, timeout):
-        "Set the default timeout for future operations, in float seconds."
+        "Set the default *timeout* for future operations, in seconds."
         self.timeout = timeout
 
     def setmaxsize(self, maxsize):
-        """Set the default maximum buffer size for future operations, in
-        integer of bytes. Does not truncate the current buffer.
+        """Set the default maximum buffer size *maxsize* for future
+        operations, in bytes. Does not truncate the current buffer.
         """
         self.maxsize = maxsize
 
@@ -140,15 +140,17 @@ class BufferedSocket(object):
             size (int): The maximum number of bytes to receive.
             flags (int): Kept for API compatibility with sockets. Only
                 the default, ``0``, is valid.
-            timeout (float): The timeout for this operation. Can be 0 for
-                nonblocking and None for no timeout. Defaults to the value
-                set in the constructor of BufferedSocket.
+            timeout (float): The timeout for this operation. Can be
+                ``0`` for nonblocking and ``None`` for no
+                timeout. Defaults to the value set in the constructor
+                of BufferedSocket.
 
         If the operation does not complete in *timeout* seconds, a
         :exc:`Timeout` is raised. Much like the built-in
-        :type:`socket.socket`, if this method returns an empty string,
+        :class:`socket.socket`, if this method returns an empty string,
         then the socket is closed and recv buffer is empty. Further
         calls to recv will raise :exc:`socket.error`.
+
         """
         with self.recv_lock:
             if timeout is _UNSET:
@@ -314,7 +316,9 @@ class BufferedSocket(object):
 
     def send(self, data, flags=0, timeout=_UNSET):
         """Send the contents of the internal send buffer, as well as *data*,
-        to the receiving end of the connection.
+        to the receiving end of the connection. Returns the total
+        number of bytes sent. If no exception is raised, all of *data* was
+        sent and the internal send buffer is empty.
 
         Args:
             data (bytes): The bytes to send.
@@ -325,7 +329,9 @@ class BufferedSocket(object):
                 set in the constructor of BufferedSocket.
 
         Will raise :exc:`Timeout` if the send operation fails to
-        complete before *timeout*.
+        complete before *timeout*. In the event of an exception, use
+        :meth:`BufferedSocket.getsendbuffer` to see which data was
+        unsent.
 
         """
         with self.send_lock:
@@ -336,12 +342,13 @@ class BufferedSocket(object):
             sbuf = self.sbuf
             sbuf.append(data)
             if len(sbuf) > 1:
-                sbuf[:] = [b''.join(sbuf)]
+                sbuf[:] = [b''.join([s for s in sbuf if s])]
             self.sock.settimeout(timeout)
-            start = time.time()
+            start, total_sent = time.time(), 0
             try:
                 while sbuf[0]:
                     sent = self.sock.send(sbuf[0])
+                    total_sent += sent
                     sbuf[0] = sbuf[0][sent:]
                     if timeout:
                         cur_timeout = timeout - (time.time() - start)
@@ -350,9 +357,13 @@ class BufferedSocket(object):
                         self.sock.settimeout(cur_timeout)
             except socket.timeout:
                 raise Timeout(timeout, '%s bytes unsent' % len(sbuf[0]))
-        return
+        return total_sent
 
-    sendall = send
+    def sendall(self, data, flags=0, timeout=_UNSET):
+        """An passthrough to :meth:`~BufferedSocket.send`, retained for
+        parallelism to the :class:`socket.socket` API.
+        """
+        return self.send(data, flags, timeout)
 
     def flush(self):
         "Send the contents of the internal send buffer."
@@ -367,7 +378,14 @@ class BufferedSocket(object):
         return
 
 
-class Error(socket.error, Exception):
+class Error(socket.error):
+    """A subclass of :exc:`socket.error` from which all other
+    ``socketutils`` exceptions inherit.
+
+    When using :class:`BufferedSocket` and other ``socketutils``
+    types, generally you want to catch one of the specific exception
+    types below, or :exc:`socket.error`.
+    """
     pass
 
 
@@ -376,13 +394,15 @@ class ConnectionClosed(Error):
 
 
 class MessageTooLong(Error):
-    """Only raised from :meth:`BufferedSocket.recv_until` when more than
-    *maxsize* bytes are read without the socket closing.
+    """Raised from :meth:`BufferedSocket.recv_until` and
+    :meth:`BufferedSocket.recv_closed` when more than *maxsize* bytes are
+    read without encountering the marker or a closed connection,
+    respectively.
     """
     def __init__(self, bytes_read=None, marker=None):
         msg = 'message exceeded maximum size'
         if bytes_read is not None:
-            msg += '%s bytes read' % (bytes_read,)
+            msg += '. %s bytes read' % (bytes_read,)
         if marker is not None:
             msg += '. Marker not found: %r' % (marker,)
         super(MessageTooLong, self).__init__(msg)
@@ -405,7 +425,7 @@ class NetstringSocket(object):
     More info: https://en.wikipedia.org/wiki/Netstring
     Even more info: http://cr.yp.to/proto/netstrings.txt
     """
-    def __init__(self, sock, timeout=30, maxsize=32 * 1024):
+    def __init__(self, sock, timeout=DEFAULT_TIMEOUT, maxsize=DEFAULT_MAXSIZE):
         self.bsock = BufferedSocket(sock)
         self.timeout = timeout
         self.maxsize = maxsize
