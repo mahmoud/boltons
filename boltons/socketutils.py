@@ -188,7 +188,7 @@ class BufferedSocket(object):
             self.rbuf = data + self.rbuf
         return data
 
-    def recv_close(self, maxsize=_UNSET, timeout=_UNSET):
+    def recv_close(self, timeout=_UNSET, maxsize=_UNSET):
         """Receive until the connection is closed, up to *maxsize* bytes. If
         more than *maxsize* bytes are received, raises :exc:`MessageTooLong`.
         """
