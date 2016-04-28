@@ -214,7 +214,8 @@ class BufferedSocket(object):
             else:
                 # put extra received bytes (now in rbuf) after recvd
                 self.rbuf = recvd + self.rbuf
-                raise MessageTooLong(len(self.rbuf))  # check receive buffer
+                size_read = min(maxsize, len(self.rbuf))
+                raise MessageTooLong(size_read)  # check receive buffer
         return ret
 
     def recv_until(self, delimiter, timeout=_UNSET, maxsize=_UNSET):
@@ -250,8 +251,7 @@ class BufferedSocket(object):
                         offset += len(delimiter)  # include delimiter in return
                         break
                     elif len(recvd) > maxsize:
-                        raise MessageTooLong(len(recvd), delimiter)  # see buff
-                    find_offset_start -= len(recvd) - len(delimiter)
+                        raise MessageTooLong(maxsize, delimiter)  # see rbuf
                     if timeout:
                         cur_timeout = timeout - (time.time() - start)
                         if cur_timeout <= 0.0:
@@ -264,6 +264,7 @@ class BufferedSocket(object):
                                ' without finding symbol: %r' % args)
                         raise ConnectionClosed(msg)  # check the recv buffer
                     recvd.extend(nxt)
+                    find_offset_start = -len(nxt) - len(delimiter) + 1
             except socket.timeout:
                 self.rbuf = bytes(recvd)
                 msg = ('read %s bytes without finding delimiter: %r'
