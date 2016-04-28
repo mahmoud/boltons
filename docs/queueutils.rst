@@ -1,4 +1,4 @@
-``queueutils`` - Priority Queues
+``queueutils`` - Priority queues
 ================================
 
 .. automodule:: boltons.queueutils
