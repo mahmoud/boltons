@@ -3,11 +3,29 @@
 import time
 import socket
 import threading
-from boltons.socketutils import (NetstringSocket,
+from boltons.socketutils import (BufferedSocket,
+                                 NetstringSocket,
                                  ConnectionClosed,
                                  NetstringMessageTooLong,
                                  MessageTooLong,
                                  Timeout)
+
+
+def test_short_lines():
+    x, y = socket.socketpair()
+    bs = BufferedSocket(x)
+    y.sendall('1\n2\n3\n')
+    assert bs.recv_until('\n') == '1\n'
+    assert bs.recv_until('\n') == '2\n'
+    y.close()
+    assert bs.recv_close() == '3\n'
+
+    try:
+        bs.recv_size(1)
+    except ConnectionClosed:
+        pass
+    else:
+        assert False, 'expected ConnectionClosed'
 
 
 def netstring_server(server_socket):
