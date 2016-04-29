@@ -105,6 +105,7 @@ Section listing
    namedutils
    queueutils
    setutils
+   socketutils
    statsutils
    strutils
    tableutils

@@ -31,7 +31,7 @@ def test_short_lines():
 
 
 def test_multibyte_delim():
-    delim = '\r\n'
+    delim = b'\r\n'
     empty = b'' + delim
     small_one = b'1' + delim
     big_two = b'2' * 2048 + delim
@@ -58,7 +58,7 @@ def test_multibyte_delim():
 
 
 def test_split_delim():
-    delim = '\r\n'
+    delim = b'\r\n'
     first = b'1234\r'
     second = b'\n5'
 
@@ -73,7 +73,7 @@ def test_split_delim():
     y.sendall(second)
 
     assert bs.recv_until(delim) == b'1234\r\n'
-    assert bs.recv_size(1) == '5'
+    assert bs.recv_size(1) == b'5'
     return
 
 
