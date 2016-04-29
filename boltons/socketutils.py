@@ -249,16 +249,18 @@ class BufferedSocket(object):
                 maxsize = _RECV_LARGE_MAXSIZE
             if timeout is _UNSET:
                 timeout = self.timeout
+
             sock = self.sock
             recvd = bytearray(self.rbuf)
             start = time.time()
             find_offset_start = 0  # becomes a negative index below
+
             if not timeout:  # covers None (no timeout) and 0 (nonblocking)
                 sock.settimeout(timeout)
             try:
                 while 1:
                     offset = recvd.find(delimiter, find_offset_start, maxsize)
-                    if offset >= 0:
+                    if offset != -1:  # str.find returns -1 when no match found
                         offset += len(delimiter)  # include delimiter in return
                         break
                     elif len(recvd) > maxsize:

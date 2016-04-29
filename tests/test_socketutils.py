@@ -118,7 +118,6 @@ def test_basic_nonblocking():
     return
 
 
-
 def netstring_server(server_socket):
     "A basic netstring server loop, supporting a few operations"
     running = True
