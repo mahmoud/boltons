@@ -103,7 +103,10 @@ class BufferedSocket(object):
 
     The BufferedSocket is threadsafe, but consider the semantics of
     your protocol before accessing a single socket from multiple
-    threads.
+    threads. Similarly, once the BufferedSocket is constructed, avoid
+    using the underlying socket directly. Only use it for operations
+    unrelated to messages, e.g., :meth:`socket.getpeername`.
+
     """
     def __init__(self, sock, timeout=_UNSET,
                  maxsize=DEFAULT_MAXSIZE, recvsize=_UNSET):
@@ -193,7 +196,8 @@ class BufferedSocket(object):
 
     def peek(self, size, timeout=_UNSET):
         """Returns *size* bytes from the socket and/or internal buffer. Bytes
-        are kept in the buffer.
+        are retained in BufferedSocket's internal recv buffer. To only
+        see bytes in the recv buffer, use :meth:`getrecvbuffer`.
 
         Args:
             size (int): The exact number of bytes to peek at
@@ -201,6 +205,10 @@ class BufferedSocket(object):
                 nonblocking and None for no timeout. Defaults to the value
                 set in the constructor of BufferedSocket.
 
+        If the appropriate number of bytes cannot be fetched from the
+        buffer and socket before *timeout* expires, then a
+        :exc:`Timeout` will be raised. If the connection is closed, a
+        :exc:`ConnectionClosed` will be raised.
         """
         with self.recv_lock:
             if len(self.rbuf) >= size:
@@ -230,17 +238,28 @@ class BufferedSocket(object):
         return ret
 
     def recv_until(self, delimiter, timeout=_UNSET, maxsize=_UNSET):
-        """Receive until *delimiter* is found, *timeout* is exceeded, or internal
-        buffer reaches *maxsize*.
+        """Receive until *delimiter* is found, *maxsize* bytes have been read,
+        or *timeout* is exceeded.
 
         Args:
-            delimiter (bytes): The byte or bytestring to be searched for
+            delimiter (bytes): One or more bytes to be searched for
                 in the socket stream.
             timeout (float): The timeout for this operation. Can be 0 for
                 nonblocking and None for no timeout. Defaults to the value
                 set in the constructor of BufferedSocket.
             maxsize (int): The maximum size for the internal buffer.
                 Defaults to the value set in the constructor.
+
+        ``recv_until`` will raise the following exceptions:
+
+          * :exc:`Timeout` if more than *timeout* seconds expire.
+          * :exc:`ConnectionClosed` if the underlying socket is closed
+            by the sending end.
+          * :exc:`MessageTooLong` if the delimiter is not found in the
+            first *maxsize* bytes.
+          * :exc:`socket.error` if operating in nonblocking mode
+            (*timeout* equal to 0), or if some unexpected socket error
+            occurs, such as operating on a closed socket.
         """
         with self.recv_lock:
             if maxsize is _UNSET:
@@ -362,7 +381,6 @@ class BufferedSocket(object):
         complete before *timeout*. In the event of an exception, use
         :meth:`BufferedSocket.getsendbuffer` to see which data was
         unsent.
-
         """
         with self.send_lock:
             if timeout is _UNSET:
