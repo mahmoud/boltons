@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import time
+import errno
 import socket
 import threading
 from boltons.socketutils import (BufferedSocket,
@@ -75,6 +76,47 @@ def test_split_delim():
     assert bs.recv_until(delim) == b'1234\r\n'
     assert bs.recv_size(1) == b'5'
     return
+
+
+def test_basic_nonblocking():
+    delim = b'\n'
+
+    # test with per-call timeout
+    x, y = socket.socketpair()
+    bs = BufferedSocket(x)
+
+    try:
+        bs.recv_until(delim, timeout=0)
+    except socket.error as se:
+        assert se.errno == errno.EWOULDBLOCK
+    y.sendall(delim)
+    assert bs.recv_until(delim) == delim
+
+    # test with instance-level default timeout
+    x, y = socket.socketpair()
+    bs = BufferedSocket(x, timeout=0)
+
+    try:
+        bs.recv_until(delim)
+    except socket.error as se:
+        assert se.errno == errno.EWOULDBLOCK
+    y.sendall(delim)
+    assert bs.recv_until(delim) == delim
+
+    # test with setblocking(0) on the underlying socket
+    x, y = socket.socketpair()
+    x.setblocking(0)
+    bs = BufferedSocket(x)
+
+    try:
+        bs.recv_until(delim)
+    except socket.error as se:
+        assert se.errno == errno.EWOULDBLOCK
+    y.sendall(delim)
+    assert bs.recv_until(delim) == delim
+
+    return
+
 
 
 def netstring_server(server_socket):

@@ -70,7 +70,9 @@ class BufferedSocket(object):
     Args:
         sock (socket): The connected socket to be wrapped.
         timeout (float): The default timeout for sends and recvs, in
-            seconds. Defaults to 10 seconds.
+            seconds. Set to ``None`` for no timeout, and 0 for
+            nonblocking. Defaults to *sock*'s own timeout if already set,
+            and 10 seconds otherwise.
         maxsize (int): The default maximum number of bytes to be received
             into the buffer before it is considered full and raises an
             exception. Defaults to 32 kilobytes.
@@ -102,16 +104,25 @@ class BufferedSocket(object):
     The BufferedSocket is threadsafe, but consider the semantics of
     your protocol before accessing a single socket from multiple
     threads.
-
     """
-    def __init__(self, sock, timeout=DEFAULT_TIMEOUT,
+    def __init__(self, sock, timeout=_UNSET,
                  maxsize=DEFAULT_MAXSIZE, recvsize=_UNSET):
         self.sock = sock
-        self.sock.settimeout(None)
         self.rbuf = b''
         self.sbuf = []
-        self.timeout = float(timeout)
         self.maxsize = int(maxsize)
+
+        if timeout is _UNSET:
+            if self.sock.gettimeout() is None:
+                self.timeout = DEFAULT_TIMEOUT
+            else:
+                self.timeout = self.sock.gettimeout()
+        else:
+            if timeout is None:
+                self.timeout = timeout
+            else:
+                self.timeout = float(timeout)
+
         if recvsize is _UNSET:
             self._recvsize = self.maxsize
         else:
