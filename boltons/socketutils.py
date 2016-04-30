@@ -137,6 +137,12 @@ class BufferedSocket(object):
         "Set the default *timeout* for future operations, in seconds."
         self.timeout = timeout
 
+    def gettimeout(self):
+        return self.timeout
+
+    def setblocking(self, blocking):
+        self.timeout = None if blocking else 0.0
+
     def setmaxsize(self, maxsize):
         """Set the default maximum buffer size *maxsize* for future
         operations, in bytes. Does not truncate the current buffer.
@@ -423,6 +429,36 @@ class BufferedSocket(object):
         with self._send_lock:
             self.sbuf.append(data)
         return
+
+    # # # Passing through some socket basics
+
+    def getsockname(self):
+        """Convenience function to return the wrapped socket's own address.
+        See :meth:`socket.getsockname` for more details.
+        """
+        return self.sock.getpeername()
+
+    def getpeername(self):
+        """Convenience function to return the remote address to which the
+        wrapped socket is connected.  See :meth:`socket.getpeername`
+        for more details.
+        """
+        return self.sock.getpeername()
+
+    def getsockopt(self, level, optname, buflen=None):
+        """Convenience function passing through to the wrapped socket's
+        :meth:`socket.getsockopt`.
+        """
+        args = (level, optname)
+        if buflen is not None:
+            args += (buflen,)
+        return self.sock.getsockopt(*args)
+
+    def setsockopt(self, level, optname, value):
+        """Convenience function passing through to the wrapped socket's
+        :meth:`socket.setsockopt`.
+        """
+        return self.sock.setsockopt(level, optname, value)
 
 
 class Error(socket.error):

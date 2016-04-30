@@ -118,6 +118,28 @@ def test_basic_nonblocking():
     return
 
 
+def test_simple_buffered_socket_passthroughs():
+    x, y = socket.socketpair()
+    bs = BufferedSocket(x)
+
+    assert bs.getsockname() == x.getsockname()
+    assert bs.getpeername() == x.getpeername()
+
+
+def test_timeout_setters_getters():
+    x, y = socket.socketpair()
+    bs = BufferedSocket(x)
+
+    assert bs.settimeout(1.0) is None
+    assert bs.gettimeout() == 1.0
+
+    assert bs.setblocking(False) is None
+    assert bs.gettimeout() == 0.0
+
+    assert bs.setblocking(True) is None
+    assert bs.gettimeout() is None
+
+
 def netstring_server(server_socket):
     "A basic netstring server loop, supporting a few operations"
     running = True
