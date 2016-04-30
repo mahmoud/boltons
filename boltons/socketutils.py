@@ -29,7 +29,6 @@ contributions on this module.
 
 """
 
-
 import time
 import socket
 
@@ -460,9 +459,9 @@ class Timeout(socket.timeout, Error):
     def __init__(self, timeout, extra=""):
         msg = 'socket operation timed out'
         if timeout is not None:
-            msg += ' after %sms' % (timeout * 1000)
+            msg += ' after %sms.' % (timeout * 1000)
         if extra:
-            msg += '.' + extra
+            msg += ' ' + extra
         super(Timeout, self).__init__(msg)
 
 
@@ -538,3 +537,38 @@ class NetstringMessageTooLong(NetstringProtocolError):
         msg = ('netstring message length exceeds configured maxsize: %s > %s'
                % (size, maxsize))
         super(NetstringMessageTooLong, self).__init__(msg)
+
+
+"""
+attrs worth adding/passing through:
+
+- getpeername
+- getsockname
+- getsockopt
+- fileno
+- close (empties rbuf)
+- shutdown
+- setblocking
+
+properties: type, proto
+
+For its main functionality, BufferedSocket can wrap any object that
+has the following methods:
+
+  - gettimeout()
+  - settimeout()
+  - recv(size)
+  - send(data)
+
+The following methods are passed through:
+
+...
+
+Also, make the locks _*
+"""
+
+# TODO: buffered socket check socket.type == SOCK_STREAM?
+# TODO: make recv_until support taking a regex
+# TODO: including the delimiter in the recv_until return is not
+#       necessary, as ConnectionClosed differentiates empty messages
+#       from socket closes.
