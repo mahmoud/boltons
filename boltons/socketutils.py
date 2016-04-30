@@ -130,8 +130,8 @@ class BufferedSocket(object):
         else:
             self._recvsize = int(recvsize)
 
-        self.send_lock = RLock()
-        self.recv_lock = RLock()
+        self._send_lock = RLock()
+        self._recv_lock = RLock()
 
     def settimeout(self, timeout):
         "Set the default *timeout* for future operations, in seconds."
@@ -145,12 +145,12 @@ class BufferedSocket(object):
 
     def getrecvbuffer(self):
         "Returns the receive buffer bytestring (rbuf)."
-        with self.recv_lock:
+        with self._recv_lock:
             return self.rbuf
 
     def getsendbuffer(self):
         "Returns a copy of the send buffer list."
-        with self.send_lock:
+        with self._send_lock:
             return list(self.sbuf)
 
     def recv(self, size, flags=0, timeout=_UNSET):
@@ -173,7 +173,7 @@ class BufferedSocket(object):
         calls to recv will raise :exc:`socket.error`.
 
         """
-        with self.recv_lock:
+        with self._recv_lock:
             if timeout is _UNSET:
                 timeout = self.timeout
             if flags:
@@ -209,7 +209,7 @@ class BufferedSocket(object):
         :exc:`Timeout` will be raised. If the connection is closed, a
         :exc:`ConnectionClosed` will be raised.
         """
-        with self.recv_lock:
+        with self._recv_lock:
             if len(self.rbuf) >= size:
                 return self.rbuf[:size]
             data = self.recv_size(size, timeout=timeout)
@@ -220,7 +220,7 @@ class BufferedSocket(object):
         """Receive until the connection is closed, up to *maxsize* bytes. If
         more than *maxsize* bytes are received, raises :exc:`MessageTooLong`.
         """
-        with self.recv_lock:
+        with self._recv_lock:
             if maxsize is _UNSET:
                 maxsize = self.maxsize
             if maxsize is None:
@@ -260,7 +260,7 @@ class BufferedSocket(object):
             (*timeout* equal to 0), or if some unexpected socket error
             occurs, such as operating on a closed socket.
         """
-        with self.recv_lock:
+        with self._recv_lock:
             if maxsize is _UNSET:
                 maxsize = self.maxsize
             if maxsize is None:
@@ -322,7 +322,7 @@ class BufferedSocket(object):
         :exc:`Timeout` will be raised. If the connection is closed, a
         :exc:`ConnectionClosed` will be raised.
         """
-        with self.recv_lock:
+        with self._recv_lock:
             if timeout is _UNSET:
                 timeout = self.timeout
             chunks = []
@@ -381,7 +381,7 @@ class BufferedSocket(object):
         :meth:`BufferedSocket.getsendbuffer` to see which data was
         unsent.
         """
-        with self.send_lock:
+        with self._send_lock:
             if timeout is _UNSET:
                 timeout = self.timeout
             if flags:
@@ -414,13 +414,13 @@ class BufferedSocket(object):
 
     def flush(self):
         "Send the contents of the internal send buffer."
-        with self.send_lock:
+        with self._send_lock:
             self.send(b'')
         return
 
     def buffer(self, data):
         "Buffer *data* bytes for the next send operation."
-        with self.send_lock:
+        with self._send_lock:
             self.sbuf.append(data)
         return
 
@@ -564,7 +564,6 @@ The following methods are passed through:
 
 ...
 
-Also, make the locks _*
 """
 
 # TODO: buffered socket check socket.type == SOCK_STREAM?
