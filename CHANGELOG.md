@@ -1,8 +1,32 @@
 boltons Changelog
 =================
 
-Since February 20, 2013 there have been 22 releases and 795 commits for
-an average of one 36-commit release every 7.6 weeks.
+Since February 20, 2013 there have been 23 releases and 826 commits for
+an average of one 35-commit release every 7.5 weeks.
+
+16.2.1
+------
+*(April 29, 2016)*
+
+This version sees the soft debut of [socketutils][socketutils], which
+includes wrappers and tools for working with the built-in socket. A
+lot of [socketutils.BufferedSocket][socketutils.BufferedSocket] changes.
+
+  * [BufferedSocket.recv_until][socketutils.BufferedSocket.recv_until] now
+    supports multibyte delimiters and also includes the delimiter in its returns.
+  * Better BufferedSocket timeout discipline throughout.
+  * Various BufferedSocket argument name changes, *maxbytes* became
+    *maxsize*, *n* became *size*, *marker* became *delimiter*, etc.
+  * [BufferedSocket][socketutils.BufferedSocket] BufferedSocket became
+    threadsafe
+  * [BufferedSocket.recv][socket.BufferedSocket.recv] now always returns the
+    contents of the internal buffer before doing a socket call.
+  * [BufferedSocket.recv_close][BufferedSocket.recv_close] now exists
+    to receive until the sending end closes the connection.
+  * Can now pass *recvsize* to
+    [BufferedSocket][socketutils.BufferedSocket] constructor to tune
+    the size passed to the lower-level recv call.
+  * [socketutils][socketutils] got documented and tested.
 
 16.2.0
 ------
@@ -600,6 +624,9 @@ added in this release.
 [mathutils.ceil]: http://boltons.readthedocs.org/en/latest/mathutils.html#boltons.mathutils.ceil
 [mathutils.floor]: http://boltons.readthedocs.org/en/latest/mathutils.html#boltons.mathutils.floor
 [socketutils.BufferedSocket]: http://boltons.readthedocs.org/en/latest/socketutils.html#boltons.socketutils.BufferedSocket
+[socketutils.BufferedSocket.recv]: http://boltons.readthedocs.org/en/latest/socketutils.html#boltons.socketutils.BufferedSocket.recv
+[socketutils.BufferedSocket.recv_until]: http://boltons.readthedocs.org/en/latest/socketutils.html#boltons.socketutils.BufferedSocket.recv_until
+[socketutils.BufferedSocket.recv_close]: http://boltons.readthedocs.org/en/latest/socketutils.html#boltons.socketutils.BufferedSocket.recv_close
 [socketutils.NetstringSocket]: http://boltons.readthedocs.org/en/latest/socketutils.html#boltons.socketutils.NetstringSocket
 [statsutils]: http://boltons.readthedocs.org/en/latest/statsutils.html
 [statsutils.Stats]: http://boltons.readthedocs.org/en/latest/statsutils.html#boltons.statsutils.Stats
