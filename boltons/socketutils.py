@@ -430,7 +430,9 @@ class BufferedSocket(object):
             self.sbuf.append(data)
         return
 
+    # # #
     # # # Passing through some socket basics
+    # # #
 
     def getsockname(self):
         """Convenience function to return the wrapped socket's own address.
@@ -459,6 +461,52 @@ class BufferedSocket(object):
         :meth:`socket.setsockopt`.
         """
         return self.sock.setsockopt(level, optname, value)
+
+    # # #
+    # # # Now for some more advanced interpretations of the builtin socket
+    # # #
+
+    def fileno(self):
+        """Returns the file descriptor of the wrapped socket. -1 if it has
+        been closed on this end.
+
+        Note that this makes the BufferedSocket selectable, i.e.,
+        usable for operating system event loops without any external
+        libraries. Keep in mind that the operating system cannot know
+        about data in BufferedSocket's internal buffer. Exercise
+        discipline with calling ``recv*`` functions.
+        """
+        return self.sock.fileno()
+
+    def close(self):
+        """Closes the wrapped socket, and empties the internal buffers. The
+        send buffer is not flushed automatically, so if you have been
+        calling :meth:`~BufferedSocket.buffer`, be sure to call
+        :meth:`~BufferedSocket.flush` before calling this
+        method. After calling this method, future socket operations
+        will raise :exc:`socket.error`.
+        """
+        with self._recv_lock:
+            with self._send_lock:
+                self.rbuf = r''
+                self.sbuf[:] = []
+                self.sock.close()
+        return
+
+    def shutdown(self, how):
+        """Convenience method which passes through to the wrapped socket's
+        :meth:`~socket.shutdown`. Semantics vary by platform, so no
+        special internal handling is done with the buffers. This
+        method exists to facilitate the most common usage, wherein a
+        full ``shutdown`` is followed by a
+        :meth:`~BufferedSocket.close`. Developers requiring more
+        support, please open `an issue`_.
+
+        .. _an issue: https://github.com/mahmoud/boltons/issues
+        """
+        return self.sock.shutdown(how)
+
+    # end BufferedSocket
 
 
 class Error(socket.error):
@@ -578,13 +626,6 @@ class NetstringMessageTooLong(NetstringProtocolError):
 """
 attrs worth adding/passing through:
 
-- getpeername
-- getsockname
-- getsockopt
-- fileno
-- close (empties rbuf)
-- shutdown
-- setblocking
 
 properties: type, proto
 
