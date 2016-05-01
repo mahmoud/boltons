@@ -10,22 +10,28 @@ The ``socketutils`` module provides natural next steps to the ``socket``
 builtin: straightforward, tested building blocks for higher-level
 protocols.
 
-The :class:`BufferedSocket` wraps an ordinary socket, but provides a
-layer of buffering for both sending and receiving. This facilitates
-parsing messages from streams, which is necessary for virtually all
-protocols on TCP and UDS sockets in ``SOCK_STREAM`` mode. The
-Bufferedsocket enables receiving until the next relevant token, or up
-to a certain size. It also provides size limiting, as well as timeouts
-that are compatible with multiple concurrency paradigms.
+The :class:`BufferedSocket` wraps an ordinary socket, providing a
+layer of intuitive buffering for both sending and receiving. This
+facilitates parsing messages from streams, i.e., all sockets with type
+``SOCK_STREAM``. The BufferedSocket enables receiving until the next
+relevant token, up to a certain size, or until the connection is
+closed. For all of these, it provides consistent APIs to size
+limiting, as well as timeouts that are compatible with multiple
+concurrency paradigms. Use it to parse the next one-off text or binary
+socket protocol you encounter.
 
 This module also provides the :class:`NetstringSocket`, a pure-Python
-implementation of the Netstring protocol, built on the
-:class:`BufferedSocket`.
+implementation of `the Netstring protocol`_, built on top of the
+:class:`BufferedSocket`, serving as a ready-made, production-grade example.
 
 Special thanks to `Kurt Rose`_ for his original authorship and all his
-contributions on this module.
+contributions on this module. Also thanks to `Daniel J. Bernstein`_, the
+original author of `Netstring`_.
 
+.. _the Netstring protocol: https://en.wikipedia.org/wiki/Netstring
 .. _Kurt Rose: https://github.com/doublereedkurt
+.. _Daniel J. Bernstein: https://cr.yp.to/
+.. _Netstring: https://cr.yp.to/proto/netstrings.txt
 
 """
 

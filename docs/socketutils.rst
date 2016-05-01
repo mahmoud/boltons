@@ -29,7 +29,7 @@ Netstring
 Nestring Exceptions
 ^^^^^^^^^^^^^^^^^^^
 
-These are a few higher-level exceptions for netstring connections.
+These are a few higher-level exceptions for Netstring connections.
 
 .. autoexception:: boltons.socketutils.NetstringProtocolError
 .. autoexception:: boltons.socketutils.NetstringInvalidSize
