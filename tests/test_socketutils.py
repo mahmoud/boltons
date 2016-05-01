@@ -28,6 +28,8 @@ def test_short_lines():
             pass
         else:
             assert False, 'expected ConnectionClosed'
+
+        bs.close()
     return
 
 
@@ -54,6 +56,55 @@ def test_multibyte_delim():
         else:
             if ms is not None:
                 assert False, 'expected MessageTooLong'
+
+    return
+
+
+def test_client_disconnecting():
+    def get_bs_pair():
+        x, y = socket.socketpair()
+        bx, by = BufferedSocket(x), BufferedSocket(y)
+
+        # sanity check
+        by.sendall(b'123')
+        bx.recv_size(3) == b'123'
+
+        return bx, by
+
+    bx, by = get_bs_pair()
+    assert bx.fileno() > 0
+
+    bx.close()
+    assert bx.getrecvbuffer() == b''
+
+    try:
+        bx.recv(1)
+    except socket.error:
+        pass
+    else:
+        assert False, 'expected socket.error on closed recv'
+
+    assert bx.fileno() == -1
+
+    by.buffer(b'123')
+    assert by.getsendbuffer()
+    try:
+        by.flush()
+    except socket.error:
+        assert by.getsendbuffer()[0] == b'123'
+    else:
+        assert False, 'expected socket.error broken pipe'
+
+    by.shutdown(socket.SHUT_RDWR)
+    by.close()
+    assert not by.getsendbuffer()
+
+    try:
+        by.send(b'123')
+    except socket.error:
+        pass
+    else:
+        assert False, 'expected socket.error on closed send'
 
     return
 
