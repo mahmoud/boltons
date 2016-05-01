@@ -226,6 +226,10 @@ class BufferedSocket(object):
         """Receive until the connection is closed, up to *maxsize* bytes. If
         more than *maxsize* bytes are received, raises :exc:`MessageTooLong`.
         """
+        # recv_close works by using recv_size to request maxsize data,
+        # and ignoring ConnectionClose, returning and clearing the
+        # internal buffer instead. It raises an exception if
+        # ConnectionClosed isn't raised.
         with self._recv_lock:
             if maxsize is _UNSET:
                 maxsize = self.maxsize
@@ -481,9 +485,12 @@ class BufferedSocket(object):
 
     @property
     def proto(self):
-        """A passthrough to the wrapped socket's protocol. Nobody ever uses
-        this, so it's always 0, specifying "the default" protocol. You
-        can go back to not knowing this existed.
+        """A passthrough to the wrapped socket's protocol. The ``proto``
+        attribute is very rarely used, so it's always 0, meaning "the
+        default" protocol. Pretty much all the practical information
+        is in :attr:`~BufferedSocket.type` and
+        :attr:`~BufferedSocket.family`, so you can go back to never
+        thinking about this.
         """
         return self.sock.proto
 
