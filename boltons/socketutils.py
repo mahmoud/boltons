@@ -462,6 +462,31 @@ class BufferedSocket(object):
         """
         return self.sock.setsockopt(level, optname, value)
 
+    @property
+    def type(self):
+        """A passthrough to the wrapped socket's type. Valid usages should
+        only ever see :data:`socket.SOCK_STREAM`.
+        """
+        return self.sock.type
+
+    @property
+    def family(self):
+        """A passthrough to the wrapped socket's family. BufferedSocket
+        supports all widely-used families, so this read-only attribute
+        can be one of :data:`socket.AF_INET` for IP,
+        :data:`socket.AF_INET6` for IPv6, and :data:`socket.AF_UNIX`
+        for UDS.
+        """
+        return self.sock.family
+
+    @property
+    def proto(self):
+        """A passthrough to the wrapped socket's protocol. Nobody ever uses
+        this, so it's always 0, specifying "the default" protocol. You
+        can go back to not knowing this existed.
+        """
+        return self.sock.proto
+
     # # #
     # # # Now for some more advanced interpretations of the builtin socket
     # # #
