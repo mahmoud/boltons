@@ -1,8 +1,36 @@
 boltons Changelog
 =================
 
-Since February 20, 2013 there have been 23 releases and 826 commits for
-an average of one 35-commit release every 7.5 weeks.
+Since February 20, 2013 there have been 24 releases and 845 commits for
+an average of one 35-commit release every 7.2 weeks.
+
+16.2.2
+------
+*(May 3, 2016)*
+
+many small tweaks to socketutils.BufferedSocket, including optional
+inclusion of the delimiter in recv_until. also undid the enabling of bak
+files with AtomicFile on windows
+
+  * Small [socketutils.BufferedSocket][socketutils.BufferedSocket] tweaks
+    * make recv_until conditionally return the delimiter (by default it
+      does not). also fix a NetstringException inheritance typo
+    * socketutils: rename BufferedSocket.recv_lock to _recv_lock, and same
+      for send_lock.
+    * add a bunch of simple passthrough methods to better fill out
+      socket's API
+    * add .fileno/.close/.shutdown to [socketutils.BufferedSocket][socketutils.BufferedSocket]
+    * added type/family/proto
+      [socketutils.BufferedSocket][socketutils.BufferedSocket]
+      passthrough properties
+    * BufferedSocket: also lock on .shutdown()
+    * adding an rbuf_unconsumed attribute for post-close debugging, per
+      @doublereedkurt's request
+    * `getsendbuffer()` returns a bytestring and `recv_size()` uses the proper
+      `._recvsize` on the first socket fetch
+  * [fileutils.AtomicFile][fileutils.AtomicFile]: revert bak file as
+    it was causing confusion, per nvie/pip-tools#351
+
 
 16.2.1
 ------
