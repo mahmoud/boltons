@@ -252,7 +252,8 @@ class BufferedSocket(object):
                 raise MessageTooLong(size_read)  # check receive buffer
         return ret
 
-    def recv_until(self, delimiter, timeout=_UNSET, maxsize=_UNSET):
+    def recv_until(self, delimiter, timeout=_UNSET, maxsize=_UNSET,
+                   with_delimiter=False):
         """Receive until *delimiter* is found, *maxsize* bytes have been read,
         or *timeout* is exceeded.
 
@@ -264,6 +265,10 @@ class BufferedSocket(object):
                 set in the constructor of BufferedSocket.
             maxsize (int): The maximum size for the internal buffer.
                 Defaults to the value set in the constructor.
+            with_delimiter (bool): Whether or not to include the
+                delimiter in the output. ``False`` by default, but
+                ``True`` is useful in cases where one is simply
+                forwarding the messages.
 
         ``recv_until`` will raise the following exceptions:
 
@@ -275,6 +280,7 @@ class BufferedSocket(object):
           * :exc:`socket.error` if operating in nonblocking mode
             (*timeout* equal to 0), or if some unexpected socket error
             occurs, such as operating on a closed socket.
+
         """
         with self._recv_lock:
             if maxsize is _UNSET:
@@ -283,6 +289,7 @@ class BufferedSocket(object):
                 maxsize = _RECV_LARGE_MAXSIZE
             if timeout is _UNSET:
                 timeout = self.timeout
+            len_delimiter = len(delimiter)
 
             sock = self.sock
             recvd = bytearray(self.rbuf)
@@ -295,7 +302,11 @@ class BufferedSocket(object):
                 while 1:
                     offset = recvd.find(delimiter, find_offset_start, maxsize)
                     if offset != -1:  # str.find returns -1 when no match found
-                        offset += len(delimiter)  # include delimiter in return
+                        if with_delimiter:  # include delimiter in return
+                            offset += len_delimiter
+                            rbuf_offset = offset
+                        else:
+                            rbuf_offset = offset + len_delimiter
                         break
                     elif len(recvd) > maxsize:
                         raise MessageTooLong(maxsize, delimiter)  # see rbuf
@@ -311,7 +322,7 @@ class BufferedSocket(object):
                                ' without finding symbol: %r' % args)
                         raise ConnectionClosed(msg)  # check the recv buffer
                     recvd.extend(nxt)
-                    find_offset_start = -len(nxt) - len(delimiter) + 1
+                    find_offset_start = -len(nxt) - len_delimiter + 1
             except socket.timeout:
                 self.rbuf = bytes(recvd)
                 msg = ('read %s bytes without finding delimiter: %r'
@@ -320,7 +331,7 @@ class BufferedSocket(object):
             except Exception:
                 self.rbuf = bytes(recvd)
                 raise
-            val, self.rbuf = bytes(recvd[:offset]), bytes(recvd[offset:])
+            val, self.rbuf = bytes(recvd[:offset]), bytes(recvd[rbuf_offset:])
         return val
 
     def recv_size(self, size, timeout=_UNSET):
@@ -617,17 +628,11 @@ class NetstringSocket(object):
         size_prefix = self.bsock.recv_until(b':',
                                             timeout=self.timeout,
                                             maxsize=self._msgsize_maxsize)
-
-        size_bytes, sep, _ = size_prefix.partition(b':')
-
-        if not sep:
-            raise NetstringInvalidSize('netstring messages must start with'
-                                       ' "size:", not %r' % size_prefix)
         try:
-            size = int(size_bytes)
+            size = int(size_prefix)
         except ValueError:
             raise NetstringInvalidSize('netstring message size must be valid'
-                                       ' integer, not %r' % size_bytes)
+                                       ' integer, not %r' % size_prefix)
 
         if size > self.maxsize:
             raise NetstringMessageTooLong(size, self.maxsize)
@@ -651,7 +656,7 @@ class NetstringProtocolError(Error):
 
 class NetstringInvalidSize(NetstringProtocolError):
     def __init__(self, msg):
-        super(NetstringMessageTooLong, self).__init__(msg)
+        super(NetstringInvalidSize, self).__init__(msg)
 
 
 class NetstringMessageTooLong(NetstringProtocolError):

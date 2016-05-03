@@ -17,8 +17,8 @@ def test_short_lines():
         x, y = socket.socketpair()
         bs = BufferedSocket(x)
         y.sendall(b'1\n2\n3\n')
-        assert bs.recv_until(b'\n', maxsize=ms) == b'1\n'
-        assert bs.recv_until(b'\n', maxsize=ms) == b'2\n'
+        assert bs.recv_until(b'\n', maxsize=ms) == b'1'
+        assert bs.recv_until(b'\n', maxsize=ms) == b'2'
         y.close()
         assert bs.recv_close(maxsize=ms) == b'3\n'
 
@@ -34,28 +34,39 @@ def test_short_lines():
 
 
 def test_multibyte_delim():
+    """Primarily tests recv_until with various maxsizes and True/False
+    for with_delimiter.
+    """
+
     delim = b'\r\n'
-    empty = b'' + delim
-    small_one = b'1' + delim
-    big_two = b'2' * 2048 + delim
-    for ms in (3, 5, 1024, None):
-        x, y = socket.socketpair()
-        bs = BufferedSocket(x)
-
-        y.sendall(empty)
-        y.sendall(small_one)
-        y.sendall(big_two)
-
-        assert bs.recv_until(delim, maxsize=ms) == empty
-        assert bs.recv_until(delim, maxsize=ms) == small_one
-        try:
-            assert bs.recv_until(delim, maxsize=ms) == big_two
-        except MessageTooLong:
-            if ms is None:
-                assert False, 'unexpected MessageTooLong'
+    for with_delim in (True, False):
+        if with_delim:
+            cond_delim = b'\r\n'
         else:
-            if ms is not None:
-                assert False, 'expected MessageTooLong'
+            cond_delim = b''
+
+        empty = b''
+        small_one = b'1'
+        big_two = b'2' * 2048
+        for ms in (3, 5, 1024, None):
+            x, y = socket.socketpair()
+            bs = BufferedSocket(x)
+
+            y.sendall(empty + delim)
+            y.sendall(small_one + delim)
+            y.sendall(big_two + delim)
+
+            kwargs = {'maxsize': ms, 'with_delimiter': with_delim}
+            assert bs.recv_until(delim, **kwargs) == empty + cond_delim
+            assert bs.recv_until(delim, **kwargs) == small_one + cond_delim
+            try:
+                assert bs.recv_until(delim, **kwargs) == big_two + cond_delim
+            except MessageTooLong:
+                if ms is None:
+                    assert False, 'unexpected MessageTooLong'
+            else:
+                if ms is not None:
+                    assert False, 'expected MessageTooLong'
 
     return
 
@@ -124,7 +135,7 @@ def test_split_delim():
         pass
     y.sendall(second)
 
-    assert bs.recv_until(delim) == b'1234\r\n'
+    assert bs.recv_until(delim, with_delimiter=True) == b'1234\r\n'
     assert bs.recv_size(1) == b'5'
     return
 
@@ -140,8 +151,8 @@ def test_basic_nonblocking():
         bs.recv_until(delim, timeout=0)
     except socket.error as se:
         assert se.errno == errno.EWOULDBLOCK
-    y.sendall(delim)
-    assert bs.recv_until(delim) == delim
+    y.sendall(delim)  # sending an empty message, effectively
+    assert bs.recv_until(delim) == b''
 
     # test with instance-level default timeout
     x, y = socket.socketpair()
@@ -152,7 +163,7 @@ def test_basic_nonblocking():
     except socket.error as se:
         assert se.errno == errno.EWOULDBLOCK
     y.sendall(delim)
-    assert bs.recv_until(delim) == delim
+    assert bs.recv_until(delim) == b''
 
     # test with setblocking(0) on the underlying socket
     x, y = socket.socketpair()
@@ -164,7 +175,7 @@ def test_basic_nonblocking():
     except socket.error as se:
         assert se.errno == errno.EWOULDBLOCK
     y.sendall(delim)
-    assert bs.recv_until(delim) == delim
+    assert bs.recv_until(delim) == b''
 
     return
 
