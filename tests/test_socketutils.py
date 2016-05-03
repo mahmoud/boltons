@@ -71,6 +71,16 @@ def test_multibyte_delim():
     return
 
 
+def test_props():
+    x, y = socket.socketpair()
+    bs = BufferedSocket(x)
+
+    assert bs.type == x.type
+    assert bs.proto == x.proto
+    assert bs.family == x.family
+    return
+
+
 def test_client_disconnecting():
     def get_bs_pair():
         x, y = socket.socketpair()
