@@ -434,7 +434,7 @@ class BufferedSocket(object):
         return total_sent
 
     def sendall(self, data, flags=0, timeout=_UNSET):
-        """An passthrough to :meth:`~BufferedSocket.send`, retained for
+        """A passthrough to :meth:`~BufferedSocket.send`, retained for
         parallelism to the :class:`socket.socket` API.
         """
         return self.send(data, flags, timeout)
