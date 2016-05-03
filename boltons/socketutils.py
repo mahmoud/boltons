@@ -163,7 +163,7 @@ class BufferedSocket(object):
     def getsendbuffer(self):
         "Returns a copy of the send buffer list."
         with self._send_lock:
-            return list(self.sbuf)
+            return b''.join(self.sbuf)
 
     def recv(self, size, flags=0, timeout=_UNSET):
         """Returns **up to** *size* bytes, using the internal buffer before
@@ -335,7 +335,7 @@ class BufferedSocket(object):
         return val
 
     def recv_size(self, size, timeout=_UNSET):
-        """Read off of the internal buffer, then off the socket, until exactly
+        """Read off of the internal buffer, then off the socket, until
         *size* bytes have been read.
 
         Args:
@@ -357,7 +357,7 @@ class BufferedSocket(object):
             try:
                 start = time.time()
                 self.sock.settimeout(timeout)
-                nxt = self.rbuf or self.sock.recv(size)
+                nxt = self.rbuf or self.sock.recv(self._recvsize)
                 while nxt:
                     total_bytes += len(nxt)
                     if total_bytes >= size:
