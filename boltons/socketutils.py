@@ -553,7 +553,10 @@ class BufferedSocket(object):
 
         .. _an issue: https://github.com/mahmoud/boltons/issues
         """
-        return self.sock.shutdown(how)
+        with self._recv_lock:
+            with self._send_lock:
+                self.sock.shutdown(how)
+        return
 
     # end BufferedSocket
 
