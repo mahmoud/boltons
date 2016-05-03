@@ -81,6 +81,24 @@ def test_props():
     return
 
 
+def test_buffers():
+    x, y = socket.socketpair()
+    bx, by = BufferedSocket(x), BufferedSocket(y)
+
+    assert by.getrecvbuffer() == b''
+    assert by.getsendbuffer() == b''
+
+    assert bx.getrecvbuffer() == b''
+
+    by.buffer(b'12')
+    by.sendall(b'3')
+    assert bx.recv_size(1) == b'1'
+
+    assert bx.getrecvbuffer() == b'23'
+
+    return
+
+
 def test_client_disconnecting():
     def get_bs_pair():
         x, y = socket.socketpair()
@@ -112,7 +130,7 @@ def test_client_disconnecting():
     try:
         by.flush()
     except socket.error:
-        assert by.getsendbuffer()[0] == b'123'
+        assert by.getsendbuffer() == b'123'
     else:
         assert False, 'expected socket.error broken pipe'
 
