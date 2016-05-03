@@ -538,6 +538,7 @@ class BufferedSocket(object):
         with self._recv_lock:
             with self._send_lock:
                 self.rbuf = b''
+                self.rbuf_unconsumed = self.rbuf
                 self.sbuf[:] = []
                 self.sock.close()
         return
