@@ -2,7 +2,9 @@
 
 import string
 
-from boltons.cacheutils import LRU, LRI
+import mock
+
+from boltons.cacheutils import LRU, LRI, cached
 
 
 def test_lru_add():
@@ -134,3 +136,68 @@ def _test_linkage(dll, max_count=10000, prev_idx=0, next_idx=1):
         i += 1
 
     return True
+
+
+def test_decorator():
+    cache = LRU()
+
+    # create mock function
+    heavy_func_mock = mock.MagicMock()
+    heavy_func_mock.return_value = 121
+
+    # apply decorator
+    cached_func_decorated = cached(cache)(heavy_func_mock)
+    for _ in range(19):
+        assert cached_func_decorated() == heavy_func_mock.return_value
+
+    assert heavy_func_mock.call_count == 1
+
+
+def test_decorator_multiple_arguments():
+    arg_variety_count = 7
+    cache = LRU()
+
+    # create mock function
+    heavy_func_mock = mock.MagicMock()
+
+    # apply decorator
+    cached_func_decorated = cached(cache)(heavy_func_mock)
+    for index in range(arg_variety_count):
+        heavy_func_mock.return_value = index
+        for _ in range(19):
+            assert cached_func_decorated(index) == heavy_func_mock.return_value
+
+    assert heavy_func_mock.call_count == arg_variety_count
+
+
+def test_decorator_with_cache_from_function():
+    cache = LRU()
+
+    def get_cache():
+        return cache
+
+    # create mock function
+    heavy_func_mock = mock.MagicMock()
+    heavy_func_mock.return_value = 121
+
+    # apply decorator (cache been provided from function)
+    cached_func_decorated = cached(get_cache)(heavy_func_mock)
+    for _ in range(19):
+        assert cached_func_decorated() == heavy_func_mock.return_value
+
+    assert heavy_func_mock.call_count == 1
+
+
+def test_decorator_with_cache_from_lambda():
+    cache = LRU()
+
+    # create mock function
+    heavy_func_mock = mock.MagicMock()
+    heavy_func_mock.return_value = 121
+
+    # apply decorator (cache been provided from lambda)
+    cached_func_decorated = cached(lambda: cache)(heavy_func_mock)
+    for _ in range(19):
+        assert cached_func_decorated() == heavy_func_mock.return_value
+
+    assert heavy_func_mock.call_count == 1
