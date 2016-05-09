@@ -28,8 +28,8 @@ files with AtomicFile on windows
       @doublereedkurt's request
     * `getsendbuffer()` returns a bytestring and `recv_size()` uses the proper
       `._recvsize` on the first socket fetch
-  * [fileutils.AtomicFile][fileutils.AtomicFile]: revert bak file as
-    it was causing confusion, per nvie/pip-tools#351
+  * [fileutils.AtomicSaver][fileutils.AtomicSaver]: revert bak file as
+    it was causing confusion, per [nvie/pip-tools#351](https://github.com/nvie/pip-tools/issues/351)
 
 
 16.2.1
