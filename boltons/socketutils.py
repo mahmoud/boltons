@@ -459,7 +459,7 @@ class BufferedSocket(object):
         """Convenience function to return the wrapped socket's own address.
         See :meth:`socket.getsockname` for more details.
         """
-        return self.sock.getpeername()
+        return self.sock.getsockname()
 
     def getpeername(self):
         """Convenience function to return the remote address to which the
