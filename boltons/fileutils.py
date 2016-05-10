@@ -468,7 +468,7 @@ def iter_find_files(directory, patterns, ignored=None):
     For example, finding Python files in the current directory:
 
     >>> filenames = sorted(iter_find_files(_CUR_DIR, '*.py'))
-    >>> filenames[-1].split('/')[-1]
+    >>> os.path.basename(filenames[-1])
     'typeutils.py'
 
     Or, Python files while ignoring emacs lockfiles:
