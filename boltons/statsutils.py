@@ -451,16 +451,16 @@ class Stats(object):
         Here is the information returned by a default ``describe``, as
         presented in the ``"text"`` format:
 
-        >>> stats = Stats(range(10))
+        >>> stats = Stats(range(1, 8))
         >>> print(stats.describe(format='text'))
-        count:    10
-        mean:     4.5
-        std_dev:  2.87228132327
-        min:      0
-        0.25:     2.25
-        0.5:      4.5
-        0.75:     6.75
-        max:      9
+        count:    7
+        mean:     4.0
+        std_dev:  2.0
+        min:      1
+        0.25:     2.5
+        0.5:      4
+        0.75:     5.5
+        max:      7
 
         For more advanced descriptive statistics, check out my blog
         post on the topic `Statistics for Software
