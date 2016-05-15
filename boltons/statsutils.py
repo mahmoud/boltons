@@ -429,6 +429,87 @@ class Stats(object):
         m = self.mean
         return [(v - m) ** power for v in self.data]
 
+    def describe(self, quantiles=None, format=None):
+        """Provides a descriptive summary of the data in the Stats object, in
+        one of several convenient formats.
+
+        Args:
+
+            quantiles (list): A list of numeric values to use as
+                quantiles in the resulting summary. All values must be
+                0.0-1.0, with 0.5 representing the median. Defaults to
+                ``[0.25, 0.5, 0.75]``, representing the standard
+                quartiles.
+            format (str): Controls the return type of the function,
+                with one of three valid values: ``"dict"`` gives back
+                a :type:`dict` with the appropriate keys and
+                values. ``"list"`` is a list of key-value pairs in an
+                order suitable to pass to an OrderedDict or HTML
+                table. ``"text"`` converts the values to text suitable
+                for printing, as seen below.
+
+        Here is the information returned by a default ``describe``, as
+        presented in the ``"text"`` format:
+
+        >>> stats = Stats(range(10))
+        >>> print(stats.describe(format='text'))
+        count:    10
+        mean:     4.5
+        std_dev:  2.87228132327
+        min:      0
+        0.25:     2.25
+        0.5:      4.5
+        0.75:     6.75
+        max:      9
+
+        For more advanced descriptive statistics, check out my blog
+        post on the topic `Statistics for Software
+        <https://www.paypal-engineering.com/2016/04/11/statistics-for-software/>`_.
+        """
+        if format is None:
+            format = 'dict'
+        elif format not in ('dict', 'list', 'text'):
+            raise ValueError('invalid format for describe,'
+                             ' expected one of "dict"/"list"/"text", not %r'
+                             % format)
+        quantiles = quantiles or [0.25, 0.5, 0.75]
+        q_items = []
+        for q in quantiles:
+            q_val = self.get_quantile(q)
+            q_items.append((str(q), q_val))
+
+        items = [('count', self.count),
+                 ('mean', self.mean),
+                 ('std_dev', self.std_dev),
+                 ('min', self.min)]
+        items.extend(q_items)
+        items.append(('max', self.max))
+        if format == 'dict':
+            ret = dict(items)
+        elif format == 'list':
+            ret = items
+        elif format == 'text':
+            ret = '\n'.join(['%s%s' % ((label + ':').ljust(10), val)
+                             for label, val in items])
+        return ret
+
+
+def describe(data, quantiles=None, format=None):
+    """A convenience function for describing data. See
+    :meth:`Stats.describe` for more details.
+
+    >>> print(describe(range(7), format='text'))
+    count:    7
+    mean:     3.0
+    std_dev:  2.0
+    min:      0
+    0.25:     1.5
+    0.5:      3
+    0.75:     4.5
+    max:      6
+    """
+    return Stats(data).describe(quantiles=quantiles, format=format)
+
 
 def _get_conv_func(attr_name):
     def stats_helper(data, default=0.0):
