@@ -1,16 +1,18 @@
 # -*- coding: utf-8 -*-
-"""``statsutils`` provides statistical functionality, such as mean
-(average), median, and variance, for basic data analysis.
+"""``statsutils`` provides tools aimed primarily at descriptive
+statistics for data analysis, such as :func:`mean` (average),
+:func:`median`, :func:`variance`, and many others,
 
 The :class:`Stats` type provides all the main functionality of the
 ``statsutils`` module. A :class:`Stats` object wraps a given dataset,
 providing all statistical measures as property attributes. These
 attributes cache their results, which allows efficient computation of
 multiple measures, as many measures rely on other measures. For
-example, relative standard deviation (:meth:`Stats.rel_std_dev`) relies
-on both the mean and standard deviation.
+example, relative standard deviation (:meth:`Stats.rel_std_dev`)
+relies on both the mean and standard deviation. The Stats object
+caches those results so no rework is done.
 
-The :class:`Stats` type's methods have a module-level counterpart for
+The :class:`Stats` type's attributes have module-level counterparts for
 convenience when the computation reuse advantages do not apply.
 
 >>> stats = Stats(range(42))
@@ -18,6 +20,14 @@ convenience when the computation reuse advantages do not apply.
 20.5
 >>> mean(range(42))
 20.5
+
+Statistics is a large field, and ``statsutils`` is focused on a few
+basic techniques that are useful in software. The following is a brief
+introduction to those techniques. For a more in-depth introduction,
+`Statistics for Software
+<https://www.paypal-engineering.com/2016/04/11/statistics-for-software/>`_,
+an article I wrote on the topic. It introduces key terminology vital
+to effective usage of statistics.
 
 Statistical moments
 -------------------
@@ -83,6 +93,7 @@ system instrumentation package.
 .. _Online: https://en.wikipedia.org/wiki/Online_algorithm
 .. _streaming: https://en.wikipedia.org/wiki/Streaming_algorithm
 .. _Lithoxyl: https://github.com/mahmoud/lithoxyl
+
 """
 
 from __future__ import print_function
@@ -430,11 +441,10 @@ class Stats(object):
         return [(v - m) ** power for v in self.data]
 
     def describe(self, quantiles=None, format=None):
-        """Provides a descriptive summary of the data in the Stats object, in
-        one of several convenient formats.
+        """Provides standard summary statistics for the data in the Stats
+        object, in one of several convenient formats.
 
         Args:
-
             quantiles (list): A list of numeric values to use as
                 quantiles in the resulting summary. All values must be
                 0.0-1.0, with 0.5 representing the median. Defaults to
@@ -465,6 +475,7 @@ class Stats(object):
         For more advanced descriptive statistics, check out my blog
         post on the topic `Statistics for Software
         <https://www.paypal-engineering.com/2016/04/11/statistics-for-software/>`_.
+
         """
         if format is None:
             format = 'dict'
@@ -495,8 +506,9 @@ class Stats(object):
 
 
 def describe(data, quantiles=None, format=None):
-    """A convenience function for describing data. See
-    :meth:`Stats.describe` for more details.
+    """A convenience function to get standard summary statistics useful
+    for describing most data. See :meth:`Stats.describe` for more
+    details.
 
     >>> print(describe(range(7), format='text'))
     count:    7
@@ -507,6 +519,7 @@ def describe(data, quantiles=None, format=None):
     0.5:      3
     0.75:     4.5
     max:      6
+
     """
     return Stats(data).describe(quantiles=quantiles, format=format)
 
