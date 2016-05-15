@@ -161,6 +161,17 @@ class Stats(object):
                 continue
             delattr(self, attr_name)
 
+    def _calc_count(self):
+        """The number of items in this Stats object. Returns the same as
+        :func:`len` on a Stats object, but provided for pandas terminology
+        parallelism.
+
+        >>> Stats(range(20)).count
+        20
+        """
+        return len(self.data)
+    count = _StatsProperty('count', _calc_count)
+
     def _calc_mean(self):
         """
         The arithmetic mean, or "average". Sum of the values divided by
@@ -178,7 +189,7 @@ class Stats(object):
         """
         The maximum value present in the data.
 
-        >>> max([2, 1, 3])
+        >>> Stats([2, 1, 3]).max
         3
         """
         if self._is_sorted:
@@ -190,7 +201,7 @@ class Stats(object):
         """
         The minimum value present in the data.
 
-        >>> min([2, 1, 3])
+        >>> Stats([2, 1, 3]).min
         1
         """
         if self._is_sorted:
@@ -428,7 +439,7 @@ def _get_conv_func(attr_name):
 
 for attr_name, attr in list(Stats.__dict__.items()):
     if isinstance(attr, _StatsProperty):
-        if attr_name in ('max', 'min'):  # don't shadow builtins
+        if attr_name in ('max', 'min', 'count'):  # don't shadow builtins
             continue
         func = _get_conv_func(attr_name)
         func.__doc__ = attr.func.__doc__

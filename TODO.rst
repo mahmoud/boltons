@@ -45,9 +45,9 @@ tbutils
 statsutils
 ----------
 
-- count (alias for len)?
 - get_quantile bug (short list index out of range)
 - describe
+- dirty bit auto clears cache on property access
 - percentiles
 - geometric mean (2 ** sum(log(a, b, ...))
 
