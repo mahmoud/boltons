@@ -8,7 +8,7 @@ The :class:`Stats` type provides all the main functionality of the
 providing all statistical measures as property attributes. These
 attributes cache their results, which allows efficient computation of
 multiple measures, as many measures rely on other measures. For
-example, relative standard deviation (:meth:`Stats.rel_std_dev`)
+example, relative standard deviation (:attr:`Stats.rel_std_dev`)
 relies on both the mean and standard deviation. The Stats object
 caches those results so no rework is done.
 
