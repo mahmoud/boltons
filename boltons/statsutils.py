@@ -174,6 +174,30 @@ class Stats(object):
         return sum(self.data, 0.0) / len(self.data)
     mean = _StatsProperty('mean', _calc_mean)
 
+    def _calc_max(self):
+        """
+        The maximum value present in the data.
+
+        >>> max([2, 1, 3])
+        3
+        """
+        if self._is_sorted:
+            return self.data[-1]
+        return max(self.data)
+    max = _StatsProperty('max', _calc_max)
+
+    def _calc_min(self):
+        """
+        The minimum value present in the data.
+
+        >>> min([2, 1, 3])
+        1
+        """
+        if self._is_sorted:
+            return self.data[0]
+        return min(self.data)
+    min = _StatsProperty('min', _calc_min)
+
     def _calc_median(self):
         """
         The median is either the middle value or the average of the two
@@ -404,6 +428,8 @@ def _get_conv_func(attr_name):
 
 for attr_name, attr in list(Stats.__dict__.items()):
     if isinstance(attr, _StatsProperty):
+        if attr_name in ('max', 'min'):  # don't shadow builtins
+            continue
         func = _get_conv_func(attr_name)
         func.__doc__ = attr.func.__doc__
         globals()[attr_name] = func

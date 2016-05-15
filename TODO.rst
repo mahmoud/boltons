@@ -46,7 +46,6 @@ statsutils
 ----------
 
 - count (alias for len)?
-- min/max
 - get_quantile bug (short list index out of range)
 - describe
 - percentiles
