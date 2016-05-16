@@ -395,6 +395,8 @@ class Stats(object):
         q = float(q)
         if not 0.0 <= q <= 1.0:
             raise ValueError('expected q between 0.0 and 1.0, not %r' % q)
+        elif not self.data:
+            return self.default
         return self._get_quantile(self._get_sorted_data(), q)
 
     def get_zscore(self, value):
