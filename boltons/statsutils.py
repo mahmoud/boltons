@@ -127,9 +127,19 @@ class Stats(object):
     """The ``Stats`` type is used to represent a group of unordered
     statistical datapoints for calculations such as mean, median, and
     variance.
+
+    Args:
+
+        data (list): List or other iterable containing numeric values.
+        default (float): A value to be returned when a given
+            statistical measure is not defined. 0.0 by default, but
+            ``float('nan')`` is appropriate for stricter applications.
+        use_copy (bool): By default Stats objects copy the initial
+            data into a new list to avoid issues with
+            modifications. Pass ``False`` to disable this behavior.
+
     """
     def __init__(self, data, default=0.0, use_copy=True):
-        # float('nan') could also be a good default
         self._use_copy = use_copy
         self._is_sorted = False
         if use_copy:
