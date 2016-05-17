@@ -33,7 +33,6 @@ Learn more about `caching algorithms on Wikipedia
 # TODO: TimedLRI
 # TODO: support 0 max_size?
 
-__all__ = ['LRI', 'LRU', 'cached', 'ThresholdCache']
 
 import itertools
 from collections import deque
@@ -51,7 +50,7 @@ except Exception:
             pass
 
 try:
-    from typeutils import make_sentinel
+    from boltons.typeutils import make_sentinel
     _MISSING = make_sentinel(var_name='_MISSING')
     _KWARG_MARK = make_sentinel(var_name='_KWARG_MARK')
 except ImportError:

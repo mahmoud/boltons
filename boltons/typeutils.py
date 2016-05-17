@@ -44,6 +44,7 @@ def make_sentinel(name='_MISSING', var_name=None):
         def __init__(self):
             self.name = name
             self.var_name = var_name
+
         def __repr__(self):
             if self.var_name:
                 return self.var_name
@@ -51,6 +52,7 @@ def make_sentinel(name='_MISSING', var_name=None):
         if var_name:
             def __reduce__(self):
                 return self.var_name
+
         def __nonzero__(self):
             return False
     return Sentinel()
