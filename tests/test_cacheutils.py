@@ -2,7 +2,16 @@
 
 import string
 
-from boltons.cacheutils import LRU, LRI
+from boltons.cacheutils import LRU, LRI, cached
+
+
+class CountingCallable(object):
+    def __init__(self):
+        self.call_count = 0
+
+    def __call__(self, *a, **kw):
+        self.call_count += 1
+        return self.call_count
 
 
 def test_lru_add():
@@ -134,3 +143,25 @@ def _test_linkage(dll, max_count=10000, prev_idx=0, next_idx=1):
         i += 1
 
     return True
+
+
+def test_callable_cache():
+    lru = LRU()
+    get_lru = lambda: lru
+
+    inner_func = CountingCallable()
+    func = cached(get_lru)(inner_func)
+
+    assert inner_func.call_count == 0
+    func()
+    assert inner_func.call_count == 1
+    func()
+    assert inner_func.call_count == 1
+
+    lru.clear()
+
+    func()
+    assert inner_func.call_count == 2
+    func()
+    assert inner_func.call_count == 2
+    return

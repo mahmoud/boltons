@@ -420,11 +420,11 @@ class _HashedKey(list):
         return self.hash_value
 
 
-def _make_cache_key(args, kwargs, typed=False, kwarg_mark=_KWARG_MARK,
-                    fasttypes=frozenset([int, str, frozenset, type(None)])):
-    """Make a cache key from optionally typed positional and keyword
-    arguments. If *typed* is ``True``, ``3`` and ``3.0`` will be
-    treated as separate keys.
+def make_cache_key(args, kwargs, typed=False, kwarg_mark=_KWARG_MARK,
+                   fasttypes=frozenset([int, str, frozenset, type(None)])):
+    """Make a generic, hashable cache key from a function's positional and
+    keyword arguments. If *typed* is ``True``, ``3`` and ``3.0`` will
+    be treated as separate keys.
 
     The key is constructed in a way that is flat as possible rather than
     as a nested structure that would take more memory.
@@ -446,19 +446,33 @@ def _make_cache_key(args, kwargs, typed=False, kwarg_mark=_KWARG_MARK,
         return key[0]
     return _HashedKey(key)
 
+# for backwards compatibility in case someone was importing it
+_make_cache_key = make_cache_key
+
 
 class CachedFunction(object):
     def __init__(self, func, cache, typed=False):
         self.func = func
-        self.cache = cache
+        if callable(cache):
+            self.get_cache = cache
+        elif not (callable(getattr(cache, '__getitem__', None))
+                  and callable(getattr(cache, '__setitem__', None))):
+            raise TypeError('expected cache to be a dict-like object,'
+                            ' or callable returning a dict-like object, not %r'
+                            % cache)
+        else:
+            def _get_cache():
+                return cache
+            self.get_cache = _get_cache
         self.typed = typed
 
     def __call__(self, *args, **kwargs):
-        key = _make_cache_key(args, kwargs, typed=self.typed)
+        cache = self.get_cache()
+        key = make_cache_key(args, kwargs, typed=self.typed)
         try:
-            ret = self.cache[key]
+            ret = cache[key]
         except KeyError:
-            ret = self.cache[key] = self.func(*args, **kwargs)
+            ret = cache[key] = self.func(*args, **kwargs)
         return ret
 
     def __repr__(self):
