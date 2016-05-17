@@ -2,7 +2,7 @@
 
 import string
 
-from boltons.cacheutils import LRU, LRI, cached, cachedmethod
+from boltons.cacheutils import LRU, LRI, cached, cachedmethod, cachedproperty
 
 
 class CountingCallable(object):
@@ -242,3 +242,31 @@ def test_cachedmethod():
     print(repr(car_two.door))
     print(repr(Car.door))
     return
+
+
+def test_cachedproperty():
+    class Proper(object):
+        def __init__(self):
+            self.expensive_func = CountingCallable()
+
+        @cachedproperty
+        def useful_attr(self):
+            return self.expensive_func()
+
+    prop = Proper()
+
+    assert prop.expensive_func.call_count == 0
+    assert prop.useful_attr == 1
+    assert prop.expensive_func.call_count == 1
+    assert prop.useful_attr == 1
+    assert prop.expensive_func.call_count == 1
+
+    prop.useful_attr += 1  # would not be possible with normal properties
+    assert prop.useful_attr == 2
+
+    delattr(prop, 'useful_attr')
+    assert prop.expensive_func.call_count == 1
+    assert prop.useful_attr
+    assert prop.expensive_func.call_count == 2
+
+    repr(Proper.useful_attr)

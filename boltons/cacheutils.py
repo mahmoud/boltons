@@ -572,6 +572,22 @@ def cachedmethod(cache, typed=False, selfish=True):
     return cached_method_decorator
 
 
+class cachedproperty(object):
+    def __init__(self, func):
+        self.func = func
+
+    def __get__(self, obj, objtype=None):
+        if obj is None:
+            return self
+        value = self.func(obj)
+        setattr(obj, self.func.__name__, value)
+        return value
+
+    def __repr__(self):
+        cn = self.__class__.__name__
+        return '<%s func=%s>' % (cn, self.func)
+
+
 class ThresholdCounter(object):
     """A **bounded** dict-like Mapping from keys to counts. The
     ThresholdCounter automatically compacts after every (1 /
