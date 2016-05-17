@@ -450,7 +450,7 @@ def _make_cache_key(args, kwargs, typed=False, kwarg_mark=_KWARG_MARK,
 class CachedFunction(object):
     def __init__(self, func, cache, typed=False):
         self.func = func
-        self.cache = cache
+        self.cache = cache() if callable(cache) else cache
         self.typed = typed
 
     def __call__(self, *args, **kwargs):
