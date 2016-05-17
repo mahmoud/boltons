@@ -422,12 +422,16 @@ class _HashedKey(list):
     def __hash__(self):
         return self.hash_value
 
+    def __repr__(self):
+        return '%s(%s)' % (self.__class__.__name__, list.__repr__(self))
+
 
 def make_cache_key(args, kwargs, typed=False, kwarg_mark=_KWARG_MARK,
                    fasttypes=frozenset([int, str, frozenset, type(None)])):
-    """Make a generic, hashable cache key from a function's positional and
-    keyword arguments. If *typed* is ``True``, ``3`` and ``3.0`` will
-    be treated as separate keys.
+    """Make a generic key from a function's positional and keyword
+    arguments, suitable for use in caches. Arguments within *args* and
+    *kwargs* must be `hashable`_. If *typed* is ``True``, ``3`` and
+    ``3.0`` will be treated as separate keys.
 
     The key is constructed in a way that is flat as possible rather than
     as a nested structure that would take more memory.
@@ -435,6 +439,11 @@ def make_cache_key(args, kwargs, typed=False, kwarg_mark=_KWARG_MARK,
     If there is only a single argument and its data type is known to cache
     its hash value, then that argument is returned without a wrapper.  This
     saves space and improves lookup speed.
+
+    >>> tuple(make_cache_key(('a', 'b'), {'c': ('d')}))
+    ('a', 'b', _KWARG_MARK, ('c', 'd'))
+
+    .. _hashable: https://docs.python.org/2/glossary.html#term-hashable
     """
     key = list(args)
     if kwargs:
@@ -454,6 +463,9 @@ _make_cache_key = make_cache_key
 
 
 class CachedFunction(object):
+    """This type is used by :func:`cached`, below. Instances of this
+    class are used to wrap functions in caching logic.
+    """
     def __init__(self, func, cache, typed=False):
         self.func = func
         if callable(cache):
@@ -486,6 +498,9 @@ class CachedFunction(object):
 
 
 class CachedMethod(object):
+    """Similar to :class:`CachedFunction`, this type is used by
+    :func:`cachedmethod` to wrap methods in caching logic.
+    """
     def __init__(self, func, cache, typed=False, selfish=True):
         self.func = func
         if isinstance(cache, basestring):
@@ -538,13 +553,15 @@ class CachedMethod(object):
 
 
 def cached(cache, typed=False):
-    """Cache any function with the cache instance of your choosing. Note
+    """Cache any function with the cache object of your choosing. Note
     that the function wrapped should take only `hashable`_ arguments.
 
     Args:
         cache (Mapping): Any :class:`dict`-like object suitable for
             use as a cache. Instances of the :class:`LRU` and
-            :class:`LRI` are good choices.
+            :class:`LRI` are good choices, but a plain :class:`dict`
+            can work in some cases, as well. This argument can also be
+            a callable which accepts no arguments and returns a mapping.
         typed (bool): Whether to factor argument types into the cache
             check. Default ``False``, setting to ``True`` causes the
             cache keys for ``3`` and ``3.0`` to be considered unequal.
@@ -560,6 +577,7 @@ def cached(cache, typed=False):
     1
 
     .. _hashable: https://docs.python.org/2/glossary.html#term-hashable
+
     """
     def cached_func_decorator(func):
         return CachedFunction(func, cache, typed=typed)
@@ -567,12 +585,51 @@ def cached(cache, typed=False):
 
 
 def cachedmethod(cache, typed=False, selfish=True):
+    """Similar to :func:`cached`, ``cachedmethod`` is used to cache
+    methods based on their arguments, using any :class:`dict`-like
+    *cache* object.
+
+    Args:
+        cache (str/Mapping/callable): Can be the name of an attribute
+            on the instance, any Mapping/:class:`dict`-like object, or
+            a callable which returns a Mapping.
+        typed (bool): Whether to factor argument types into the cache
+            check. Default ``False``, setting to ``True`` causes the
+            cache keys for ``3`` and ``3.0`` to be considered unequal.
+        selfish (bool): Whether an instance's ``self`` argument should
+            be considered in the cache key. Use this to share cache
+            objects across instances.
+
+    >>> class Lowerer(object):
+    ...     def __init__(self):
+    ...         self.cache = LRI()
+    ...
+    ...     @cachedmethod('cache')
+    ...     def lower(self, text):
+    ...         return text.lower()
+    ...
+    >>> lowerer = Lowerer()
+    >>> lowerer.lower('WOW WHO COULD GUESS CACHING COULD BE SO NEAT')
+    'wow who could guess caching could be so neat'
+    >>> len(lowerer.cache)
+    1
+    """
     def cached_method_decorator(func):
         return CachedMethod(func, cache, typed=typed, selfish=selfish)
     return cached_method_decorator
 
 
 class cachedproperty(object):
+    """The ``cachedproperty`` is used similar to :class:`property`, except
+    that the wrapped method is only called once. This is commonly used
+    to implement lazy attributes.
+
+    After the property has been accessed, the value is stored on the
+    instance itself, using the same name as the cachedproperty. This
+    allows the cache to be cleared with :func:`delattr`, or through
+    manipulating the object's ``__dict__``.
+    """
+
     def __init__(self, func):
         self.func = func
 
