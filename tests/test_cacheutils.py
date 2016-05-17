@@ -145,7 +145,22 @@ def _test_linkage(dll, max_count=10000, prev_idx=0, next_idx=1):
     return True
 
 
-def test_callable_cache():
+def test_cache_dec():
+    lru = LRU()
+    inner_func = CountingCallable()
+    func = cached(lru)(inner_func)
+
+    assert inner_func.call_count == 0
+    func()
+    assert inner_func.call_count == 1
+    func()
+    assert inner_func.call_count == 1
+    func('man door hand hook car door')
+    assert inner_func.call_count == 2
+    return
+
+
+def test_callable_cache_dec():
     lru = LRU()
     get_lru = lambda: lru
 
