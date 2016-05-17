@@ -29,20 +29,23 @@ the :class:`LRI`, the LRU has threadsafety built in.
 .. autoclass:: boltons.cacheutils.LRU
    :members:
 
-
 Automatic function caching
 --------------------------
 
 Continuing in the theme of cache tunability and experimentation,
-``cacheutils`` also offers a way to pluggably cache function return
-values: the :func:`cached` function decorator.
+``cacheutils`` also offers a pluggable way to cache function return
+values: the :func:`cached` function decorator and the
+:func:`cachedmethod` method decorator.
 
 .. autofunction:: boltons.cacheutils.cached
+.. autofunction:: boltons.cacheutils.cachedmethod
 
 Similar functionality can be found in Python 3.4's
 :func:`functools.lru_cache` decorator, but the functools approach does
-not support the same cache strategy modification or sharing the cache
-object across multiple functions.
+not support the same cache strategy modification, nor does it support
+sharing the cache object across multiple functions.
+
+.. autofunction:: boltons.cacheutils.cachedproperty
 
 Threshold-bounded Counting
 --------------------------
