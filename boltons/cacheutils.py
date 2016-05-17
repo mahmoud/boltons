@@ -37,6 +37,7 @@ __all__ = ['LRI', 'LRU', 'cached', 'ThresholdCache']
 
 import itertools
 from collections import deque
+from operator import attrgetter
 
 try:
     from threading import RLock
@@ -60,7 +61,9 @@ except ImportError:
 try:
     xrange
 except NameError:
+    # py3
     xrange = range
+    unicode, str, bytes, basestring = str, bytes, bytes, (str, bytes)
 
 PREV, NEXT, KEY, VALUE = range(4)   # names for the link fields
 DEFAULT_MAX_SIZE = 128
@@ -482,6 +485,58 @@ class CachedFunction(object):
         return "%s(func=%r)" % (cn, self.func)
 
 
+class CachedMethod(object):
+    def __init__(self, func, cache, typed=False, selfish=True):
+        self.func = func
+        if isinstance(cache, basestring):
+            self.get_cache = attrgetter(cache)
+        elif callable(cache):
+            self.get_cache = cache
+        elif not (callable(getattr(cache, '__getitem__', None))
+                  and callable(getattr(cache, '__setitem__', None))):
+            raise TypeError('expected cache to be an attribute name,'
+                            ' dict-like object, or callable returning'
+                            ' a dict-like object, not %r'
+                            % cache)
+        else:
+            def _get_cache(obj):
+                return cache
+            self.get_cache = _get_cache
+        self.typed = typed
+        self.selfish = selfish
+        self.bound_to = None
+
+    def __get__(self, obj, objtype=None):
+        if obj is None:
+            return self
+        cls = self.__class__
+        ret = cls(self.func, self.get_cache,
+                  typed=self.typed, selfish=self.selfish)
+        ret.bound_to = obj
+        return ret
+
+    def __call__(self, *args, **kwargs):
+        obj = args[0] if self.bound_to is None else self.bound_to
+        cache = self.get_cache(obj)
+        key_args = (self.bound_to,) + args if self.selfish else args
+        key = make_cache_key(key_args, kwargs, typed=self.typed)
+        try:
+            ret = cache[key]
+        except KeyError:
+            if self.bound_to is not None:
+                args = (self.bound_to,) + args
+            ret = cache[key] = self.func(*args, **kwargs)
+        return ret
+
+    def __repr__(self):
+        cn = self.__class__.__name__
+        args = (cn, self.func, self.typed, self.selfish)
+        if self.bound_to is not None:
+            args += (self.bound_to,)
+            return ('<%s func=%r typed=%r selfish=%r bound_to=%r>' % args)
+        return ("%s(func=%r, typed=%r, selfish=%r)" % args)
+
+
 def cached(cache, typed=False):
     """Cache any function with the cache instance of your choosing. Note
     that the function wrapped should take only `hashable`_ arguments.
@@ -509,6 +564,12 @@ def cached(cache, typed=False):
     def cached_func_decorator(func):
         return CachedFunction(func, cache, typed=typed)
     return cached_func_decorator
+
+
+def cachedmethod(cache, typed=False, selfish=True):
+    def cached_method_decorator(func):
+        return CachedMethod(func, cache, typed=typed, selfish=selfish)
+    return cached_method_decorator
 
 
 class ThresholdCounter(object):

@@ -2,7 +2,7 @@
 
 import string
 
-from boltons.cacheutils import LRU, LRI, cached
+from boltons.cacheutils import LRU, LRI, cached, cachedmethod
 
 
 class CountingCallable(object):
@@ -145,7 +145,7 @@ def _test_linkage(dll, max_count=10000, prev_idx=0, next_idx=1):
     return True
 
 
-def test_cache_dec():
+def test_cached_dec():
     lru = LRU()
     inner_func = CountingCallable()
     func = cached(lru)(inner_func)
@@ -160,7 +160,7 @@ def test_cache_dec():
     return
 
 
-def test_callable_cache_dec():
+def test_callable_cached_dec():
     lru = LRU()
     get_lru = lambda: lru
 
@@ -179,4 +179,66 @@ def test_callable_cache_dec():
     assert inner_func.call_count == 2
     func()
     assert inner_func.call_count == 2
+
+    print(repr(func))
+
+    return
+
+
+def test_cachedmethod():
+    class Car(object):
+        def __init__(self, cache=None):
+            self.h_cache = LRI() if cache is None else cache
+            self.door_count = 0
+            self.hook_count = 0
+            self.hand_count = 0
+
+        @cachedmethod('h_cache')
+        def hand(self, *a, **kw):
+            self.hand_count += 1
+
+        @cachedmethod(lambda obj: obj.h_cache)
+        def hook(self, *a, **kw):
+            self.hook_count += 1
+
+        @cachedmethod('h_cache', selfish=False)
+        def door(self, *a, **kw):
+            self.door_count += 1
+
+    car = Car()
+
+    # attribute name-style
+    assert car.hand_count == 0
+    car.hand('h', a='nd')
+    assert car.hand_count == 1
+    car.hand('h', a='nd')
+    assert car.hand_count == 1
+
+    # callable-style
+    assert car.hook_count == 0
+    car.hook()
+    assert car.hook_count == 1
+    car.hook()
+    assert car.hook_count == 1
+
+    # Ensure that non-selfish caches share the cache nicely
+    lru = LRU()
+    car_one = Car(cache=lru)
+    assert car_one.door_count == 0
+    car_one.door('bob')
+    assert car_one.door_count == 1
+    car_one.door('bob')
+    assert car_one.door_count == 1
+
+    car_two = Car(cache=lru)
+    assert car_two.door_count == 0
+    car_two.door('bob')
+    assert car.door_count == 0
+
+    # try unbound for kicks
+    Car.door(Car(), 'bob')
+
+    # always check the repr
+    print(repr(car_two.door))
+    print(repr(Car.door))
     return
