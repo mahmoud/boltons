@@ -272,7 +272,7 @@ def strpdate(string, format):
     return whence.date()
 
 
-def daterange(start, stop=None, step=1, inclusive=False):
+def daterange(start, stop=None, step=timedelta(days=1), inclusive=False):
     """Generator that yields a range of `date` objects.
 
     If `stop` is present, the final date produced will be the day before `stop`
@@ -305,6 +305,10 @@ def daterange(start, stop=None, step=1, inclusive=False):
     datetime.date(2015, 12, 27)
     datetime.date(2015, 12, 29)
     datetime.date(2015, 12, 31)
+
+    Care should be exercised when stop=None, as this will yield an infinite
+    sequence of dates:
+
     >>> for i, day in enumerate(daterange(new_year)):
     ...   if i > 4:  break
     ...   print(repr(day))
@@ -314,15 +318,14 @@ def daterange(start, stop=None, step=1, inclusive=False):
     datetime.date(2016, 1, 4)
     datetime.date(2016, 1, 5)
     """
-    assert isinstance(start, date)
-    assert stop is None or isinstance(stop, date)
-    if isinstance(step, int):
+    if not isinstance(start, date):
+        raise TypeError("start must be a 'date' object")
+    if stop and not isinstance(stop, date):
+        raise TypeError("stop must be either a 'date' object or None")
+    if not isinstance(step, timedelta):
         step = timedelta(days=step)
-    elif isinstance(step, timedelta):
-        if step.seconds > 0 or step.microseconds > 0:
-            raise ValueError("step must be given in terms of days")
-    else:
-        raise TypeError("step must be an 'int' or 'timedelta' object")
+    if step.seconds > 0 or step.microseconds > 0:
+        raise ValueError("step must be an integer number of days")
     if stop is None:
         finished = lambda t: False
     elif inclusive:
