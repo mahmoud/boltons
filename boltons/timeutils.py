@@ -248,39 +248,27 @@ def relative_time(d, other=None, ndigits=0):
 
 
 def strpdate(string, format):
-    """Parse the date string according to the format in `format`.  Returns
-    a :class:`date` object.
+    """Parse the date string according to the format in `format`.  Returns a
+    :class:`date` object.  Internally, :meth:`datetime.strptime` is used to
+    parse the string and thus conversion specifiers for time fields (e.g. `%H`)
+    may be provided;  these will be parsed but ignored.
 
     Args:
         string (str): The date string to be parsed.
-        format (str): The :meth:`datetime.strptime` format string
-            describing how to parse the date string.
+        format (str): The `strptime()`-style date format string.
     Returns:
-        date: The parsed date object.
-
-    Raises :class:`ValueError` if :meth:`datetime.strptime` returns
-    a non-zero value in one of the hour, minute, second, or microsecond
-    fields.
+        datetime.date
 
     >>> strpdate('20160214', '%Y%m%d')
     datetime.date(2016, 2, 14)
     >>> strpdate('26/12 (2015)', '%d/%m (%Y)')
     datetime.date(2015, 12, 26)
     >>> strpdate('20151231 23:59:59', '%Y%m%d %H:%M:%S')
-    Traceback (most recent call last):
-        ...
-    ValueError: parsed date has non-zero time value(s)
-    >>> strpdate('20160101 00:00:00.000', '%Y%m%d %H:%M:%S.%f')
-    datetime.date(2016, 1, 1)
+    datetime.date(2015, 12, 31)
     >>> strpdate('20160101 00:00:00.001', '%Y%m%d %H:%M:%S.%f')
-    Traceback (most recent call last):
-        ...
-    ValueError: parsed date has non-zero time value(s)
+    datetime.date(2016, 1, 1)
     """
     whence = datetime.strptime(string, format)
-    time_fields = 'hour', 'minute', 'second', 'microsecond'
-    if not all(getattr(whence, attr) == 0 for attr in time_fields):
-        raise ValueError("parsed date has non-zero time value(s)")
     return whence.date()
 
 
