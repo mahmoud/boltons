@@ -5,6 +5,13 @@ applications. Currently this focuses on ways to use :mod:`pdb`, the
 built-in Python debugger.
 """
 
+import time
+
+try:
+    basestring
+except NameError:
+    basestring = (str, bytes)  # py3
+
 __all__ = ['pdb_on_signal', 'pdb_on_exception']
 
 
@@ -67,14 +74,18 @@ def pdb_on_exception(limit=100):
     return
 
 
-import time
+def wt_print_hook(obj, name, args, kwargs):
+    args = (hex(id(obj)), time.time(), obj.__class__.__name__, name,
+            ', '.join([repr(a) for a in args]))
+    tmpl = '@%s %r - %s.%s(%s)'
+    if kwargs:
+        args += (', '.join(['%s=%r' % (k, v) for k, v in kwargs.items()]),)
+        tmpl = '%s - %s@%s.%s(%s, %s)'
+
+    print(tmpl % args)
 
 
-def tw_print_hook(name, a, kw):
-    print time.time(), name, a, kw
-
-
-def wrap_trace(obj, which=None):
+def wrap_trace(obj, hook=wt_print_hook, which=None):
     # other actions: pdb.set_trace, print, aggregate, aggregate_return
     # (like aggregate but with the return value) Q: should aggregate
     # includ self?
@@ -88,10 +99,10 @@ def wrap_trace(obj, which=None):
     else:   # if callable(which):
         which_func = which
 
-    def wrap_method(attr_name, func):
+    def wrap_method(attr_name, func, _hook=hook):
         def wrapped(*a, **kw):
             a = a[1:]
-            print (time.time(), attr_name, a, kw)
+            hook(obj, attr_name, a, kw)
             return func(*a, **kw)
         wrapped.__name__ = func.__name__
         wrapped.__doc__ = func.__doc__
@@ -108,7 +119,7 @@ def wrap_trace(obj, which=None):
 
     def wrap_getattribute():
         def __getattribute__(self, attr_name):
-            print (time.time(), '__getattribute__', (attr_name,))
+            hook(obj, '__getattribute__', (attr_name,), {})
             ret = type(obj).__getattribute__(obj, attr_name)
             if callable(ret):
                 ret = type(obj).__getattribute__(self, attr_name)

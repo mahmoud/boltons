@@ -26,13 +26,13 @@ def test_trace_dict():
     return
 
 
-def test_trace_str():
+def test_trace_bytes():
     target = u'Hello'.encode('ascii')
 
     wrapped = wrap_trace(target)
 
     assert target is not wrapped
-    assert isinstance(wrapped, str)
+    assert isinstance(wrapped, bytes)
 
     assert len(wrapped) == len(target)
     assert wrapped.decode('utf-8') == u'Hello'
