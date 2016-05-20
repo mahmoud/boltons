@@ -64,3 +64,101 @@ def pdb_on_exception(limit=100):
         pdb.post_mortem(exc_tb)
 
     sys.excepthook = pdb_excepthook
+    return
+
+
+import time
+
+
+def tw_print_hook(name, a, kw):
+    print time.time(), name, a, kw
+
+
+def wrap_trace(obj, which=None):
+    # other actions: pdb.set_trace, print, aggregate, aggregate_return
+    # (like aggregate but with the return value) Q: should aggregate
+    # includ self?
+
+    # TODO: how to handle creating the instance
+    # Specifically, getting around the namedtuple problem
+    # TODO: test classmethod/staticmethod
+
+    if isinstance(which, basestring):
+        which_func = lambda attr_name, attr_val: attr_name == which
+    else:   # if callable(which):
+        which_func = which
+
+    def wrap_method(attr_name, func):
+        def wrapped(*a, **kw):
+            a = a[1:]
+            print (time.time(), attr_name, a, kw)
+            return func(*a, **kw)
+        wrapped.__name__ = func.__name__
+        wrapped.__doc__ = func.__doc__
+        try:
+            wrapped.__module__ = func.__module__
+        except Exception:
+            pass
+        try:
+            if func.__dict__:
+                wrapped.__dict__.update(func.__dict__)
+        except Exception:
+            pass
+        return wrapped
+
+    def wrap_getattribute():
+        def __getattribute__(self, attr_name):
+            print (time.time(), '__getattribute__', (attr_name,))
+            ret = type(obj).__getattribute__(obj, attr_name)
+            if callable(ret):
+                ret = type(obj).__getattribute__(self, attr_name)
+            return ret
+        return __getattribute__
+
+    attrs = {}
+    for attr_name in dir(obj):
+        try:
+            attr_val = getattr(obj, attr_name)
+        except Exception:
+            continue
+
+        if not callable(attr_val) or attr_name in ('__new__',):
+            continue
+        elif which_func and not which_func(attr_name, attr_val):
+            continue
+
+        if attr_name == '__getattribute__':
+            wrapped_method = wrap_getattribute()
+        else:
+            wrapped_method = wrap_method(attr_name, attr_val)
+
+        attrs[attr_name] = wrapped_method
+
+    cls_name = obj.__class__.__name__
+    if cls_name == cls_name.lower():
+        type_name = 'wrapped_' + cls_name
+    else:
+        type_name = 'Wrapped' + cls_name
+
+    if hasattr(obj, '__mro__'):
+        bases = (obj.__class__,)
+    else:
+        # need new-style class for even basic wrapping of callables to
+        # work. getattribute won't work for old-style classes of course.
+        bases = (obj.__class__, object)
+
+    trace_type = type(type_name, bases, attrs)
+    for cls in trace_type.__mro__:
+        try:
+            return cls.__new__(trace_type)
+        except Exception:
+            pass
+    raise TypeError('unable to wrap_trace %r instance %r'
+                    % (obj.__class__, obj))
+
+
+if __name__ == '__main__':
+    obj = wrap_trace({})
+    obj['hi'] = 'hello'
+    obj.fail
+    import pdb;pdb.set_trace()
