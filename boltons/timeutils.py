@@ -23,6 +23,7 @@ degree of accuracy in corner cases, check out `pytz`_.
 import re
 import time
 import bisect
+import operator
 from datetime import tzinfo, timedelta, date, datetime
 
 
@@ -257,11 +258,13 @@ def strpdate(string, format):
 
     Args:
         string (str): The date string to be parsed.
-        format (str): The `strptime()`-style date format string.
+        format (str): The `strptime`_-style date format string.
     Returns:
         datetime.date
 
-    >>> strpdate('20160214', '%Y%m%d')
+    .. _`strptime`: https://docs.python.org/2/library/datetime.html#strftime-strptime-behavior
+
+    >>> strpdate('2016-02-14', '%Y-%m-%d')
     datetime.date(2016, 2, 14)
     >>> strpdate('26/12 (2015)', '%d/%m (%Y)')
     datetime.date(2015, 12, 26)
@@ -274,13 +277,30 @@ def strpdate(string, format):
     return whence.date()
 
 
-def daterange(start, stop=None, step=1, inclusive=False):
-    """Generator that yields a range of `date` objects.
+def daterange(start, stop, step=1, inclusive=False):
+    """In the spirit of :func:`range` and :class:`xrange`, the `daterange`
+    generator that yields a sequence of :class:`~datetime.date`
+    objects, starting at *start*, incrementing by *step*, until *stop*
+    is reached.
 
-    If `stop` is present, the final date produced will be the day before `stop`
-    (for consistency with the range() builtin).  When `inclusive` is True, the
-    final date will be `stop`.  By default, `step` is one day.  Pass an `int`
-    (for days) or a :class:`timedelta` object to change this.
+    When *inclusive* is True, the final date may be *stop*, **if**
+    *step* falls evenly on it. By default, *step* is one day. See
+    details below for many more details.
+
+    Args:
+        start (datetime.date): The starting date The first value in
+            the sequence.
+        stop (datetime.date): The stopping date. By default not
+            included in return. Can be `None` to yield an infinite
+            sequence.
+        step (int): The value to increment *start* by to reach
+            *stop*. Can be an :class:`int` number of days, a
+            :class:`datetime.timedelta`, or a :class:`tuple` of integers,
+            `(year, month, day)`. Positive and negative *step* values
+            are supported.
+        inclusive (bool): Whether or not the *stop* date can be
+            returned. *stop* is only returned when a *step* falls evenly
+            on it.
 
     >>> christmas = date(year=2015, month=12, day=25)
     >>> boxing_day = date(year=2015, month=12, day=26)
@@ -297,19 +317,16 @@ def daterange(start, stop=None, step=1, inclusive=False):
     >>> for day in daterange(christmas, boxing_day):
     ...     print(repr(day))
     datetime.date(2015, 12, 25)
-    >>> for day in daterange(christmas, boxing_day, inclusive=True):
+    >>> for day in daterange(date(2017, 5, 1), date(2017, 8, 1),
+    ...                      step=(0, 1, 0), inclusive=True):
     ...     print(repr(day))
-    datetime.date(2015, 12, 25)
-    datetime.date(2015, 12, 26)
-    >>> for day in daterange(christmas, new_year, step=2):
-    ...     print(repr(day))
-    datetime.date(2015, 12, 25)
-    datetime.date(2015, 12, 27)
-    datetime.date(2015, 12, 29)
-    datetime.date(2015, 12, 31)
+    datetime.date(2017, 5, 1)
+    datetime.date(2017, 6, 1)
+    datetime.date(2017, 7, 1)
+    datetime.date(2017, 8, 1)
 
-    Care should be exercised when stop=None, as this will yield an infinite
-    sequence of dates:
+    *Be careful when using stop=None, as this will yield an infinite
+    sequence of dates.*
     """
     if not isinstance(start, date):
         raise TypeError("start expected datetime.date instance")
@@ -328,19 +345,21 @@ def daterange(start, stop=None, step=1, inclusive=False):
     else:
         raise ValueError('step expected int, timedelta, or tuple'
                          ' (year, month, day), not: %r' % step)
+
     if stop is None:
         finished = lambda t: False
-    elif inclusive:
-        finished = lambda t: t > stop
+    elif start < stop:
+        finished = operator.gt if inclusive else operator.ge
     else:
-        finished = lambda t: t >= stop
+        finished = operator.lt if inclusive else operator.le
     now = start
-    while not finished(now):
+
+    while not finished(now, stop):
         yield now
         if y_step or m_step:
-            m_y_step, cur_month = divmod(now.month + 1, 12)
+            m_y_step, cur_month = divmod(now.month + m_step, 12)
             now = now.replace(year=now.year + y_step + m_y_step,
-                              month=now.month + m_step)
+                              month=cur_month or 12)
         now = now + d_step
     return
 

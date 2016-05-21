@@ -37,5 +37,13 @@ def test_daterange_years():
     assert len(list(new_years_remaining)) == 22
 
     y2025 = date(2025, 1, 1)
-    bakers_new_years_til_2025 = daterange(new_year, y2025, step=(1, 1, 0))
-    assert len(list(bakers_new_years_til_2025)) == 8
+    bakers_years_til_2025 = list(daterange(new_year, y2025, step=(1, 1, 0)))
+    assert len(bakers_years_til_2025) == 8
+    assert bakers_years_til_2025[-1] == date(2024, 8, 1)
+    assert bakers_years_til_2025[-1] == date(2024, 8, 1)
+
+    years_from_2025 = list(daterange(y2025, new_year, step=(-1, 0, 0),
+                                     inclusive=True))
+
+    assert years_from_2025[0] == date(2025, 1, 1)
+    assert years_from_2025[-1] == date(2017, 1, 1)
