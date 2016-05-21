@@ -247,13 +247,17 @@ class Stats(object):
     median = _StatsProperty('median', _calc_median)
 
     def _calc_trimean(self):
-        """
+        """The trimean is a robust measure of central tendency, like the
+        median, that takes the weighted average of the median and the
+        upper and lower quartiles.
+
         >>> trimean([2, 1, 3])
         2.0
         >>> trimean(range(97))
         48.0
         >>> trimean(list(range(96)) + [1066])  # 1066 is an arbitrary outlier
         48.0
+
         """
         sorted_data = self._get_sorted_data()
         gq = lambda q: self._get_quantile(sorted_data, q)
