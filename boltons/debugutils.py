@@ -92,7 +92,9 @@ def wrap_trace(obj, hook=wt_print_hook, which=None):
 
     # TODO: how to handle creating the instance
     # Specifically, getting around the namedtuple problem
-    # TODO: test classmethod/staticmethod
+    # TODO: test classmethod/staticmethod/property
+    # TODO: label for object
+    # TODO: wrap __dict__ for old-style classes?
 
     if isinstance(which, basestring):
         which_func = lambda attr_name, attr_val: attr_name == which
