@@ -278,7 +278,7 @@ def strpdate(string, format):
 
 
 def daterange(start, stop, step=1, inclusive=False):
-    """In the spirit of :func:`range` and :class:`xrange`, the `daterange`
+    """In the spirit of :func:`range` and :func:`xrange`, the `daterange`
     generator that yields a sequence of :class:`~datetime.date`
     objects, starting at *start*, incrementing by *step*, until *stop*
     is reached.
