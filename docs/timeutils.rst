@@ -3,10 +3,12 @@
 
 .. automodule:: boltons.timeutils
 
-.. autofunction:: total_seconds
-.. autofunction:: dt_to_timestamp
+.. autofunction:: daterange
 .. autofunction:: isoparse
 .. autofunction:: parse_timedelta
+.. autofunction:: strpdate
+.. autofunction:: total_seconds
+.. autofunction:: dt_to_timestamp
 
 .. autofunction:: relative_time
 .. autofunction:: decimal_relative_time
