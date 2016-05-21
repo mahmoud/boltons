@@ -1,6 +1,6 @@
 
-from datetime import timedelta
-from boltons.timeutils import total_seconds
+from datetime import timedelta, date
+from boltons.timeutils import total_seconds, daterange
 
 
 def test_float_total_seconds():
@@ -27,3 +27,15 @@ def test_float_total_seconds():
 
     assert total_seconds(timedelta(seconds=123456.789012)) == 123456.789012
     assert total_seconds(timedelta(seconds=-123456.789012)) == -123456.789012
+
+
+def test_daterange_years():
+    new_year = date(2017, 1, 1)
+    bit_rollover = date(2038, 1, 19)
+
+    new_years_remaining = daterange(new_year, bit_rollover, step=(1, 0, 0))
+    assert len(list(new_years_remaining)) == 22
+
+    y2025 = date(2025, 1, 1)
+    bakers_new_years_til_2025 = daterange(new_year, y2025, step=(1, 1, 0))
+    assert len(list(bakers_new_years_til_2025)) == 8

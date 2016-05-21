@@ -173,7 +173,8 @@ def _cardinalize_time_unit(unit, value):
 
 def decimal_relative_time(d, other=None, ndigits=0, cardinalize=True):
     """Get a tuple representing the relative time difference between two
-    :class:`~datetime.datetime` objects or one :class:`~datetime.datetime` and now.
+    :class:`~datetime.datetime` objects or one
+    :class:`~datetime.datetime` and now.
 
     Args:
         d (datetime): The first datetime object.
@@ -200,6 +201,7 @@ def decimal_relative_time(d, other=None, ndigits=0, cardinalize=True):
     (0.002, 'seconds')
     >>> decimal_relative_time(now, now - timedelta(days=900), ndigits=1)
     (-2.5, 'years')
+
     """
     if other is None:
         other = datetime.utcnow()
@@ -272,7 +274,7 @@ def strpdate(string, format):
     return whence.date()
 
 
-def daterange(start, stop=None, step=timedelta(days=1), inclusive=False):
+def daterange(start, stop=None, step=1, inclusive=False):
     """Generator that yields a range of `date` objects.
 
     If `stop` is present, the final date produced will be the day before `stop`
@@ -280,11 +282,11 @@ def daterange(start, stop=None, step=timedelta(days=1), inclusive=False):
     final date will be `stop`.  By default, `step` is one day.  Pass an `int`
     (for days) or a :class:`timedelta` object to change this.
 
-    >>> christmas   = date(year=2015, month=12, day=25)
-    >>> boxing_day  = date(year=2015, month=12, day=26)
-    >>> new_year    = date(year=2016, month=1,  day=1)
+    >>> christmas = date(year=2015, month=12, day=25)
+    >>> boxing_day = date(year=2015, month=12, day=26)
+    >>> new_year = date(year=2016, month=1,  day=1)
     >>> for day in daterange(christmas, new_year):
-    ...   print(repr(day))
+    ...     print(repr(day))
     datetime.date(2015, 12, 25)
     datetime.date(2015, 12, 26)
     datetime.date(2015, 12, 27)
@@ -293,14 +295,14 @@ def daterange(start, stop=None, step=timedelta(days=1), inclusive=False):
     datetime.date(2015, 12, 30)
     datetime.date(2015, 12, 31)
     >>> for day in daterange(christmas, boxing_day):
-    ...   print(repr(day))
+    ...     print(repr(day))
     datetime.date(2015, 12, 25)
     >>> for day in daterange(christmas, boxing_day, inclusive=True):
-    ...   print(repr(day))
+    ...     print(repr(day))
     datetime.date(2015, 12, 25)
     datetime.date(2015, 12, 26)
     >>> for day in daterange(christmas, new_year, step=2):
-    ...   print(repr(day))
+    ...     print(repr(day))
     datetime.date(2015, 12, 25)
     datetime.date(2015, 12, 27)
     datetime.date(2015, 12, 29)
@@ -308,24 +310,24 @@ def daterange(start, stop=None, step=timedelta(days=1), inclusive=False):
 
     Care should be exercised when stop=None, as this will yield an infinite
     sequence of dates:
-
-    >>> for i, day in enumerate(daterange(new_year)):
-    ...   if i > 4:  break
-    ...   print(repr(day))
-    datetime.date(2016, 1, 1)
-    datetime.date(2016, 1, 2)
-    datetime.date(2016, 1, 3)
-    datetime.date(2016, 1, 4)
-    datetime.date(2016, 1, 5)
     """
     if not isinstance(start, date):
-        raise TypeError("start must be a 'date' object")
+        raise TypeError("start expected datetime.date instance")
     if stop and not isinstance(stop, date):
-        raise TypeError("stop must be either a 'date' object or None")
-    if not isinstance(step, timedelta):
-        step = timedelta(days=step)
-    if step.seconds > 0 or step.microseconds > 0:
-        raise ValueError("step must be an integer number of days")
+        raise TypeError("stop expected datetime.date instance or None")
+    try:
+        y_step, m_step, d_step = step
+    except TypeError:
+        y_step, m_step, d_step = 0, 0, step
+    else:
+        y_step, m_step = int(y_step), int(m_step)
+    if isinstance(d_step, int):
+        d_step = timedelta(days=int(d_step))
+    elif isinstance(d_step, timedelta):
+        pass
+    else:
+        raise ValueError('step expected int, timedelta, or tuple'
+                         ' (year, month, day), not: %r' % step)
     if stop is None:
         finished = lambda t: False
     elif inclusive:
@@ -335,7 +337,12 @@ def daterange(start, stop=None, step=timedelta(days=1), inclusive=False):
     now = start
     while not finished(now):
         yield now
-        now = now + step
+        if y_step or m_step:
+            m_y_step, cur_month = divmod(now.month + 1, 12)
+            now = now.replace(year=now.year + y_step + m_y_step,
+                              month=now.month + m_step)
+        now = now + d_step
+    return
 
 
 # Timezone support (brought in from tzutils)
