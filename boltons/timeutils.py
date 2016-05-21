@@ -23,7 +23,7 @@ degree of accuracy in corner cases, check out `pytz`_.
 import re
 import time
 import bisect
-from datetime import tzinfo, timedelta, datetime
+from datetime import tzinfo, timedelta, date, datetime
 
 
 def total_seconds(td):
@@ -245,6 +245,97 @@ def relative_time(d, other=None, ndigits=0):
     if drt < 0:
         phrase = 'from now'
     return '%g %s %s' % (abs(drt), unit, phrase)
+
+
+def strpdate(string, format):
+    """Parse the date string according to the format in `format`.  Returns a
+    :class:`date` object.  Internally, :meth:`datetime.strptime` is used to
+    parse the string and thus conversion specifiers for time fields (e.g. `%H`)
+    may be provided;  these will be parsed but ignored.
+
+    Args:
+        string (str): The date string to be parsed.
+        format (str): The `strptime()`-style date format string.
+    Returns:
+        datetime.date
+
+    >>> strpdate('20160214', '%Y%m%d')
+    datetime.date(2016, 2, 14)
+    >>> strpdate('26/12 (2015)', '%d/%m (%Y)')
+    datetime.date(2015, 12, 26)
+    >>> strpdate('20151231 23:59:59', '%Y%m%d %H:%M:%S')
+    datetime.date(2015, 12, 31)
+    >>> strpdate('20160101 00:00:00.001', '%Y%m%d %H:%M:%S.%f')
+    datetime.date(2016, 1, 1)
+    """
+    whence = datetime.strptime(string, format)
+    return whence.date()
+
+
+def daterange(start, stop=None, step=timedelta(days=1), inclusive=False):
+    """Generator that yields a range of `date` objects.
+
+    If `stop` is present, the final date produced will be the day before `stop`
+    (for consistency with the range() builtin).  When `inclusive` is True, the
+    final date will be `stop`.  By default, `step` is one day.  Pass an `int`
+    (for days) or a :class:`timedelta` object to change this.
+
+    >>> christmas   = date(year=2015, month=12, day=25)
+    >>> boxing_day  = date(year=2015, month=12, day=26)
+    >>> new_year    = date(year=2016, month=1,  day=1)
+    >>> for day in daterange(christmas, new_year):
+    ...   print(repr(day))
+    datetime.date(2015, 12, 25)
+    datetime.date(2015, 12, 26)
+    datetime.date(2015, 12, 27)
+    datetime.date(2015, 12, 28)
+    datetime.date(2015, 12, 29)
+    datetime.date(2015, 12, 30)
+    datetime.date(2015, 12, 31)
+    >>> for day in daterange(christmas, boxing_day):
+    ...   print(repr(day))
+    datetime.date(2015, 12, 25)
+    >>> for day in daterange(christmas, boxing_day, inclusive=True):
+    ...   print(repr(day))
+    datetime.date(2015, 12, 25)
+    datetime.date(2015, 12, 26)
+    >>> for day in daterange(christmas, new_year, step=2):
+    ...   print(repr(day))
+    datetime.date(2015, 12, 25)
+    datetime.date(2015, 12, 27)
+    datetime.date(2015, 12, 29)
+    datetime.date(2015, 12, 31)
+
+    Care should be exercised when stop=None, as this will yield an infinite
+    sequence of dates:
+
+    >>> for i, day in enumerate(daterange(new_year)):
+    ...   if i > 4:  break
+    ...   print(repr(day))
+    datetime.date(2016, 1, 1)
+    datetime.date(2016, 1, 2)
+    datetime.date(2016, 1, 3)
+    datetime.date(2016, 1, 4)
+    datetime.date(2016, 1, 5)
+    """
+    if not isinstance(start, date):
+        raise TypeError("start must be a 'date' object")
+    if stop and not isinstance(stop, date):
+        raise TypeError("stop must be either a 'date' object or None")
+    if not isinstance(step, timedelta):
+        step = timedelta(days=step)
+    if step.seconds > 0 or step.microseconds > 0:
+        raise ValueError("step must be an integer number of days")
+    if stop is None:
+        finished = lambda t: False
+    elif inclusive:
+        finished = lambda t: t > stop
+    else:
+        finished = lambda t: t >= stop
+    now = start
+    while not finished(now):
+        yield now
+        now = now + step
 
 
 # Timezone support (brought in from tzutils)
