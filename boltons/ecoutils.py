@@ -81,7 +81,7 @@ and print a profile in JSON format::
           "unicode_wide": true,
           "zlib": "1.2.8"
         },
-        "version": "2.7.6 (default, Jun 22 2015, 17:58:13) \n[GCC 4.8.2]",
+        "version": "2.7.6 (default, Jun 22 2015, 17:58:13) [GCC 4.8.2]",
         "version_info": [
           2,
           7,
