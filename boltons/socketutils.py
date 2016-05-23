@@ -575,7 +575,7 @@ class Error(socket.error):
 
 class ConnectionClosed(Error):
     """Raised when receiving and the connection is unexpectedly closed
-    from the sending end. Raised from :type:`BufferedSocket`'s
+    from the sending end. Raised from :class:`BufferedSocket`'s
     :meth:`~BufferedSocket.peek`, :meth:`~BufferedSocket.recv_until`,
     and :meth:`~BufferedSocket.recv_size`, and never from its
     :meth:`~BufferedSocket.recv` or
@@ -602,7 +602,7 @@ class MessageTooLong(Error):
 class Timeout(socket.timeout, Error):
     """Inheriting from :exc:`socket.timeout`, Timeout is used to indicate
     when a socket operation did not complete within the time
-    specified. Raised from any of :type:`BufferedSocket`'s ``recv``
+    specified. Raised from any of :class:`BufferedSocket`'s ``recv``
     methods.
     """
     def __init__(self, timeout, extra=""):
@@ -680,7 +680,7 @@ class NetstringInvalidSize(NetstringProtocolError):
       5:hello,
 
     Here the ``5`` is the size. Anything in this prefix position that
-    is not parsable as a Python integer (i.e., :type:`int`) will raise
+    is not parsable as a Python integer (i.e., :class:`int`) will raise
     this exception.
     """
     def __init__(self, msg):
@@ -690,7 +690,7 @@ class NetstringInvalidSize(NetstringProtocolError):
 class NetstringMessageTooLong(NetstringProtocolError):
     """NetstringMessageTooLong is raised when the size prefix contains a
     valid integer, but that integer is larger than the
-    :type:`NetstringSocket`'s configured *maxsize*.
+    :class:`NetstringSocket`'s configured *maxsize*.
 
     When this exception is raised, it's recommended to simply close
     the connection instead of trying to recover.

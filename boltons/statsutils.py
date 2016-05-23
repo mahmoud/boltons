@@ -468,7 +468,7 @@ class Stats(object):
                 quartiles.
             format (str): Controls the return type of the function,
                 with one of three valid values: ``"dict"`` gives back
-                a :type:`dict` with the appropriate keys and
+                a :class:`dict` with the appropriate keys and
                 values. ``"list"`` is a list of key-value pairs in an
                 order suitable to pass to an OrderedDict or HTML
                 table. ``"text"`` converts the values to text suitable
