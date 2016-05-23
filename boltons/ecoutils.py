@@ -37,7 +37,7 @@ following information is deemed not dense enough, and thus omitted:
 
 * :data:`sys.path`
 * full :mod:`sysconfig`
-* environment variables (:data:`os.environ`
+* environment variables (:data:`os.environ`)
 
 Compatibility
 -------------
