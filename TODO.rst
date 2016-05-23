@@ -27,6 +27,11 @@ jsonutils
 misc?
 -----
 
+- wrap_trace debug utility. Takes an object, looks at its dir, wraps
+  everything callable, with a hook. Needs an enable/disable flag.
+  - get/set/call/return/exception
+  - __slots__
+
 - Tracking proxy. An object that always succeeds for all operations, saving the call history.
 - Top/Bottom singletons (greater than and less than everything)
 
