@@ -142,7 +142,13 @@ def test_client_disconnecting():
         if sys.platform != 'win32':  # Windows socketpairs are kind of bad
             assert False, 'expected socket.error broken pipe'
 
-    by.shutdown(socket.SHUT_RDWR)
+    try:
+        by.shutdown(socket.SHUT_RDWR)
+    except socket.error:
+        # Mac sockets are already shut down at this point. See #71.
+        if sys.platform != 'darwin':
+            raise
+
     by.close()
     assert not by.getsendbuffer()
 
