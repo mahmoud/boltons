@@ -5,12 +5,21 @@ applications. Currently this focuses on ways to use :mod:`pdb`, the
 built-in Python debugger.
 """
 
+import sys
 import time
 
 try:
     basestring
+    from repr import Repr
 except NameError:
     basestring = (str, bytes)  # py3
+    from reprlib import Repr
+
+try:
+    from typeutils import make_sentinel
+    _UNSET = make_sentinel(var_name='_UNSET')
+except ImportError:
+    _UNSET = object()
 
 __all__ = ['pdb_on_signal', 'pdb_on_exception']
 
@@ -73,39 +82,83 @@ def pdb_on_exception(limit=100):
     sys.excepthook = pdb_excepthook
     return
 
-
-def wt_print_hook(obj, name, args, kwargs):
-    args = (hex(id(obj)), time.time(), obj.__class__.__name__, name,
-            ', '.join([repr(a) for a in args]))
-    tmpl = '@%s %r - %s.%s(%s)'
-    if kwargs:
-        args += (', '.join(['%s=%r' % (k, v) for k, v in kwargs.items()]),)
-        tmpl = '%s - %s@%s.%s(%s, %s)'
-
-    print(tmpl % args)
+_repr_obj = Repr()
+_repr_obj.maxstring = 50
+_repr_obj.maxother = 50
+brief_repr = _repr_obj.repr
 
 
-def wrap_trace(obj, hook=wt_print_hook, which=None):
+# events: call, return, get, set, del, raise
+def wt_print_hook(event, label, obj, attr_name,
+                  args=(), kwargs={}, result=_UNSET):
+    fargs = (event.ljust(6), time.time(), label.rjust(10),
+             obj.__class__.__name__, attr_name)
+    if event == 'get':
+        tmpl = '%s %s - %s - %s.%s -> %s'
+        fargs += (brief_repr(result),)
+    elif event == 'set':
+        tmpl = '%s %s - %s - %s.%s = %s'
+        fargs += (brief_repr(args[0]),)
+    elif event == 'del':
+        tmpl = '%s %s - %s - %s.%s'
+    else:  # call/return/raise
+        tmpl = '%s %s - %s - %s.%s(%s)'
+        fargs += (', '.join([brief_repr(a) for a in args]),)
+        if kwargs:
+            tmpl = '%s %s - %s - %s.%s(%s, %s)'
+            fargs += (', '.join(['%s=%s' % (k, brief_repr(v))
+                                 for k, v in kwargs.items()]),)
+        if result is not _UNSET:
+            tmpl += ' -> %s'
+            fargs += (brief_repr(result),)
+    print(tmpl % fargs)
+    return
+
+
+def wrap_trace(obj, hook=wt_print_hook, which=None, events=None, label=None):
     # other actions: pdb.set_trace, print, aggregate, aggregate_return
     # (like aggregate but with the return value) Q: should aggregate
     # includ self?
 
-    # TODO: how to handle creating the instance
-    # Specifically, getting around the namedtuple problem
     # TODO: test classmethod/staticmethod/property
-    # TODO: label for object
     # TODO: wrap __dict__ for old-style classes?
 
     if isinstance(which, basestring):
         which_func = lambda attr_name, attr_val: attr_name == which
     else:   # if callable(which):
         which_func = which
+    label = label or hex(id(obj))
 
-    def wrap_method(attr_name, func, _hook=hook):
+    if isinstance(events, basestring):
+        events = [events]
+    do_get = not events or 'get' in events
+    do_set = not events or 'set' in events
+    do_del = not events or 'del' in events
+    do_call = not events or 'call' in events
+    do_raise = not events or 'raise' in events
+    do_return = not events or 'return' in events
+
+    def wrap_method(attr_name, func, _hook=hook, _label=label):
         def wrapped(*a, **kw):
             a = a[1:]
-            hook(obj, attr_name, a, kw)
-            return func(*a, **kw)
+            if do_call:
+                hook(event='call', label=_label, obj=obj,
+                     attr_name=attr_name, args=a, kwargs=kw)
+            if do_raise:
+                try:
+                    ret = func(*a, **kw)
+                except:
+                    if not hook(event='raise', label=_label, obj=obj,
+                                attr_name=attr_name, args=a, kwargs=kw,
+                                result=sys.exc_info()):
+                        raise
+            else:
+                ret = func(*a, **kw)
+            if do_return:
+                hook(event='return', label=_label, obj=obj,
+                     attr_name=attr_name, args=a, kwargs=kw, result=ret)
+            return ret
+
         wrapped.__name__ = func.__name__
         wrapped.__doc__ = func.__doc__
         try:
@@ -119,17 +172,37 @@ def wrap_trace(obj, hook=wt_print_hook, which=None):
             pass
         return wrapped
 
-    def wrap_getattribute():
-        def __getattribute__(self, attr_name):
-            hook(obj, '__getattribute__', (attr_name,), {})
-            ret = type(obj).__getattribute__(obj, attr_name)
-            if callable(ret):
-                ret = type(obj).__getattribute__(self, attr_name)
-            return ret
-        return __getattribute__
+    def __getattribute__(self, attr_name):
+        ret = type(obj).__getattribute__(obj, attr_name)
+        if callable(ret):  # wrap any bound methods
+            ret = type(obj).__getattribute__(self, attr_name)
+        if do_get:
+            hook('get', label, obj, attr_name, (), {}, result=ret)
+        return ret
+
+    def __setattr__(self, attr_name, value):
+        type(obj).__setattr__(obj, attr_name, value)
+        if do_set:
+            hook('set', label, obj, attr_name, (value,), {})
+        return
+
+    def __delattr__(self, attr_name):
+        type(obj).__delattr__(obj, attr_name)
+        if do_del:
+            hook('del', label, obj, attr_name, (), {})
+        return
 
     attrs = {}
     for attr_name in dir(obj):
+        if attr_name == '__getattribute__':
+            attrs[attr_name] = __getattribute__
+            continue
+        elif attr_name == '__setattr__':
+            attrs[attr_name] = __setattr__
+            continue
+        elif attr_name == '__delattr__':
+            attrs[attr_name] = __delattr__
+            continue
         try:
             attr_val = getattr(obj, attr_name)
         except Exception:
@@ -140,11 +213,7 @@ def wrap_trace(obj, hook=wt_print_hook, which=None):
         elif which_func and not which_func(attr_name, attr_val):
             continue
 
-        if attr_name == '__getattribute__':
-            wrapped_method = wrap_getattribute()
-        else:
-            wrapped_method = wrap_method(attr_name, attr_val)
-
+        wrapped_method = wrap_method(attr_name, attr_val)
         attrs[attr_name] = wrapped_method
 
     cls_name = obj.__class__.__name__
