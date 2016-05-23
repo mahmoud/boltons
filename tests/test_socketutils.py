@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+import sys
 import time
 import errno
 import socket
@@ -10,6 +11,12 @@ from boltons.socketutils import (BufferedSocket,
                                  NetstringMessageTooLong,
                                  MessageTooLong,
                                  Timeout)
+
+import pytest
+
+# skip if there's no socketpair
+pytestmark = pytest.mark.skipif(getattr(socket, 'socketpair', None) is None,
+                                reason='no socketpair (likely Py2 on Windows)')
 
 
 def test_short_lines():

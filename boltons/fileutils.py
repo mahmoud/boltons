@@ -160,8 +160,10 @@ class FilePerms(object):
         Args:
             path (str): Filesystem path of the target file.
 
-        >>> from os.path import expanduser
-        >>> 'r' in FilePerms.from_path(expanduser('~')).user  # probably
+        Here's an example that holds true on most systems:
+
+        >>> import tempfile
+        >>> 'r' in FilePerms.from_path(tempfile.tempdir).user
         True
         """
         stat_res = os.stat(path)
