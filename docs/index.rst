@@ -93,6 +93,7 @@ Section listing
    cacheutils
    debugutils
    dictutils
+   ecoutils
    fileutils
    formatutils
    funcutils

@@ -1,12 +1,31 @@
 # -*- coding: utf-8 -*-
-"""The goal of the survey is to provide an information-dense
-description of critical runtime factors while minimizing side
-effects. The expected execution time for collection and uploading the
-description is 100ms or less. This depends on the network speed to the
-datastore, but as of writing, the execution time to localhost is
-80ms. The message is designed to fit in one path MTU, and is currently
-at around 1000 bytes of JSON in normal cases, but this can grow with
-the sizes of paths
+"""The larger a programming ecosystem gets, the greater the chances of
+runtime variability become. Currently, Python is one of the most
+widely deployed high-level programming environments available, making
+it a viable target for all manner of application. But it's important
+to know what you're working with.
+
+Some basic variations that are common among development machines:
+
+* **Executable runtime**: CPython, PyPy, Jython, etc., plus build date and compiler
+* **Language version**: 2.6, 2.7, 3.3, 3.4, 3.5
+* **Host operating system**: Windows, OS X, Ubuntu, Debian, CentOS, RHEL, etc.
+* **Features**: 64-bit, IPv6, Unicode character support (UCS-2/UCS-4)
+* **Built-in library support**: OpenSSL, threading, SQLite, zlib
+* **User environment**: umask, ulimit, working directory path
+* **Machine info**: CPU count, hostname, filesystem encoding
+
+See the full example profile below for more.
+
+ecoutils was created to quantify that variability. Using only
+functionality built-in to the language before 2010, ecoutils quickly
+produces an information-dense description of critical runtime factors,
+with minimal side effects. In short, ecoutils is like browser and user
+agent analytics, but for Python environments.
+
+The data is all JSON serializable, and is suitable for sending to a
+central analytics server. An HTTP-backed service for this can be found
+at: https://github.com/mahmoud/espymetrics/
 
 # Notable omissions
 
@@ -16,13 +35,74 @@ following information is deemed not dense enough, and thus omitted:
 * sys.path
 * full sysconfig
 * environment variables
-  *
 
 # Compatibility
 
 So far ecoutils has has been tested on Python 2.6, 2.7, 3.4, 3.5, and
-PyPy.
+PyPy. Various versions have been tested on Ubuntu, Debian, RHEL, OS X,
+FreeBSD, and Windows 7.
+
+# Example profile
+
+When run as a module, ecoutils will print a profile in JSON format.
+
+$ python -m boltons.ecoutils
+{
+  "_eco_version": "1.0.0",
+  "cpu_count": 4,
+  "cwd": "/home/mahmoud/projects/boltons",
+  "fs_encoding": "UTF-8",
+  "hostfqdn": "mahmoud-gabbro",
+  "hostname": "mahmoud-gabbro",
+  "linux_dist_name": "Ubuntu",
+  "linux_dist_version": "14.04",
+  "python": {
+    "argv": "boltons/ecoutils.py",
+    "bin": "/home/mahmoud/virtualenvs/tests/bin/python",
+    "build_date": "Jun 22 2015 17:58:13",
+    "compiler": "GCC 4.8.2",
+    "features": {
+      "64bit": true,
+      "expat": "expat_2.1.0",
+      "ipv6": true,
+      "openssl": "OpenSSL 1.0.1f 6 Jan 2014",
+      "readline": true,
+      "sqlite": "3.8.2",
+      "threading": true,
+      "tkinter": "8.6",
+      "unicode_wide": true,
+      "zlib": "1.2.8"
+    },
+    "version": "2.7.6 (default, Jun 22 2015, 17:58:13) \n[GCC 4.8.2]",
+    "version_info": [
+      2,
+      7,
+      6,
+      "final",
+      0
+    ]
+  },
+  "time_utc": "2016-05-23 18:08:23.742238",
+  "time_utc_offset": -8.0,
+  "ulimit_hard": 4096,
+  "ulimit_soft": 1024,
+  "umask": "002",
+  "uname": {
+    "machine": "x86_64",
+    "node": "mahmoud-gabbro",
+    "processor": "x86_64",
+    "release": "3.13.0-85-generic",
+    "system": "Linux",
+    "version": "#129-Ubuntu SMP Thu Mar 17 20:50:15 UTC 2016"
+  },
+  "username": "mahmoud",
+  "uuid": "9a3bffe7-62f1-4d61-9776-0ad180eb7b1d"
+}
+
 """
+
+# TODO: some hash of the less-dynamic bits to put it all together
+# TODO: a flag to remove identifiable info (e.g., username, hostname)
 
 import re
 import os
@@ -99,8 +179,6 @@ try:
 except:
     CPU_COUNT = None
 
-# TODO: have_ipv6
-
 try:
     import threading
     HAVE_THREADING = True
@@ -154,8 +232,19 @@ def get_python_info():
 
 
 def get_profile():
+    """The main entrypoint to ecoutils. Calling this will return a
+    JSON-serializable dictionary of information about the current
+    process.
+
+    It is very unlikely that the information returned will change
+    during the lifetime of the process, and in most cases the majority
+    of the information stays the same between runs as well.
+    """
     ret = {}
-    ret['username'] = getpass.getuser()
+    try:
+        ret['username'] = getpass.getuser()
+    except Exception:
+        ret['username'] = ''
     ret['uuid'] = str(INSTANCE_ID)
     ret['hostname'] = socket.gethostname()
     ret['hostfqdn'] = socket.getfqdn()
