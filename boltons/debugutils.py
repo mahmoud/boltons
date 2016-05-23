@@ -89,8 +89,8 @@ brief_repr = _repr_obj.repr
 
 
 # events: call, return, get, set, del, raise
-def wt_print_hook(event, label, obj, attr_name,
-                  args=(), kwargs={}, result=_UNSET):
+def trace_print_hook(event, label, obj, attr_name,
+                     args=(), kwargs={}, result=_UNSET):
     fargs = (event.ljust(6), time.time(), label.rjust(10),
              obj.__class__.__name__, attr_name)
     if event == 'get':
@@ -115,18 +115,48 @@ def wt_print_hook(event, label, obj, attr_name,
     return
 
 
-def wrap_trace(obj, hook=wt_print_hook, which=None, events=None, label=None):
+def wrap_trace(obj, hook=trace_print_hook,
+               which=None, events=None, label=None):
+    """Monitor an object for interactions. Whenever code calls a method,
+    gets an attribute, or sets an attribute, an event is called. By
+    default the trace output is printed, but a custom tracing *hook*
+    can be passed.
+
+    Args:
+       obj (object): New- or old-style object to be traced. Built-in
+           objects like lists and dicts also supported.
+       hook (callable): A function called once for every event. See
+           below for details.
+       which (str): One or more attribute names to trace, or a
+           function accepting attribute name and value, and returing
+           True/False.
+       events (str): One or more kinds of events to call *hook*
+           on. Expected values are ``['get', 'set', 'del', 'call',
+           'raise', 'return']``. Defaults to all events.
+       label (str): A name to associate with the traced object
+           Defaults to hexadecimal memory address, similar to repr.
+
+    The object returned is not the same object as the one passed
+    in. It will not pass identity checks. However, it will pass
+    :func:`isinstance` checks, as it is a new instance of a new
+    subtype of the object passed.
+
+    """
     # other actions: pdb.set_trace, print, aggregate, aggregate_return
-    # (like aggregate but with the return value) Q: should aggregate
-    # includ self?
+    # (like aggregate but with the return value)
 
     # TODO: test classmethod/staticmethod/property
     # TODO: wrap __dict__ for old-style classes?
 
     if isinstance(which, basestring):
         which_func = lambda attr_name, attr_val: attr_name == which
-    else:   # if callable(which):
+    elif callable(getattr(which, '__contains__', None)):
+        which_func = lambda attr_name, attr_val: attr_name in which
+    elif which is None or callable(which):
         which_func = which
+    else:
+        raise TypeError('expected attr name(s) or callable, not: %r' % which)
+
     label = label or hex(id(obj))
 
     if isinstance(events, basestring):
@@ -194,15 +224,6 @@ def wrap_trace(obj, hook=wt_print_hook, which=None, events=None, label=None):
 
     attrs = {}
     for attr_name in dir(obj):
-        if attr_name == '__getattribute__':
-            attrs[attr_name] = __getattribute__
-            continue
-        elif attr_name == '__setattr__':
-            attrs[attr_name] = __setattr__
-            continue
-        elif attr_name == '__delattr__':
-            attrs[attr_name] = __delattr__
-            continue
         try:
             attr_val = getattr(obj, attr_name)
         except Exception:
@@ -213,14 +234,21 @@ def wrap_trace(obj, hook=wt_print_hook, which=None, events=None, label=None):
         elif which_func and not which_func(attr_name, attr_val):
             continue
 
-        wrapped_method = wrap_method(attr_name, attr_val)
+        if attr_name == '__getattribute__':
+            wrapped_method = __getattribute__
+        elif attr_name == '__setattr__':
+            wrapped_method = __setattr__
+        elif attr_name == '__delattr__':
+            wrapped_method = __delattr__
+        else:
+            wrapped_method = wrap_method(attr_name, attr_val)
         attrs[attr_name] = wrapped_method
 
     cls_name = obj.__class__.__name__
     if cls_name == cls_name.lower():
-        type_name = 'wrapped_' + cls_name
+        type_name = 'traced_' + cls_name
     else:
-        type_name = 'Wrapped' + cls_name
+        type_name = 'Traced' + cls_name
 
     if hasattr(obj, '__mro__'):
         bases = (obj.__class__,)
