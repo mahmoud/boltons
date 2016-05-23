@@ -24,7 +24,6 @@ So far ecoutils has has been tested on Python 2.6, 2.7, 3.4, 3.5, and
 PyPy.
 """
 
-import gc
 import re
 import os
 import sys
@@ -172,6 +171,7 @@ def get_profile():
     ret['linux_dist_version'] = linux_dist[1]
     ret['cpu_count'] = CPU_COUNT
 
+    ret['fs_encoding'] = sys.getfilesystemencoding()
     ret['ulimit_soft'] = RLIMIT_FDS_SOFT
     ret['ulimit_hard'] = RLIMIT_FDS_HARD
     ret['cwd'] = os.getcwd()
