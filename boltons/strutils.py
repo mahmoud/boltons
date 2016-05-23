@@ -861,11 +861,11 @@ def range2list(range_string, delim=',', range_delim='-'):
     """
     output = []
 
-    for x in range_string.strip().split(sep=delim):
+    for x in range_string.strip().split(delim):
 
         # Range
         if range_delim in x:
-            range_limits = list(map(int, x.split(sep=range_delim)))
+            range_limits = list(map(int, x.split(range_delim)))
             output += list(range(min(range_limits), max(range_limits)+1))
 
         # Empty String
@@ -931,7 +931,7 @@ def list2range(int_list, delim=',', range_delim='-', delim_space=False):
 
             # Current value is non-contiguous.
             elif delta > 1:
-                output.append('{:d}'.format(contig_range.popleft()))
+                output.append('{0:d}'.format(contig_range.popleft()))
                 contig_range.append(x)
 
             # Current value repeated.
@@ -943,7 +943,7 @@ def list2range(int_list, delim=',', range_delim='-', delim_space=False):
 
         # Last value is non-contiguous.
         if len(contig_range) == 1:
-            output.append('{:d}'.format(contig_range.popleft()))
+            output.append('{0:d}'.format(contig_range.popleft()))
             contig_range.clear()
 
         # Last value is part of contiguous range.
