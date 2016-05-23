@@ -848,16 +848,21 @@ def args2cmd(args, sep=' '):
 
 
 def parse_int_list(range_string, delim=',', range_delim='-'):
-    """Returns a sorted list of integers based on *range_string*. Reverse of :func:`format_int_list`.
+    """Returns a sorted list of positive integers based on
+    *range_string*. Reverse of :func:`format_int_list`.
 
     Args:
-        range_string (str): String of comma separated integers or ranges (e.g. '1,2,4-6,8'). Typical of a custom page
-            range string used in printer dialogs.
-        delim (char): Defaults to ','. Separates integers and contiguous ranges of integers.
-        range_delim (char): Defaults to '-'. Indicates a contiguous range of integers.
+        range_string (str): String of comma separated positive
+            integers or ranges (e.g. '1,2,4-6,8'). Typical of a custom
+            page range string used in printer dialogs.
+        delim (char): Defaults to ','. Separates integers and
+            contiguous ranges of integers.
+        range_delim (char): Defaults to '-'. Indicates a contiguous
+            range of integers.
 
     >>> parse_int_list('1,3,5-8,10-11,15')
     [1, 3, 5, 6, 7, 8, 10, 11, 15]
+
     """
     output = []
 
@@ -880,18 +885,23 @@ def parse_int_list(range_string, delim=',', range_delim='-'):
 
 
 def format_int_list(int_list, delim=',', range_delim='-', delim_space=False):
-    """Returns a sorted range string from a list of integers (*int_list*). Contiguous ranges of integers are
-    collapsed to min and max values. Reverse of :func:`parse_int_list`.
+    """Returns a sorted range string from a list of positive integers
+    (*int_list*). Contiguous ranges of integers are collapsed to min
+    and max values. Reverse of :func:`parse_int_list`.
 
     Args:
-        int_list (list): List of integers to be converted into a range string (e.g. [1,2,4,5,6,8]).
-        delim (char): Defaults to ','. Separates integers and contiguous ranges of integers.
-        range_delim (char): Defaults to '-'. Indicates a contiguous range of integers.
-        delim_space (bool): Defaults to ``False``. If ``True``, adds a space after all *delim* characters.
-
+        int_list (list): List of positive integers to be converted
+           into a range string (e.g. [1,2,4,5,6,8]).
+        delim (char): Defaults to ','. Separates integers and
+           contiguous ranges of integers.
+        range_delim (char): Defaults to '-'. Indicates a contiguous
+           range of integers.
+        delim_space (bool): Defaults to ``False``. If ``True``, adds a
+           space after all *delim* characters.
 
     >>> format_int_list([1,3,5,6,7,8,10,11,15])
     '1,3,5-8,10-11,15'
+
     """
     output = []
     contig_range = collections.deque()
@@ -912,7 +922,9 @@ def format_int_list(int_list, delim=',', range_delim='-', delim_space=False):
 
             # Current value is non-contiguous.
             elif delta > 1:
-                range_substr = '{0:d}{1}{2:d}'.format(min(contig_range), range_delim, max(contig_range))
+                range_substr = '{0:d}{1}{2:d}'.format(min(contig_range),
+                                                      range_delim,
+                                                      max(contig_range))
                 output.append(range_substr)
                 contig_range.clear()
                 contig_range.append(x)
@@ -921,7 +933,7 @@ def format_int_list(int_list, delim=',', range_delim='-', delim_space=False):
             else:
                 continue
 
-        # Handle current value, given that contiguous integers haven't been previously detected.
+        # Handle current value, given no previous contiguous integers
         else:
             delta = x - contig_range[0]
 
@@ -948,7 +960,9 @@ def format_int_list(int_list, delim=',', range_delim='-', delim_space=False):
 
         # Last value is part of contiguous range.
         elif len(contig_range) > 1:
-            range_substr = '{0:d}{1}{2:d}'.format(min(contig_range), range_delim, max(contig_range))
+            range_substr = '{0:d}{1}{2:d}'.format(min(contig_range),
+                                                  range_delim,
+                                                  max(contig_range))
             output.append(range_substr)
             contig_range.clear()
 
