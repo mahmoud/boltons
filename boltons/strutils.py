@@ -31,7 +31,7 @@ __all__ = ['camel2under', 'under2camel', 'slugify', 'split_punct_ws',
            'asciify', 'is_ascii', 'is_uuid', 'html2text', 'strip_ansi',
            'bytes2human', 'find_hashtags', 'a10n', 'gunzip_bytes',
            'iter_splitlines', 'indent', 'escape_shell_args',
-           'args2cmd', 'args2sh', 'range2list', 'list2range']
+           'args2cmd', 'args2sh', 'parse_int_list', 'format_int_list']
 
 
 _punct_ws_str = string.punctuation + string.whitespace
@@ -847,8 +847,8 @@ def args2cmd(args, sep=' '):
     return ''.join(result)
 
 
-def range2list(range_string, delim=',', range_delim='-'):
-    """Returns a sorted list of integers based on *range_string*. Reverse of :func:`list2range`.
+def parse_int_list(range_string, delim=',', range_delim='-'):
+    """Returns a sorted list of integers based on *range_string*. Reverse of :func:`format_int_list`.
 
     Args:
         range_string (str): String of comma separated integers or ranges (e.g. '1,2,4-6,8'). Typical of a custom page
@@ -856,7 +856,7 @@ def range2list(range_string, delim=',', range_delim='-'):
         delim (char): Defaults to ','. Separates integers and contiguous ranges of integers.
         range_delim (char): Defaults to '-'. Indicates a contiguous range of integers.
 
-    >>> range2list('1,3,5-8,10-11,15')
+    >>> parse_int_list('1,3,5-8,10-11,15')
     [1, 3, 5, 6, 7, 8, 10, 11, 15]
     """
     output = []
@@ -879,9 +879,9 @@ def range2list(range_string, delim=',', range_delim='-'):
     return sorted(output)
 
 
-def list2range(int_list, delim=',', range_delim='-', delim_space=False):
+def format_int_list(int_list, delim=',', range_delim='-', delim_space=False):
     """Returns a sorted range string from a list of integers (*int_list*). Contiguous ranges of integers are
-    collapsed to min and max values. Reverse of :func:`range2list`.
+    collapsed to min and max values. Reverse of :func:`parse_int_list`.
 
     Args:
         int_list (list): List of integers to be converted into a range string (e.g. [1,2,4,5,6,8]).
@@ -890,7 +890,7 @@ def list2range(int_list, delim=',', range_delim='-', delim_space=False):
         delim_space (bool): Defaults to ``False``. If ``True``, adds a space after all *delim* characters.
 
 
-    >>> list2range([1,3,5,6,7,8,10,11,15])
+    >>> format_int_list([1,3,5,6,7,8,10,11,15])
     '1,3,5-8,10-11,15'
     """
     output = []
