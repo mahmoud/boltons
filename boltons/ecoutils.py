@@ -111,7 +111,6 @@ and print a profile in JSON format::
 """
 
 # TODO: some hash of the less-dynamic bits to put it all together
-# TODO: a flag to remove identifiable info (e.g., username, hostname)
 
 import re
 import os
@@ -240,7 +239,7 @@ def get_python_info():
     return ret
 
 
-def get_profile():
+def get_profile(**kwargs):
     """The main entrypoint to ecoutils. Calling this will return a
     JSON-serializable dictionary of information about the current
     process.
@@ -248,7 +247,18 @@ def get_profile():
     It is very unlikely that the information returned will change
     during the lifetime of the process, and in most cases the majority
     of the information stays the same between runs as well.
+
+    :func:`get_profile` takes one optional keyword argument, *scrub*,
+    a :class:`bool` that, if True, blanks out identifiable
+    information. This includes current working directory, hostname,
+    Python executable path, command-line arguments, and
+    username. Values are replaced with '-', but for compatibility keys
+    remain in place.
+
     """
+    scrub = kwargs.pop('scrub', False)
+    if kwargs:
+        raise TypeError('unexpected keyword arguments: %r' % (kwargs.keys(),))
     ret = {}
     try:
         ret['username'] = getpass.getuser()
@@ -278,6 +288,17 @@ def get_profile():
     ret['python'] = get_python_info()
     ret.update(START_TIME_INFO)
     ret['_eco_version'] = ECO_VERSION
+
+    if scrub:
+        # mask identifiable information
+        ret['cwd'] = '-'
+        ret['hostname'] = '-'
+        ret['hostfqdn'] = '-'
+        ret['python']['bin'] = '-'
+        ret['python']['argv'] = '-'
+        ret['uname']['node'] = '-'
+        ret['username'] = '-'
+
     return ret
 
 
