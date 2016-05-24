@@ -19,6 +19,9 @@ except NameError:
     # Python 3
     make_method = lambda desc, obj, obj_type: MethodType(desc, obj)
     basestring = (str, bytes)  # Python 3 compat
+    _IS_PY2 = False
+else:
+    _IS_PY2 = True
 
 
 def get_module_callables(mod, ignore=None):
@@ -222,7 +225,6 @@ def wraps(func, injected=None, **kw):
     can be modified. By passing a list of *injected* argument names,
     those arguments will be removed from the wrapper's signature.
     """
-    # TODO: py3 for this and FunctionBuilder
     if injected is None:
         injected = []
     elif isinstance(injected, basestring):
@@ -236,7 +238,7 @@ def wraps(func, injected=None, **kw):
     for arg in injected:
         fb.remove_arg(arg)
 
-    fb.body = 'return _call(%s)' % fb.get_sig_str()
+    fb.body = 'return _call(%s)' % fb.get_invocation_str()
 
     def wrapper_wrapper(wrapper_func):
         execdict = dict(_call=wrapper_func, _func=func)
@@ -248,25 +250,49 @@ def wraps(func, injected=None, **kw):
 
 
 class FunctionBuilder(object):
+    if _IS_PY2:
+        _argspec_defaults = {'args': list,
+                             'varargs': lambda: None,
+                             'keywords': lambda: None,
+                             'defaults': lambda: None}
 
-    _defaults = {'args': [],
-                 'varargs': None,
-                 'keywords': None,
-                 'defaults': (),
-                 'doc': '',
-                 'dict': {},
-                 'module': None,
-                 'body': 'pass',
-                 'indent': 4}
+        @classmethod
+        def _argspec_to_dict(cls, f):
+            argspec = inspect.getargspec(f)
+            return dict((attr, getattr(argspec, attr))
+                        for attr in cls._argspec_defaults)
+
+    else:
+        _argspec_defaults = {'args': list,
+                             'varargs': lambda: None,
+                             'varkw': lambda: None,
+                             'defaults': lambda: None,
+                             'kwonlyargs': list,
+                             'kwonlydefaults': dict,
+                             'annotations': dict}
+
+        @classmethod
+        def _argspec_to_dict(cls, f):
+            argspec = inspect.getfullargspec(f)
+            return dict((attr, getattr(argspec, attr))
+                        for attr in cls._argspec_defaults)
+
+    _defaults = {'doc': str,
+                 'dict': dict,
+                 'module': lambda: None,
+                 'body': lambda: 'pass',
+                 'indent': lambda: 4}
+
+    _defaults.update(_argspec_defaults)
 
     _compile_count = itertools.count()
 
     def __init__(self, name, **kw):
         self.name = name
-        for a in self._defaults.keys():
+        for a, default_factory in self._defaults.items():
             val = kw.pop(a, None)
             if val is None:
-                val = self._defaults[a]
+                val = default_factory()
             setattr(self, a, val)
 
         if kw:
@@ -275,22 +301,53 @@ class FunctionBuilder(object):
 
     # def get_argspec(self):  # TODO
 
-    def get_sig_str(self):
-        return inspect.formatargspec(self.args, self.varargs,
-                                     self.keywords, [])[1:-1]
+    if _IS_PY2:
+        def get_sig_str(self):
+            return inspect.formatargspec(self.args, self.varargs,
+                                         self.keywords, [])
+
+        def get_invocation_str(self):
+            return inspect.formatargspec(self.args, self.varargs,
+                                         self.keywords, [])[1:-1]
+    else:
+        def get_sig_str(self):
+            return inspect.formatargspec(self.args,
+                                         self.varargs,
+                                         self.varkw,
+                                         [],
+                                         self.kwonlyargs,
+                                         {},
+                                         self.annotations)
+
+        def get_invocation_str(self):
+            kwonly_pairs = None
+            formatters = {}
+            if self.kwonlyargs:
+                kwonly_pairs = dict((arg, arg)
+                                    for arg in self.kwonlyargs)
+                formatters['formatvalue'] = lambda value: '=' + value
+
+            sig = inspect.formatargspec(self.args,
+                                        self.varargs,
+                                        self.varkw,
+                                        [],
+                                        kwonly_pairs,
+                                        kwonly_pairs,
+                                        {},
+                                        **formatters)
+            sig = sig.replace('*, ', '')
+            return sig[1:-1]
 
     @classmethod
     def from_func(cls, func):
         # TODO: copy_body? gonna need a good signature regex.
         # TODO: might worry about __closure__?
-        argspec = inspect.getargspec(func)
         kwargs = {'name': func.__name__,
                   'doc': func.__doc__,
                   'module': func.__module__,
                   'dict': getattr(func, '__dict__', {})}
 
-        for a in ('args', 'varargs', 'keywords', 'defaults'):
-            kwargs[a] = getattr(argspec, a)
+        kwargs.update(cls._argspec_to_dict(func))
 
         return cls(**kwargs)
 
@@ -298,7 +355,7 @@ class FunctionBuilder(object):
         execdict = execdict or {}
         body = self.body or self._default_body
 
-        tmpl = 'def {name}({sig_str}):'
+        tmpl = 'def {name}{sig_str}:'
         if self.doc:
             tmpl += '\n    """{doc}"""'
         tmpl += '\n{body}'
@@ -308,13 +365,15 @@ class FunctionBuilder(object):
         name = self.name.replace('<', '_').replace('>', '_')  # lambdas
         src = tmpl.format(name=name, sig_str=self.get_sig_str(),
                           doc=self.doc, body=body)
-
         self._compile(src, execdict)
         func = execdict[name]
 
         func.__name__ = self.name
         func.__doc__ = self.doc
         func.__defaults__ = self.defaults
+        if not _IS_PY2:
+            func.__kwdefaults__ = self.kwonlydefaults
+
         if with_dict:
             func.__dict__.update(self.dict)
         func.__module__ = self.module
@@ -326,8 +385,8 @@ class FunctionBuilder(object):
         return func
 
     def get_defaults_dict(self):
-        ret = dict(reversed(zip(reversed(self.args),
-                                reversed(self.defaults or []))))
+        ret = dict(reversed(list(zip(reversed(self.args),
+                                     reversed(self.defaults or [])))))
         return ret
 
     def remove_arg(self, arg_name):
