@@ -4,6 +4,10 @@
 # This configuration based on:
 # https://github.com/audreyr/cookiecutter/commit/3c4685f536afda3be93da3fe3039cec0ab0d60a3
 
+branches:
+  except:
+    - function_builder
+
 environment:
   matrix:
     - PYTHON: "C:\\Python27-x64"
