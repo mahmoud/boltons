@@ -1,12 +1,19 @@
 boltons Changelog
 =================
 
-Since February 20, 2013 there have been 25 releases and 898 commits for
-an average of one 35-commit release every 7.0 weeks.
+Since February 20, 2013 there have been 26 releases and 912 commits for
+an average of one 35-commit release every 6.8 weeks.
+
+16.3.1
+------
+*(May  24, 2016)*
+
+Just a couple of [ecoutils][ecoutils] follow-ons, removing uuid
+dependency and adding the ability to scrub identifiable data.
 
 16.3.0
 ------
-*(May  24, 2016)*
+*(May  23, 2016)*
 
 Big, big update. Lots of additions, a few bugfixes.
 
