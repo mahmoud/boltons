@@ -1,8 +1,29 @@
 boltons Changelog
 =================
 
-Since February 20, 2013 there have been 24 releases and 845 commits for
-an average of one 35-commit release every 7.2 weeks.
+Since February 20, 2013 there have been 25 releases and 898 commits for
+an average of one 35-commit release every 7.0 weeks.
+
+16.3.0
+------
+*(May  24, 2016)*
+
+Big, big update. Lots of additions, a few bugfixes.
+
+* [ecoutils][ecoutils] - Python runtime/environment profile generator
+* [timeutils.strpdate][timeutils.strpdate] - like datetime.datetime.strpdate but for date
+* [timeutils.daterange][timeutils.daterange] - like range() but for datetime.date objects
+* [strutils.parse_int_list][strutils.parse_int_list]
+  and [strutils.format_int_list][strutils.format_int_list]
+* [cacheutils][cacheutils]
+  * [cachedproperty][cacheutils.cachedproperty]
+  * [cacheutils.cachedmethod][cacheutils.cachedmethod]
+  * [cacheutils.cached][cacheutils.cached] now accepts a callable, as well.
+  * ``cacheutils.make_cache_key`` is now public, should others need it
+* [statsutils.Stats][statsutils.Stats] update, several new methods,
+  including [Stats.describe][statsutils.Stats.describe]
+* A few [socketutils][socketutils] platform tweaks
+* `debugutils.wrap_trace` preview
 
 16.2.2
 ------
@@ -10,13 +31,13 @@ an average of one 35-commit release every 7.2 weeks.
 
 many small tweaks to socketutils.BufferedSocket, including optional
 inclusion of the delimiter in recv_until. also undid the enabling of bak
-files with AtomicFile on windows
+files with AtomicSaver on windows
 
   * Small [socketutils.BufferedSocket][socketutils.BufferedSocket] tweaks
     * make recv_until conditionally return the delimiter (by default it
       does not). also fix a NetstringException inheritance typo
-    * socketutils: rename BufferedSocket.recv_lock to _recv_lock, and same
-      for send_lock.
+    * [socketutils][socketutils]: rename BufferedSocket.recv_lock to
+      _recv_lock, and same for send_lock.
     * add a bunch of simple passthrough methods to better fill out
       socket's API
     * add .fileno/.close/.shutdown to [socketutils.BufferedSocket][socketutils.BufferedSocket]
@@ -170,7 +191,7 @@ with significantly improved behavior and code factoring.
   * [strutils.iter_splitlines][strutils.iter_splitlines] is now in the docs.
   * [cacheutils][cacheutils]: now imports RLock from the right place for python 2
   * [statsutils][statsutils]: Only `delattr` when `hasattr` in
-    [Stats.clear_cache][statsutils.Stats.clearcache]
+    [Stats.clear_cache][statsutils.Stats.clear_cache]
   * [statsutils.Stats][statsutils.Stats]: Add
     [Stats.get_zscore][statsutils.Stats.get_zscore] to support
     calculating the [z-score][zscore] (see also: t-statistic)
@@ -603,6 +624,8 @@ added in this release.
 [cacheutils.LRU]: http://boltons.readthedocs.org/en/latest/cacheutils.html#boltons.cacheutils.LRU
 [cacheutils.ThresholdCounter]: http://boltons.readthedocs.org/en/latest/cacheutils.html#boltons.cacheutils.ThresholdCounter
 [cacheutils.cached]: http://boltons.readthedocs.org/en/latest/cacheutils.html#boltons.cacheutils.cached
+[cacheutils.cachedmethod]: http://boltons.readthedocs.org/en/latest/cacheutils.html#boltons.cacheutils.cachedmethod
+[cacheutils.cachedproperty]: http://boltons.readthedocs.org/en/latest/cacheutils.html#boltons.cacheutils.cachedproperty
 [debugutils.pdb_on_signal]: http://boltons.readthedocs.org/en/latest/debugutils.html#boltons.debugutils.pdb_on_signal
 [dictutils.OMD]: http://boltons.readthedocs.org/en/latest/dictutils.html#boltons.dictutils.OMD
 [dictutils.OMD.pop]: http://boltons.readthedocs.org/en/latest/dictutils.html#boltons.dictutils.OrderedMultiDict.pop
@@ -610,6 +633,7 @@ added in this release.
 [dictutils.OMD.setdefault]: http://boltons.readthedocs.org/en/latest/dictutils.html#boltons.dictutils.OrderedMultiDict.setdefault
 [dictutils.OrderedMultiDict]: http://boltons.readthedocs.org/en/latest/dictutils.html#boltons.dictutils.OrderedMultiDict
 [dictutils.OrderedMultiDict.get_inverted]: http://boltons.readthedocs.org/en/latest/dictutils.html#boltons.dictutils.OrderedMultiDict.get_inverted
+[ecoutils]: http://boltons.readthedocs.org/en/latest/ecoutils.html
 [excutils.ParsedException]: http://boltons.readthedocs.org/en/latest/excutils.html#boltons.excutils.ParsedException
 [fileutils]: http://boltons.readthedocs.org/en/latest/fileutils.html
 [fileutils.replace]: http://boltons.readthedocs.org/en/latest/fileutils.html#boltons.fileutils.replace
@@ -651,6 +675,7 @@ added in this release.
 [jsonutils.JSONLIterator]: http://boltons.readthedocs.org/en/latest/jsonutils.html#boltons.jsonutils.JSONLIterator
 [mathutils.ceil]: http://boltons.readthedocs.org/en/latest/mathutils.html#boltons.mathutils.ceil
 [mathutils.floor]: http://boltons.readthedocs.org/en/latest/mathutils.html#boltons.mathutils.floor
+[socketutils]: http://boltons.readthedocs.org/en/latest/socketutils.html
 [socketutils.BufferedSocket]: http://boltons.readthedocs.org/en/latest/socketutils.html#boltons.socketutils.BufferedSocket
 [socketutils.BufferedSocket.recv]: http://boltons.readthedocs.org/en/latest/socketutils.html#boltons.socketutils.BufferedSocket.recv
 [socketutils.BufferedSocket.recv_until]: http://boltons.readthedocs.org/en/latest/socketutils.html#boltons.socketutils.BufferedSocket.recv_until
@@ -658,7 +683,8 @@ added in this release.
 [socketutils.NetstringSocket]: http://boltons.readthedocs.org/en/latest/socketutils.html#boltons.socketutils.NetstringSocket
 [statsutils]: http://boltons.readthedocs.org/en/latest/statsutils.html
 [statsutils.Stats]: http://boltons.readthedocs.org/en/latest/statsutils.html#boltons.statsutils.Stats
-[statsutils.Stats.clearcache]: http://boltons.readthedocs.org/en/latest/statsutils.html#boltons.statsutils.Stats.clear_cache
+[statsutils.Stats.clear_cache]: http://boltons.readthedocs.org/en/latest/statsutils.html#boltons.statsutils.Stats.clear_cache
+[statsutils.Stats.describe]: http://boltons.readthedocs.org/en/latest/statsutils.html#boltons.statsutils.Stats.describe
 [statsutils.Stats.get_zscore]: http://boltons.readthedocs.org/en/latest/statsutils.html#boltons.statsutils.Stats.get_zscore
 [statsutils.median]: http://boltons.readthedocs.org/en/latest/statsutils.html#boltons.statsutils.median
 [statsutils.trimean]: http://boltons.readthedocs.org/en/latest/statsutils.html#boltons.statsutils.trimean
@@ -676,15 +702,19 @@ added in this release.
 [strutils.pluralize]: http://boltons.readthedocs.org/en/latest/strutils.html#boltons.strutils.pluralize
 [strutils.is_ascii]: http://boltons.readthedocs.org/en/latest/strutils.html#boltons.strutils.is_ascii
 [strutils.is_uuid]: http://boltons.readthedocs.org/en/latest/strutils.html#boltons.strutils.is_uuid
+[strutils.parse_int_list]: http://boltons.readthedocs.org/en/latest/strutils.html#boltons.strutils.parse_int_list
+[strutils.format_int_list]: http://boltons.readthedocs.org/en/latest/strutils.html#boltons.strutils.format_int_list
 [tableutils]: http://boltons.readthedocs.org/en/latest/tableutils.html
 [tableutils.Table]: http://boltons.readthedocs.org/en/latest/tableutils.html#boltons.tableutils.Table
 [tbutils.ExceptionInfo]: http://boltons.readthedocs.org/en/latest/tbutils.html#boltons.tbutils.ExceptionInfo
 [tbutils.ParsedException]: http://boltons.readthedocs.org/en/latest/tbutils.html#boltons.tbutils.ParsedException
 [tbutils.TracebackInfo]: http://boltons.readthedocs.org/en/latest/tbutils.html#boltons.tbutils.TracebackInfo
+[timeutils.daterange]: http://boltons.readthedocs.org/en/latest/timeutils.html#boltons.timeutils.daterange
 [timeutils.decimal_relative_time]: http://boltons.readthedocs.org/en/latest/timeutils.html#boltons.timeutils.decimal_relative_time
 [timeutils.dt_to_timestamp]: http://boltons.readthedocs.org/en/latest/timeutils.html#boltons.timeutils.dt_to_timestamp
 [timeutils.isoparse]: http://boltons.readthedocs.org/en/latest/timeutils.html#boltons.timeutils.isoparse
 [timeutils.parse_timedelta]: http://boltons.readthedocs.org/en/latest/timeutils.html#boltons.timeutils.parse_timedelta
+[timeutils.strpdate]: http://boltons.readthedocs.org/en/latest/timeutils.html#boltons.timeutils.strpdate
 [typeutils.get_all_subclasses]: http://boltons.readthedocs.org/en/latest/typeutils.html#boltons.typeutils.get_all_subclasses
 [typeutils.make_sentinel]: http://boltons.readthedocs.org/en/latest/typeutils.html#boltons.typeutils.make_sentinel
 [zscore]: https://en.wikipedia.org/wiki/Standard_score
