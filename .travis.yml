@@ -10,3 +10,6 @@ python:
 
 install: "pip install -r requirements-test.txt"
 script: "py.test --doctest-modules boltons tests"
+branches:
+  except:
+    - function_builder
