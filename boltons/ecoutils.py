@@ -60,13 +60,14 @@ and print a profile in JSON format::
       "cpu_count": 4,
       "cwd": "/home/mahmoud/projects/boltons",
       "fs_encoding": "UTF-8",
-      "hostfqdn": "mahmoud-gabbro",
-      "hostname": "mahmoud-gabbro",
+      "guid": "6b139e7bbf5ad4ed8d4063bf6235b4d2",
+      "hostfqdn": "mahmoud-host",
+      "hostname": "mahmoud-host",
       "linux_dist_name": "Ubuntu",
       "linux_dist_version": "14.04",
       "python": {
         "argv": "boltons/ecoutils.py",
-        "bin": "/home/mahmoud/virtualenvs/tests/bin/python",
+        "bin": "/usr/bin/python",
         "build_date": "Jun 22 2015 17:58:13",
         "compiler": "GCC 4.8.2",
         "features": {
@@ -90,21 +91,20 @@ and print a profile in JSON format::
           0
         ]
       },
-      "time_utc": "2016-05-23 18:08:23.742238",
+      "time_utc": "2016-05-24 07:59:40.473140",
       "time_utc_offset": -8.0,
       "ulimit_hard": 4096,
       "ulimit_soft": 1024,
       "umask": "002",
       "uname": {
         "machine": "x86_64",
-        "node": "mahmoud-gabbro",
+        "node": "mahmoud-host",
         "processor": "x86_64",
         "release": "3.13.0-85-generic",
         "system": "Linux",
         "version": "#129-Ubuntu SMP Thu Mar 17 20:50:15 UTC 2016"
       },
-      "username": "mahmoud",
-      "uuid": "9a3bffe7-62f1-4d61-9776-0ad180eb7b1d"
+      "username": "mahmoud"
     }
 
 ``pip install boltons`` and try it yourself!
@@ -117,7 +117,7 @@ import os
 import sys
 import json
 import time
-import uuid
+import random
 import socket
 import getpass
 import datetime
@@ -127,7 +127,8 @@ ECO_VERSION = '1.0.0'
 
 PY_GT_2 = sys.version_info[0] > 2
 
-INSTANCE_ID = uuid.uuid4()
+# 128-bit GUID just like a UUID, but backwards compatible to 2.4
+INSTANCE_ID = hex(random.getrandbits(128))[2:-1]
 IS_64BIT = sys.maxsize > 2 ** 32
 HAVE_UCS4 = getattr(sys, 'maxunicode', 0) > 65536
 HAVE_READLINE = True
@@ -264,7 +265,7 @@ def get_profile(**kwargs):
         ret['username'] = getpass.getuser()
     except Exception:
         ret['username'] = ''
-    ret['uuid'] = str(INSTANCE_ID)
+    ret['guid'] = str(INSTANCE_ID)
     ret['hostname'] = socket.gethostname()
     ret['hostfqdn'] = socket.getfqdn()
     uname = platform.uname()
