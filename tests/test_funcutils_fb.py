@@ -1,11 +1,6 @@
-import sys
-import textwrap
-
 import pytest
 
 from boltons.funcutils import wraps, FunctionBuilder
-
-IS_PY2 = sys.version_info[0] == 2
 
 
 def pita_wrap(flag=False):
@@ -104,57 +99,6 @@ def test_wraps_unknown_args():
 
     with pytest.raises(TypeError):
         fails(wrappable_func)
-
-
-def conditional_source(src, names):
-    """
-    Conditional compilation for Python 3
-    """
-    code = compile(textwrap.dedent(src), __file__, 'single')
-    if IS_PY2:
-        exec("exec code in globals(), T")
-    else:
-        exec_ = __builtins__["exec"]
-        exec_(code, globals(), names)
-
-
-@pytest.mark.skipif(IS_PY2, reason="Contains Python 3-only syntax")
-def test_wraps_py3():
-    F = {}
-
-    def C(src):
-        return conditional_source(src, F)
-
-    C("""
-    @pita_wrap(flag=True)
-    def annotations(a: int, b: float=1) -> "tuple":
-        return a, b
-    """)
-
-    assert F['annotations'](0) == (True, "annotations", (0, 1))
-    assert F['annotations'].__annotations__ == {'a': int, 'b': float,
-                                                'return': 'tuple'}
-
-    C("""
-    @pita_wrap(flag=False)
-    def kwonly_arg(a, *, b, c=2):
-        return a, b, c
-    """)
-
-    with pytest.raises(TypeError):
-        F['kwonly_arg'](0)
-
-    assert F["kwonly_arg"](0, b=1) == (False, "kwonly_arg", (0, 1, 2))
-    assert F["kwonly_arg"](0, b=1, c=3) == (False, "kwonly_arg", (0, 1, 3))
-
-    C("""
-    @pita_wrap(flag=True)
-    def kwonly_non_roundtrippable_repr(*, x=lambda y: y + 1):
-        return x(1)
-    """)
-
-    assert F["kwonly_non_roundtrippable_repr"]() == (
-        True, 'kwonly_non_roundtrippable_repr', 2)
 
 
 def test_FunctionBuilder_invalid_args():
