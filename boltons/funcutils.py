@@ -7,6 +7,7 @@ correcting Python's standard metaprogramming facilities.
 from __future__ import print_function
 
 import sys
+import re
 import inspect
 import functools
 import itertools
@@ -319,6 +320,13 @@ class FunctionBuilder(object):
                                          {},
                                          self.annotations)
 
+        _REMOVE_KWONLY_MARKER = re.compile(r"""
+        \*     # a star
+        \ *    # followed by any number of spaces
+        ,      # followed by a comma
+        \ *    # followed by any number of spaces
+        """, re.VERBOSE)
+
         def get_invocation_str(self):
             kwonly_pairs = None
             formatters = {}
@@ -335,7 +343,7 @@ class FunctionBuilder(object):
                                         kwonly_pairs,
                                         {},
                                         **formatters)
-            sig = sig.replace('*, ', '')
+            sig = self._REMOVE_KWONLY_MARKER.sub('', sig)
             return sig[1:-1]
 
     @classmethod
