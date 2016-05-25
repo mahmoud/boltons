@@ -320,11 +320,11 @@ class FunctionBuilder(object):
                                          {},
                                          self.annotations)
 
-        _REMOVE_KWONLY_MARKER = re.compile(r"""
+        _KWONLY_MARKER = re.compile(r"""
         \*     # a star
-        \ *    # followed by any number of spaces
+        \s*    # followed by any amount of whitespace
         ,      # followed by a comma
-        \ *    # followed by any number of spaces
+        \s*    # followed by any amount of whitespace
         """, re.VERBOSE)
 
         def get_invocation_str(self):
@@ -343,7 +343,7 @@ class FunctionBuilder(object):
                                         kwonly_pairs,
                                         {},
                                         **formatters)
-            sig = self._REMOVE_KWONLY_MARKER.sub('', sig)
+            sig = self._KWONLY_MARKER.sub('', sig)
             return sig[1:-1]
 
     @classmethod

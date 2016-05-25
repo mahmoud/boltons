@@ -1,4 +1,4 @@
-from boltons.funcutils import wraps
+from boltons.funcutils import wraps, FunctionBuilder
 
 import pytest
 
@@ -40,3 +40,27 @@ def test_wraps_py3():
 
     assert kwonly_non_roundtrippable_repr() == (
         True, 'kwonly_non_roundtrippable_repr', 2)
+
+
+@pytest.mark.parametrize('signature,should_match',
+                         [('a, *, b', True),
+                          ('a,*,b', True),
+                          ('a, * , b', True),
+                          ('a, *,\nb', True),
+                          ('a, *\n,b', True),
+                          ('a, b', False),
+                          ('a, *args', False),
+                          ('a, *args, **kwargs', False),
+                          ('*args', False),
+                          ('*args, **kwargs', False)])
+def test_FunctionBuilder_KWONLY_MARKER(signature, should_match):
+    """
+    _KWONLY_MARKER matches the keyword-only argument separator,
+    regardless of whitespace.
+
+    Note: it assumes the signature is valid Python.
+    """
+    matched = bool(FunctionBuilder._KWONLY_MARKER.search(signature))
+    message = "{!r}: should_match was {}, but result was {}".format(
+        signature, should_match, matched)
+    assert bool(matched) == should_match, message
