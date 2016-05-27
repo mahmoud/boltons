@@ -115,10 +115,11 @@ and print a profile in JSON format::
 import re
 import os
 import sys
-import json
 import time
+import pprint
 import random
 import socket
+import struct
 import getpass
 import datetime
 import platform
@@ -128,8 +129,8 @@ ECO_VERSION = '1.0.0'
 PY_GT_2 = sys.version_info[0] > 2
 
 # 128-bit GUID just like a UUID, but backwards compatible to 2.4
-INSTANCE_ID = hex(random.getrandbits(128))[2:-1]
-IS_64BIT = sys.maxsize > 2 ** 32
+INSTANCE_ID = hex(random.getrandbits(128))[2:-1].lower()
+IS_64BIT = struct.calcsize("P") > 4
 HAVE_UCS4 = getattr(sys, 'maxunicode', 0) > 65536
 HAVE_READLINE = True
 
@@ -142,6 +143,7 @@ try:
     import sqlite3
     SQLITE_VERSION = sqlite3.sqlite_version
 except Exception:
+    # note: 2.5 and older have sqlite, but not sqlite3
     SQLITE_VERSION = ''
 
 
@@ -186,7 +188,7 @@ try:
     from multiprocessing import cpu_count
     CPU_COUNT = cpu_count()
 except Exception:
-    CPU_COUNT = None
+    CPU_COUNT = 0
 
 try:
     import threading
@@ -220,7 +222,7 @@ def get_python_info():
     # Even though compiler/build_date are already here, they're
     # actually parsed from the version string. So, in the rare case of
     # the unparsable version string, we're still transmitting it.
-    ret['version'] = sys.version
+    ret['version'] = ' '.join(sys.version.split())
 
     ret['compiler'] = platform.python_compiler()
     ret['build_date'] = platform.python_build()[1]
@@ -275,7 +277,10 @@ def get_profile(**kwargs):
                     'version': uname[3],  # linux: kernel version
                     'machine': uname[4],
                     'processor': uname[5]}
-    linux_dist = platform.linux_distribution()
+    try:
+        linux_dist = platform.linux_distribution()
+    except Exception:
+        linux_dist = ('', '', '')
     ret['linux_dist_name'] = linux_dist[0]
     ret['linux_dist_version'] = linux_dist[1]
     ret['cpu_count'] = CPU_COUNT
@@ -284,7 +289,7 @@ def get_profile(**kwargs):
     ret['ulimit_soft'] = RLIMIT_FDS_SOFT
     ret['ulimit_hard'] = RLIMIT_FDS_HARD
     ret['cwd'] = os.getcwd()
-    ret['umask'] = '{0:03o}'.format(os.umask(os.umask(2)))
+    ret['umask'] = oct(os.umask(os.umask(2))).rjust(3, '0')
 
     ret['python'] = get_python_info()
     ret.update(START_TIME_INFO)
@@ -303,9 +308,52 @@ def get_profile(**kwargs):
     return ret
 
 
+def _fake_json_dumps(val):
+    # never do this. this is a hack for Python 2.4. Python 2.5 added
+    # the json module for a reason.
+
+    _real_safe_repr = pprint._safe_repr
+
+    def _fake_safe_repr(*a, **kw):
+        res, is_read, is_rec = _real_safe_repr(*a, **kw)
+        if res == 'None':
+            res = 'null'
+        if res == 'True':
+            res = 'true'
+        if res == 'False':
+            res = 'false'
+        if not (res.startswith("'") or res.startswith("u'")):
+            res = res
+        else:
+            if res.startswith('u'):
+                res = res[1:]
+
+            contents = res[1:-1]
+            contents = contents.replace('"', '').replace(r'\"', '')
+            res = '"' + contents + '"'
+        return res, is_read, is_rec
+
+    pprint._safe_repr = _fake_safe_repr
+    try:
+        ret = pprint.pformat(val)
+    finally:
+        pprint._safe_repr = _real_safe_repr
+
+    return ret
+
+
 def main():
+    try:
+        import json
+
+        def dumps(val):
+            return json.dumps(val, sort_keys=True, indent=2)
+
+    except ImportError:
+        dumps = _fake_json_dumps
+
     data_dict = get_profile()
-    print(json.dumps(data_dict, sort_keys=True, indent=2))
+    print(dumps(data_dict))
 
     return
 
@@ -316,7 +364,10 @@ def main():
 
 def _escape_shell_args(args, sep=' ', style=None):
     if not style:
-        style = 'cmd' if sys.platform == 'win32' else 'sh'
+        if sys.platform == 'win32':
+            style = 'cmd'
+        else:
+            style = 'sh'
 
     if style == 'sh':
         return _args2sh(args, sep=sep)
