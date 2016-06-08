@@ -101,9 +101,9 @@ lot of [socketutils.BufferedSocket][socketutils.BufferedSocket] changes.
     *maxsize*, *n* became *size*, *marker* became *delimiter*, etc.
   * [BufferedSocket][socketutils.BufferedSocket] BufferedSocket became
     threadsafe
-  * [BufferedSocket.recv][socket.BufferedSocket.recv] now always returns the
+  * [BufferedSocket.recv][socketutils.BufferedSocket.recv] now always returns the
     contents of the internal buffer before doing a socket call.
-  * [BufferedSocket.recv_close][BufferedSocket.recv_close] now exists
+  * [BufferedSocket.recv_close][socketutils.BufferedSocket.recv_close] now exists
     to receive until the sending end closes the connection.
   * Can now pass *recvsize* to
     [BufferedSocket][socketutils.BufferedSocket] constructor to tune
@@ -691,6 +691,7 @@ added in this release.
 [i30]: https://github.com/mahmoud/boltons/issues/30
 [i41]: https://github.com/mahmoud/boltons/issues/41
 [i79]: https://github.com/mahmoud/boltons/pull/79
+[iterutils]: http://boltons.readthedocs.org/en/latest/iterutils.html
 [iterutils.backoff]: http://boltons.readthedocs.org/en/latest/iterutils.html#boltons.iterutils.backoff
 [iterutils.backoff_iter]: http://boltons.readthedocs.org/en/latest/iterutils.html#boltons.iterutils.backoff_iter
 [iterutils.chunked]: http://boltons.readthedocs.org/en/latest/iterutils.html#boltons.iterutils.chunked
