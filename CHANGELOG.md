@@ -1,8 +1,34 @@
 boltons Changelog
 =================
 
-Since February 20, 2013 there have been 26 releases and 912 commits for
-an average of one 35-commit release every 6.8 weeks.
+Since February 20, 2013 there have been 27 releases and 933 commits for
+an average of one 34-commit release every 6.5 weeks.
+
+16.4.0
+------
+*(June 8, 2016)*
+
+another significant release, thanks to the addition of funcutils.wraps
+and funcutils.FunctionBuilder. also iterutils.chunked speedup, and
+tbutils.ParsedException.to_string.
+
+  * [funcutils.wraps][funcutils.wraps]: Just like functools.wraps, but
+    can preserve the function signature as well.
+  * [funcutils.FunctionBuilder][funcutils.FunctionBuilder]: The basis
+    for [funcutils.wraps][funcutils.wraps], this full-featured type
+    enables programmatically creating functions, from scratch or from
+    existing functions. Supports all Python 2 and 3 function features.
+  * [ecoutils][ecoutils]: Python 2.4 and 2.5 support.
+  * [iterutils][iterutils]: optimize
+    [iterutils.chunked_iter][iterutils.chunked_iter] (2-5x faster
+    depending on runtime). [See #79][i79].
+  * [tbutils][tbutils]: add the
+    [ParsedException.to_string][tbutils.ParsedException.to_string]
+    method, to convert parsed exceptions back into strings, possibly
+    after manipulation
+  * switch FunctionBuilder on Python 2 to be congruent with Python 3
+    (keywords attribute renamed to varkw, preview users might have to
+    adjust)
 
 16.3.1
 ------
@@ -651,7 +677,9 @@ added in this release.
 [fileutils.iter_find_files]: http://boltons.readthedocs.org/en/latest/fileutils.html#boltons.fileutils.iter_find_files
 [fileutils.mkdir_p]: http://boltons.readthedocs.org/en/latest/fileutils.html#boltons.fileutils.mkdir_p
 [fileutils.DummyFile]: http://boltons.readthedocs.org/en/latest/fileutils.html#boltons.fileutils.DummyFile
+[funcutils.FunctionBuilder]: http://boltons.readthedocs.org/en/latest/funcutils.html#boltons.funcutils.FunctionBuilder
 [funcutils.partial_ordering]: http://boltons.readthedocs.org/en/latest/funcutils.html#boltons.funcutils.partial_ordering
+[funcutils.wraps]: http://boltons.readthedocs.org/en/latest/funcutils.html#boltons.funcutils.wraps
 [gcutils.GCToggler]: http://boltons.readthedocs.org/en/latest/gcutils.html#boltons.gcutils.GCToggler
 [gcutils.get_all]: http://boltons.readthedocs.org/en/latest/gcutils.html#boltons.gcutils.get_all
 [gcutils.is_tracked]: http://boltons.readthedocs.org/en/latest/gcutils.html#boltons.gcutils.is_tracked
@@ -662,6 +690,7 @@ added in this release.
 [i21]: https://github.com/mahmoud/boltons/issues/21
 [i30]: https://github.com/mahmoud/boltons/issues/30
 [i41]: https://github.com/mahmoud/boltons/issues/41
+[i79]: https://github.com/mahmoud/boltons/pull/79
 [iterutils.backoff]: http://boltons.readthedocs.org/en/latest/iterutils.html#boltons.iterutils.backoff
 [iterutils.backoff_iter]: http://boltons.readthedocs.org/en/latest/iterutils.html#boltons.iterutils.backoff_iter
 [iterutils.chunked]: http://boltons.readthedocs.org/en/latest/iterutils.html#boltons.iterutils.chunked
@@ -713,8 +742,10 @@ added in this release.
 [strutils.format_int_list]: http://boltons.readthedocs.org/en/latest/strutils.html#boltons.strutils.format_int_list
 [tableutils]: http://boltons.readthedocs.org/en/latest/tableutils.html
 [tableutils.Table]: http://boltons.readthedocs.org/en/latest/tableutils.html#boltons.tableutils.Table
+[tbutils]: http://boltons.readthedocs.org/en/latest/tbutils.html
 [tbutils.ExceptionInfo]: http://boltons.readthedocs.org/en/latest/tbutils.html#boltons.tbutils.ExceptionInfo
 [tbutils.ParsedException]: http://boltons.readthedocs.org/en/latest/tbutils.html#boltons.tbutils.ParsedException
+[tbutils.ParsedException.to_string]: http://boltons.readthedocs.org/en/latest/tbutils.html#boltons.tbutils.ParsedException.to_string
 [tbutils.TracebackInfo]: http://boltons.readthedocs.org/en/latest/tbutils.html#boltons.tbutils.TracebackInfo
 [timeutils.daterange]: http://boltons.readthedocs.org/en/latest/timeutils.html#boltons.timeutils.daterange
 [timeutils.decimal_relative_time]: http://boltons.readthedocs.org/en/latest/timeutils.html#boltons.timeutils.decimal_relative_time
