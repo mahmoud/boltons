@@ -8,7 +8,7 @@ to know what you're working with.
 Some basic variations that are common among development machines:
 
 * **Executable runtime**: CPython, PyPy, Jython, etc., plus build date and compiler
-* **Language version**: 2.6, 2.7, 3.3, 3.4, 3.5
+* **Language version**: 2.4, 2.5, 2.6, 2.7... 3.3, 3.4, 3.5
 * **Host operating system**: Windows, OS X, Ubuntu, Debian, CentOS, RHEL, etc.
 * **Features**: 64-bit, IPv6, Unicode character support (UCS-2/UCS-4)
 * **Built-in library support**: OpenSSL, threading, SQLite, zlib
@@ -42,9 +42,13 @@ following information is deemed not dense enough, and thus omitted:
 Compatibility
 -------------
 
-So far ecoutils has has been tested on Python 2.6, 2.7, 3.4, 3.5, and
-PyPy. Various versions have been tested on Ubuntu, Debian, RHEL, OS X,
-FreeBSD, and Windows 7.
+So far ecoutils has has been tested on Python 2.4, 2.5, 2.6, 2.7, 3.4,
+3.5, and PyPy. Various versions have been tested on Ubuntu, Debian,
+RHEL, OS X, FreeBSD, and Windows 7.
+
+.. note:: Boltons typically only support back to Python 2.6, but due
+    to its nature, ecoutils extends backwards compatibility to Python
+    2.4 and 2.5.
 
 Profile generation
 ------------------
@@ -108,6 +112,7 @@ and print a profile in JSON format::
     }
 
 ``pip install boltons`` and try it yourself!
+
 """
 
 import re
