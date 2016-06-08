@@ -683,6 +683,12 @@ class ParsedException(object):
                 % (cn, self.exc_type, self.exc_msg, self.frames))
 
     def to_string(self):
+        """Formats the exception and its traceback into the standard format,
+        as returned by the traceback module.
+
+        ``ParsedException.from_string(text).to_string()`` should yield
+        ``text``.
+        """
         lines = [u'Traceback (most recent call last):']
 
         for frame in self.frames:
