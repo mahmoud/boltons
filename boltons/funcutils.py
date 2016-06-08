@@ -214,17 +214,59 @@ partial = CachedInstancePartial
 
 
 def wraps(func, injected=None, **kw):
-    """Modeled after the built-in :func:`functools.wraps`, this version of
-    `wraps` enables a decorator to be more informative and transparent
-    than ever. Use `wraps` to make your wrapper functions have the
-    same name, documentation, and signature information as the inner
-    function that is being wrapped.
+    """Modeled after the built-in :func:`functools.wraps`, this function is
+    used to make your decorator's wrapper functions reflect the
+    wrapped function's:
 
-    By default, this version of `wraps` copies the inner function's
-    signature exactly, allowing seamless introspection with the
-    built-in :mod:`inspect` module. In addition, the outer signature
-    can be modified. By passing a list of *injected* argument names,
-    those arguments will be removed from the wrapper's signature.
+      * Name
+      * Documentation
+      * Module
+      * Signature
+
+    The built-in :func:`functools.wraps` copies the first three, but
+    does not copy the signature. This version of ``wraps`` can copy
+    the inner function's signature exactly, allowing seamless usage
+    and :mod:`introspection <inspect>`. Usage is identical to the
+    built-in version::
+
+        >>> from boltons.funcutils import wraps
+        >>>
+        >>> def print_return(func):
+        ...     @wraps(func)
+        ...     def wrapper(*args, **kwargs):
+        ...         ret = func(*args, **kwargs)
+        ...         print(ret)
+        ...         return ret
+        ...     return wrapper
+        ...
+        >>> @print_return
+        ... def example():
+        ...     '''docstring'''
+        ...     return 'example return value'
+        >>>
+        >>> val = example()
+        example return value
+        >>> example.__name__
+        'example'
+        >>> example.__doc__
+        'docstring'
+
+    In addition, the boltons version of wraps supports modifying the
+    outer signature based on the inner signature. By passing a list of
+    *injected* argument names, those arguments will be removed from
+    the outer wrapper's signature, allowing your decorator to provide
+    arguments that aren't passed in.
+
+    Args:
+
+        func (function): The callable whose attributes are to be copied.
+        injected (list): An optional list of argument names which
+            should not appear in the new wrapper's signature.
+        update_dict(bool): Whether to copy other, non-standard
+            attributes of *func* over to the wrapper. Defaults to True.
+
+    For more in-depth wrapping of functions, see the
+    :class:`FunctionBuilder` type, on which wraps was built.
     """
     if injected is None:
         injected = []
@@ -251,17 +293,79 @@ def wraps(func, injected=None, **kw):
 
 
 class FunctionBuilder(object):
+    """The FunctionBuilder type provides an interface for programmatically
+    creating new functions, either based on existing functions or from
+    scratch.
+
+    Values are passed in at construction or set as attributes on the
+    instance. For creating a new function based of an existing one,
+    see the :meth:`~FunctionBuilder.from_func` classmethod. At any
+    point, :meth:`~FunctionBuilder.get_func` can be called to get a
+    newly compiled function, based on the values configured.
+
+    >>> fb = FunctionBuilder('return_five', doc='returns the integer 5',
+    ...                      body='return 5')
+    >>> f = fb.get_func()
+    >>> f()
+    5
+    >>> fb.varkw = 'kw'
+    >>> f_kw = fb.get_func()
+    >>> f_kw(ignored_arg='ignored_val')
+    5
+
+    Note that function signatures themselves changed quite a bit in
+    Python 3, so several arguments are only applicable to
+    FunctionBuilder in Python 3. Except for *name*, all arguments to
+    the constructor are keyword arguments.
+
+    Args:
+        name (str): Name of the function.
+        doc (str): `Docstring`_ for the function, defaults to empty.
+        module (str): Name of the module from which this function was
+            imported. Defaults to None.
+        body (str): String version of the code representing the body
+            of the function. Defaults to ``'pass'``, which will result
+            in a function which does nothing and returns ``None``.
+        args (list): List of argument names, defaults to empty list,
+            denoting no arguments.
+        varargs (str): Name of the catch-all variable for positional
+            arguments. E.g., "args" if the resultant function is to have
+            ``*args`` in the signature. Defaults to None.
+        varkw (str): Name of the catch-all variable for keyword
+            arguments. E.g., "kwargs" if the resultant function is to have
+            ``**kwargs`` in the signature. Defaults to None.
+        defaults (dict): A mapping of argument names to default values.
+        kwonlyargs (list): Argument names which are only valid as
+            keyword arguments. **Python 3 only.**
+        kwonlydefaults (dict): A mapping, same as normal *defaults*,
+            but only for the *kwonlyargs*. **Python 3 only.**
+        annotations (dict): Mapping of type hints and so
+            forth. **Python 3 only.**
+        indent (int): Number of spaces with which to indent the
+            function *body*. Values less than 1 will result in an error.
+        dict (dict): Any other attributes which should be added to the
+            functions compiled with this FunctionBuilder.
+
+    All of these arguments are also made available as attributes which
+    can be mutated as necessary.
+
+    .. _Docstring: https://en.wikipedia.org/wiki/Docstring#Python
+
+    """
+
     if _IS_PY2:
         _argspec_defaults = {'args': list,
                              'varargs': lambda: None,
-                             'keywords': lambda: None,
+                             'varkw': lambda: None,
                              'defaults': lambda: None}
 
         @classmethod
         def _argspec_to_dict(cls, f):
-            argspec = inspect.getargspec(f)
-            return dict((attr, getattr(argspec, attr))
-                        for attr in cls._argspec_defaults)
+            args, varargs, varkw, defaults = inspect.getargspec(f)
+            return {'args': args,
+                    'varargs': varargs,
+                    'varkw': varkw,
+                    'defaults': defaults}
 
     else:
         _argspec_defaults = {'args': list,
@@ -305,11 +409,11 @@ class FunctionBuilder(object):
     if _IS_PY2:
         def get_sig_str(self):
             return inspect.formatargspec(self.args, self.varargs,
-                                         self.keywords, [])
+                                         self.varkw, [])
 
         def get_invocation_str(self):
             return inspect.formatargspec(self.args, self.varargs,
-                                         self.keywords, [])[1:-1]
+                                         self.varkw, [])[1:-1]
     else:
         def get_sig_str(self):
             return inspect.formatargspec(self.args,
@@ -348,6 +452,10 @@ class FunctionBuilder(object):
 
     @classmethod
     def from_func(cls, func):
+        """Create a new FunctionBuilder instance based on an existing
+        function. The original function will not be stored or
+        modified.
+        """
         # TODO: copy_body? gonna need a good signature regex.
         # TODO: might worry about __closure__?
         kwargs = {'name': func.__name__,
@@ -360,6 +468,22 @@ class FunctionBuilder(object):
         return cls(**kwargs)
 
     def get_func(self, execdict=None, add_source=True, with_dict=True):
+        """Compile and return a new function based on the current values of
+        the FunctionBuilder.
+
+        Args:
+            execdict (dict): The dictionary representing the scope in
+                which the compilation should take place. Defaults to an empty
+                dict.
+            add_source (bool): Whether to add the source used to a
+                special ``__source__`` attribute on the resulting
+                function. Defaults to True.
+            with_dict (bool): Add any custom attributes, if
+                applicable. Defaults to True.
+
+        To see an example of usage, see the implementation of
+        :func:`~boltons.funcutils.wraps`.
+        """
         execdict = execdict or {}
         body = self.body or self._default_body
 
@@ -393,11 +517,24 @@ class FunctionBuilder(object):
         return func
 
     def get_defaults_dict(self):
+        """Get a dictionary of function arguments with defaults and the
+        respective values.
+        """
         ret = dict(reversed(list(zip(reversed(self.args),
                                      reversed(self.defaults or [])))))
         return ret
 
     def remove_arg(self, arg_name):
+        """Remove an argument from this FunctionBuilder's argument list. The
+        resulting function will have one less argument per call to
+        this function.
+
+        Args:
+            arg_name (str): The name of the argument to remove.
+
+        Raises a :exc:`ValueError` if the argument is not present.
+
+        """
         d_dict = self.get_defaults_dict()
         try:
             self.args.remove(arg_name)
@@ -409,7 +546,7 @@ class FunctionBuilder(object):
         return
 
     def _compile(self, src, execdict):
-        filename = ('<boltons.FunctionBuilder-%d>'
+        filename = ('<boltons.funcutils.FunctionBuilder-%d>'
                     % (next(self._compile_count),))
         try:
             code = compile(src, filename, 'single')

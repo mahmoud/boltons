@@ -109,3 +109,14 @@ def test_FunctionBuilder_invalid_args():
 def test_FunctionBuilder_invalid_body():
     with pytest.raises(SyntaxError):
         FunctionBuilder(name="fails", body="*").get_func()
+
+
+def test_FunctionBuilder_modify():
+    fb = FunctionBuilder('return_five', doc='returns the integer 5',
+                         body='return 5')
+    f = fb.get_func()
+    assert f() == 5
+
+    fb.varkw = 'kw'
+    f_kw = fb.get_func()
+    assert f_kw(ignored_arg='ignored_val') == 5
