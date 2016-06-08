@@ -481,7 +481,7 @@ ecoutils protocol version history
 The version is ECO_VERSION module-level constant, and _eco_version key
 in the dictionary returned from ecoutils.get_profile().
 
-1.0.1 - (boltons version 16.3.2) Remove uuid dependency and add HAVE_URANDOM
+1.0.1 - (boltons version 16.3.2+) Remove uuid dependency and add HAVE_URANDOM
 1.0.0 - (boltons version 16.3.0-16.3.1) Initial release
 
 """
