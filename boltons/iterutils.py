@@ -218,17 +218,13 @@ def chunked_iter(src, size, **kw):
     postprocess = lambda chk: chk
     if isinstance(src, basestring):
         postprocess = lambda chk, _sep=type(src)(): _sep.join(chk)
-    cur_chunk = []
-    i = 0
-    for item in src:
-        cur_chunk.append(item)
-        i += 1
-        if i % size == 0:
-            yield postprocess(cur_chunk)
-            cur_chunk = []
-    if cur_chunk:
-        if do_fill:
-            lc = len(cur_chunk)
+    src_iter = iter(src)
+    while True:
+        cur_chunk = list(itertools.islice(src_iter, size))
+        if not cur_chunk:
+            break
+        lc = len(cur_chunk)
+        if lc < size and do_fill:
             cur_chunk[lc:] = [fill_val] * (size - lc)
         yield postprocess(cur_chunk)
     return
