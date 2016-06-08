@@ -110,8 +110,6 @@ and print a profile in JSON format::
 ``pip install boltons`` and try it yourself!
 """
 
-# TODO: some hash of the less-dynamic bits to put it all together
-
 import re
 import os
 import sys
@@ -124,12 +122,21 @@ import getpass
 import datetime
 import platform
 
-ECO_VERSION = '1.0.0'
+ECO_VERSION = '1.0.1'  # see version history below
 
 PY_GT_2 = sys.version_info[0] > 2
 
+try:
+    getrandbits = random.SystemRandom().getrandbits
+    HAVE_URANDOM = True
+except Exception:
+    HAVE_URANDOM = False
+    getrandbits = random.getrandbits
+
+
 # 128-bit GUID just like a UUID, but backwards compatible to 2.4
-INSTANCE_ID = hex(random.getrandbits(128))[2:-1].lower()
+INSTANCE_ID = hex(getrandbits(128))[2:-1].lower()
+
 IS_64BIT = struct.calcsize("P") > 4
 HAVE_UCS4 = getattr(sys, 'maxunicode', 0) > 65536
 HAVE_READLINE = True
@@ -237,7 +244,8 @@ def get_python_info():
                        'readline': HAVE_READLINE,
                        '64bit': IS_64BIT,
                        'ipv6': HAVE_IPV6,
-                       'threading': HAVE_THREADING}
+                       'threading': HAVE_THREADING,
+                       'urandom': HAVE_URANDOM}
 
     return ret
 
@@ -308,12 +316,12 @@ def get_profile(**kwargs):
     return ret
 
 
-def _fake_json_dumps(val):
+_real_safe_repr = pprint._safe_repr
+
+
+def _fake_json_dumps(val, indent=2):
     # never do this. this is a hack for Python 2.4. Python 2.5 added
     # the json module for a reason.
-
-    _real_safe_repr = pprint._safe_repr
-
     def _fake_safe_repr(*a, **kw):
         res, is_read, is_rec = _real_safe_repr(*a, **kw)
         if res == 'None':
@@ -335,27 +343,39 @@ def _fake_json_dumps(val):
 
     pprint._safe_repr = _fake_safe_repr
     try:
-        ret = pprint.pformat(val)
+        ret = pprint.pformat(val, indent=indent)
     finally:
         pprint._safe_repr = _real_safe_repr
 
     return ret
 
 
-def main():
+def get_profile_json(indent=False):
+    if indent:
+        indent = 2
+    else:
+        indent = 0
     try:
         import json
 
-        def dumps(val):
-            return json.dumps(val, sort_keys=True, indent=2)
+        def dumps(val, indent):
+            if indent:
+                return json.dumps(val, sort_keys=True, indent=indent)
+            return json.dumps(val, sort_keys=True)
 
     except ImportError:
-        dumps = _fake_json_dumps
+        def dumps(val, indent):
+            ret = _fake_json_dumps(val, indent=indent)
+            if not indent:
+                ret = re.sub('\n\s*', ' ', ret)
+            return ret
 
     data_dict = get_profile()
-    print(dumps(data_dict))
+    return dumps(data_dict, indent)
 
-    return
+
+def main():
+    print(get_profile_json(indent=True))
 
 #############################################
 #  The shell escaping copied in from strutils
@@ -446,3 +466,17 @@ def _args2cmd(args, sep=' '):
 
 if __name__ == '__main__':
     main()
+
+
+"""
+
+ecoutils protocol version history
+---------------------------------
+
+The version is ECO_VERSION module-level constant, and _eco_version key
+in the dictionary returned from ecoutils.get_profile().
+
+1.0.1 - (boltons version 16.3.2) Remove uuid dependency and add HAVE_URANDOM
+1.0.0 - (boltons version 16.3.0-16.3.1) Initial release
+
+"""
