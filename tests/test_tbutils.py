@@ -9,28 +9,10 @@ except:
 
 from boltons.tbutils import (TracebackInfo,
                              ExceptionInfo,
-                             ParsedException,
                              print_exception,
                              fix_print_exception,
                              ContextualCallpoint,
                              ContextualExceptionInfo)
-
-
-def test_parsed_exc():
-    FAKE_TB_STR = u"""
-Traceback (most recent call last):
-  File "example.py", line 2, in <module>
-    plarp
-NameError: name 'plarp' is not defined
-"""
-    parsed_tb = ParsedException.from_string(FAKE_TB_STR)
-    print(parsed_tb)
-    assert parsed_tb.exc_type == 'NameError'
-    assert parsed_tb.exc_msg == "name 'plarp' is not defined"
-    assert parsed_tb.frames == [{'source_line': u'plarp',
-                                 'filepath': u'example.py',
-                                 'lineno': u'2',
-                                 'funcname': u'<module>'}]
 
 
 

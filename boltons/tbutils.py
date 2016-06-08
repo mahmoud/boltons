@@ -682,6 +682,22 @@ class ParsedException(object):
         return ('%s(%r, %r, frames=%r)'
                 % (cn, self.exc_type, self.exc_msg, self.frames))
 
+    def to_string(self):
+        lines = [u'Traceback (most recent call last):']
+
+        for frame in self.frames:
+            lines.append(u'  File "%s", line %s, in %s' % (frame['filepath'],
+                                                           frame['lineno'],
+                                                           frame['funcname']))
+            source_line = frame.get('source_line')
+            if source_line:
+                lines.append(u'    %s' % (source_line,))
+        if self.exc_msg:
+            lines.append(u'%s: %s' % (self.exc_type, self.exc_msg))
+        else:
+            lines.append(u'%s' % (self.exc_type,))
+        return u'\n'.join(lines)
+
     @classmethod
     def from_string(cls, tb_str):
         """Parse a traceback and exception from the text *tb_str*. This text
