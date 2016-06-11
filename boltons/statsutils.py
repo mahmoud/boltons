@@ -463,7 +463,7 @@ class Stats(object):
         m = self.mean
         return [(v - m) ** power for v in self.data]
 
-    def _get_bin_bounds(self, count=None, trim=False, with_max=True):
+    def _get_bin_bounds(self, count=None, with_max=True):
         if not self.data:
             return [0.0]  # TODO: raise?
 
@@ -476,33 +476,15 @@ class Stats(object):
             dx = (max_data - min_data) / float(count)
             bins = [min_data + (dx * i) for i in range(count)]
         elif count is None:
-            # freedman
+            # freedman algorithm for fixed-width bin selection
             q25, q75 = self.get_quantile(0.25), self.get_quantile(0.75)
             dx = 2 * (q75 - q25) / (len_data ** (1 / 3.0))
             bin_count = max(1, int(ceil((max_data - min_data) / dx)))
             bins = [min_data + (dx * i) for i in range(bin_count + 1)]
             bins = [b for b in bins if b < max_data]
         else:
-            if trim is False:
-                trim = 0.0
-            elif trim is True:
-                trim = 1.0 / count
-            else:
-                trim = float(trim)
-                if not (0.0 <= trim < 0.5):
-                    raise ValueError('expected 0.0 <= trim < 0.5, not %r'
-                                     % trim)
-            size = len_data
-            size_diff = int(size * trim)
-            data = self._get_sorted_data()
-            if not trim or not size_diff:
-                dx = (data[-1] - data[0]) / float(count)
-                bins = [data[0] + dx * i for i in range(count)]
-            else:
-                bins = [min_data]
-                data = data[size_diff:-size_diff]
-                dx = (data[-1] - data[0]) / float(count - 1)
-                bins.extend([data[0] + (dx * i) for i in range(count - 1)])
+            dx = (max_data - min_data) / float(count)
+            bins = [min_data + (dx * i) for i in range(count)]
 
         if with_max:
             bins.append(float(max_data))
@@ -521,27 +503,23 @@ class Stats(object):
             except Exception:
                 width = 80
         format_value = kwargs.pop('format_value', lambda v: v)
-        edge_bin_size = kwargs.pop('edge_bin_size', 0.0)
         round_bin_digits = kwargs.pop('bin_digits', 1)
 
         if not bins:
-            bins = self._get_bin_bounds(trim=edge_bin_size, with_max=False)
+            bins = self._get_bin_bounds(with_max=False)
         else:
             try:
                 bin_count = int(bins)
-                edge_bin_size = 1 / (bin_count * 4.0) if edge_bin_size is None else edge_bin_size
             except TypeError:
                 try:
                     bins = sorted([float(x) for x in bins])
                 except Exception:
-                    raise ValueError('bins expected integer bin count or list of'
-                                     ' float bin boundaries, not %r' % bins)
+                    raise ValueError('bins expected integer bin count or list'
+                                     ' of float bin boundaries, not %r' % bins)
                 if self.min < bins[0]:
                     bins = [self.min] + bins
             else:
-                bins = self._get_bin_bounds(bin_count,
-                                            trim=edge_bin_size,
-                                            with_max=False)
+                bins = self._get_bin_bounds(bin_count, with_max=False)
 
         bins = [round(float(b), round_bin_digits) for b in bins]
 
