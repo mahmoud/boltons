@@ -98,7 +98,9 @@ system instrumentation package.
 
 from __future__ import print_function
 
+import bisect
 from math import floor, ceil
+from collections import Counter
 
 
 class _StatsProperty(object):
@@ -433,14 +435,19 @@ class Stats(object):
         of a list of values. This has the effect of limiting the
         effect of outliers.
 
+        Args:
+            amount (float): A value between 0.0 and 0.5 to trim off of
+                each side of the data.
+
         .. note:
 
             This operation modifies the data in-place. It does not
             make or return a copy.
+
         """
         trim = float(amount)
-        if not 0.0 <= trim <= 1.0:
-            raise ValueError('expected amount between 0.0 and 1.0, not %r'
+        if not 0.0 <= trim < 0.5:
+            raise ValueError('expected amount between 0.0 and 0.5, not %r'
                              % trim)
         size = len(self.data)
         size_diff = int(size * trim)
@@ -455,6 +462,110 @@ class Stats(object):
         """
         m = self.mean
         return [(v - m) ** power for v in self.data]
+
+    def _get_bin_bounds(self, count=None, trim=False, with_max=True):
+        if not self.data:
+            return [0.0]  # TODO: raise?
+
+        data = self.data
+        len_data, min_data, max_data = len(data), min(data), max(data)
+
+        if len_data < 4:
+            if not count:
+                count = len_data
+            dx = (max_data - min_data) / float(count)
+            bins = [min_data + (dx * i) for i in range(count)]
+        elif count is None:
+            # freedman
+            q25, q75 = self.get_quantile(0.25), self.get_quantile(0.75)
+            dx = 2 * (q75 - q25) / (len_data ** (1 / 3.0))
+            bin_count = max(1, int(ceil((max_data - min_data) / dx)))
+            bins = [min_data + (dx * i) for i in range(bin_count + 1)]
+            bins = [b for b in bins if b < max_data]
+        else:
+            if trim is False:
+                trim = 0.0
+            elif trim is True:
+                trim = 1.0 / count
+            else:
+                trim = float(trim)
+                if not (0.0 <= trim < 0.5):
+                    raise ValueError('expected 0.0 <= trim < 0.5, not %r'
+                                     % trim)
+            size = len_data
+            size_diff = int(size * trim)
+            data = self._get_sorted_data()
+            if not trim or not size_diff:
+                dx = (data[-1] - data[0]) / float(count)
+                bins = [data[0] + dx * i for i in range(count)]
+            else:
+                bins = [min_data]
+                data = data[size_diff:-size_diff]
+                dx = (data[-1] - data[0]) / float(count - 1)
+                bins.extend([data[0] + (dx * i) for i in range(count - 1)])
+
+        if with_max:
+            bins.append(float(max_data))
+
+        return bins
+
+    def get_histogram_items(self):
+        pass
+
+    def format_histogram(self, bins=None, width=None, **kwargs):
+        lines = []
+        if not width:
+            try:
+                import shutil
+                width = shutil.get_terminal_size()[0]
+            except Exception:
+                width = 80
+        format_value = kwargs.pop('format_value', lambda v: v)
+        edge_bin_size = kwargs.pop('edge_bin_size', 0.0)
+        round_bin_digits = kwargs.pop('bin_digits', 1)
+
+        if not bins:
+            bins = self._get_bin_bounds(trim=edge_bin_size, with_max=False)
+        else:
+            try:
+                bin_count = int(bins)
+                edge_bin_size = 1 / (bin_count * 4.0) if edge_bin_size is None else edge_bin_size
+            except TypeError:
+                try:
+                    bins = sorted([float(x) for x in bins])
+                except Exception:
+                    raise ValueError('bins expected integer bin count or list of'
+                                     ' float bin boundaries, not %r' % bins)
+                if self.min < bins[0]:
+                    bins = [self.min] + bins
+            else:
+                bins = self._get_bin_bounds(bin_count,
+                                            trim=edge_bin_size,
+                                            with_max=False)
+
+        bins = [round(float(b), round_bin_digits) for b in bins]
+
+        idx_counter = Counter([bisect.bisect(bins, d) - 1 for d in self.data])
+        bin_counts = [(b, idx_counter.get(i, 0)) for i, b in enumerate(bins)]
+
+        count_max = max(idx_counter.values())
+        count_cols = len(str(count_max))
+
+        labels = ['%s' % format_value(b) for b in bins]
+        label_cols = max([len(l) for l in labels])
+        tmp_line = '%s: %s #' % ('x' * label_cols, count_max)
+
+        bar_cols = max(width - len(tmp_line), 3)
+        line_k = float(bar_cols) / max(idx_counter.values())
+        tmpl = "{:>{}}: {:>{}} {}"
+        for label, (bin_val, count) in zip(labels, bin_counts):
+            bar_len = int(round(count * line_k))
+            text = format_value(float(bin_val))
+            bar = ('#' * bar_len) or '|'
+            line = tmpl.format(text, label_cols, count, count_cols, bar)
+            lines.append(line)
+
+        return '\n'.join(lines)
 
     def describe(self, quantiles=None, format=None):
         """Provides standard summary statistics for the data in the Stats
