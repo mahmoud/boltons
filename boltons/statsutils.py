@@ -463,7 +463,7 @@ class Stats(object):
         m = self.mean
         return [(v - m) ** power for v in self.data]
 
-    def _get_bin_bounds(self, count=None, with_max=True):
+    def _get_bin_bounds(self, count=None, with_max=False):
         if not self.data:
             return [0.0]  # TODO: raise?
 
@@ -491,22 +491,13 @@ class Stats(object):
 
         return bins
 
-    def get_histogram_items(self):
-        pass
-
-    def format_histogram(self, bins=None, width=None, **kwargs):
-        lines = []
-        if not width:
-            try:
-                import shutil
-                width = shutil.get_terminal_size()[0]
-            except Exception:
-                width = 80
-        format_value = kwargs.pop('format_value', lambda v: v)
-        round_bin_digits = kwargs.pop('bin_digits', 1)
+    def get_histogram_counts(self, bins=None, **kw):
+        bin_digits = int(kw.pop('bin_digits', 1))
+        if kw:
+            raise TypeError('unexpected keyword arguments: %r' % kw.keys())
 
         if not bins:
-            bins = self._get_bin_bounds(with_max=False)
+            bins = self._get_bin_bounds()
         else:
             try:
                 bin_count = int(bins)
@@ -519,14 +510,32 @@ class Stats(object):
                 if self.min < bins[0]:
                     bins = [self.min] + bins
             else:
-                bins = self._get_bin_bounds(bin_count, with_max=False)
+                bins = self._get_bin_bounds(bin_count)
 
-        bins = [round(float(b), round_bin_digits) for b in bins]
+        # floor and ceil should really have taken ndigits, like round()
+        round_factor = 10.0 ** bin_digits
+        bins = [floor(b * round_factor) / round_factor for b in bins]
 
         idx_counter = Counter([bisect.bisect(bins, d) - 1 for d in self.data])
         bin_counts = [(b, idx_counter.get(i, 0)) for i, b in enumerate(bins)]
 
-        count_max = max(idx_counter.values())
+        return bin_counts
+
+    def format_histogram(self, bins=None, **kw):
+        lines = []
+        width = kw.pop('width', None)
+        if not width:
+            try:
+                import shutil  # python 3 convenience
+                width = shutil.get_terminal_size()[0]
+            except Exception:
+                width = 80
+        format_value = kw.pop('format_value', lambda v: v)
+
+        bin_counts = self.get_histogram_counts(bins=bins, **kw)
+
+        bins = [b for b, _ in bin_counts]
+        count_max = max([count for _, count in bin_counts])
         count_cols = len(str(count_max))
 
         labels = ['%s' % format_value(b) for b in bins]
@@ -534,7 +543,7 @@ class Stats(object):
         tmp_line = '%s: %s #' % ('x' * label_cols, count_max)
 
         bar_cols = max(width - len(tmp_line), 3)
-        line_k = float(bar_cols) / max(idx_counter.values())
+        line_k = float(bar_cols) / count_max
         tmpl = "{:>{}}: {:>{}} {}"
         for label, (bin_val, count) in zip(labels, bin_counts):
             bar_len = int(round(count * line_k))
