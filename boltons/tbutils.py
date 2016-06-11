@@ -409,6 +409,9 @@ class ExceptionInfo(object):
         tb_str = self.tb_info.get_formatted()
         return ''.join([tb_str, '%s: %s' % (self.exc_type, self.exc_msg)])
 
+    def get_formatted_exception_only(self):
+        return '%s: %s' % (self.exc_type, self.exc_msg)
+
 
 class ContextualCallpoint(Callpoint):
     """The ContextualCallpoint is a :class:`Callpoint` subtype with the
