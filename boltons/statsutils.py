@@ -512,7 +512,7 @@ class Stats(object):
             else:
                 bins = self._get_bin_bounds(bin_count)
 
-        # floor and ceil should really have taken ndigits, like round()
+        # floor and ceil really should have taken ndigits, like round()
         round_factor = 10.0 ** bin_digits
         bins = [floor(b * round_factor) / round_factor for b in bins]
 
@@ -522,37 +522,12 @@ class Stats(object):
         return bin_counts
 
     def format_histogram(self, bins=None, **kw):
-        lines = []
         width = kw.pop('width', None)
-        if not width:
-            try:
-                import shutil  # python 3 convenience
-                width = shutil.get_terminal_size()[0]
-            except Exception:
-                width = 80
-        format_value = kw.pop('format_value', lambda v: v)
-
+        format_bin = kw.pop('format_bin', None)
         bin_counts = self.get_histogram_counts(bins=bins, **kw)
-
-        bins = [b for b, _ in bin_counts]
-        count_max = max([count for _, count in bin_counts])
-        count_cols = len(str(count_max))
-
-        labels = ['%s' % format_value(b) for b in bins]
-        label_cols = max([len(l) for l in labels])
-        tmp_line = '%s: %s #' % ('x' * label_cols, count_max)
-
-        bar_cols = max(width - len(tmp_line), 3)
-        line_k = float(bar_cols) / count_max
-        tmpl = "{:>{}}: {:>{}} {}"
-        for label, (bin_val, count) in zip(labels, bin_counts):
-            bar_len = int(round(count * line_k))
-            text = format_value(float(bin_val))
-            bar = ('#' * bar_len) or '|'
-            line = tmpl.format(text, label_cols, count, count_cols, bar)
-            lines.append(line)
-
-        return '\n'.join(lines)
+        return format_histogram_counts(bin_counts,
+                                       width=width,
+                                       format_bin=format_bin)
 
     def describe(self, quantiles=None, format=None):
         """Provides standard summary statistics for the data in the Stats
@@ -657,3 +632,36 @@ for attr_name, attr in list(Stats.__dict__.items()):
 del attr
 del attr_name
 del func
+
+
+def format_histogram_counts(counts, width=None, format_bin=None):
+    lines = []
+    bin_counts = counts
+    if not format_bin:
+        format_bin = lambda v: v
+    if not width:
+        try:
+            import shutil  # python 3 convenience
+            width = shutil.get_terminal_size()[0]
+        except Exception:
+            width = 80
+
+    bins = [b for b, _ in bin_counts]
+    count_max = max([count for _, count in bin_counts])
+    count_cols = len(str(count_max))
+
+    labels = ['%s' % format_bin(b) for b in bins]
+    label_cols = max([len(l) for l in labels])
+    tmp_line = '%s: %s #' % ('x' * label_cols, count_max)
+
+    bar_cols = max(width - len(tmp_line), 3)
+    line_k = float(bar_cols) / count_max
+    tmpl = "{:>{}}: {:>{}} {}"
+    for label, (bin_val, count) in zip(labels, bin_counts):
+        bar_len = int(round(count * line_k))
+        text = format_bin(float(bin_val))
+        bar = ('#' * bar_len) or '|'
+        line = tmpl.format(text, label_cols, count, count_cols, bar)
+        lines.append(line)
+
+    return '\n'.join(lines)
