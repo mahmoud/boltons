@@ -101,6 +101,7 @@ from __future__ import print_function
 import bisect
 from math import floor, ceil
 
+
 class _StatsProperty(object):
     def __init__(self, name, func):
         self.name = name
@@ -137,11 +138,13 @@ class Stats(object):
         use_copy (bool): By default Stats objects copy the initial
             data into a new list to avoid issues with
             modifications. Pass ``False`` to disable this behavior.
+        is_sorted (bool): Presorted data can skip an extra sorting
+            step for a little speed boost. Defaults to False.
 
     """
-    def __init__(self, data, default=0.0, use_copy=True):
+    def __init__(self, data, default=0.0, use_copy=True, is_sorted=False):
         self._use_copy = use_copy
-        self._is_sorted = False
+        self._is_sorted = is_sorted
         if use_copy:
             self.data = list(data)
         else:
