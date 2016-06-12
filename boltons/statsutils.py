@@ -638,6 +638,7 @@ class Stats(object):
         count:    7
         mean:     4.0
         std_dev:  2.0
+        mad:      2.0
         min:      1
         0.25:     2.5
         0.5:      4
@@ -664,7 +665,9 @@ class Stats(object):
         items = [('count', self.count),
                  ('mean', self.mean),
                  ('std_dev', self.std_dev),
+                 ('mad', self.mad),
                  ('min', self.min)]
+
         items.extend(q_items)
         items.append(('max', self.max))
         if format == 'dict':
@@ -686,6 +689,7 @@ def describe(data, quantiles=None, format=None):
     count:    7
     mean:     3.0
     std_dev:  2.0
+    mad:      2.0
     min:      0
     0.25:     1.5
     0.5:      3
