@@ -101,7 +101,6 @@ from __future__ import print_function
 import bisect
 from math import floor, ceil
 
-
 class _StatsProperty(object):
     def __init__(self, name, func):
         self.name = name
@@ -511,7 +510,7 @@ class Stats(object):
         :meth:`Stats.format_histogram` for more details.
 
         Args:
-            bins (int): integer number of bins, or list of
+            bins (int): maximum number of bins, or list of
                 floating-point bin boundaries. Defaults to the output of
                 Freedman's algorithm.
             bin_digits (int): Number of digits used to round down the
@@ -534,7 +533,7 @@ class Stats(object):
                 bin_count = int(bins)
             except TypeError:
                 try:
-                    bins = sorted([float(x) for x in bins])
+                    bins = [float(x) for x in bins]
                 except Exception:
                     raise ValueError('bins expected integer bin count or list'
                                      ' of float bin boundaries, not %r' % bins)
@@ -546,6 +545,7 @@ class Stats(object):
         # floor and ceil really should have taken ndigits, like round()
         round_factor = 10.0 ** bin_digits
         bins = [floor(b * round_factor) / round_factor for b in bins]
+        bins = sorted(set(bins))
 
         idxs = [bisect.bisect(bins, d) - 1 for d in self.data]
         count_map = {}  # would have used Counter, but py26 support
@@ -581,8 +581,8 @@ class Stats(object):
         used.
 
         Args:
-            bins (int): Primarily an integer number of bins for the
-                histogram, but also accepts a list of floating-point
+            bins (int): Maximum number of bins for the
+                histogram. Also accepts a list of floating-point
                 bin boundaries. If the minimum boundary is still
                 greater than the minimum value in the data, that
                 boundary will be implicitly added. Defaults to the bin
