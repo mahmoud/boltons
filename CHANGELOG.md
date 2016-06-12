@@ -1,8 +1,22 @@
 boltons Changelog
 =================
 
-Since February 20, 2013 there have been 27 releases and 933 commits for
-an average of one 34-commit release every 6.5 weeks.
+Since February 20, 2013 there have been 28 releases and 950 commits for
+an average of one 34-commit release every 6.4 weeks.
+
+16.4.1
+------
+*(June 14, 2016)*
+
+This release primarily contains several [statsutils][statsutils] updates.
+
+* The biggest change was the addition of
+  [Stats.format_histogram][statsutils.Stats.format_histogram] complete
+  with Freedman bin selection and other useful options.
+* Added inter-quartile range (iqr) to [statsutils.Stats][statsutils.Stats]
+* Adding mad (median absolute deviation) to
+  [Stats.describe][statsutils.Stats.describe], since median and
+  std_dev were already there.
 
 16.4.0
 ------
@@ -722,6 +736,7 @@ added in this release.
 [statsutils.Stats]: http://boltons.readthedocs.org/en/latest/statsutils.html#boltons.statsutils.Stats
 [statsutils.Stats.clear_cache]: http://boltons.readthedocs.org/en/latest/statsutils.html#boltons.statsutils.Stats.clear_cache
 [statsutils.Stats.describe]: http://boltons.readthedocs.org/en/latest/statsutils.html#boltons.statsutils.Stats.describe
+[statsutils.Stats.format_histogram]: http://boltons.readthedocs.org/en/latest/statsutils.html#boltons.statsutils.Stats.format_histogram
 [statsutils.Stats.get_zscore]: http://boltons.readthedocs.org/en/latest/statsutils.html#boltons.statsutils.Stats.get_zscore
 [statsutils.median]: http://boltons.readthedocs.org/en/latest/statsutils.html#boltons.statsutils.median
 [statsutils.trimean]: http://boltons.readthedocs.org/en/latest/statsutils.html#boltons.statsutils.trimean
