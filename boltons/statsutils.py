@@ -247,6 +247,20 @@ class Stats(object):
         return self._get_quantile(self._get_sorted_data(), 0.5)
     median = _StatsProperty('median', _calc_median)
 
+    def _calc_iqr(self):
+        """Inter-quartile range (IQR) is the difference between the 75th
+        percentile and 25th percentile. IQR is a robust measure of
+        dispersion, like standard deviation, but safer to compare
+        between datasets, as it is less influenced by outliers.
+
+        >>> iqr([1, 2, 3, 4, 5])
+        2
+        >>> iqr(range(1001))
+        500
+        """
+        return self.get_quantile(0.75) - self.get_quantile(0.25)
+    iqr = _StatsProperty('iqr', _calc_iqr)
+
     def _calc_trimean(self):
         """The trimean is a robust measure of central tendency, like the
         median, that takes the weighted average of the median and the
@@ -298,6 +312,7 @@ class Stats(object):
         x = float(median(sorted_vals))  # programmatically defined below
         return median([abs(x - v) for v in sorted_vals])
     median_abs_dev = _StatsProperty('median_abs_dev', _calc_median_abs_dev)
+    mad = median_abs_dev  # convenience
 
     def _calc_rel_std_dev(self):
         """\
@@ -693,6 +708,8 @@ def _get_conv_func(attr_name):
 for attr_name, attr in list(Stats.__dict__.items()):
     if isinstance(attr, _StatsProperty):
         if attr_name in ('max', 'min', 'count'):  # don't shadow builtins
+            continue
+        if attr_name in ('mad',):  # convenience aliases
             continue
         func = _get_conv_func(attr_name)
         func.__doc__ = attr.func.__doc__
