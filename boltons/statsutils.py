@@ -491,6 +491,23 @@ class Stats(object):
         return bins
 
     def get_histogram_counts(self, bins=None, **kw):
+        """Produces a list of ``(bin, count)`` pairs comprising a histogram of
+        the Stats object's data, using fixed-width bins. See
+        :meth:`Stats.format_histogram` for more details.
+
+        Args:
+            bins (int): integer number of bins, or list of
+                floating-point bin boundaries. Defaults to the output of
+                Freedman's algorithm.
+            bin_digits (int): Number of digits used to round down the
+                bin boundaries. Defaults to 1.
+
+        The output of this method can be stored and/or modified, and
+        then passed to :func:`statsutils.format_histogram_counts` to
+        achieve the same text formatting as the
+        :meth:`~Stats.format_histogram` method. This can be useful for
+        snapshotting over time.
+        """
         bin_digits = int(kw.pop('bin_digits', 1))
         if kw:
             raise TypeError('unexpected keyword arguments: %r' % kw.keys())
@@ -528,6 +545,51 @@ class Stats(object):
         return bin_counts
 
     def format_histogram(self, bins=None, **kw):
+        """Produces a textual histogram of the data, using fixed-width bins,
+        allowing for simple visualization, even in console environments.
+
+        >>> data = list(range(20)) + list(range(5, 15)) + [10]
+        >>> print(Stats(data).format_histogram())
+         0.0:  5 ################################
+         4.4:  8 ###################################################
+         8.9: 11 ######################################################################
+        13.3:  5 ################################
+        17.8:  2 #############
+
+        In this histogram, five values are between 0.0 and 4.4, eight
+        are between 4.4 and 8.9, and two values lie between 17.8 and
+        the max.
+
+        You can specify the number of bins, or provide a list of
+        bin boundaries themselves. If no bins are provided, as in the
+        example above, `Freedman's algorithm`_ for bin selection is
+        used.
+
+        Args:
+            bins (int): Primarily an integer number of bins for the
+                histogram, but also accepts a list of floating-point
+                bin boundaries. If the minimum boundary is still
+                greater than the minimum value in the data, that
+                boundary will be implicitly added. Defaults to the bin
+                boundaries returned by `Freedman's algorithm`_.
+            bin_digits (int): Number of digits to round each bin
+                to. Note that bins are always rounded down to avoid
+                clipping any data. Defaults to 1.
+            width (int): integer number of columns in the longest line
+               in the histogram. Defaults to console width on Python
+               3.3+, or 80 if that is not available.
+            format_bin (callable): Called on each bin to create a
+               label for the final output. Use this function to add
+               units, such as "ms" for milliseconds.
+
+        Should you want something more programmatically reusable, see
+        the :meth:`~Stats.get_histogram_counts` method, the output of
+        is used by format_histogram. The :meth:`~Stats.describe`
+        method is another useful summarization method, albeit less
+        visual.
+
+        .. _Freedman's algorithm: https://en.wikipedia.org/wiki/Freedman%E2%80%93Diaconis_rule
+        """
         width = kw.pop('width', None)
         format_bin = kw.pop('format_bin', None)
         bin_counts = self.get_histogram_counts(bins=bins, **kw)
@@ -615,6 +677,8 @@ def describe(data, quantiles=None, format=None):
     0.75:     4.5
     max:      6
 
+    See :meth:`Stats.format_histogram` for another very useful
+    summarization that uses textual visualization.
     """
     return Stats(data).describe(quantiles=quantiles, format=format)
 
@@ -640,9 +704,19 @@ del attr_name
 del func
 
 
-def format_histogram_counts(counts, width=None, format_bin=None):
+def format_histogram_counts(bin_counts, width=None, format_bin=None):
+    """The formatting logic behind :meth:`Stats.format_histogram`, which
+    takes the output of :meth:`Stats.get_histogram_counts`, and passes
+    them to this function.
+
+    Args:
+        bin_counts (list): A list of bin values to counts.
+        width (int): Number of character columns in the text output,
+            defaults to 80 or console width in Python 3.3+.
+        format_bin (callable): Used to convert bin values into string
+            labels.
+    """
     lines = []
-    bin_counts = counts
     if not format_bin:
         format_bin = lambda v: v
     if not width:
