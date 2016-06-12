@@ -100,7 +100,6 @@ from __future__ import print_function
 
 import bisect
 from math import floor, ceil
-from collections import Counter
 
 
 class _StatsProperty(object):
@@ -516,8 +515,15 @@ class Stats(object):
         round_factor = 10.0 ** bin_digits
         bins = [floor(b * round_factor) / round_factor for b in bins]
 
-        idx_counter = Counter([bisect.bisect(bins, d) - 1 for d in self.data])
-        bin_counts = [(b, idx_counter.get(i, 0)) for i, b in enumerate(bins)]
+        idxs = [bisect.bisect(bins, d) - 1 for d in self.data]
+        count_map = {}  # would have used Counter, but py26 support
+        for idx in idxs:
+            try:
+                count_map[idx] += 1
+            except KeyError:
+                count_map[idx] = 1
+
+        bin_counts = [(b, count_map.get(i, 0)) for i, b in enumerate(bins)]
 
         return bin_counts
 
@@ -656,12 +662,15 @@ def format_histogram_counts(counts, width=None, format_bin=None):
 
     bar_cols = max(width - len(tmp_line), 3)
     line_k = float(bar_cols) / count_max
-    tmpl = "{:>{}}: {:>{}} {}"
+    tmpl = "{label:>{label_cols}}: {count:>{count_cols}} {bar}"
     for label, (bin_val, count) in zip(labels, bin_counts):
         bar_len = int(round(count * line_k))
-        text = format_bin(float(bin_val))
         bar = ('#' * bar_len) or '|'
-        line = tmpl.format(text, label_cols, count, count_cols, bar)
+        line = tmpl.format(label=label,
+                           label_cols=label_cols,
+                           count=count,
+                           count_cols=count_cols,
+                           bar=bar)
         lines.append(line)
 
     return '\n'.join(lines)
