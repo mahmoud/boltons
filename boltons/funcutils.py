@@ -341,6 +341,8 @@ class FunctionBuilder(object):
             but only for the *kwonlyargs*. **Python 3 only.**
         annotations (dict): Mapping of type hints and so
             forth. **Python 3 only.**
+        filename (str): The filename that will appear in
+            tracebacks. Defaults to "boltons.funcutils.FunctionBuilder".
         indent (int): Number of spaces with which to indent the
             function *body*. Values less than 1 will result in an error.
         dict (dict): Any other attributes which should be added to the
@@ -386,7 +388,8 @@ class FunctionBuilder(object):
                  'dict': dict,
                  'module': lambda: None,
                  'body': lambda: 'pass',
-                 'indent': lambda: 4}
+                 'indent': lambda: 4,
+                 'filename': lambda: 'boltons.funcutils.FunctionBuilder'}
 
     _defaults.update(_argspec_defaults)
 
@@ -546,8 +549,9 @@ class FunctionBuilder(object):
         return
 
     def _compile(self, src, execdict):
-        filename = ('<boltons.funcutils.FunctionBuilder-%d>'
-                    % (next(self._compile_count),))
+
+        filename = ('<%s-%d>'
+                    % (self.filename, next(self._compile_count),))
         try:
             code = compile(src, filename, 'single')
             exec(code, execdict)
