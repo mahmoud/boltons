@@ -268,6 +268,8 @@ def wraps(func, injected=None, **kw):
     For more in-depth wrapping of functions, see the
     :class:`FunctionBuilder` type, on which wraps was built.
     """
+    # TODO: maybe automatically use normal wraps in the very rare case
+    # that the signatures actually match and no adapter is needed.
     if injected is None:
         injected = []
     elif isinstance(injected, basestring):
