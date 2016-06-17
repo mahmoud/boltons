@@ -2,6 +2,38 @@
 
 *boltons should be builtins.*
 
+Stable release: |release| |versions| |license| |dependencies| |popularity|
+
+Development: |build| |docs| |coverage| |quality|
+
+.. |release| image:: https://img.shields.io/pypi/v/boltons.svg
+    :target: https://pypi.python.org/pypi/boltons
+    :alt: Last release
+.. |versions| image:: https://img.shields.io/pypi/pyversions/boltons.svg
+    :target: https://pypi.python.org/pypi/boltons
+    :alt: Python versions
+.. |license| image:: https://img.shields.io/pypi/l/boltons.svg
+    :target: https://www.gnu.org/licenses/gpl-2.0.html
+    :alt: Software license
+.. |popularity| image:: https://img.shields.io/pypi/dm/boltons.svg
+    :target: https://pypi.python.org/pypi/boltons#downloads
+    :alt: Popularity
+.. |dependencies| image:: https://img.shields.io/requires/github/mahmoud/boltons/master.svg
+    :target: https://requires.io/github/mahmoud/boltons/requirements/?branch=master
+    :alt: Requirements freshness
+.. |build| image:: https://img.shields.io/travis/mahmoud/boltons/develop.svg
+    :target: https://travis-ci.org/mahmoud/boltons
+    :alt: Unit-tests status
+.. |docs| image:: https://readthedocs.org/projects/boltons/badge/?version=latest
+    :target: https://boltons.readthedocs.io/en/latest/
+    :alt: Documentation Status
+.. |coverage| image:: https://codecov.io/github/mahmoud/boltons/coverage.svg?branch=develop
+    :target: https://codecov.io/github/mahmoud/boltons?branch=develop
+    :alt: Coverage Status
+.. |quality| image:: https://img.shields.io/scrutinizer/g/mahmoud/boltons.svg
+    :target: https://scrutinizer-ci.com/g/mahmoud/boltons/?branch=develop
+    :alt: Code Quality
+
 **Boltons** is a set of over 160 BSD-licensed, pure-Python utilities
 in the same spirit as — and yet conspicuously missing from —
 [the standard library][stdlib], including:
