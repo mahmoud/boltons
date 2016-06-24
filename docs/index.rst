@@ -4,6 +4,8 @@ boltons
 
 *boltons should be builtins.*
 
+|release| |calver|
+
 **Boltons** is a set of pure-Python utilities in the same spirit as —
 and yet conspicuously missing from — the `the standard library`_,
 including:
@@ -33,6 +35,13 @@ And that's just a small selection. As of |today|, ``boltons`` is
 
 .. _the standard library: https://docs.python.org/2.7/library/index.html
 .. _checking the CHANGELOG: https://github.com/mahmoud/boltons/blob/master/CHANGELOG.md
+
+.. |release| image:: https://img.shields.io/pypi/v/boltons.svg
+             :target: https://pypi.python.org/pypi/boltons
+
+.. |calver| image:: https://img.shields.io/badge/calver-YY.MINOR.MICRO-22bfda.svg
+            :target: http://calver.org
+
 
 Installation and Integration
 ----------------------------
