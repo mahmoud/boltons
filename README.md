@@ -2,6 +2,10 @@
 
 *boltons should be builtins.*
 
+<a href="https://boltons.readthedocs.io/en/latest/"><img src="https://img.shields.io/badge/docs-latest-brightgreen.svg?style=flat"></a>
+<a href="https://pypi.python.org/pypi/boltons"><img src="https://img.shields.io/pypi/v/boltons.svg"></a>
+<a href="http://calver.org"><img src="https://img.shields.io/badge/calver-YY.MINOR.MICRO-22bfda.svg"></a>
+
 **Boltons** is a set of over 160 BSD-licensed, pure-Python utilities
 in the same spirit as — and yet conspicuously missing from —
 [the standard library][stdlib], including:
