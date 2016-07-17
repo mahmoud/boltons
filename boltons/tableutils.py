@@ -470,8 +470,16 @@ class Table(object):
         sep = '\n' if with_newlines else ''
         return sep.join(lines)
 
+    def get_cell_html(self, value):
+        """Called on each value in an HTML table. By default it simply escapes
+        the HTML. Override this method to add additional conditions
+        and behaviors, but take care to ensure the final output is
+        HTML escaped.
+        """
+        return escape_html(value)
+
     def _add_horizontal_html_lines(self, lines, headers, max_depth):
-        esc = escape_html
+        esc = self.get_cell_html
         new_depth = max_depth - 1 if max_depth > 1 else max_depth
         if max_depth > 1:
             new_depth = max_depth - 1
@@ -496,7 +504,7 @@ class Table(object):
             lines.append(''.join([trtd, _tdtd.join(_fill_parts), _td_tr]))
 
     def _add_vertical_html_lines(self, lines, headers, max_depth):
-        esc = escape_html
+        esc = self.get_cell_html
         new_depth = max_depth - 1 if max_depth > 1 else max_depth
         tr, th, _th = self._html_tr, self._html_th, self._html_th_close
         td, _tdtd = self._html_td, self._html_td_close + self._html_td
