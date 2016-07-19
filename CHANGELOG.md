@@ -1,8 +1,29 @@
 boltons Changelog
 =================
 
-Since February 20, 2013 there have been 28 releases and 950 commits for
-an average of one 34-commit release every 6.4 weeks.
+Since February 20, 2013 there have been 29 releases and 960 commits for
+an average of one 33-commit release every 6.2 weeks.
+
+16.5.0
+------
+*(July 16, 2016)*
+
+A few minor changes, and medium-sized breaking change to
+[cacheutils][cacheutils].
+
+* [cacheutils][cacheutils] caching decorators now take the
+  function/method into account by default. This was done by adding the
+  scoped argument to [@cached][cacheutils.cached] and
+  [@cachedmethod][cacheutils.cachedmethod] (and removing selfish from
+  cachedmethod). also fixed a bug in a cachedmethod test, as well as
+  added docs for scoped and key arguments. all of this to fix [#83][i83].
+* [tableutils.Table][tableutils.Table] cell html can be customized by
+  overriding `get_cell_html` method.
+* [funcutils.total_ordering][funcutils.total_ordering], a
+  [functools.total_ordering][functools.total_ordering] backport for
+  python 2.6.
+* [funcutils.FunctionBuilder][funcutils.FunctionBuilder] function
+  names are now configurable.
 
 16.4.1
 ------
@@ -666,6 +687,7 @@ added in this release.
 
 
 [os.replace]: https://docs.python.org/3/library/os.html#os.replace
+[functools.total_ordering]: https://docs.python.org/2/library/functools.html#functools.total_ordering
 
 [cacheutils]: http://boltons.readthedocs.org/en/latest/cacheutils.html
 [cacheutils.LRU]: http://boltons.readthedocs.org/en/latest/cacheutils.html#boltons.cacheutils.LRU
@@ -693,6 +715,7 @@ added in this release.
 [fileutils.DummyFile]: http://boltons.readthedocs.org/en/latest/fileutils.html#boltons.fileutils.DummyFile
 [funcutils.FunctionBuilder]: http://boltons.readthedocs.org/en/latest/funcutils.html#boltons.funcutils.FunctionBuilder
 [funcutils.partial_ordering]: http://boltons.readthedocs.org/en/latest/funcutils.html#boltons.funcutils.partial_ordering
+[funcutils.total_ordering]: http://boltons.readthedocs.org/en/latest/funcutils.html#boltons.funcutils.total_ordering
 [funcutils.wraps]: http://boltons.readthedocs.org/en/latest/funcutils.html#boltons.funcutils.wraps
 [gcutils.GCToggler]: http://boltons.readthedocs.org/en/latest/gcutils.html#boltons.gcutils.GCToggler
 [gcutils.get_all]: http://boltons.readthedocs.org/en/latest/gcutils.html#boltons.gcutils.get_all
@@ -705,6 +728,7 @@ added in this release.
 [i30]: https://github.com/mahmoud/boltons/issues/30
 [i41]: https://github.com/mahmoud/boltons/issues/41
 [i79]: https://github.com/mahmoud/boltons/pull/79
+[i83]: https://github.com/mahmoud/boltons/issues/83
 [iterutils]: http://boltons.readthedocs.org/en/latest/iterutils.html
 [iterutils.backoff]: http://boltons.readthedocs.org/en/latest/iterutils.html#boltons.iterutils.backoff
 [iterutils.backoff_iter]: http://boltons.readthedocs.org/en/latest/iterutils.html#boltons.iterutils.backoff_iter
