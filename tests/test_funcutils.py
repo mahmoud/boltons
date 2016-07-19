@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from boltons.funcutils import (copy_function,
+                               total_ordering,
                                InstancePartial,
                                CachedInstancePartial)
 
@@ -39,3 +40,24 @@ def test_copy_function():
     callee_copy = copy_function(callee)
     assert callee is not callee_copy
     assert callee() == callee_copy()
+
+
+class test_total_ordering():
+    @total_ordering
+    class Number(object):
+        def __init__(self, val):
+            self.val = int(val)
+
+        def __gt__(self, other):
+            return self.val > other
+
+        def __eq__(self, other):
+            return self.val == other
+
+    num = Number(3)
+    assert num > 0
+    assert num == 3
+
+    assert num < 5
+    assert num >= 2
+    assert num != 1
