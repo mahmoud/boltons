@@ -425,7 +425,8 @@ class _HashedKey(list):
         return '%s(%s)' % (self.__class__.__name__, list.__repr__(self))
 
 
-def make_cache_key(args, kwargs, typed=False, kwarg_mark=_KWARG_MARK,
+def make_cache_key(args, kwargs, typed=False,
+                   kwarg_mark=_KWARG_MARK,
                    fasttypes=frozenset([int, str, frozenset, type(None)])):
     """Make a generic key from a function's positional and keyword
     arguments, suitable for use in caches. Arguments within *args* and
@@ -444,6 +445,9 @@ def make_cache_key(args, kwargs, typed=False, kwarg_mark=_KWARG_MARK,
 
     .. _hashable: https://docs.python.org/2/glossary.html#term-hashable
     """
+
+    # key = [func_name] if func_name else []
+    # key.extend(args)
     key = list(args)
     if kwargs:
         sorted_items = sorted(kwargs.items())
@@ -465,7 +469,7 @@ class CachedFunction(object):
     """This type is used by :func:`cached`, below. Instances of this
     class are used to wrap functions in caching logic.
     """
-    def __init__(self, func, cache, typed=False):
+    def __init__(self, func, cache, typed=False, key=None):
         self.func = func
         if callable(cache):
             self.get_cache = cache
@@ -479,10 +483,11 @@ class CachedFunction(object):
                 return cache
             self.get_cache = _get_cache
         self.typed = typed
+        self.key_func = key or make_cache_key
 
     def __call__(self, *args, **kwargs):
         cache = self.get_cache()
-        key = make_cache_key(args, kwargs, typed=self.typed)
+        key = self.key_func(args, kwargs, typed=self.typed)
         try:
             ret = cache[key]
         except KeyError:
@@ -500,7 +505,7 @@ class CachedMethod(object):
     """Similar to :class:`CachedFunction`, this type is used by
     :func:`cachedmethod` to wrap methods in caching logic.
     """
-    def __init__(self, func, cache, typed=False, selfish=True):
+    def __init__(self, func, cache, typed=False, selfish=True, key=None):
         self.func = func
         if isinstance(cache, basestring):
             self.get_cache = attrgetter(cache)
@@ -518,6 +523,7 @@ class CachedMethod(object):
             self.get_cache = _get_cache
         self.typed = typed
         self.selfish = selfish
+        self.key_func = key or make_cache_key
         self.bound_to = None
 
     def __get__(self, obj, objtype=None):
@@ -533,7 +539,7 @@ class CachedMethod(object):
         obj = args[0] if self.bound_to is None else self.bound_to
         cache = self.get_cache(obj)
         key_args = (self.bound_to,) + args if self.selfish else args
-        key = make_cache_key(key_args, kwargs, typed=self.typed)
+        key = self.key_func(key_args, kwargs, typed=self.typed)
         try:
             ret = cache[key]
         except KeyError:
@@ -551,7 +557,7 @@ class CachedMethod(object):
         return ("%s(func=%r, typed=%r, selfish=%r)" % args)
 
 
-def cached(cache, typed=False):
+def cached(cache, typed=False, key=None):
     """Cache any function with the cache object of your choosing. Note
     that the function wrapped should take only `hashable`_ arguments.
 
@@ -579,11 +585,11 @@ def cached(cache, typed=False):
 
     """
     def cached_func_decorator(func):
-        return CachedFunction(func, cache, typed=typed)
+        return CachedFunction(func, cache, typed=typed, key=key)
     return cached_func_decorator
 
 
-def cachedmethod(cache, typed=False, selfish=True):
+def cachedmethod(cache, typed=False, selfish=True, key=None):
     """Similar to :func:`cached`, ``cachedmethod`` is used to cache
     methods based on their arguments, using any :class:`dict`-like
     *cache* object.
@@ -614,7 +620,7 @@ def cachedmethod(cache, typed=False, selfish=True):
     1
     """
     def cached_method_decorator(func):
-        return CachedMethod(func, cache, typed=typed, selfish=selfish)
+        return CachedMethod(func, cache, typed=typed, selfish=selfish, key=key)
     return cached_method_decorator
 
 
