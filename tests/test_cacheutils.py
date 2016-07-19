@@ -157,6 +157,25 @@ def test_cached_dec():
     assert inner_func.call_count == 1
     func('man door hand hook car door')
     assert inner_func.call_count == 2
+
+    return
+
+
+def test_unscoped_cached_dec():
+    lru = LRU()
+    inner_func = CountingCallable()
+    func = cached(lru)(inner_func)
+
+    other_inner_func = CountingCallable()
+    other_func = cached(lru)(other_inner_func)
+
+    assert inner_func.call_count == 0
+    func('a')
+    assert inner_func.call_count == 1
+    func('a')
+
+    other_func('a')
+    assert other_inner_func.call_count == 0
     return
 
 
@@ -201,7 +220,7 @@ def test_cachedmethod():
         def hook(self, *a, **kw):
             self.hook_count += 1
 
-        @cachedmethod('h_cache', selfish=False)
+        @cachedmethod('h_cache', scoped=False)
         def door(self, *a, **kw):
             self.door_count += 1
 
@@ -233,7 +252,7 @@ def test_cachedmethod():
     car_two = Car(cache=lru)
     assert car_two.door_count == 0
     car_two.door('bob')
-    assert car.door_count == 0
+    assert car_two.door_count == 0
 
     # try unbound for kicks
     Car.door(Car(), 'bob')

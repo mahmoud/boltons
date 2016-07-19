@@ -469,7 +469,7 @@ class CachedFunction(object):
     """This type is used by :func:`cached`, below. Instances of this
     class are used to wrap functions in caching logic.
     """
-    def __init__(self, func, cache, typed=False, key=None):
+    def __init__(self, func, cache, scoped=True, typed=False, key=None):
         self.func = func
         if callable(cache):
             self.get_cache = cache
@@ -482,6 +482,7 @@ class CachedFunction(object):
             def _get_cache():
                 return cache
             self.get_cache = _get_cache
+        self.scoped = scoped
         self.typed = typed
         self.key_func = key or make_cache_key
 
@@ -496,8 +497,9 @@ class CachedFunction(object):
 
     def __repr__(self):
         cn = self.__class__.__name__
-        if self.typed:
-            return "%s(func=%r, typed=%r)" % (cn, self.func, self.typed)
+        if self.typed or not self.scoped:
+            return ("%s(func=%r, scoped=%r, typed=%r)"
+                    % (cn, self.func, self.scoped, self.typed))
         return "%s(func=%r)" % (cn, self.func)
 
 
@@ -505,7 +507,7 @@ class CachedMethod(object):
     """Similar to :class:`CachedFunction`, this type is used by
     :func:`cachedmethod` to wrap methods in caching logic.
     """
-    def __init__(self, func, cache, typed=False, selfish=True, key=None):
+    def __init__(self, func, cache, scoped=True, typed=False, key=None):
         self.func = func
         if isinstance(cache, basestring):
             self.get_cache = attrgetter(cache)
@@ -515,14 +517,13 @@ class CachedMethod(object):
                   and callable(getattr(cache, '__setitem__', None))):
             raise TypeError('expected cache to be an attribute name,'
                             ' dict-like object, or callable returning'
-                            ' a dict-like object, not %r'
-                            % cache)
+                            ' a dict-like object, not %r' % cache)
         else:
             def _get_cache(obj):
                 return cache
             self.get_cache = _get_cache
+        self.scoped = scoped
         self.typed = typed
-        self.selfish = selfish
         self.key_func = key or make_cache_key
         self.bound_to = None
 
@@ -530,15 +531,15 @@ class CachedMethod(object):
         if obj is None:
             return self
         cls = self.__class__
-        ret = cls(self.func, self.get_cache,
-                  typed=self.typed, selfish=self.selfish)
+        ret = cls(self.func, self.get_cache, typed=self.typed,
+                  scoped=self.scoped, key=self.key_func)
         ret.bound_to = obj
         return ret
 
     def __call__(self, *args, **kwargs):
         obj = args[0] if self.bound_to is None else self.bound_to
         cache = self.get_cache(obj)
-        key_args = (self.bound_to,) + args if self.selfish else args
+        key_args = (self.bound_to, self.func) + args if self.scoped else args
         key = self.key_func(key_args, kwargs, typed=self.typed)
         try:
             ret = cache[key]
@@ -550,14 +551,14 @@ class CachedMethod(object):
 
     def __repr__(self):
         cn = self.__class__.__name__
-        args = (cn, self.func, self.typed, self.selfish)
+        args = (cn, self.func, self.scoped, self.typed)
         if self.bound_to is not None:
             args += (self.bound_to,)
-            return ('<%s func=%r typed=%r selfish=%r bound_to=%r>' % args)
-        return ("%s(func=%r, typed=%r, selfish=%r)" % args)
+            return ('<%s func=%r scoped=%r typed=%r bound_to=%r>' % args)
+        return ("%s(func=%r, scoped=%r, typed=%r)" % args)
 
 
-def cached(cache, typed=False, key=None):
+def cached(cache, scoped=True, typed=False, key=None):
     """Cache any function with the cache object of your choosing. Note
     that the function wrapped should take only `hashable`_ arguments.
 
@@ -567,6 +568,12 @@ def cached(cache, typed=False, key=None):
             :class:`LRI` are good choices, but a plain :class:`dict`
             can work in some cases, as well. This argument can also be
             a callable which accepts no arguments and returns a mapping.
+        scoped (bool): Whether the function itself is part of the
+            cache key.  ``True`` by default, different functions will
+            not read one another's cache entries, but can evict one
+            another's results. ``False`` can be useful for certain
+            shared cache use cases. More advanced behavior can be
+            produced through the *key* argument.
         typed (bool): Whether to factor argument types into the cache
             check. Default ``False``, setting to ``True`` causes the
             cache keys for ``3`` and ``3.0`` to be considered unequal.
@@ -585,11 +592,11 @@ def cached(cache, typed=False, key=None):
 
     """
     def cached_func_decorator(func):
-        return CachedFunction(func, cache, typed=typed, key=key)
+        return CachedFunction(func, cache, scoped=scoped, typed=typed, key=key)
     return cached_func_decorator
 
 
-def cachedmethod(cache, typed=False, selfish=True, key=None):
+def cachedmethod(cache, scoped=True, typed=False, key=None):
     """Similar to :func:`cached`, ``cachedmethod`` is used to cache
     methods based on their arguments, using any :class:`dict`-like
     *cache* object.
@@ -598,12 +605,18 @@ def cachedmethod(cache, typed=False, selfish=True, key=None):
         cache (str/Mapping/callable): Can be the name of an attribute
             on the instance, any Mapping/:class:`dict`-like object, or
             a callable which returns a Mapping.
+        scoped (bool): Whether the method itself and the object it is
+            bound to are part of the cache keys. ``True`` by default,
+            different methods will not read one another's cache
+            results. ``False`` can be useful for certain shared cache
+            use cases. More advanced behavior can be produced through
+            the *key* arguments.
         typed (bool): Whether to factor argument types into the cache
             check. Default ``False``, setting to ``True`` causes the
             cache keys for ``3`` and ``3.0`` to be considered unequal.
-        selfish (bool): Whether an instance's ``self`` argument should
-            be considered in the cache key. Use this to share cache
-            objects across instances.
+        key (callable): A callable with a signature that matches
+            :func:`make_cache_key` that returns a tuple of hashable
+            values to be used as the key in the cache.
 
     >>> class Lowerer(object):
     ...     def __init__(self):
@@ -618,9 +631,10 @@ def cachedmethod(cache, typed=False, selfish=True, key=None):
     'wow who could guess caching could be so neat'
     >>> len(lowerer.cache)
     1
+
     """
     def cached_method_decorator(func):
-        return CachedMethod(func, cache, typed=typed, selfish=selfish, key=key)
+        return CachedMethod(func, cache, scoped=scoped, typed=typed, key=key)
     return cached_method_decorator
 
 
