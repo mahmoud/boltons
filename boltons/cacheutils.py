@@ -405,7 +405,7 @@ class LRI(dict):
             return default
 
 
-### Cached decorator
+# Cached decorator
 # Key-making technique adapted from Python 3.4's functools
 
 class _HashedKey(list):
@@ -473,8 +473,8 @@ class CachedFunction(object):
         self.func = func
         if callable(cache):
             self.get_cache = cache
-        elif not (callable(getattr(cache, '__getitem__', None))
-                  and callable(getattr(cache, '__setitem__', None))):
+        elif not (callable(getattr(cache, '__getitem__', None)) and
+                  callable(getattr(cache, '__setitem__', None))):
             raise TypeError('expected cache to be a dict-like object,'
                             ' or callable returning a dict-like object, not %r'
                             % cache)
@@ -513,8 +513,8 @@ class CachedMethod(object):
             self.get_cache = attrgetter(cache)
         elif callable(cache):
             self.get_cache = cache
-        elif not (callable(getattr(cache, '__getitem__', None))
-                  and callable(getattr(cache, '__setitem__', None))):
+        elif not (callable(getattr(cache, '__getitem__', None)) and
+                  callable(getattr(cache, '__setitem__', None))):
             raise TypeError('expected cache to be an attribute name,'
                             ' dict-like object, or callable returning'
                             ' a dict-like object, not %r' % cache)

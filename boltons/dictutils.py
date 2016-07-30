@@ -56,7 +56,8 @@ __all__ = ['MultiDict', 'OMD', 'OrderedMultiDict']
 try:
     profile
 except NameError:
-    profile = lambda x: x
+    def profile(x):
+        return x
 
 
 class OrderedMultiDict(dict):
@@ -306,8 +307,8 @@ class OrderedMultiDict(dict):
             for (selfk, selfv), (otherk, otherv) in zipped_items:
                 if selfk != otherk or selfv != otherv:
                     return False
-            if not(next(selfi, _MISSING) is _MISSING
-                   and next(otheri, _MISSING) is _MISSING):
+            if not(next(selfi, _MISSING) is _MISSING and
+                   next(otheri, _MISSING) is _MISSING):
                 # leftovers  (TODO: watch for StopIteration?)
                 return False
             return True

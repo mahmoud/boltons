@@ -277,7 +277,9 @@ class Stats(object):
 
         """
         sorted_data = self._get_sorted_data()
-        gq = lambda q: self._get_quantile(sorted_data, q)
+
+        def gq(q):
+            return self._get_quantile(sorted_data, q)
         return (gq(0.25) + (2 * gq(0.5)) + gq(0.75)) / 4.0
     trimean = _StatsProperty('trimean', _calc_trimean)
 
@@ -742,7 +744,9 @@ def format_histogram_counts(bin_counts, width=None, format_bin=None):
     """
     lines = []
     if not format_bin:
-        format_bin = lambda v: v
+        def format_bin(v):
+            return v
+
     if not width:
         try:
             import shutil  # python 3 convenience

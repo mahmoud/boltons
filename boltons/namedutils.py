@@ -29,10 +29,12 @@ from operator import itemgetter as _itemgetter
 
 try:
     basestring
+
     def exec_(code, global_env):
         exec("exec code in global_env")
 except NameError:
     basestring = (str, bytes)  # Python 3 compat
+
     def exec_(code, global_env):
         exec(code, global_env)
 
@@ -50,9 +52,8 @@ _m_field_tmpl = '''\
     {name} = _property(_itemgetter({index:d}), _itemsetter({index:d}), doc='Alias for field {index:d}')
 '''
 
-#################################################################
-### namedtuple
-#################################################################
+
+# namedtuple
 
 _namedtuple_tmpl = '''\
 class {typename}(tuple):
@@ -104,6 +105,7 @@ class {typename}(tuple):
 {field_defs}
 '''
 
+
 def namedtuple(typename, field_names, verbose=False, rename=False):
     """Returns a new subclass of tuple with named fields.
 
@@ -135,13 +137,13 @@ def namedtuple(typename, field_names, verbose=False, rename=False):
     if rename:
         seen = set()
         for index, name in enumerate(field_names):
-            if (not all(c.isalnum() or c == '_' for c in name)
-                or _iskeyword(name)
-                or not name
-                or name[0].isdigit()
-                or name.startswith('_')
-                or name in seen):
-                field_names[index] = '_%d' % index
+            if (not all(c.isalnum() or c == '_' for c in name) or
+                _iskeyword(name) or
+                not name or
+                name[0].isdigit() or
+                name.startswith('_') or
+                name in seen):
+                    field_names[index] = '_%d' % index
             seen.add(name)
     for name in [typename] + field_names:
         if not all(c.isalnum() or c == '_' for c in name):
@@ -203,9 +205,7 @@ def namedtuple(typename, field_names, verbose=False, rename=False):
     return result
 
 
-#################################################################
-### namedlist
-#################################################################
+# namedlist
 
 _namedlist_tmpl = '''\
 class {typename}(list):
@@ -294,13 +294,13 @@ def namedlist(typename, field_names, verbose=False, rename=False):
     if rename:
         seen = set()
         for index, name in enumerate(field_names):
-            if (not all(c.isalnum() or c == '_' for c in name)
-                or _iskeyword(name)
-                or not name
-                or name[0].isdigit()
-                or name.startswith('_')
-                or name in seen):
-                field_names[index] = '_%d' % index
+            if (not all(c.isalnum() or c == '_' for c in name) or
+                _iskeyword(name) or
+                not name or
+                name[0].isdigit() or
+                name.startswith('_') or
+                name in seen):
+                    field_names[index] = '_%d' % index
             seen.add(name)
     for name in [typename] + field_names:
         if not all(c.isalnum() or c == '_' for c in name):
