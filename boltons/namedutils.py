@@ -142,7 +142,7 @@ def namedtuple(typename, field_names, verbose=False, rename=False):
                 not name or
                 name[0].isdigit() or
                 name.startswith('_') or
-                name in seen):
+                name in seen):  # noqa
                     field_names[index] = '_%d' % index
             seen.add(name)
     for name in [typename] + field_names:
@@ -299,7 +299,7 @@ def namedlist(typename, field_names, verbose=False, rename=False):
                 not name or
                 name[0].isdigit() or
                 name.startswith('_') or
-                name in seen):
+                name in seen):  # noqa
                     field_names[index] = '_%d' % index
             seen.add(name)
     for name in [typename] + field_names:
