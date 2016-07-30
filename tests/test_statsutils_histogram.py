@@ -21,9 +21,9 @@ NORM_DATA = [12.975, 8.341, 12.27, 12.799, 15.443, 6.739, 10.572,
 
 SIMPLE_RANGE_DATA = range(110)
 
-LAYER_RANGE_DATA = (list(range(100))
-                    + list(range(20, 80))
-                    + list(range(40, 60)))
+LAYER_RANGE_DATA = (list(range(100)) +
+                    list(range(20, 80)) +
+                    list(range(40, 60)))
 
 EMPTY_DATA = []
 

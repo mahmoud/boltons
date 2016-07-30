@@ -5,7 +5,10 @@ from boltons.queueutils import SortedPriorityQueue, HeapPriorityQueue
 
 def _test_priority_queue(queue_type):
     pq = queue_type()
-    func = lambda x: x
+
+    def func(x):
+        return x
+
     pq.add(func)
     pq.remove(func)
     pq.add(func)

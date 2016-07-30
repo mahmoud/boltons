@@ -15,7 +15,6 @@ from boltons.tbutils import (TracebackInfo,
                              ContextualExceptionInfo)
 
 
-
 def test_exception_info():
     # test ExceptionInfo and TracebackInfo and hooks, via StringIOs
     builtin_exc_hook = sys.excepthook
@@ -64,9 +63,11 @@ def test_exception_info():
 def test_contextual():
     def func1():
         return func2()
+
     def func2():
         x = 5
         return func3()
+
     def func3():
         return ContextualCallpoint.from_current(level=2)
 
@@ -80,9 +81,11 @@ def test_contextual():
     def func_a():
         a = 1
         raise Exception('func_a exception')
+
     def func_b():
         b = 2
         return func_a()
+
     def func_c():
         c = 3
         return func_b()
