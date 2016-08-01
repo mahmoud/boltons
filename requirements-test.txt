@@ -1,3 +1,7 @@
-pytest==2.8.7
-tox==1.9.2
-virtualenv==12.1.1
+coverage==4.2
+pluggy==0.3.1
+py==1.4.31
+pytest==2.9.2
+pytest-cov==2.3.0
+tox==2.3.1
+virtualenv==15.0.2
