@@ -716,7 +716,7 @@ def default_exit(path, key, old_parent, new_parent, new_items):
     elif isinstance(new_parent, Set):
         vals = [v for i, v in new_items]
         try:
-            new_parent.update(new_items)
+            new_parent.update(vals)
         except AttributeError:
             ret = new_parent.__class__(vals)  # frozensets
     else:

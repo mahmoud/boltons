@@ -331,6 +331,14 @@ class TestRemap(object):
         remapped = remap(orig, enter=enter)
         assert remapped == ref
 
+    def test_remap_set(self):
+        # explicit test for sets to make sure #84 is covered
+        s = set([1, 2, 3])
+        assert remap(s) == s
+
+        fs = frozenset([1, 2, 3])
+        assert remap(fs) == fs
+
 
 class TestGetPath(object):
     def test_depth_one(self):
