@@ -120,3 +120,26 @@ def test_FunctionBuilder_modify():
     fb.varkw = 'kw'
     f_kw = fb.get_func()
     assert f_kw(ignored_arg='ignored_val') == 5
+
+
+def test_wraps_wrappers():
+    call_list = []
+
+    def call_list_appender(func):
+        @wraps(func)
+        def appender(*a, **kw):
+            call_list.append((a, kw))
+            return func(*a, **kw)
+        return appender
+
+    with pytest.raises(TypeError):
+        class Num(object):
+            def __init__(self, num):
+                self.num = num
+
+            @call_list_appender
+            @classmethod
+            def added(cls, x, y=1):
+                return cls(x + y)
+
+    return

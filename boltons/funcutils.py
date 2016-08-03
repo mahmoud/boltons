@@ -275,6 +275,12 @@ def wraps(func, injected=None, **kw):
     elif isinstance(injected, basestring):
         injected = [injected]
 
+    if isinstance(func, (classmethod, staticmethod)):
+        raise TypeError('wraps does not support wrapping classmethods and'
+                        ' staticmethods, change the order of wrapping to'
+                        ' wrap the underlying function: %r'
+                        % (getattr(func, '__func__', None),))
+
     update_dict = kw.pop('update_dict', True)
     if kw:
         raise TypeError('unexpected kwargs: %r' % kw.keys())
@@ -463,6 +469,9 @@ class FunctionBuilder(object):
         """
         # TODO: copy_body? gonna need a good signature regex.
         # TODO: might worry about __closure__?
+        if not callable(func):
+            raise TypeError('expected callable object, not %r' % (func,))
+
         kwargs = {'name': func.__name__,
                   'doc': func.__doc__,
                   'module': func.__module__,
