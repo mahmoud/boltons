@@ -179,12 +179,14 @@ class Stats(object):
         return self.data
 
     def clear_cache(self):
-        """Stats objects automatically cache intermediary calculations that
-        can be reused. For instance, accessing the ``std_dev``
+        """``Stats`` objects automatically cache intermediary calculations
+        that can be reused. For instance, accessing the ``std_dev``
         attribute after the ``variance`` attribute will be
-        significantly faster for medium-to-large datasets. If you
-        modify the object by adding additional data points, call this
-        function to have the cached statistics recomputed.
+        significantly faster for medium-to-large datasets.
+
+        If you modify the object by adding additional data points,
+        call this function to have the cached statistics recomputed.
+
         """
         for attr_name in self._prop_attr_names:
             attr_name = getattr(self.__class__, attr_name).internal_name
@@ -428,7 +430,11 @@ class Stats(object):
         return (data[idx_f] * (idx_c - idx)) + (data[idx_c] * (idx - idx_f))
 
     def get_quantile(self, q):
-        """
+        """Get a quantile from the dataset. Quantiles are floating point
+        values between ``0.0`` and ``1.0``, with ``0.0`` representing
+        the minimum value in the dataset and ``1.0`` representing the
+        maximum. ``0.5`` represents the median:
+
         >>> Stats(range(100)).get_quantile(0.5)
         49.5
         """
