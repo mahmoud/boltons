@@ -179,11 +179,19 @@ class Stats(object):
         return self.data
 
     def clear_cache(self):
+        """Stats objects automatically cache intermediary calculations that
+        can be reused. For instance, accessing the ``std_dev``
+        attribute after the ``variance`` attribute will be
+        significantly faster for medium-to-large datasets. If you
+        modify the object by adding additional data points, call this
+        function to have the cached statistics recomputed.
+        """
         for attr_name in self._prop_attr_names:
             attr_name = getattr(self.__class__, attr_name).internal_name
             if not hasattr(self, attr_name):
                 continue
             delattr(self, attr_name)
+        return
 
     def _calc_count(self):
         """The number of items in this Stats object. Returns the same as
