@@ -14,8 +14,8 @@ def clamp(x, lower=None, upper=None):
         upper (int or float): Maximum value for x.
 
     The returned value is guaranteed to be between *lower* and
-    *upper*. Arguments are not type-checked, but ints and floats are
-    supported.
+    *upper*. Integers, floats, and other comparable types can be
+    mixed.
 
     >>> clamp(1.0, 0, 5)
     1.0
@@ -27,7 +27,11 @@ def clamp(x, lower=None, upper=None):
     Similar to `numpy's clip`_ function.
 
     .. _numpy's clip: http://docs.scipy.org/doc/numpy/reference/generated/numpy.clip.html
+
     """
+    if upper < lower:
+        raise ValueError('expected upper bound (%r) >= lower bound (%r)'
+                         % (upper, lower))
     return min(max(x, lower), upper)
 
 
