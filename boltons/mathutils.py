@@ -5,6 +5,28 @@ from math import ceil as _ceil, floor as _floor
 import bisect
 
 
+def clamp(x, lower=None, upper=None):
+    """Limit a value to a given range.
+
+    Args:
+        x (int or float): Number to be clamped.
+        lower (int or float): Minimum value for x.
+        upper (int or float): Maximum value for x.
+
+    The returned value is guaranteed to be between *lower* and
+    *upper*. Arguments are not type-checked, but ints and floats are
+    supported.
+
+    >>> clamp(1.0, 0, 5)
+    1.0
+    >>> clamp(-1.0, 0, 5)
+    0
+    >>> clamp(101.0, 0, 5)
+    5
+    """
+    return min(max(x, lower), upper)
+
+
 def ceil(x, options=None):
     """Return the ceiling of *x*. If *options* is set, return the smallest
     integer or float from *options* that is greater than or equal to
