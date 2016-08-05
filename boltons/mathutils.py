@@ -23,6 +23,10 @@ def clamp(x, lower=None, upper=None):
     0
     >>> clamp(101.0, 0, 5)
     5
+
+    Similar to `numpy's clip`_ function.
+
+    .. _numpy's clip: http://docs.scipy.org/doc/numpy/reference/generated/numpy.clip.html
     """
     return min(max(x, lower), upper)
 
