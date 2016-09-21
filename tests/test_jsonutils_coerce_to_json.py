@@ -43,6 +43,7 @@ def sample_generator():
     # 'type_constructor', 'outtype'
     # Auto-convert scalars
     (SampleScalarDict, dict),
+    (SampleScalarDict, dict),  # Repeat to ensure conversion list is non-lazy
     # Scalar types to themselves
     (lambda: None, type(None)),
     (lambda: True, bool),

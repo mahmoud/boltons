@@ -106,11 +106,11 @@ def reverse_iter_lines(file_obj, blocksize=DEFAULT_BLOCKSIZE, preseek=True):
         yield buff
 
 
-_json_conversion_methods = [''.join(frags)
-                                  for frags in product(['', '_'],
-                                                       ['as', 'to'],
-                                                       ['_'],
-                                                       ['json', 'dict', 'list'])]
+_json_conversion_methods = tuple(''.join(frags)
+                                 for frags in product(('', '_'),
+                                                      ('as', 'to'),
+                                                      ('_',),
+                                                      ('json', 'dict', 'list')))
 
 
 def coerce_to_json(data, fallback_collection=str):
