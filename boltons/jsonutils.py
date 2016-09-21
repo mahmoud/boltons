@@ -18,8 +18,33 @@ try:
     from collections import UserDict
 except ImportError:
     from UserDict import UserDict
+    basestring = (str, bytes)
 
-from boltons.iterutils import first, is_scalar
+try:
+    from boltons.iterutils import first, is_scalar
+except ImportError:
+    def is_iterable(obj):
+        try:
+            iter(obj)
+        except TypeError:
+            return False
+        return True
+
+    def is_scalar(obj):
+        return not is_iterable(obj) or isinstance(obj, basestring)
+
+    def first(iterable, default=None, key=None):
+        if key is None:
+            for el in iterable:
+                if el:
+                    return el
+        else:
+            for el in iterable:
+                if key(el):
+                    return el
+
+        return default
+
 
 DEFAULT_BLOCKSIZE = 4096
 
