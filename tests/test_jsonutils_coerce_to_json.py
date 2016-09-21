@@ -38,6 +38,9 @@ class SampleScalarDict(object):
 def sample_generator():
     yield True
 
+class SillyList(list):
+    def to_json(self):
+        return 42
 
 @pytest.mark.parametrize(('type_constructor', 'outtype'), [
     # 'type_constructor', 'outtype'
@@ -50,6 +53,7 @@ def sample_generator():
     (lambda: 1, int),
     (lambda: 1.0, float),
     (SimpleNamespace, SimpleNamespace),
+    (SillyList, int),
     # Lists
     (list, list),
     (tuple, list),

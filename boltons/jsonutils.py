@@ -128,21 +128,21 @@ def coerce_to_json(data, fallback_collection=str):
     :return:
     :rtype:
     """
-    if is_scalar(data):
-        construct = first(lambda x: getattr(data, m)()
-                          for m in _json_conversion_methods
-                          if hasattr(data, m))
-        if not construct:
+    construct = first(lambda x: getattr(data, m)()
+                      for m in _json_conversion_methods
+                      if hasattr(data, m))
+    if not construct:
+        if is_scalar(data):
             construct = lambda x: x
-
-    else:
-        # Would it be better to just `try: dict(data) ...`?
-        if isinstance(data, (Mapping, UserDict)):
-            construct = dict
-        elif isinstance(data, Iterable):
-            construct = list
         else:
-            construct = fallback_collection
+            # Would it be better to just `try: dict(data) ...`?
+            if isinstance(data, (Mapping, UserDict)):
+                construct = dict
+            elif isinstance(data, Iterable):
+                construct = list
+
+    if not construct:
+        construct = fallback_collection
 
     return construct(data)
 
