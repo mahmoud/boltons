@@ -11,7 +11,15 @@ from __future__ import print_function
 
 import os
 import json
+from collections import Iterable, Mapping
+from itertools import product
 
+try:
+    from collections import UserDict
+except ImportError:
+    from UserDict import UserDict
+
+from boltons.iterutils import first, is_scalar
 
 DEFAULT_BLOCKSIZE = 4096
 
@@ -71,6 +79,47 @@ def reverse_iter_lines(file_obj, blocksize=DEFAULT_BLOCKSIZE, preseek=True):
     if buff:
         # TODO: test this, does an empty buffer always mean don't yield?
         yield buff
+
+
+common_json_conversion_methods = [''.join(frags)
+                                  for frags in product(['', '_'],
+                                                       ['as', 'to'],
+                                                       ['_'],
+                                                       ['json', 'dict', 'list'])]
+
+
+def coerce_to_json(data, fallback_collection=str):
+    """Coerce data into types compatible with JSON.
+
+    JSON has no representation for sets, iterators, etc., so this attempts to
+    convert them to something compatible. It only converts single data
+    items -- it does not go through collections and convert individual elements.
+    Use :func:`boltons.iterutils.remap` with this function to do that.
+
+    :param data:
+    :type data:
+    :param fallback_collection:
+    :type fallback_collection:
+    :return:
+    :rtype:
+    """
+    if is_scalar(data):
+        construct = first(lambda x: getattr(data, m)()
+                          for m in common_json_conversion_methods
+                          if hasattr(data, m))
+        if not construct:
+            construct = lambda x: x
+
+    else:
+        # Would it be better to just `try: dict(data) ...`?
+        if isinstance(data, (Mapping, UserDict)):
+            construct = dict
+        elif isinstance(data, Iterable):
+            construct = list
+        else:
+            construct = fallback_collection
+
+    return construct(data)
 
 
 """
