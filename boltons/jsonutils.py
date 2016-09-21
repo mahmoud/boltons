@@ -60,7 +60,7 @@ DEFAULT_BLOCKSIZE = 4096
 #  - when the outer loop completes, yield the buffer
 
 
-__all__ = ['JSONLIterator', 'reverse_iter_lines']
+__all__ = ['JSONLIterator', 'reverse_iter_lines', 'coerce_to_json']
 
 
 def reverse_iter_lines(file_obj, blocksize=DEFAULT_BLOCKSIZE, preseek=True):
