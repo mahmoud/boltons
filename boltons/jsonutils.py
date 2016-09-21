@@ -106,7 +106,7 @@ def reverse_iter_lines(file_obj, blocksize=DEFAULT_BLOCKSIZE, preseek=True):
         yield buff
 
 
-common_json_conversion_methods = [''.join(frags)
+_json_conversion_methods = [''.join(frags)
                                   for frags in product(['', '_'],
                                                        ['as', 'to'],
                                                        ['_'],
@@ -130,7 +130,7 @@ def coerce_to_json(data, fallback_collection=str):
     """
     if is_scalar(data):
         construct = first(lambda x: getattr(data, m)()
-                          for m in common_json_conversion_methods
+                          for m in _json_conversion_methods
                           if hasattr(data, m))
         if not construct:
             construct = lambda x: x
