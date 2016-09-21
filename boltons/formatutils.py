@@ -41,7 +41,10 @@ from __future__ import print_function
 import re
 from string import Formatter
 
-from .namedutils import namedtuple
+try:
+    from boltons.namedutils import namedtuple
+except ImportError:
+    from collections import namedtuple
 
 __all__ = ['DeferredValue', 'get_format_args', 'tokenize_format_str',
            'construct_format_field_str', 'infer_positional_format_args',
