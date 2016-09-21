@@ -38,6 +38,10 @@ class SampleScalarDict(object):
 def sample_generator():
     yield True
 
+class SillyString(str):
+    def to_json(self):
+        return 42
+
 class SillyList(list):
     def to_json(self):
         return 42
@@ -53,6 +57,9 @@ class SillyList(list):
     (lambda: 1, int),
     (lambda: 1.0, float),
     (SimpleNamespace, SimpleNamespace),
+    (lambda: b'python', type(b'')),
+    (lambda: u'ππ', type(u'')),
+    (SillyString, int),
     (SillyList, int),
     # Lists
     (list, list),
