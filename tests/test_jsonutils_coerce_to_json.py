@@ -67,11 +67,6 @@ def test_coerce_to_json(type_constructor, outtype):
     """Test :func:`coerce_to_json`."""
     assert isinstance(coerce_to_json(type_constructor()), outtype)
 
-try:
-    from types import MappingProxyType
-except ImportError:
-    MappingProxyType = None
-
 
 def test_coerce_to_json_remap():
     """Test recursively mapping a structure with non-JSON data."""
