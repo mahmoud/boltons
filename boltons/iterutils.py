@@ -24,6 +24,7 @@ except ImportError:
     _UNSET = object()
 
 try:
+    from future_builtins import filter
     from itertools import izip
 except ImportError:
     # Python 3 compat
@@ -631,16 +632,7 @@ def first(iterable, default=None, key=None):
 
     .. _the original standalone module: https://github.com/hynek/first
     """
-    if key is None:
-        for el in iterable:
-            if el:
-                return el
-    else:
-        for el in iterable:
-            if key(el):
-                return el
-
-    return default
+    return next(filter(key, iterable), default)
 
 
 def same(iterable, ref=_UNSET):
