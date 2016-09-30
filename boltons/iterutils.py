@@ -13,7 +13,7 @@ following are based on examples in itertools docs.
 import math
 import random
 import itertools
-from collections import Mapping, Sequence, Set, ItemsView
+from collections import Mapping, Sequence, Set, ItemsView, defaultdict
 
 try:
     from typeutils import make_sentinel
@@ -480,18 +480,12 @@ def bucketize(src, key=None):
     item. See :func:`partition` for a version specialized for binary
     use cases.
     """
-    if not is_iterable(src):
-        raise TypeError('expected an iterable')
     if key is None:
         key = bool
-    if not callable(key):
-        raise TypeError('expected callable key function')
-
-    ret = {}
+    ret = defaultdict(list)
     for val in src:
-        keyval = key(val)
-        ret.setdefault(keyval, []).append(val)
-    return ret
+        ret[key(val)].append(val)
+    return dict(ret)
 
 
 def partition(src, key=None):

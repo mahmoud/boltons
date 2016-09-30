@@ -3,6 +3,7 @@ import pytest
 
 from boltons.dictutils import OMD
 from boltons.iterutils import (first,
+                               bucketize,
                                remap,
                                default_enter,
                                default_exit,
@@ -424,3 +425,8 @@ def test_backoff_jitter():
     assert len(nonconst_jittered) == 5
     # no two should be equal realistically
     assert len(set(nonconst_jittered)) == 5
+
+
+def test_bucketize():
+    assert bucketize(range(3)) == {True: [1, 2], False: [0]}
+    assert bucketize('Aba', key=str.lower) == {'a': ['A', 'a'], 'b': ['b']}
