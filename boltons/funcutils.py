@@ -274,6 +274,8 @@ def wraps(func, injected=None, **kw):
         injected = []
     elif isinstance(injected, basestring):
         injected = [injected]
+    else:
+        injected = list(injected)
 
     if isinstance(func, (classmethod, staticmethod)):
         raise TypeError('wraps does not support wrapping classmethods and'
@@ -282,12 +284,18 @@ def wraps(func, injected=None, **kw):
                         % (getattr(func, '__func__', None),))
 
     update_dict = kw.pop('update_dict', True)
+    inject_to_varkw = kw.pop('inject_to_varkw', True)
     if kw:
         raise TypeError('unexpected kwargs: %r' % kw.keys())
 
     fb = FunctionBuilder.from_func(func)
     for arg in injected:
-        fb.remove_arg(arg)
+        try:
+            fb.remove_arg(arg)
+        except MissingArgument:
+            if inject_to_varkw and fb.varkw is not None:
+                continue  # keyword arg will be caught by the varkw
+            raise
 
     fb.body = 'return _call(%s)' % fb.get_invocation_str()
 
@@ -553,8 +561,10 @@ class FunctionBuilder(object):
         try:
             self.args.remove(arg_name)
         except ValueError:
-            raise ValueError('arg %r not found in %s argument list: %r'
-                             % (arg_name, self.name, self.args))
+            exc = MissingArgument('arg %r not found in %s argument list: %r'
+                                  % (arg_name, self.name, self.args))
+            exc.arg_name = arg_name
+            raise exc
         d_dict.pop(arg_name, None)
         self.defaults = tuple([d_dict[a] for a in self.args if a in d_dict])
         return
@@ -569,6 +579,10 @@ class FunctionBuilder(object):
         except Exception:
             raise
         return execdict
+
+
+class MissingArgument(ValueError):
+    pass
 
 
 def _indent(text, margin, newline='\n', key=bool):

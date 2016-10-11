@@ -18,6 +18,10 @@ def wrappable_func(a, b):
     return a, b
 
 
+def wrappable_varkw_func(a, b, **kw):
+    return a, b
+
+
 def test_wraps_basic():
 
     @pita_wrap(flag=True)
@@ -71,6 +75,30 @@ def test_wraps_injected():
 
     with pytest.raises(ValueError):
         inject_nonexistent_arg(wrappable_func)
+
+    def inject_missing_argument(func):
+        @wraps(func, injected="c")
+        def wrapped(*args, **kwargs):
+            return func(1, *args, **kwargs)
+        return wrapped
+
+    def inject_misc_argument(func):
+        # inject_to_varkw is default True, just being explicit
+        @wraps(func, injected="c", inject_to_varkw=True)
+        def wrapped(*args, **kwargs):
+            return func(c=1, *args, **kwargs)
+        return wrapped
+
+    assert inject_misc_argument(wrappable_varkw_func)(1, 2) == (1, 2)
+
+    def inject_misc_argument_no_varkw(func):
+        @wraps(func, injected="c", inject_to_varkw=False)
+        def wrapped(*args, **kwargs):
+            return func(c=1, *args, **kwargs)
+        return wrapped
+
+    with pytest.raises(ValueError):
+        inject_misc_argument_no_varkw(wrappable_varkw_func)
 
 
 def test_wraps_update_dict():
