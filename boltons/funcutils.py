@@ -262,11 +262,14 @@ def wraps(func, injected=None, **kw):
         func (function): The callable whose attributes are to be copied.
         injected (list): An optional list of argument names which
             should not appear in the new wrapper's signature.
-        update_dict(bool): Whether to copy other, non-standard
+        update_dict (bool): Whether to copy other, non-standard
             attributes of *func* over to the wrapper. Defaults to True.
+        inject_to_varkw (bool): Ignore missing arguments when a
+            ``**kwargs``-type catch-all is present. Defaults to True.
 
     For more in-depth wrapping of functions, see the
     :class:`FunctionBuilder` type, on which wraps was built.
+
     """
     # TODO: maybe automatically use normal wraps in the very rare case
     # that the signatures actually match and no adapter is needed.
