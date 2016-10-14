@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """\
 
-The :class:`set` type brings brings the practical expressiveness of
+The :class:`set` type brings the practical expressiveness of
 set theory to Python. It has a very rich API overall, but lacks a
 couple of fundamental features. For one, sets are not ordered. On top
 of this, sets are not indexable, i.e, ``my_set[8]`` will raise an
