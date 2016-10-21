@@ -14,7 +14,13 @@ else:
     binary_type = str
 
 
-class BaseTestMixins(object):
+class AssertionsMixin(object):
+
+    def assertIsNone(self, item, msg=None):
+        self.assertTrue(item is None, msg)
+
+
+class BaseTestMixin(object):
     """
     A set of tests that work the same for SpooledBtyesIO and SpooledStringIO
     """
@@ -67,14 +73,12 @@ class BaseTestMixins(object):
     def test_type_error_too_many_args(self):
         """Make sure TypeError raised if too many args passed to truncate"""
         self.spooled_flo.write(self.test_str)
-        with self.assertRaises(TypeError):
-            self.spooled_flo.truncate(0, 10)
+        self.assertRaises(TypeError, self.spooled_flo.truncate, 0, 10)
 
     def test_io_error_negative_truncate(self):
         """Make sure IOError raised trying to truncate with negative value"""
         self.spooled_flo.write(self.test_str)
-        with self.assertRaises(IOError):
-            self.spooled_flo.truncate(-1)
+        self.assertRaises(IOError, self.spooled_flo.truncate, -1)
 
     def test_compare_different_instances(self):
         """Make sure we can compare instances of a different type"""
@@ -152,7 +156,7 @@ class BaseTestMixins(object):
                         self.spooled_flo.isatty() is False)
 
 
-class TestSpooledBytesIO(TestCase, BaseTestMixins):
+class TestSpooledBytesIO(TestCase, BaseTestMixin, AssertionsMixin):
     linesep = os.linesep.encode('ascii')
 
     def setUp(self):
@@ -205,8 +209,7 @@ class TestSpooledBytesIO(TestCase, BaseTestMixins):
 
     def test_invalid_type(self):
         """Ensure TypeError raised when writing unicode to SpooledBytesIO"""
-        with self.assertRaises(TypeError):
-            self.spooled_flo.write(u"hi")
+        self.assertRaises(TypeError, self.spooled_flo.write, u"hi")
 
     def test_flush_after_rollover(self):
         """Make sure we can flush before and after rolling to a real file"""
@@ -216,7 +219,7 @@ class TestSpooledBytesIO(TestCase, BaseTestMixins):
         self.assertIsNone(self.spooled_flo.flush())
 
 
-class TestSpooledStringIO(TestCase, BaseTestMixins):
+class TestSpooledStringIO(TestCase, BaseTestMixin, AssertionsMixin):
     linesep = os.linesep
 
     def setUp(self):
@@ -269,5 +272,4 @@ class TestSpooledStringIO(TestCase, BaseTestMixins):
 
     def test_invalid_type(self):
         """Ensure TypeError raised when writing bytes to SpooledStringIO"""
-        with self.assertRaises(TypeError):
-            self.spooled_flo.write(b"hi")
+        self.assertRaises(TypeError, self.spooled_flo.write, b"hi")
