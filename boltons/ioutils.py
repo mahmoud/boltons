@@ -138,14 +138,13 @@ class SpooledIOBase(object):
     @property
     def len(self):
         """Determine the length of the file"""
-        # Calling .fileno() forces a rollover, so only access fileno if rolled
-        if self._rolled:
-            return os.fstat(self.fileno()).st_size
-
-        # Fallback if still in-memory file
         pos = self.tell()
-        self.seek(0, os.SEEK_END)
-        val = self.tell()
+        if self._rolled:
+            self.seek(0)
+            val = os.fstat(self.fileno()).st_size
+        else:
+            self.seek(0, os.SEEK_END)
+            val = self.tell()
         self.seek(pos)
         return val
 
