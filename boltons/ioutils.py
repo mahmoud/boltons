@@ -9,8 +9,8 @@ are useful when dealing with input, output, and bytestreams in a variety of
 ways.
 """
 import os
+import sys
 import logging
-import six
 from abc import (
     ABCMeta,
     abstractmethod,
@@ -22,6 +22,27 @@ from codecs import EncodedFile
 from tempfile import TemporaryFile
 
 log = logging.getLogger(__name__)
+
+# Python2/3 compat
+if sys.version_info[0] == 3:
+    text_type = str
+    binary_type = bytes
+else:
+    text_type = unicode
+    binary_type = str
+
+
+def utf8_encode_if_unicode(string):
+    """
+    Given a string type, return it in bytes, encoding to UTF-8 if the string is
+    unicode.
+    """
+    if isinstance(string, text_type):
+        return string.encode('utf-8')
+    elif isinstance(string, binary_type):
+        return string
+    else:
+        raise TypeError("{} is not a unicode or str object".format(string))
 
 
 class SpooledIOBase(object):
@@ -173,7 +194,8 @@ class SpooledIOBase(object):
 
     def __eq__(self, other):
         if isinstance(other, SpooledIOBase):
-            return self.getvalue() == other.getvalue()
+            return (utf8_encode_if_unicode(self.getvalue()) ==
+                    utf8_encode_if_unicode(other.getvalue()))
         return False
 
     def __ne__(self, other):
@@ -189,21 +211,21 @@ class SpooledBytesIO(SpooledIOBase):
 
     Example::
 
-        >>> from lrmslib import ioutils
+        >>> from boltons import ioutils
         >>> with ioutils.SpooledBytesIO() as f:
         ...     f.write(b"Happy IO")
         ...     _ = f.seek(0)
-        ...     print(f.getvalue())
-        Happy IO
+        ...     isinstance(f.getvalue(), ioutils.binary_type)
+        True
     """
 
     def read(self, n=-1):
         return self.buffer.read(n)
 
     def write(self, s):
-        if not isinstance(s, six.binary_type):
+        if not isinstance(s, binary_type):
             raise TypeError("{0} expected, got {1}".format(
-                six.binary_type.__name__,
+                binary_type.__name__,
                 type(s).__name__
             ))
 
@@ -251,12 +273,12 @@ class SpooledStringIO(SpooledIOBase):
 
     Example::
 
-        >>> from lrmslib import ioutils
+        >>> from boltons import ioutils
         >>> with ioutils.SpooledStringIO() as f:
         ...     f.write(u"\u2014 Hey, an emdash!")
         ...     _ = f.seek(0)
-        ...     f.read()
-        u'\u2014 Hey, an emdash!'
+        ...     isinstance(f.read(), ioutils.text_type)
+        True
 
      """
 
@@ -264,9 +286,9 @@ class SpooledStringIO(SpooledIOBase):
         return self.buffer.read(n).decode('utf-8')
 
     def write(self, s):
-        if not isinstance(s, six.text_type):
+        if not isinstance(s, text_type):
             raise TypeError("{0} expected, got {1}".format(
-                six.text_type.__name__,
+                text_type.__name__,
                 type(s).__name__
             ))
 

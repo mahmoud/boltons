@@ -1,8 +1,17 @@
 import os
+import sys
 from unittest import TestCase
 
-import six
+
 from boltons import ioutils
+
+# Python2/3 compat
+if sys.version_info[0] == 3:
+    text_type = str
+    binary_type = bytes
+else:
+    text_type = unicode
+    binary_type = str
 
 
 class BaseTestMixins(object):
@@ -70,9 +79,9 @@ class BaseTestMixins(object):
     def test_compare_different_instances(self):
         """Make sure we can compare instances of a different type"""
         a = ioutils.SpooledBytesIO()
-        a.write(six.binary_type("I am equal!"))
+        a.write(binary_type(b"I am equal!"))
         b = ioutils.SpooledStringIO()
-        b.write(six.text_type("I am equal!"))
+        b.write(text_type("I am equal!"))
         self.assertEqual(a, b)
 
     def test_compare_unequal_instances(self):
@@ -97,7 +106,7 @@ class BaseTestMixins(object):
         self.spooled_flo.write(self.test_str)
         self.spooled_flo.seek(0)
         self.assertEqual([x for x in self.spooled_flo][0], self.test_str)
-        self.assertEqual([x for x in self.spooled_flo][0], self.data_type(''))
+        self.assertEqual([x for x in self.spooled_flo][0], self.data_type())
 
     def test_buf_property(self):
         """'buf' property returns the same value as getvalue()"""
@@ -117,24 +126,24 @@ class BaseTestMixins(object):
         """Make readline returns expected values"""
         self.spooled_flo.write(self.test_str_lines)
         self.spooled_flo.seek(0)
-        self.assertEqual(self.spooled_flo.readline().rstrip(os.linesep),
-                         self.test_str_lines.split(os.linesep)[0])
+        self.assertEqual(self.spooled_flo.readline().rstrip(self.linesep),
+                         self.test_str_lines.split(self.linesep)[0])
 
     def test_readlines(self):
         """Make sure readlines returns expected values"""
         self.spooled_flo.write(self.test_str_lines)
         self.spooled_flo.seek(0)
         self.assertEqual(
-            [x.rstrip(os.linesep) for x in self.spooled_flo.readlines()],
-            self.test_str_lines.split(os.linesep)
+            [x.rstrip(self.linesep) for x in self.spooled_flo.readlines()],
+            self.test_str_lines.split(self.linesep)
         )
 
     def test_next(self):
         """Make next returns expected values"""
         self.spooled_flo.write(self.test_str_lines)
         self.spooled_flo.seek(0)
-        self.assertEqual(self.spooled_flo.next().rstrip(os.linesep),
-                         self.test_str_lines.split(os.linesep)[0])
+        self.assertEqual(self.spooled_flo.next().rstrip(self.linesep),
+                         self.test_str_lines.split(self.linesep)[0])
 
     def test_isatty(self):
         """Make sure we can check if the value is a tty"""
@@ -144,38 +153,41 @@ class BaseTestMixins(object):
 
 
 class TestSpooledBytesIO(TestCase, BaseTestMixins):
+    linesep = os.linesep.encode('ascii')
 
     def setUp(self):
         self.spooled_flo = ioutils.SpooledBytesIO()
-        self.test_str = "Armado en los EE, UU. para S. P. Richards co.,"
-        self.test_str_lines = "Text with:{0}newlines!".format(os.linesep)
-        self.data_type = six.binary_type
+        self.test_str = b"Armado en los EE, UU. para S. P. Richards co.,"
+        self.test_str_lines = (
+            "Text with:{0}newlines!".format(os.linesep).encode('ascii')
+        )
+        self.data_type = binary_type
 
     def test_compare_not_equal_instances(self):
         """Make sure instances with different values fail == check."""
         a = ioutils.SpooledBytesIO()
-        a.write("I am a!")
+        a.write(b"I am a!")
         b = ioutils.SpooledBytesIO()
-        b.write("I am b!")
+        b.write(b"I am b!")
         self.assertNotEqual(a, b)
 
     def test_compare_two_equal_instances(self):
         """Make sure we can compare instances"""
         a = ioutils.SpooledBytesIO()
-        a.write("I am equal!")
+        a.write(b"I am equal!")
         b = ioutils.SpooledBytesIO()
-        b.write("I am equal!")
+        b.write(b"I am equal!")
         self.assertEqual(a, b)
 
     def test_auto_rollover(self):
         """Make sure file rolls over to disk after max_size reached"""
         tmp = ioutils.SpooledBytesIO(max_size=10)
-        tmp.write("The quick brown fox jumped over the lazy dogs.")
+        tmp.write(b"The quick brown fox jumped over the lazy dogs.")
         self.assertTrue(tmp._rolled)
 
     def test_use_as_context_mgr(self):
         """Make sure SpooledBytesIO can be used as a context manager"""
-        test_str = "Armado en los EE, UU. para S. P. Richards co.,"
+        test_str = b"Armado en los EE, UU. para S. P. Richards co.,"
         with ioutils.SpooledBytesIO() as f:
             f.write(test_str)
             self.assertEqual(f.getvalue(), test_str)
@@ -205,12 +217,13 @@ class TestSpooledBytesIO(TestCase, BaseTestMixins):
 
 
 class TestSpooledStringIO(TestCase, BaseTestMixins):
+    linesep = os.linesep
 
     def setUp(self):
         self.spooled_flo = ioutils.SpooledStringIO()
         self.test_str = u"Remember kids, always use an emdash: '\u2014'"
         self.test_str_lines = u"Text with\u2014{0}newlines!".format(os.linesep)
-        self.data_type = six.text_type
+        self.data_type = text_type
 
     def test_compare_not_equal_instances(self):
         """Make sure instances with different values fail == check."""

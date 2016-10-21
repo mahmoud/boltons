@@ -18,8 +18,6 @@ __contact__ = 'mahmoudrhashemi@gmail.com'
 __url__ = 'https://github.com/mahmoud/boltons'
 __license__ = 'BSD'
 
-INSTALL_REQUIRES = ['six', ]
-
 
 setup(name='boltons',
       version=__version__,
@@ -30,7 +28,6 @@ setup(name='boltons',
       url=__url__,
       packages=['boltons'],
       include_package_data=True,
-      install_requires=INSTALL_REQUIRES,
       zip_safe=False,
       license=__license__,
       platforms='any',
