@@ -36,6 +36,7 @@ Boltons is tested against Python 2.6, 2.7, 3.4, 3.5, and PyPy.
 [tbinfo]: https://boltons.readthedocs.org/en/latest/tbutils.html#boltons.tbutils.TracebackInfo
 
 [fileutils]: https://boltons.readthedocs.org/en/latest/fileutils.html#module-boltons.fileutils
+[ioutils]: https://boltons.readthedocs.org/en/latest/ioutils.html#module-boltons.ioutils
 [dictutils]: https://boltons.readthedocs.org/en/latest/dictutils.html#module-boltons.dictutils
 [queueutils]: https://boltons.readthedocs.org/en/latest/queueutils.html#module-boltons.queueutils
 [iterutils]: https://boltons.readthedocs.org/en/latest/iterutils.html#module-boltons.iterutils
