@@ -24,6 +24,41 @@ SpooledBytesIO
 ^^^^^^^^^^^^^^
 .. autoclass:: boltons.ioutils.SpooledBytesIO
 
+.. _spooledstringio:
+
 SpooledStringIO
 ^^^^^^^^^^^^^^^
 .. autoclass:: boltons.ioutils.SpooledStringIO
+
+
+Example
+-------
+A good use case is downloading a file from some remote location. It's nice to
+keep it in memory if it's small, but writing a large file into memory can make
+servers quite grumpy. If the file being downloaded happens to be a zip file
+then things are worse. You can't use a normal SpooledTemporaryFile because it
+isn't compatible. A :ref:`spooledbytesio` instance is a good alternative. Here
+is a simple example using the requests library to download a zip file::
+
+    from zipfile import ZipFile
+
+    import requests
+    from boltons import ioutils
+
+    s = requests.Session()
+    r = s.get("http://127.0.0.1/test_file.zip", stream=True)
+    if r.status_code == 200:
+        flo = SpooledBytesIO()
+
+    r = self._get(url, stream=True)
+    if r.status_code == 200:
+        with ioutils.SpooledBytesIO() as flo:
+            for chunk in r.iter_content(chunk_size=64000):
+                flo.write(chunk)
+
+            flo.seek(0)
+
+            zip_doc = ZipFile(flo)
+
+            # Print all the files in the zip
+            print zip_doc.namelist()
