@@ -10,7 +10,6 @@ ways.
 """
 import os
 import sys
-import logging
 from abc import (
     ABCMeta,
     abstractmethod,
@@ -20,8 +19,6 @@ from errno import EINVAL
 from io import BytesIO
 from codecs import EncodedFile
 from tempfile import TemporaryFile
-
-log = logging.getLogger(__name__)
 
 # Python2/3 compat
 if sys.version_info[0] == 3:
