@@ -332,10 +332,10 @@ class SpooledStringIO(SpooledIOBase):
         self.seek(0)
         enc_pos = 0
         while True:
-            self.read(1)
-            enc_pos += 1
             if self.buffer.tell() == pos:
                 break
+            self.read(1)
+            enc_pos += 1
         self.buffer.seek(pos)
         return enc_pos
 
@@ -346,7 +346,7 @@ class SpooledStringIO(SpooledIOBase):
         self.seek(0)
         total = 0
         while True:
-            ret = self.read(32000)
+            ret = self.read(21333)
             if not ret:
                 break
             total += len(ret)
