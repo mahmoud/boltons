@@ -86,6 +86,10 @@ class SpooledIOBase(object):
     def _rolled(self):
         """Returns whether the file has been rolled to a real file or not"""
 
+    @abstractproperty
+    def len(self):
+        """Returns the length of the data"""
+
     def _get_softspace(self):
         return self.buffer.softspace
 
@@ -127,19 +131,6 @@ class SpooledIOBase(object):
     @property
     def buf(self):
         return self.getvalue()
-
-    @property
-    def len(self):
-        """Determine the length of the file"""
-        pos = self.tell()
-        if self._rolled:
-            self.seek(0)
-            val = os.fstat(self.fileno()).st_size
-        else:
-            self.seek(0, os.SEEK_END)
-            val = self.tell()
-        self.seek(pos)
-        return val
 
     def fileno(self):
         self.rollover()
@@ -252,6 +243,19 @@ class SpooledBytesIO(SpooledIOBase):
             self._buffer = BytesIO()
         return self._buffer
 
+    @property
+    def len(self):
+        """Determine the length of the file"""
+        pos = self.tell()
+        if self._rolled:
+            self.seek(0)
+            val = os.fstat(self.fileno()).st_size
+        else:
+            self.seek(0, os.SEEK_END)
+            val = self.tell()
+        self.seek(pos)
+        return val
+
 
 class SpooledStringIO(SpooledIOBase):
     """
@@ -313,3 +317,17 @@ class SpooledStringIO(SpooledIOBase):
             tmp.seek(pos)
             self.buffer.close()
             self._buffer = tmp
+
+    @property
+    def len(self):
+        """Determine the number of codepoints in the file"""
+        pos = self.buffer.tell()
+        self.seek(0)
+        total = 0
+        while True:
+            ret = self.read(64000)
+            if not ret:
+                break
+            total += len(ret)
+        self.buffer.seek(pos)
+        return total
