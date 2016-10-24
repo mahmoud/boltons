@@ -232,11 +232,10 @@ class SpooledBytesIO(SpooledIOBase):
         """Roll the StringIO over to a TempFile"""
         if not self._rolled:
             tmp = TemporaryFile()
-            pos = self._file.tell()
-            self._buffer.seek(0)
-            tmp.write(self._buffer.read())
+            pos = self.buffer.tell()
+            tmp.write(self.buffer.getvalue())
             tmp.seek(pos)
-            self._buffer.close()
+            self.buffer.close()
             self._buffer = tmp
 
     @property
@@ -308,8 +307,7 @@ class SpooledStringIO(SpooledIOBase):
         if not self._rolled:
             tmp = EncodedFile(TemporaryFile(), data_encoding='utf-8')
             pos = self.buffer.tell()
-            self.buffer.seek(0)
-            tmp.write(self.buffer.read())
+            tmp.write(self.buffer.getvalue())
             tmp.seek(pos)
             self.buffer.close()
             self._buffer = tmp
