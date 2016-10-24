@@ -61,37 +61,30 @@ class SpooledIOBase(object):
     @abstractmethod
     def read(self, n=-1):
         """Read n characters from the buffer"""
-        pass
 
     @abstractmethod
     def write(self, s):
         """Write into the buffer"""
-        pass
 
     @abstractmethod
     def readline(self, length=None):
         """Returns the next available line"""
-        pass
 
     @abstractmethod
     def readlines(self, sizehint=0):
         """Returns a list of all lines from the current position forward"""
-        pass
 
     @abstractmethod
     def rollover(self):
         """Roll file-like-object over into a real temporary file"""
-        pass
 
     @abstractproperty
     def buffer(self):
         """Should return a flo instance"""
-        pass
 
     @abstractproperty
     def _rolled(self):
         """Returns whether the file has been rolled to a real file or not"""
-        pass
 
     def _get_softspace(self):
         return self.buffer.softspace
