@@ -240,11 +240,11 @@ class SpooledBytesIO(SpooledIOBase):
         if not self._rolled:
             tmp = TemporaryFile()
             pos = self._file.tell()
-            self.__buffer.seek(0)
-            tmp.write(self.__buffer.read())
+            self._buffer.seek(0)
+            tmp.write(self._buffer.read())
             tmp.seek(pos)
-            self.__buffer.close()
-            self.__buffer = tmp
+            self._buffer.close()
+            self._buffer = tmp
 
     @property
     def _rolled(self):
@@ -253,10 +253,10 @@ class SpooledBytesIO(SpooledIOBase):
     @property
     def buffer(self):
         try:
-            return self.__buffer
+            return self._buffer
         except AttributeError:
-            self.__buffer = BytesIO()
-        return self.__buffer
+            self._buffer = BytesIO()
+        return self._buffer
 
 
 class SpooledStringIO(SpooledIOBase):
@@ -301,10 +301,10 @@ class SpooledStringIO(SpooledIOBase):
     @property
     def buffer(self):
         try:
-            return self.__buffer
+            return self._buffer
         except AttributeError:
-            self.__buffer = EncodedFile(BytesIO(), data_encoding='utf-8')
-        return self.__buffer
+            self._buffer = EncodedFile(BytesIO(), data_encoding='utf-8')
+        return self._buffer
 
     @property
     def _rolled(self):
@@ -319,4 +319,4 @@ class SpooledStringIO(SpooledIOBase):
             tmp.write(self.buffer.read())
             tmp.seek(pos)
             self.buffer.close()
-            self.__buffer = tmp
+            self._buffer = tmp
