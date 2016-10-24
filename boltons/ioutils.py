@@ -323,19 +323,31 @@ class SpooledStringIO(SpooledIOBase):
             self._buffer = tmp
 
     def tell(self):
-        """
-        Return the codepoint position
-
-        TODO: Do this in reading chunks to improve efficiency
-        """
+        """Return the codepoint position"""
         pos = self.buffer.tell()
         self.seek(0)
         enc_pos = 0
         while True:
-            if self.buffer.tell() == pos:
+            current_pos = self.buffer.tell()
+            if current_pos == pos:
                 break
-            self.read(1)
-            enc_pos += 1
+
+            ret = self.read(21333)
+            if self.buffer.tell() < pos:
+                enc_pos += len(ret)
+                continue
+
+            # If the previous check fails, then we've seeked beyond the
+            # intended position. Go back to our position at the start of the
+            # loop and iterate one codepoint at a time until we reach the
+            # buffers position.
+            self.buffer.seek(current_pos)
+            while True:
+                if self.buffer.tell() == pos:
+                    break
+                self.read(1)
+                enc_pos += 1
+            break
         self.buffer.seek(pos)
         return enc_pos
 
