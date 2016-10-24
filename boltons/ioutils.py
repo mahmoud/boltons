@@ -29,19 +29,6 @@ else:
     binary_type = str
 
 
-def utf8_encode_if_unicode(string):
-    """
-    Given a string type, return it in bytes, encoding to UTF-8 if the string is
-    unicode.
-    """
-    if isinstance(string, text_type):
-        return string.encode('utf-8')
-    elif isinstance(string, binary_type):
-        return string
-    else:
-        raise TypeError("{} is not a unicode or str object".format(string))
-
-
 class SpooledIOBase(object):
     """
     The SpooledTempoaryFile class doesn't support a number of attributes and
