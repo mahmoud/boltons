@@ -31,14 +31,33 @@ SpooledStringIO
 .. autoclass:: boltons.ioutils.SpooledStringIO
 
 
-Example
--------
-A good use case is downloading a file from some remote location. It's nice to
-keep it in memory if it's small, but writing a large file into memory can make
-servers quite grumpy. If the file being downloaded happens to be a zip file
-then things are worse. You can't use a normal SpooledTemporaryFile because it
-isn't compatible. A :ref:`spooledbytesio` instance is a good alternative. Here
-is a simple example using the requests library to download a zip file::
+Examples
+--------
+It's not uncommon to find excessive usage of StringIO in older Python code. A
+SpooledTemporaryFile would be a nice replacement if one wanted to reduce memory
+overhead, but unfortunately it's api differs too much. This is a good candidate
+for :ref:`spooledbytesio` as it is api compatible and thus may be used as a
+drop-in replacement.
+
+Old Code::
+
+    flo = StringIO()
+    flo.write(gigantic_string)
+
+Updated::
+
+    from boltions.ioutils import SpooledBytesIO
+
+    flo = SpooledBytesIO()
+    flo.write(gigantic_string)
+
+
+Another good use case is downloading a file from some remote location. It's
+nice to keep it in memory if it's small, but writing a large file into memory
+can make servers quite grumpy. If the file being downloaded happens to be a zip
+file then things are worse. You can't use a normal SpooledTemporaryFile because
+it isn't compatible. A :ref:`spooledbytesio` instance is a good alternative.
+Here is a simple example using the requests library to download a zip file::
 
     from zipfile import ZipFile
 
