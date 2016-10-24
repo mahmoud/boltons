@@ -81,12 +81,12 @@ class BaseTestMixin(object):
         self.assertRaises(IOError, self.spooled_flo.truncate, -1)
 
     def test_compare_different_instances(self):
-        """Make sure we can compare instances of a different type"""
+        """Make sure two different instance types are not considered equal"""
         a = ioutils.SpooledBytesIO()
         a.write(binary_type(b"I am equal!"))
         b = ioutils.SpooledStringIO()
         b.write(text_type("I am equal!"))
-        self.assertEqual(a, b)
+        self.assertNotEqual(a, b)
 
     def test_compare_unequal_instances(self):
         """Comparisons of non-SpooledIOBase classes should fail"""

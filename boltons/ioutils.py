@@ -185,9 +185,8 @@ class SpooledIOBase(object):
         self._file.close()
 
     def __eq__(self, other):
-        if isinstance(other, SpooledIOBase):
-            return (utf8_encode_if_unicode(self.getvalue()) ==
-                    utf8_encode_if_unicode(other.getvalue()))
+        if isinstance(other, self.__class__):
+            return self.getvalue() == other.getvalue()
         return False
 
     def __ne__(self, other):
