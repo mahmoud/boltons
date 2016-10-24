@@ -78,6 +78,10 @@ class SpooledIOBase(object):
     def rollover(self):
         """Roll file-like-object over into a real temporary file"""
 
+    @abstractmethod
+    def tell(self):
+        """Return the current position"""
+
     @abstractproperty
     def buffer(self):
         """Should return a flo instance"""
@@ -101,9 +105,6 @@ class SpooledIOBase(object):
     @property
     def _file(self):
         return self.buffer
-
-    def tell(self):
-        return self._file.tell()
 
     def seek(self, pos, mode=0):
         return self.buffer.seek(pos, mode)
@@ -256,6 +257,9 @@ class SpooledBytesIO(SpooledIOBase):
         self.seek(pos)
         return val
 
+    def tell(self):
+        return self._buffer.tell()
+
 
 class SpooledStringIO(SpooledIOBase):
     """
@@ -318,6 +322,23 @@ class SpooledStringIO(SpooledIOBase):
             self.buffer.close()
             self._buffer = tmp
 
+    def tell(self):
+        """
+        Return the codepoint position
+
+        TODO: Do this in reading chunks to improve efficiency
+        """
+        pos = self.buffer.tell()
+        self.seek(0)
+        enc_pos = 0
+        while True:
+            self.read(1)
+            enc_pos += 1
+            if self.buffer.tell() == pos:
+                break
+        self.buffer.seek(pos)
+        return enc_pos
+
     @property
     def len(self):
         """Determine the number of codepoints in the file"""
@@ -325,7 +346,7 @@ class SpooledStringIO(SpooledIOBase):
         self.seek(0)
         total = 0
         while True:
-            ret = self.read(64000)
+            ret = self.read(32000)
             if not ret:
                 break
             total += len(ret)

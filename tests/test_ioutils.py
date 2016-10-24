@@ -59,7 +59,6 @@ class BaseTestMixin(object):
         self.spooled_flo.seek(5)
         self.spooled_flo.truncate(10)
         self.assertEqual(self.spooled_flo.getvalue(), self.test_str[:10])
-        self.assertEqual(self.spooled_flo.tell(), 5)
 
     def test_truncate_with_args_rollover(self):
         """Test truncating to a value with on-disk flo"""
@@ -68,7 +67,6 @@ class BaseTestMixin(object):
         self.spooled_flo.rollover()
         self.spooled_flo.truncate(10)
         self.assertEqual(self.spooled_flo.getvalue(), self.test_str[:10])
-        self.assertEqual(self.spooled_flo.tell(), 5)
 
     def test_type_error_too_many_args(self):
         """Make sure TypeError raised if too many args passed to truncate"""
@@ -273,3 +271,10 @@ class TestSpooledStringIO(TestCase, BaseTestMixin, AssertionsMixin):
     def test_invalid_type(self):
         """Ensure TypeError raised when writing bytes to SpooledStringIO"""
         self.assertRaises(TypeError, self.spooled_flo.write, b"hi")
+
+    def test_tell_codepoints(self):
+        """Verify tell() returns codepoint position, not bytes position"""
+        self.spooled_flo.write(self.test_str)
+        self.spooled_flo.seek(0)
+        self.spooled_flo.read(40)
+        self.assertEqual(self.spooled_flo.tell(), 40)
