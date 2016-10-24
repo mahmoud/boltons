@@ -258,7 +258,7 @@ class SpooledBytesIO(SpooledIOBase):
         return val
 
     def tell(self):
-        return self._buffer.tell()
+        return self.buffer.tell()
 
 
 class SpooledStringIO(SpooledIOBase):
