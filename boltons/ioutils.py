@@ -172,6 +172,9 @@ class SpooledIOBase(object):
         self.seek(pos)
         return val
 
+    def __len__(self):
+        return self.len
+
     def __iter__(self):
         yield self.readline()
 

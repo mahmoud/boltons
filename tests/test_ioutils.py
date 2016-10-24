@@ -197,15 +197,17 @@ class TestSpooledBytesIO(TestCase, BaseTestMixin, AssertionsMixin):
             self.assertEqual(f.getvalue(), test_str)
 
     def test_len_no_rollover(self):
-        """Make sure len property works with in-memory flo"""
+        """Make sure len works with in-memory flo"""
         self.spooled_flo.write(self.test_str)
         self.assertEqual(self.spooled_flo.len, len(self.test_str))
+        self.assertEqual(len(self.spooled_flo), len(self.test_str))
 
     def test_len_rollover(self):
-        """Make sure len property works with on-disk flo"""
+        """Make sure len works with on-disk flo"""
         self.spooled_flo.write(self.test_str)
         self.spooled_flo.rollover()
         self.assertEqual(self.spooled_flo.len, len(self.test_str))
+        self.assertEqual(len(self.spooled_flo), len(self.test_str))
 
     def test_invalid_type(self):
         """Ensure TypeError raised when writing unicode to SpooledBytesIO"""
