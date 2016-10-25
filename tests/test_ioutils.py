@@ -278,3 +278,18 @@ class TestSpooledStringIO(TestCase, BaseTestMixin, AssertionsMixin):
         self.spooled_flo.seek(0)
         self.spooled_flo.read(40)
         self.assertEqual(self.spooled_flo.tell(), 40)
+
+    def test_codepoints_all_enc(self):
+        """"Test getting read, seek, tell, on various codepoints"""
+        test_str = u"\u2014\u2014\u2014"
+        self.spooled_flo.write(test_str)
+        self.spooled_flo.seek(1)
+        self.assertEqual(self.spooled_flo.read(), u"\u2014\u2014")
+        self.assertEqual(len(self.spooled_flo), len(test_str))
+        self.assertEqual(self.spooled_flo.tell(), 3)
+
+    def test_seek_codepoints(self):
+        """Make seek() moves to positions along codepoints"""
+        self.spooled_flo.write(self.test_str)
+        ret = self.spooled_flo.seek(0, os.SEEK_END)
+        self.assertEqual(ret, len(self.test_str))
