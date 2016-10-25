@@ -367,10 +367,6 @@ class SpooledStringIO(SpooledIOBase):
                 # needed to put us over the pos value.
                 pos_read = True
         else:
-            # We're done with the buffer at this point, so seek to the previous
-            # pos for happy return and error raising.
-            self.buffer.seek(pos)
-
             # We've read past the underlying seek value. We now iterate our
             # last retrieved chunk until the encoded character bytes plus the
             # current_pos add up to the pos. Anything over that means that our
@@ -379,14 +375,20 @@ class SpooledStringIO(SpooledIOBase):
                 enc_pos += 1
                 current_pos += len(char.encode('utf-8'))
 
-                if current_pos == pos:
+                if current_pos >= pos:
                     break
-                elif current_pos >= pos:
-                    raise IOError(
-                        "SpooledStringIO's underlying EncodedFile seeked to "
-                        "invalid code point!")
 
-        if current_pos != pos:
+        self.buffer.seek(pos)
+
+        if current_pos > pos:
+            # This means that we've read a character that started before the
+            # seek location, and ended after the seek location meaning that the
+            # cursor isn't aligned to the characters.
+            raise IOError(
+                "SpooledStringIO's underlying EncodedFile seeked to "
+                "invalid code point!")
+
+        if current_pos < pos:
             # If we made it this far and our current_pos doesn't equal our pos,
             # something has gone wrong with our flo.
             raise IOError(
@@ -394,7 +396,6 @@ class SpooledStringIO(SpooledIOBase):
                 "position. Likely data truncation while we were "
                 "reading it.")
 
-        self.buffer.seek(pos)
         return enc_pos
 
     @property
