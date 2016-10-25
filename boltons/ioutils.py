@@ -293,20 +293,46 @@ class SpooledStringIO(SpooledIOBase):
         if self.tell() >= self._max_size:
             self.rollover()
 
+    def _traverse_codepoints(self, current_position, n):
+        """Traverse from current position to the right n codepoints"""
+        dest = current_position + n
+        while True:
+            if current_position == dest:
+                # By chance we've landed on the right position, break
+                break
+
+            # If the read would take us past the intended position then
+            # seek only enough to cover the offset
+            if current_position + READ_CHUNK_SIZE > dest:
+                self.read(dest - current_position)
+                break
+            else:
+                ret = self.read(READ_CHUNK_SIZE)
+
+            # Increment our current position
+            current_position += READ_CHUNK_SIZE
+
+            # If we kept reading but there was nothing here, break
+            # as we are at the end of the file
+            if not ret:
+                break
+
+        return dest
+
     def seek(self, pos, mode=0):
+        """Traverse from offset to the specified codepoint"""
+        # Seek to position from the start of the file
         if mode == os.SEEK_SET:
             self.buffer.seek(0)
-            self.buffer.read(pos)
-            return pos
+            return self._traverse_codepoints(0, pos)
+        # Seek to new position relative to current position
         elif mode == os.SEEK_CUR:
             start_pos = self.tell()
-            self.buffer.read(pos)
-            return start_pos + pos
+            return self._traverse_codepoints(self.tell(), pos)
         elif mode == os.SEEK_END:
             self.buffer.seek(0)
             dest_position = self.len - pos
-            self.buffer.read(dest_position)
-            return dest_position
+            return self._traverse_codepoints(0, dest_position)
         else:
             raise ValueError(
                 "Invalid whence ({0}, should be 0, 1, or 2)".format(mode)
