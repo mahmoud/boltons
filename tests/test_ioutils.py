@@ -1,7 +1,8 @@
 import os
+import random
+import string
 import sys
 from unittest import TestCase
-
 
 from boltons import ioutils
 
@@ -289,21 +290,46 @@ class TestSpooledStringIO(TestCase, BaseTestMixin, AssertionsMixin):
         self.assertEqual(self.spooled_flo.tell(), 3)
 
     def test_seek_codepoints_SEEK_END(self):
-        """Make seek() moves to codepoints relative to file end"""
+        """Make sure  seek() moves to codepoints relative to file end"""
         self.spooled_flo.write(self.test_str)
         ret = self.spooled_flo.seek(0, os.SEEK_END)
         self.assertEqual(ret, len(self.test_str))
 
+    def test_seek_codepoints_large_SEEK_END(self):
+        """Make sure seek() moves to codepoints relative to file end"""
+        test_str = u"".join(random.choice(string.ascii_letters) for
+                            x in range(34000))
+        self.spooled_flo.write(test_str)
+        ret = self.spooled_flo.seek(0, os.SEEK_END)
+        self.assertEqual(ret, len(test_str))
+
     def test_seek_codepoints_SEEK_SET(self):
-        """Make seek() moves to codepoints relative to file start"""
+        """Make sure seek() moves to codepoints relative to file start"""
         self.spooled_flo.write(self.test_str)
         ret = self.spooled_flo.seek(3, os.SEEK_SET)
         self.assertEqual(ret, 3)
 
+    def test_seek_codepoints_large_SEEK_SET(self):
+        """Make sure seek() moves to codepoints relative to file start"""
+        test_str = u"".join(random.choice(string.ascii_letters) for
+                            x in range(34000))
+        self.spooled_flo.write(test_str)
+        ret = self.spooled_flo.seek(33000, os.SEEK_SET)
+        self.assertEqual(ret, 33000)
+
     def test_seek_codepoints_SEEK_CUR(self):
-        """Make seek() moves to codepoints relative to current_position"""
+        """Make sure seek() moves to codepoints relative to current_position"""
         test_str = u"\u2014\u2014\u2014"
         self.spooled_flo.write(test_str)
         self.spooled_flo.seek(1)
         ret = self.spooled_flo.seek(2, os.SEEK_CUR)
         self.assertEqual(ret, 3)
+
+    def test_seek_codepoints_large_SEEK_CUR(self):
+        """Make sure seek() moves to codepoints relative to current_position"""
+        test_str = u"".join(random.choice(string.ascii_letters) for
+                            x in range(34000))
+        self.spooled_flo.write(test_str)
+        self.spooled_flo.seek(1)
+        ret = self.spooled_flo.seek(33000, os.SEEK_CUR)
+        self.assertEqual(ret, 33001)
