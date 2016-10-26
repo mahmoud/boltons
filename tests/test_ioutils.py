@@ -343,3 +343,10 @@ class TestSpooledStringIO(TestCase, BaseTestMixin, AssertionsMixin):
         self.spooled_flo.seek(0)
         self.assertEqual(len(self.spooled_flo.read(2)), 2)
         self.assertEqual(self.spooled_flo.read(), '0')
+
+    def test_seek_encoded(self):
+        """Make sure reading works when bytes exceeds read val"""
+        test_str = u"\u2014\u2014\u2014"
+        self.spooled_flo.write(test_str)
+        self.spooled_flo.seek(0)
+        self.assertEqual(self.spooled_flo.read(3), test_str)
