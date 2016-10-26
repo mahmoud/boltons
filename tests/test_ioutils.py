@@ -322,6 +322,7 @@ class TestSpooledStringIO(TestCase, BaseTestMixin, AssertionsMixin):
         test_str = u"\u2014\u2014\u2014"
         self.spooled_flo.write(test_str)
         self.spooled_flo.seek(1)
+        self.assertEqual(self.spooled_flo.tell(), 1)
         ret = self.spooled_flo.seek(2, os.SEEK_CUR)
         self.assertEqual(ret, 3)
 
