@@ -148,7 +148,7 @@ class SpooledIOBase(object):
         # Emulate truncation to a particular location
         pos = self.tell()
         self.seek(size)
-        self.buffer.truncate(size)
+        self.buffer.truncate()
         if pos < size:
             self.seek(pos)
 
@@ -283,7 +283,7 @@ class SpooledStringIO(SpooledIOBase):
         super(SpooledStringIO, self).__init__(*args, **kwargs)
 
     def read(self, n=-1):
-        ret = self.buffer.read(n).decode('utf-8')
+        ret = self.buffer.reader.read(n, n)
         self._tell = self.tell() + len(ret)
         return ret
 
@@ -388,7 +388,7 @@ class SpooledStringIO(SpooledIOBase):
     def len(self):
         """Determine the number of codepoints in the file"""
         pos = self.buffer.tell()
-        self.seek(0)
+        self.buffer.seek(0)
         total = 0
         while True:
             ret = self.read(READ_CHUNK_SIZE)

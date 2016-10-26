@@ -279,6 +279,8 @@ class TestSpooledStringIO(TestCase, BaseTestMixin, AssertionsMixin):
         self.spooled_flo.seek(0)
         self.spooled_flo.read(40)
         self.assertEqual(self.spooled_flo.tell(), 40)
+        self.spooled_flo.seek(10)
+        self.assertEqual(self.spooled_flo.tell(), 10)
 
     def test_codepoints_all_enc(self):
         """"Test getting read, seek, tell, on various codepoints"""
@@ -287,7 +289,6 @@ class TestSpooledStringIO(TestCase, BaseTestMixin, AssertionsMixin):
         self.spooled_flo.seek(1)
         self.assertEqual(self.spooled_flo.read(), u"\u2014\u2014")
         self.assertEqual(len(self.spooled_flo), len(test_str))
-        self.assertEqual(self.spooled_flo.tell(), 3)
 
     def test_seek_codepoints_SEEK_END(self):
         """Make sure  seek() moves to codepoints relative to file end"""
@@ -334,3 +335,11 @@ class TestSpooledStringIO(TestCase, BaseTestMixin, AssertionsMixin):
         self.spooled_flo.seek(1)
         ret = self.spooled_flo.seek(33000, os.SEEK_CUR)
         self.assertEqual(ret, 33001)
+
+    def test_x80_codepoint(self):
+        """Make sure x80 codepoint doesn't confuse read value"""
+        test_str = u'\x8000'
+        self.spooled_flo.write(test_str)
+        self.spooled_flo.seek(0)
+        self.assertEqual(len(self.spooled_flo.read(2)), 2)
+        self.assertEqual(self.spooled_flo.read(), '0')
