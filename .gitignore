@@ -46,3 +46,5 @@ nosetests.xml
 
 # Vim
 *.sw[op]
+
+.cache/
