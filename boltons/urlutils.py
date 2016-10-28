@@ -10,15 +10,14 @@ except NameError:  # basestring not defined in Python 3
     unicode, str, bytes, basestring = str, bytes, bytes, (str, bytes)
 
 
-"""
-TODO:
+"""TODO:
 
 - url.path_params (semicolon separated) http://www.w3.org/TR/REC-html40/appendix/notes.html#h-B.2.2
 - support python compiled without IPv6
 - support empty port (e.g., http://gweb.com:/)
 
-The URL class isn't really for validation at the moment, though it is
-highly standards compliant and will emit only the most valid URLs.
+The URL class isn't really for validation at the moment, though it
+aims to be standards-compliant and will only emit valid URLs.
 """
 
 DEFAULT_ENCODING = 'utf-8'
@@ -432,11 +431,6 @@ PREV, NEXT, KEY, VALUE, SPREV, SNEXT = range(6)
 
 
 __all__ = ['MultiDict', 'OMD', 'OrderedMultiDict']
-
-try:
-    profile
-except NameError:
-    profile = lambda x: x
 
 
 class OrderedMultiDict(dict):
@@ -971,7 +965,12 @@ class OrderedMultiDict(dict):
         return ItemsView(self)
 
 
-# A couple of convenient aliases
+try:
+    # try to import the built-in one anyways
+    from boltons.dictutils import OrderedMultiDict
+except ImportError:
+    pass
+
 OMD = OrderedMultiDict
 
 
@@ -985,8 +984,6 @@ class QueryParamDict(OrderedMultiDict):
         return cls(pairs)
 
     def to_bytes(self):
-        # note: uses '%20' instead of '+' for spaces, based partially
-        # on observed behavior in chromium.
         ret_list = []
         for k, v in self.iteritems(multi=True):
             key = escape_query_element(unicode(k), to_bytes=True)
