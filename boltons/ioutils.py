@@ -208,9 +208,9 @@ class SpooledBytesIO(SpooledIOBase):
                 type(s).__name__
             ))
 
-        self.buffer.write(s)
-        if self.tell() >= self._max_size:
+        if self.tell() + len(s) >= self._max_size:
             self.rollover()
+        self.buffer.write(s)
 
     def seek(self, pos, mode=0):
         return self.buffer.seek(pos, mode)
