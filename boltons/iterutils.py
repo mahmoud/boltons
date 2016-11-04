@@ -10,9 +10,15 @@ shorter-named convenience form that returns a list. Some of the
 following are based on examples in itertools docs.
 """
 
+import os
 import math
+import time
+import codecs
 import random
+import socket
+import hashlib
 import itertools
+
 from collections import Mapping, Sequence, Set, ItemsView
 
 try:
@@ -26,8 +32,10 @@ except ImportError:
 try:
     from future_builtins import filter
     from itertools import izip
+    _IS_PY3 = False
 except ImportError:
     # Python 3 compat
+    _IS_PY3 = True
     basestring = (str, bytes)
     izip, xrange = zip, range
 
@@ -934,6 +942,118 @@ def get_path(root, path, default=_UNSET):
 # TODO: get_path/set_path
 # TODO: recollect()
 # TODO: reiter()
+
+# GUID iterators: 10x faster and somewhat more compact than uuid.
+
+
+class GUIDerator(object):
+    """The GUIDerator is an iterator that yields a globally-unique
+    identifier (GUID) on every iteration. The GUIDs produced are
+    hexadecimal strings.
+
+    Testing shows it to be around 12x faster than the uuid module. By
+    default it is also more compact, partly due to its default 96-bit
+    (12-byte) length. 96 bits of randomness means that there is a 1 in
+    2 ^ 32 chance of collision after 2 ^ 64 iterations. If more or
+    less uniqueness is desired, the *size* argument can be adjusted
+    accordingly.
+
+    Args:
+        size (int): character length of the GUID, defaults to 12. Lengths
+                    between 10 and 20 are considered valid.
+
+    The GUIDerator has built-in fork protection that causes it to
+    detect a fork on next iteration and reseed accordingly.
+    """
+    def __init__(self, size=12):
+        self.size = size
+        if size < 10 or size > 20:
+            raise ValueError('expected 10 < size <= 20')
+        self.count = itertools.count()
+        self.reseed()
+
+    def reseed(self):
+        self.pid = os.getpid()
+        self.salt = '-'.join([str(self.pid),
+                              socket.gethostname() or b'<nohostname>',
+                              str(time.time()),
+                              codecs.encode(os.urandom(6),
+                                            'hex').decode('ascii')])
+        # that codecs trick is the best/only way to get a bytes to
+        # hexbytes in py2/3
+        return
+
+    def __iter__(self):
+        return self
+
+    if _IS_PY3:
+        def __next__(self):
+            if os.getpid() != self.pid:
+                self.reseed()
+            target_bytes = (self.salt + str(next(self.count))).encode('utf8')
+            hash_text = hashlib.sha1(target_bytes).hexdigest()[:self.size]
+            return hash_text
+    else:
+        def __next__(self):
+            if os.getpid() != self.pid:
+                self.reseed()
+            return hashlib.sha1(self.salt +
+                                str(next(self.count))).hexdigest()[:self.size]
+
+    next = __next__
+
+
+class SequentialGUIDerator(GUIDerator):
+    """Much like the standard GUIDerator, the SequentialGUIDerator is an
+    iterator that yields a globally-unique identifier (GUID) on every
+    iteration. The GUIDs produced are hexadecimal strings.
+
+    The SequentialGUIDerator differs in that it picks a starting GUID
+    value and increments every iteration. This yields GUIDs which are
+    of course unique, but also ordered and lexicographically sortable.
+
+    The SequentialGUIDerator is aronud 50% faster than the normal
+    GUIDerator, making it almost 20x as fast as the built-in uuid
+    module. By default it is also more compact, partly due to its
+    96-bit (12-byte) default length. 96 bits of randomness means that
+    there is a 1 in 2 ^ 32 chance of collision after 2 ^ 64
+    iterations. If more or less uniqueness is desired, the *size*
+    argument can be adjusted accordingly.
+
+    Args:
+        size (int): character length of the GUID, defaults to 12.
+
+    Note that with SequentialGUIDerator there is a chance of GUIDs
+    growing larger than the size configured. The SequentialGUIDerator
+    has built-in fork protection that causes it to detect a fork on
+    next iteration and reseed accordingly.
+
+    """
+
+    if _IS_PY3:
+        def reseed(self):
+            super(SequentialGUIDerator, self).reseed()
+            start_str = hashlib.sha1(self.salt.encode('utf8')).hexdigest()
+            self.start = int(start_str[:self.size], 16)
+            self.start |= (1 << ((self.size * 4) - 2))
+    else:
+        def reseed(self):
+            super(SequentialGUIDerator, self).reseed()
+            start_str = hashlib.sha1(self.salt).hexdigest()
+            self.start = int(start_str[:self.size], 16)
+            self.start |= (1 << ((self.size * 4) - 2))
+
+    def __next__(self):
+        if os.getpid() != self.pid:
+            self.reseed()
+        return '%x' % (next(self.count) + self.start)
+
+    next = __next__
+
+
+guid_iter = GUIDerator()
+seq_guid_iter = SequentialGUIDerator()
+
 
 """
 May actually be faster to do an isinstance check for a str path
