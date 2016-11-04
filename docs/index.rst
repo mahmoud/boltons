@@ -7,7 +7,7 @@ boltons
 |release| |calver|
 
 **Boltons** is a set of pure-Python utilities in the same spirit as —
-and yet conspicuously missing from — the `the standard library`_,
+and yet conspicuously missing from — `the standard library`_,
 including:
 
   * :func:`Atomic file saving <boltons.fileutils.atomic_save>`, bolted on with
