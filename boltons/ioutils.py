@@ -181,6 +181,9 @@ class SpooledIOBase(object):
         return not self.__eq__(other)
 
     def __nonzero__(self):
+        return self.__bool__()
+
+    def __bool__(self):
         return True
 
 
