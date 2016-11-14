@@ -180,6 +180,9 @@ class SpooledIOBase(object):
     def __ne__(self, other):
         return not self.__eq__(other)
 
+    def __nonzero__(self):
+        return True
+
 
 class SpooledBytesIO(SpooledIOBase):
     """
