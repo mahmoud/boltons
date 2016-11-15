@@ -3,6 +3,7 @@ import random
 import string
 import sys
 from unittest import TestCase
+from zipfile import ZipFile, ZIP_DEFLATED
 
 from boltons import ioutils
 
@@ -154,6 +155,13 @@ class BaseTestMixin(object):
         self.assertTrue(self.spooled_flo.isatty() is True or
                         self.spooled_flo.isatty() is False)
 
+    def test_truthy(self):
+        """Make sure empty instances are still considered truthy"""
+        self.spooled_flo.seek(0)
+        self.spooled_flo.truncate()
+        if not self.spooled_flo:
+            raise AssertionError("Instance is not truthy")
+
 
 class TestSpooledBytesIO(TestCase, BaseTestMixin, AssertionsMixin):
     linesep = os.linesep.encode('ascii')
@@ -218,6 +226,15 @@ class TestSpooledBytesIO(TestCase, BaseTestMixin, AssertionsMixin):
         self.assertIsNone(self.spooled_flo.flush())
         self.spooled_flo.rollover()
         self.assertIsNone(self.spooled_flo.flush())
+
+    def test_zip_compat(self):
+        """Make sure object is compatible with ZipFile library"""
+        self.spooled_flo.seek(0)
+        self.spooled_flo.truncate()
+        doc = ZipFile(self.spooled_flo, 'w', ZIP_DEFLATED)
+        doc.writestr("content.txt", "test")
+        self.assertTrue('content.txt' in doc.namelist())
+        doc.close()
 
 
 class TestSpooledStringIO(TestCase, BaseTestMixin, AssertionsMixin):
