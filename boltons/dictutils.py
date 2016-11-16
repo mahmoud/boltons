@@ -34,7 +34,7 @@ thanks to `Mark Williams`_ for all his help.
 .. _Mark Williams: https://github.com/markrwilliams
 """
 
-from collections import KeysView, ValuesView, ItemsView
+from collections import KeysView, ValuesView, ItemsView, namedtuple, Mapping
 
 try:
     from itertools import izip_longest
@@ -692,5 +692,64 @@ class FastIterOrderedMultiDict(OrderedMultiDict):
                     break
             yield curr[KEY]
             curr = curr[PREV]
+
+
+class FrozenDict(Mapping):
+    """A FrozenDict is a dictionary whose values are set during instance
+    creation and are fixed from that point on. Setting and altering values is
+    not allowed. This can be useful in a number of scenarios, including setting
+    up mapping constants without worrying that the values will get mutated by a
+    misbehaving function.
+
+    There are a lot of online recipies that for creating a FrozenDict class,
+    but most still rely on a real dictionary under the hood for storage. They
+    also tend to be extra weighty because they have an underlying object dict.
+
+    One common solution is to use a named tuple, but this requires setting up
+    boilerplate for every type or relying on factory functions. The FrozenDict
+    utilizes a named tuple for storage and then is further made lighter by
+    utilizing __slots__ to eliminate the underlying object dict.
+
+    Declaration of a FrozenDict requires passing all desired values into the
+    constructor:
+
+    >>> fd = FrozenDict(a=1, b=2, c=3)
+    >>> fd.get('a')
+    1
+    >>> fd['b']
+    2
+    """
+
+    __slots__ = ('_storage', '_hash_val')
+
+    def __init__(self, **kwargs):
+        self._storage = namedtuple("FrozenDictStore",
+                                   " ".join(sorted(kwargs.keys())))(**kwargs)
+
+    def __iter__(self):
+        return iter(self._storage._fields)
+
+    def iteritems(self):
+        """Iterates, returning key, value pairs as a tuple"""
+        for key in self._storage._fields:
+            yield key, getattr(self._storage, key)
+
+    def __len__(self):
+        return len(self._storage)
+
+    def __getitem__(self, key):
+        try:
+            return getattr(self._storage, key)
+        except AttributeError:
+            raise KeyError(key)
+
+    def __hash__(self):
+        try:
+            return self._hash_val
+        except AttributeError:
+            self._hash_val = 0
+            for tuple_val in self.iteritems():
+                self._hash_val ^= hash(tuple_val)
+        return self._hash_val
 
 # end dictutils.py

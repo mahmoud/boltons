@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
+from unittest import TestCase
+from boltons.dictutils import OMD, FrozenDict
 
-from boltons.dictutils import OMD
 
 _ITEMSETS = [[],
              [('a', 1), ('b', 2), ('c', 3)],
@@ -255,3 +256,59 @@ def test_setdefault():
     y = omd.setdefault('2')
     assert y is None
     assert omd.setdefault('1', None) is empty_list
+
+
+class TestFrozenDict(TestCase):
+
+    def setUp(self):
+        self.frozen_dict = FrozenDict(a=1, b=2, c=3)
+
+    def test_get(self):
+        """Verify .get works with FrozenDict"""
+        self.assertEqual(self.frozen_dict.get("a"), 1)
+        self.assertEqual(self.frozen_dict.get("b"), 2)
+        self.assertEqual(self.frozen_dict.get("c"), 3)
+
+    def test_key(self):
+        """Verify dict key access works with FrozenDict"""
+        self.assertEqual(self.frozen_dict["a"], 1)
+        self.assertEqual(self.frozen_dict["b"], 2)
+        self.assertEqual(self.frozen_dict["c"], 3)
+
+    def test_keyerror(self):
+        """Verify dict KeyError raised when accessing invalid keys"""
+        try:
+            self.frozen_dict['badkey']
+        except KeyError:
+            pass
+        else:
+            raise AssertionError("FrozenDict failed to raise KeyError")
+
+    def test_update_fails(self):
+        """Make sure updating existing value raises a TypeError"""
+        try:
+            self.frozen_dict['c'] = 4
+        except TypeError:
+            pass
+        else:
+            raise AssertionError("FrozenDict failed to raise TypeError on set")
+
+    def test_assignment_failure(self):
+        """Make sure a TypeError is raised on assignment attempts"""
+        try:
+            self.frozen_dict['d'] = 4
+        except TypeError:
+            pass
+        else:
+            raise AssertionError("FrozenDict failed to raise TypeError on set")
+
+    def test_hash_frozendict(self):
+        """Make sure a FrozenDict can be used as a dict key"""
+        try:
+            {self.frozen_dict: "hashable"}
+        except TypeError:
+            raise AssertionError("FrozenDict is not hashable")
+
+    def test_calculate_len(self):
+        """Ensure len() is calculated on key total"""
+        self.assertEqual(len(self.frozen_dict), 3)
