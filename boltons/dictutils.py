@@ -724,7 +724,7 @@ class FrozenDict(Mapping):
 
     def __init__(self, **kwargs):
         self._storage = namedtuple("FrozenDictStore",
-                                   " ".join(sorted(kwargs.keys())))(**kwargs)
+                                   " ".join(kwargs.keys()))(**kwargs)
 
     def __iter__(self):
         return iter(self._storage._fields)
