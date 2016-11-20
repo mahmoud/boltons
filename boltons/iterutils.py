@@ -584,7 +584,7 @@ def one(src, default=None, key=None):
 
     If *src* has more than one object that evaluates to ``True``, or
     if there is no object that fulfills such condition, return
-    ``False``. It's like an `XOR`_ over an iterable.
+    *default*. It's like an `XOR`_ over an iterable.
 
     >>> one((True, False, False))
     True
@@ -605,13 +605,8 @@ def one(src, default=None, key=None):
     .. _XOR: https://en.wikipedia.org/wiki/Exclusive_or
 
     """
-    the_one = default
-    for i in src:
-        if key(i) if key else i:
-            if the_one:
-                return default
-            the_one = i
-    return the_one
+    ones = list(itertools.islice(filter(key, src), 2))
+    return ones[0] if len(ones) == 1 else default
 
 
 def first(iterable, default=None, key=None):
