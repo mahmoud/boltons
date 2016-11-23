@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import pickle
 from unittest import TestCase
 from boltons.dictutils import OMD, FrozenDict
 
@@ -282,6 +283,12 @@ class TestFrozenDict(TestCase):
         self.assertTrue(3 in self.frozen_dict.values())
         self.assertEqual(len(self.frozen_dict.values()), 3)
 
+    def test_items(self):
+        """Verify .items() implementation returns list of tuples"""
+        self.assertTrue(isinstance(self.frozen_dict.items(), list))
+        for val in self.frozen_dict.items():
+            self.assertTrue(isinstance(val, tuple))
+
     def test_keyerror(self):
         """Verify dict KeyError raised when accessing invalid keys"""
         try:
@@ -319,3 +326,9 @@ class TestFrozenDict(TestCase):
     def test_calculate_len(self):
         """Ensure len() is calculated on key total"""
         self.assertEqual(len(self.frozen_dict), 3)
+
+    def test_pickle_dict(self):
+        """Make sure a frozendict is possible to pickle"""
+        pickle_str = pickle.dumps(self.frozen_dict)
+        new_instance = pickle.loads(pickle_str)
+        self.assertEqual(self.frozen_dict, new_instance)

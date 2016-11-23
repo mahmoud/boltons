@@ -720,6 +720,10 @@ class FrozenDictBase(tuple):
                 break
             idx += 1
 
+    def items(self):
+        """Returns a list of tuples of data"""
+        return [(x, self[x]) for x in self]
+
     def iteritems(self):
         """Iterates, returning key, value pairs as a tuple"""
         idx = 0
@@ -745,6 +749,11 @@ class FrozenDictBase(tuple):
     def __contains__(self, value):
         return hasattr(self, str(value.__hash__()))
 
+    def __reduce__(self):
+        state = {}
+        for k, v in self.iteritems():
+            state[k] = v
+        return (FrozenDict, (state, ))
 
 def FrozenDict(dict_map):
     """A FrozenDict is a dictionary whose values are set during instance
