@@ -275,6 +275,13 @@ class TestFrozenDict(TestCase):
         self.assertEqual(self.frozen_dict["b"], 2)
         self.assertEqual(self.frozen_dict["c"], 3)
 
+    def test_values(self):
+        """Verify .values() implementation"""
+        self.assertTrue(1 in self.frozen_dict.values())
+        self.assertTrue(2 in self.frozen_dict.values())
+        self.assertTrue(3 in self.frozen_dict.values())
+        self.assertEqual(len(self.frozen_dict.values()), 3)
+
     def test_keyerror(self):
         """Verify dict KeyError raised when accessing invalid keys"""
         try:

@@ -737,7 +737,10 @@ class FrozenDictBase(tuple):
             return default
 
     def keys(self):
-        return [x[0] for x in self]
+        return [x for x in self]
+
+    def values(self):
+        return [x[1] for x in tuple.__iter__(self)]
 
     def __contains__(self, value):
         return hasattr(self, str(value.__hash__()))
