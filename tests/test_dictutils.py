@@ -261,7 +261,7 @@ def test_setdefault():
 class TestFrozenDict(TestCase):
 
     def setUp(self):
-        self.frozen_dict = FrozenDict(a=1, b=2, c=3)
+        self.frozen_dict = FrozenDict({"a": 1, "b": 2, "c": 3})
 
     def test_get(self):
         """Verify .get works with FrozenDict"""
