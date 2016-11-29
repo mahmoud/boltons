@@ -467,10 +467,12 @@ def backoff_iter(start, stop, count=None, factor=2.0, jitter=False):
     return
 
 
-def bucketize(src, key=None):
+def bucketize(src, key=None, value_transform=None, filter_by_key=None):
     """Group values in the *src* iterable by the value returned by *key*,
     which defaults to :class:`bool`, grouping values by
     truthiness.
+    *value_transform* can be used to modify the value before returning it.
+    *filter_by_key*, if defined, will allow excluding certain buckets from being collected.
 
     >>> bucketize(range(5))
     {False: [0], True: [1, 2, 3, 4]}
@@ -483,7 +485,20 @@ def bucketize(src, key=None):
     >>> bucketize([None, None, None, 'hello'])
     {False: [None, None, None], True: ['hello']}
 
-    Note in these examples there were at most two keys, ``True`` and
+    Bucketize into more than 3 groups
+
+    >>> bucketize(range(10), lambda x: x % 3)
+    {0: [0, 3, 6, 9], 1: [1, 4, 7], 2: [2, 5, 8]}
+
+    >>> bucketize(range(5), value_transform=lambda x: x*x)
+    {False: [0], True: [1, 4, 9, 16]}
+
+    Filtering by key
+
+    >>> bucketize(range(10), key=lambda x: x % 3, filter_by_key=lambda k: k % 3 != 1)
+    {0: [0, 3, 6, 9], 2: [2, 5, 8]}
+
+    Note in some of these examples there were at most two keys, ``True`` and
     ``False``, and each key present has a list with at least one
     item. See :func:`partition` for a version specialized for binary
     use cases.
@@ -494,11 +509,16 @@ def bucketize(src, key=None):
         key = bool
     if not callable(key):
         raise TypeError('expected callable key function')
+    if value_transform is None:
+        value_transform = lambda x: x
+    if not callable(value_transform):
+        raise TypeError('expected callable key function')
 
     ret = {}
     for val in src:
-        keyval = key(val)
-        ret.setdefault(keyval, []).append(val)
+        key_of_val = key(val)
+        if filter_by_key is None or filter_by_key(key_of_val):
+            ret.setdefault(key_of_val, []).append(value_transform(val))
     return ret
 
 
