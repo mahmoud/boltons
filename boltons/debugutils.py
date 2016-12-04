@@ -21,7 +21,7 @@ try:
 except ImportError:
     _UNSET = object()
 
-__all__ = ['pdb_on_signal', 'pdb_on_exception']
+__all__ = ['pdb_on_signal', 'pdb_on_exception', 'trace_module']
 
 
 def pdb_on_signal(signalnum=None):
@@ -81,6 +81,37 @@ def pdb_on_exception(limit=100):
 
     sys.excepthook = pdb_excepthook
     return
+
+
+def trace_module(modules):
+    '''Prints lines of code as they are executed only within the
+    given modules, in the current thread.
+
+    Compare to '-t' option of trace from the standard library, made usable
+    by having the condition inverted.  Only specifc modules are invluded
+    in the output, instead of having to itemize modules to exclude.
+
+    (Uses sys.settrace() so will interfere with other modules that want to own
+    the trace function such as coverage, profile, and trace.)
+    '''
+    import sys
+
+    if type(modules) is not list:
+        modules = [modules]
+
+    globalses = set()
+    for module in modules:
+        globalses.add(id(module.__dict__))
+
+    def trace(frame, event, arg):
+        if event == 'line':
+            print(frame.f_code.co_filename, frame.f_code.co_name, frame.f_lineno)
+        if event == 'call':
+            if id(frame.f_globals) in globalses:
+                return trace
+
+    sys.settrace(trace)
+
 
 _repr_obj = Repr()
 _repr_obj.maxstring = 50
