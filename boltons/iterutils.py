@@ -682,14 +682,8 @@ def same(iterable, ref=_UNSET):
     """
     iterator = iter(iterable)
     if ref is _UNSET:
-        try:
-            ref = next(iterator)
-        except StopIteration:
-            return True  # those that were there were all equal
-    for val in iterator:
-        if val != ref:
-            return False  # short circuit on first unequal value
-    return True
+        ref = next(iterator, ref)
+    return all(val == ref for val in iterator)
 
 
 def default_visit(path, key, value):
