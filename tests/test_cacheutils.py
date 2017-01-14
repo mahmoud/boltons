@@ -270,6 +270,7 @@ def test_cachedproperty():
 
         @cachedproperty
         def useful_attr(self):
+            """Useful DocString"""
             return self.expensive_func()
 
     prop = Proper()
@@ -279,6 +280,9 @@ def test_cachedproperty():
     assert prop.expensive_func.call_count == 1
     assert prop.useful_attr == 1
     assert prop.expensive_func.call_count == 1
+
+    # Make sure original DocString is accessible
+    assert Proper.useful_attr.__doc__ == "Useful DocString"
 
     prop.useful_attr += 1  # would not be possible with normal properties
     assert prop.useful_attr == 2
