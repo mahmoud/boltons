@@ -1,12 +1,30 @@
 language: python
 sudo: false
 cache: pip
+
+# Python targets, as defined by https://github.com/travis-ci/travis-build/blob
+# /master/spec/build/script/python_spec.rb and https://github.com/travis-ci
+# /travis-build/blob/master/lib/travis/build/script/python.rb
 python:
-  - "2.6"
+  # Standard release https://docs.travis-ci.com/user/languages
+  # /python#choosing-python-versions-to-test-against
   - "2.7"
+  - "3.3"
   - "3.4"
   - "3.5"
-  - "pypy"
+  - "3.6"
+  - "3.7-dev"  # a.k.a "nightly"
+
+  # PyPy2.7: https://doc.pypy.org/en/latest
+  # /index-of-release-notes.html#cpython-2-7-compatible-versions
+  - pypy  # PyPy2.7 2.5.0
+  - pypy-5.1
+  - pypy-5.3
+  - pypy-5.4
+
+  # PyPy3.3: https://doc.pypy.org/en/latest
+  # /index-of-release-notes.html#cpython-3-3-compatible-versions
+  - pypy3.3-5.2-alpha1
 
 install: "pip install -r requirements-test.txt"
 script: "py.test --doctest-modules boltons tests"
