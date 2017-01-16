@@ -8,6 +8,7 @@ cache: pip
 python:
   # Standard release https://docs.travis-ci.com/user/languages
   # /python#choosing-python-versions-to-test-against
+  - "2.6"
   - "2.7"
   - "3.3"
   - "3.4"
