@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-
+import json
 import sys
 
 try:
@@ -9,6 +9,7 @@ except:
 
 from boltons.tbutils import (TracebackInfo,
                              ExceptionInfo,
+                             _DeferredLine,
                              print_exception,
                              fix_print_exception,
                              ContextualCallpoint,
@@ -76,6 +77,24 @@ def test_contextual():
     assert line.startswith(' ')
     assert line.strip() == 'return func3()'
     assert 'func2' in repr(callpoint)
+
+    ret = json.loads(callpoint.to_json())
+    expected = callpoint.to_dict()
+
+    # Make sure keys are shared
+    assert set(ret.keys()) == set(expected.keys())
+
+    # Make sure the data is comparable
+    for key, value in expected.items():
+        try:
+            check = ret[key]
+        except KeyError:
+            raise AssertionError("JSON missing key {0}".format(key))
+        else:
+            if isinstance(value, _DeferredLine):
+                assert check == str(value)
+            else:
+                assert check == value
 
     def func_a():
         a = 1
