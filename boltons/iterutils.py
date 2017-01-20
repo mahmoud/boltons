@@ -994,7 +994,7 @@ class GUIDerator(object):
                               socket.gethostname() or b'<nohostname>',
                               str(time.time()),
                               codecs.encode(os.urandom(6),
-                                            'hex').decode('ascii')])
+                                            'hex_codec').decode('ascii')])
         # that codecs trick is the best/only way to get a bytes to
         # hexbytes in py2/3
         return
