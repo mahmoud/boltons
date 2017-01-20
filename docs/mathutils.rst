@@ -3,8 +3,11 @@
 
 .. automodule:: boltons.mathutils
 
-Alternative Ceiling/Floor Functions
------------------------------------
+
+Alternative Rounding Functions
+------------------------------
+
+.. autofunction:: boltons.mathutils.clamp
 
 .. autofunction:: boltons.mathutils.ceil
 

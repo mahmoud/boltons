@@ -1,8 +1,36 @@
 boltons Changelog
 =================
 
-Since February 20, 2013 there have been 29 releases and 960 commits for
-an average of one 33-commit release every 6.2 weeks.
+Since February 20, 2013 there have been 30 releases and 1010 commits for
+an average of one 33-commit release every 6.1 weeks.
+
+16.5.1
+------
+*(November 6, 2016)*
+
+Mostly bug fixes and various tweaks, optimizations, and
+documentation. Also added a bit of functionality in the form of
+[ioutils][ioutils] and some GUID stuff.
+
+* Add [ioutils][ioutils] with
+  [SpooledStringIO][ioutils.SpooledStringIO] and
+  [SpooledBytesIO][ioutils.SpooledBytesIO], two in-memory file-like
+  objects, like the stdlib [StringIO][StringIO], except that they
+  automatically spill over to disk when they reach a configurable
+  size.
+* Add [iterutils.GUIDerator][iterutils.GUIDerator] and
+  [iterutils.SequentialGUIDerator][iterutils.SequentialGUIDerator],
+  two methods of getting random iterables.
+* Add [mathutils.clamp][mathutils.clamp], a combined min-max function,
+  like numpy's clip.
+* Optimized [iterutils.first][iterutils.first].
+* Enabled spillover kwargs in [funcutils.wraps][funcutils.wraps]
+* fix for default [remap][iterutils.remap] set support, fixes [#84][i84]
+* improving and testing exceptions around classmethod and staticmethod
+  for [funcutils.wraps][funcutils.wraps] and
+  [FunctionBuilder][funcutils.FunctionBuilder], fixes [#86][i86] to
+  the degree possible.
+
 
 16.5.0
 ------
@@ -688,6 +716,7 @@ added in this release.
 
 [os.replace]: https://docs.python.org/3/library/os.html#os.replace
 [functools.total_ordering]: https://docs.python.org/2/library/functools.html#functools.total_ordering
+[StringIO]: https://docs.python.org/2/library/stringio.html
 
 [cacheutils]: http://boltons.readthedocs.org/en/latest/cacheutils.html
 [cacheutils.LRU]: http://boltons.readthedocs.org/en/latest/cacheutils.html#boltons.cacheutils.LRU
@@ -729,6 +758,11 @@ added in this release.
 [i41]: https://github.com/mahmoud/boltons/issues/41
 [i79]: https://github.com/mahmoud/boltons/pull/79
 [i83]: https://github.com/mahmoud/boltons/issues/83
+[i84]: https://github.com/mahmoud/boltons/issues/84
+[i86]: https://github.com/mahmoud/boltons/issues/86
+[ioutils]: http://boltons.readthedocs.org/en/latest/ioutils.html
+[ioutils.SpooledBytesIO]: http://boltons.readthedocs.org/en/latest/ioutils.html#boltons.ioutils.SpooledBytesIO
+[ioutils.SpooledStringIO]: http://boltons.readthedocs.org/en/latest/ioutils.html#boltons.ioutils.SpooledStringIO
 [iterutils]: http://boltons.readthedocs.org/en/latest/iterutils.html
 [iterutils.backoff]: http://boltons.readthedocs.org/en/latest/iterutils.html#boltons.iterutils.backoff
 [iterutils.backoff_iter]: http://boltons.readthedocs.org/en/latest/iterutils.html#boltons.iterutils.backoff_iter
@@ -737,6 +771,8 @@ added in this release.
 [iterutils.first]: http://boltons.readthedocs.org/en/latest/iterutils.html#boltons.iterutils.first
 [iterutils.backoff]: http://boltons.readthedocs.org/en/latest/iterutils.html#boltons.iterutils.backoff
 [iterutils.frange]: http://boltons.readthedocs.org/en/latest/iterutils.html#boltons.iterutils.frange
+[iterutils.GUIDerator]: http://boltons.readthedocs.org/en/latest/iterutils.html#boltons.iterutils.GUIDerator
+[iterutils.SequentialGUIDerator]: http://boltons.readthedocs.org/en/latest/iterutils.html#boltons.iterutils.SequentialGUIDerator
 [iterutils.is_container]: http://boltons.readthedocs.org/en/latest/iterutils.html#boltons.iterutils.is_container
 [iterutils.one]: http://boltons.readthedocs.org/en/latest/iterutils.html#boltons.iterutils.one
 [iterutils.pairwise]: http://boltons.readthedocs.org/en/latest/iterutils.html#boltons.iterutils.pairwise
@@ -750,6 +786,7 @@ added in this release.
 [jsonutils.JSONLIterator]: http://boltons.readthedocs.org/en/latest/jsonutils.html#boltons.jsonutils.JSONLIterator
 [mathutils.ceil]: http://boltons.readthedocs.org/en/latest/mathutils.html#boltons.mathutils.ceil
 [mathutils.floor]: http://boltons.readthedocs.org/en/latest/mathutils.html#boltons.mathutils.floor
+[mathutils.clamp]: http://boltons.readthedocs.org/en/latest/mathutils.html#boltons.mathutils.clamp
 [socketutils]: http://boltons.readthedocs.org/en/latest/socketutils.html
 [socketutils.BufferedSocket]: http://boltons.readthedocs.org/en/latest/socketutils.html#boltons.socketutils.BufferedSocket
 [socketutils.BufferedSocket.recv]: http://boltons.readthedocs.org/en/latest/socketutils.html#boltons.socketutils.BufferedSocket.recv

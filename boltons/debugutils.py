@@ -21,7 +21,7 @@ try:
 except ImportError:
     _UNSET = object()
 
-__all__ = ['pdb_on_signal', 'pdb_on_exception']
+__all__ = ['pdb_on_signal', 'pdb_on_exception', 'wrap_trace']
 
 
 def pdb_on_signal(signalnum=None):

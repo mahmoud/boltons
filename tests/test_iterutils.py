@@ -424,3 +424,44 @@ def test_backoff_jitter():
     assert len(nonconst_jittered) == 5
     # no two should be equal realistically
     assert len(set(nonconst_jittered)) == 5
+
+
+def test_guiderator():
+    import string
+    from boltons.iterutils import GUIDerator
+
+    guid_iter = GUIDerator()
+
+    guid = next(guid_iter)
+    assert guid
+    assert len(guid) == guid_iter.size
+    assert all([c in string.hexdigits for c in guid])
+
+    guid2 = next(guid_iter)
+
+    assert guid != guid2
+
+    # custom size
+    guid_iter = GUIDerator(size=16)
+    assert len(next(guid_iter)) == 16
+
+
+def test_seqguiderator():
+    import string
+    from boltons.iterutils import SequentialGUIDerator as GUIDerator
+
+    guid_iter = GUIDerator()
+
+    guid = next(guid_iter)
+    assert guid
+    assert len(guid) == guid_iter.size
+    assert all([c in string.hexdigits for c in guid])
+
+    guid2 = next(guid_iter)
+
+    assert guid != guid2
+
+    # custom size
+    for x in range(10000):
+        guid_iter = GUIDerator(size=16)
+        assert len(next(guid_iter)) == 16

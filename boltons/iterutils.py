@@ -10,9 +10,15 @@ shorter-named convenience form that returns a list. Some of the
 following are based on examples in itertools docs.
 """
 
+import os
 import math
+import time
+import codecs
 import random
+import socket
+import hashlib
 import itertools
+
 from collections import Mapping, Sequence, Set, ItemsView
 
 try:
@@ -26,8 +32,10 @@ except ImportError:
 try:
     from future_builtins import filter
     from itertools import izip
+    _IS_PY3 = False
 except ImportError:
     # Python 3 compat
+    _IS_PY3 = True
     basestring = (str, bytes)
     izip, xrange = zip, range
 
@@ -459,10 +467,9 @@ def backoff_iter(start, stop, count=None, factor=2.0, jitter=False):
     return
 
 
-def bucketize(src, key=None):
+def bucketize(src, key=None, value_transform=None, key_filter=None):
     """Group values in the *src* iterable by the value returned by *key*,
-    which defaults to :class:`bool`, grouping values by
-    truthiness.
+    which defaults to :class:`bool`, grouping values by truthiness.
 
     >>> bucketize(range(5))
     {False: [0], True: [1, 2, 3, 4]}
@@ -475,10 +482,27 @@ def bucketize(src, key=None):
     >>> bucketize([None, None, None, 'hello'])
     {False: [None, None, None], True: ['hello']}
 
-    Note in these examples there were at most two keys, ``True`` and
+    Bucketize into more than 3 groups
+
+    >>> bucketize(range(10), lambda x: x % 3)
+    {0: [0, 3, 6, 9], 1: [1, 4, 7], 2: [2, 5, 8]}
+
+    ``bucketize`` has a couple of advanced options useful in certain
+    cases.  *value_transform* can be used to modify values as they are
+    added to buckets, and *key_filter* will allow excluding certain
+    buckets from being collected.
+
+    >>> bucketize(range(5), value_transform=lambda x: x*x)
+    {False: [0], True: [1, 4, 9, 16]}
+
+    >>> bucketize(range(10), key=lambda x: x % 3, key_filter=lambda k: k % 3 != 1)
+    {0: [0, 3, 6, 9], 2: [2, 5, 8]}
+
+    Note in some of these examples there were at most two keys, ``True`` and
     ``False``, and each key present has a list with at least one
     item. See :func:`partition` for a version specialized for binary
     use cases.
+
     """
     if not is_iterable(src):
         raise TypeError('expected an iterable')
@@ -486,11 +510,16 @@ def bucketize(src, key=None):
         key = bool
     if not callable(key):
         raise TypeError('expected callable key function')
+    if value_transform is None:
+        value_transform = lambda x: x
+    if not callable(value_transform):
+        raise TypeError('expected callable value transform function')
 
     ret = {}
     for val in src:
-        keyval = key(val)
-        ret.setdefault(keyval, []).append(val)
+        key_of_val = key(val)
+        if key_filter is None or key_filter(key_of_val):
+            ret.setdefault(key_of_val, []).append(value_transform(val))
     return ret
 
 
@@ -576,7 +605,7 @@ def one(src, default=None, key=None):
 
     If *src* has more than one object that evaluates to ``True``, or
     if there is no object that fulfills such condition, return
-    ``False``. It's like an `XOR`_ over an iterable.
+    *default*. It's like an `XOR`_ over an iterable.
 
     >>> one((True, False, False))
     True
@@ -597,13 +626,8 @@ def one(src, default=None, key=None):
     .. _XOR: https://en.wikipedia.org/wiki/Exclusive_or
 
     """
-    the_one = default
-    for i in src:
-        if key(i) if key else i:
-            if the_one:
-                return default
-            the_one = i
-    return the_one
+    ones = list(itertools.islice(filter(key, src), 2))
+    return ones[0] if len(ones) == 1 else default
 
 
 def first(iterable, default=None, key=None):
@@ -934,6 +958,118 @@ def get_path(root, path, default=_UNSET):
 # TODO: get_path/set_path
 # TODO: recollect()
 # TODO: reiter()
+
+# GUID iterators: 10x faster and somewhat more compact than uuid.
+
+
+class GUIDerator(object):
+    """The GUIDerator is an iterator that yields a globally-unique
+    identifier (GUID) on every iteration. The GUIDs produced are
+    hexadecimal strings.
+
+    Testing shows it to be around 12x faster than the uuid module. By
+    default it is also more compact, partly due to its default 96-bit
+    (12-byte) length. 96 bits of randomness means that there is a 1 in
+    2 ^ 32 chance of collision after 2 ^ 64 iterations. If more or
+    less uniqueness is desired, the *size* argument can be adjusted
+    accordingly.
+
+    Args:
+        size (int): character length of the GUID, defaults to 12. Lengths
+                    between 10 and 20 are considered valid.
+
+    The GUIDerator has built-in fork protection that causes it to
+    detect a fork on next iteration and reseed accordingly.
+    """
+    def __init__(self, size=12):
+        self.size = size
+        if size < 10 or size > 20:
+            raise ValueError('expected 10 < size <= 20')
+        self.count = itertools.count()
+        self.reseed()
+
+    def reseed(self):
+        self.pid = os.getpid()
+        self.salt = '-'.join([str(self.pid),
+                              socket.gethostname() or b'<nohostname>',
+                              str(time.time()),
+                              codecs.encode(os.urandom(6),
+                                            'hex').decode('ascii')])
+        # that codecs trick is the best/only way to get a bytes to
+        # hexbytes in py2/3
+        return
+
+    def __iter__(self):
+        return self
+
+    if _IS_PY3:
+        def __next__(self):
+            if os.getpid() != self.pid:
+                self.reseed()
+            target_bytes = (self.salt + str(next(self.count))).encode('utf8')
+            hash_text = hashlib.sha1(target_bytes).hexdigest()[:self.size]
+            return hash_text
+    else:
+        def __next__(self):
+            if os.getpid() != self.pid:
+                self.reseed()
+            return hashlib.sha1(self.salt +
+                                str(next(self.count))).hexdigest()[:self.size]
+
+    next = __next__
+
+
+class SequentialGUIDerator(GUIDerator):
+    """Much like the standard GUIDerator, the SequentialGUIDerator is an
+    iterator that yields a globally-unique identifier (GUID) on every
+    iteration. The GUIDs produced are hexadecimal strings.
+
+    The SequentialGUIDerator differs in that it picks a starting GUID
+    value and increments every iteration. This yields GUIDs which are
+    of course unique, but also ordered and lexicographically sortable.
+
+    The SequentialGUIDerator is aronud 50% faster than the normal
+    GUIDerator, making it almost 20x as fast as the built-in uuid
+    module. By default it is also more compact, partly due to its
+    96-bit (12-byte) default length. 96 bits of randomness means that
+    there is a 1 in 2 ^ 32 chance of collision after 2 ^ 64
+    iterations. If more or less uniqueness is desired, the *size*
+    argument can be adjusted accordingly.
+
+    Args:
+        size (int): character length of the GUID, defaults to 12.
+
+    Note that with SequentialGUIDerator there is a chance of GUIDs
+    growing larger than the size configured. The SequentialGUIDerator
+    has built-in fork protection that causes it to detect a fork on
+    next iteration and reseed accordingly.
+
+    """
+
+    if _IS_PY3:
+        def reseed(self):
+            super(SequentialGUIDerator, self).reseed()
+            start_str = hashlib.sha1(self.salt.encode('utf8')).hexdigest()
+            self.start = int(start_str[:self.size], 16)
+            self.start |= (1 << ((self.size * 4) - 2))
+    else:
+        def reseed(self):
+            super(SequentialGUIDerator, self).reseed()
+            start_str = hashlib.sha1(self.salt).hexdigest()
+            self.start = int(start_str[:self.size], 16)
+            self.start |= (1 << ((self.size * 4) - 2))
+
+    def __next__(self):
+        if os.getpid() != self.pid:
+            self.reseed()
+        return '%x' % (next(self.count) + self.start)
+
+    next = __next__
+
+
+guid_iter = GUIDerator()
+seq_guid_iter = SequentialGUIDerator()
+
 
 """
 May actually be faster to do an isinstance check for a str path
