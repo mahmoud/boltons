@@ -1,14 +1,16 @@
 # -*- coding: utf-8 -*-
-"""The larger a programming ecosystem gets, the greater the chances of
-runtime variability become. Currently, Python is one of the most
-widely deployed high-level programming environments available, making
-it a viable target for all manner of application. But it's important
-to know what you're working with.
+"""As a programming ecosystem grows, so do the chances of runtime
+variability.
+
+Python boasts one of the widest deployments for a high-level
+programming environment, making it a viable target for all manner of
+application. But with breadth comes variance, so it's important to
+know what you're working with.
 
 Some basic variations that are common among development machines:
 
 * **Executable runtime**: CPython, PyPy, Jython, etc., plus build date and compiler
-* **Language version**: 2.4, 2.5, 2.6, 2.7... 3.3, 3.4, 3.5
+* **Language version**: 2.4, 2.5, 2.6, 2.7... 3.4, 3.5, 3.6
 * **Host operating system**: Windows, OS X, Ubuntu, Debian, CentOS, RHEL, etc.
 * **Features**: 64-bit, IPv6, Unicode character support (UCS-2/UCS-4)
 * **Built-in library support**: OpenSSL, threading, SQLite, zlib
