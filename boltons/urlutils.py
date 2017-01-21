@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-
 import re
 import socket
 import string
@@ -227,6 +226,14 @@ class URL(object):
         if url_str:
             if isinstance(url_str, URL):
                 url_str = url_str.to_text()  # better way to copy URLs?
+            elif isinstance(url_str, bytes):
+                try:
+                    url_str = url_str.decode(encoding)
+                except UnicodeDecodeError as ude:
+                    raise URLError('expected text or %s-encoded bytes.'
+                                   ' try decoding the url bytes and passing in'
+                                   ' the result. (got: %s)'
+                                   % (DEFAULT_ENCODING, ude))
             url_dict = parse_url(url_str, encoding=encoding, strict=strict)
 
         _d = unicode()
@@ -240,6 +247,8 @@ class URL(object):
     @cachedproperty
     def query_params(self):
         return QueryParamDict.from_string(self.query)
+
+    q = query_params  # handy alias?
 
     @property
     def is_absolute(self):
