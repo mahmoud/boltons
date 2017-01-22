@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-
+import json
 import sys
 
 try:
@@ -76,6 +76,11 @@ def test_contextual():
     assert line.startswith(' ')
     assert line.strip() == 'return func3()'
     assert 'func2' in repr(callpoint)
+
+    try:
+        json.dumps(callpoint.to_dict())
+    except TypeError:
+        raise AssertionError("to_dict result is not JSON serializable")
 
     def func_a():
         a = 1
