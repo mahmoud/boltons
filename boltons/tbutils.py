@@ -22,10 +22,10 @@ lines of code.
 
 from __future__ import print_function
 
+import json
+import linecache
 import re
 import sys
-import linecache
-
 
 if str is bytes:  # py2
     text = unicode
@@ -83,6 +83,14 @@ class Callpoint(object):
             except AttributeError:
                 pass
         return ret
+
+    def to_json(self):
+        """Serialize the :class:`dict` copy of the Callpoint as JSON"""
+        data = self.to_dict()
+        for key, value in data.items():
+            if isinstance(value, _DeferredLine):
+                data[key] = str(value)
+        return json.dumps(data)
 
     @classmethod
     def from_current(cls, level=1):
