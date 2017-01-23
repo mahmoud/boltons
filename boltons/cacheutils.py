@@ -648,15 +648,14 @@ class cachedproperty(object):
     allows the cache to be cleared with :func:`delattr`, or through
     manipulating the object's ``__dict__``.
     """
-
     def __init__(self, func):
+        self.__doc__ = getattr(func, '__doc__')
         self.func = func
 
     def __get__(self, obj, objtype=None):
         if obj is None:
             return self
-        value = self.func(obj)
-        setattr(obj, self.func.__name__, value)
+        value = obj.__dict__[self.func.__name__] = self.func(obj)
         return value
 
     def __repr__(self):

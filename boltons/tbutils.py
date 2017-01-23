@@ -79,9 +79,11 @@ class Callpoint(object):
         ret = {}
         for slot in self.__slots__:
             try:
-                ret[slot] = getattr(self, slot)
+                val = getattr(self, slot)
             except AttributeError:
                 pass
+            else:
+                ret[slot] = str(val) if isinstance(val, _DeferredLine) else val
         return ret
 
     @classmethod
