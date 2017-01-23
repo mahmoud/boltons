@@ -58,7 +58,7 @@ def mro_items(type_obj):
     """Takes a type and returns an iterator over all class variables
     throughout the type hierarchy (respecting the MRO).
 
-    >>> sorted(set([k for k, v in mro_items(int) if not k.startswith('__') and not callable(v)]))
+    >>> sorted(set([k for k, v in mro_items(int) if not k.startswith('__') and 'bytes' not in k and not callable(v)]))
     ['denominator', 'imag', 'numerator', 'real']
     """
     # TODO: handle slots?
