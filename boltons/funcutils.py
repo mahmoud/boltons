@@ -305,6 +305,7 @@ def wraps(func, injected=None, **kw):
     def wrapper_wrapper(wrapper_func):
         execdict = dict(_call=wrapper_func, _func=func)
         fully_wrapped = fb.get_func(execdict, with_dict=update_dict)
+        fully_wrapped.__wrapped__ = func  # ref to the original function (#115)
 
         return fully_wrapped
 

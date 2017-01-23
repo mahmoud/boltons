@@ -32,6 +32,10 @@ def test_wraps_basic():
     assert simple_func() == (True, 'simple_func', 'hello')
     assert simple_func.__doc__ == "my doc string"
 
+    assert callable(simple_func.__wrapped__)
+    assert simple_func.__wrapped__() == 'hello'
+    assert simple_func.__wrapped__.__doc__ == "my doc string"
+
     @pita_wrap(flag=False)
     def less_simple_func(arg='hello'):
         return arg
