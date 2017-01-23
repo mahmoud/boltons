@@ -19,7 +19,7 @@ The URL class isn't really for validation at the moment, though it
 aims to be standards-compliant and will only emit valid URLs.
 """
 
-DEFAULT_ENCODING = 'utf-8'
+DEFAULT_ENCODING = 'utf8'
 
 # The unreserved URI characters (per RFC 3986)
 _UNRESERVED_CHARS = (frozenset(string.uppercase)
@@ -97,28 +97,26 @@ class cachedproperty(object):
         return '<%s func=%s>' % (cn, self.func)
 
 
-def escape_path(text, to_bytes=True):
-    if not to_bytes:
-        return u''.join([_PATH_QUOTE_MAP.get(c, c) for c in text])
+def escape_path(text):
     try:
-        bytestr = text.encode('utf-8')
+        bytestr = text.encode(DEFAULT_ENCODING)
     except UnicodeDecodeError:
+        # DecodeError from an encode means we already had bytes
         bytestr = text
     except:
-        raise ValueError('expected text or UTF-8 encoded bytes, not %r' % text)
-    return ''.join([_PATH_QUOTE_MAP[b] for b in bytestr])
+        raise ValueError('expected text, not %r' % text)
+    return u''.join([_PATH_QUOTE_MAP[b] for b in bytestr])
 
 
 def escape_query_element(text, to_bytes=True):
-    if not to_bytes:
-        return u''.join([_QUERY_ELEMENT_QUOTE_MAP.get(c, c) for c in text])
     try:
-        bytestr = text.encode('utf-8')
+        bytestr = text.encode(DEFAULT_ENCODING)
     except UnicodeDecodeError:
+        # DecodeError from an encode means we already had bytes
         bytestr = text
     except:
-        raise ValueError('expected text or UTF-8 encoded bytes, not %r' % text)
-    return ''.join([_QUERY_ELEMENT_QUOTE_MAP[b] for b in bytestr])
+        raise ValueError('expected text, not %r' % text)
+    return u''.join([_QUERY_ELEMENT_QUOTE_MAP[b] for b in bytestr])
 
 
 def parse_authority(au_str):  # TODO: namedtuple?
@@ -209,19 +207,24 @@ def parse_url(url_str, encoding=DEFAULT_ENCODING, strict=False):
     return gs
 
 
+class URLError(ValueError):
+    pass
+
+
 class URL(object):
     # TODO: removed bytestring helper, so may need to figure something
     # else out for __bytes__/__str__
+
+    # XXX encoded query strings and paths have an encoding behind the
+    # percent-escaping, and we assume that it is utf8 here. how bad is
+    # that really? should urls keep track of input encoding and be
+    # able to reserialize back out to latin-1 percent encoded urls?
+
     _attrs = ('scheme', 'username', 'password', 'family',
               'host', 'port', 'path', 'query', 'fragment')
     _quotable_attrs = ('username', 'password', 'path', 'query')  # fragment?
 
-    def __init__(self, url_str=None, encoding=None, strict=False):
-        encoding = encoding or DEFAULT_ENCODING
-        # TODO: encoded query strings have an encoding behind the
-        # percent-escaping, but otherwise is this member necessary?
-        # if not, be more explicit
-        self.encoding = encoding
+    def __init__(self, url_str=None, strict=False):
         url_dict = {}
         if url_str:
             if isinstance(url_str, URL):
@@ -257,7 +260,7 @@ class URL(object):
     @property
     def http_request_url(self):  # TODO: name
         parts = [escape_path(self.path)]
-        query_string = self.get_query_string(to_bytes=True)
+        query_string = self.get_query_string()
         if query_string:
             parts.append(query_string)
         return '?'.join(parts)
@@ -277,14 +280,12 @@ class URL(object):
     def __iter__(self):
         s = self
         return iter((s.scheme, s.get_authority(idna=True), s.path,
-                     s.path_params, s.get_query_string(to_bytes=True),
+                     s.path_params, s.get_query_string()
                      s.fragment))
 
     # TODO: normalize?
 
-    def get_query_string(self, to_bytes=True):
-        if to_bytes:
-            return self.query_params.to_bytes()
+    def get_query_string(self):
         return self.query_params.to_text()
 
     def get_authority(self, idna=True):
@@ -345,13 +346,6 @@ class URL(object):
             _add('#')
             _add(fragment)
         return u''.join(parts)
-
-    def to_bytes(self):
-        return self.to_text().encode('utf-8')
-
-    @classmethod
-    def from_bytes(cls, bytestr):
-        return cls(bytestr)
 
     def __repr__(self):
         return '%s(%r)' % (self.__class__.__name__, self.to_text())
@@ -992,20 +986,20 @@ class QueryParamDict(OrderedMultiDict):
         pairs = parse_qsl(query_string, keep_blank_values=True)
         return cls(pairs)
 
-    def to_bytes(self):
-        ret_list = []
-        for k, v in self.iteritems(multi=True):
-            key = escape_query_element(unicode(k), to_bytes=True)
-            val = escape_query_element(unicode(v), to_bytes=True)
-            ret_list.append('='.join((key, val)))
-        return '&'.join(ret_list)
-
     def to_text(self):
         ret_list = []
         for k, v in self.iteritems(multi=True):
-            key = escape_query_element(unicode(k), to_bytes=False)
-            val = escape_query_element(unicode(v), to_bytes=False)
+            key = escape_query_element(to_unicode(k))
+            val = escape_query_element(to_unicode(v))
             ret_list.append(u'='.join((key, val)))
         return u'&'.join(ret_list)
+
+
+def to_unicode(obj):
+    try:
+        return unicode(obj)
+    except UnicodeDecodeError:
+        return unicode(obj, encoding=DEFAULT_ENCODING)
+
 
 # end urlutils.py
