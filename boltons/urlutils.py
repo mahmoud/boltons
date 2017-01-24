@@ -108,7 +108,7 @@ def escape_path(text):
     return u''.join([_PATH_QUOTE_MAP[b] for b in bytestr])
 
 
-def escape_query_element(text, to_bytes=True):
+def escape_query_element(text):
     try:
         bytestr = text.encode(DEFAULT_ENCODING)
     except UnicodeDecodeError:
@@ -231,13 +231,13 @@ class URL(object):
                 url_str = url_str.to_text()  # better way to copy URLs?
             elif isinstance(url_str, bytes):
                 try:
-                    url_str = url_str.decode(encoding)
+                    url_str = url_str.decode(DEFAULT_ENCODING)
                 except UnicodeDecodeError as ude:
                     raise URLError('expected text or %s-encoded bytes.'
                                    ' try decoding the url bytes and passing in'
                                    ' the result. (got: %s)'
                                    % (DEFAULT_ENCODING, ude))
-            url_dict = parse_url(url_str, encoding=encoding, strict=strict)
+            url_dict = parse_url(url_str, strict=strict)
 
         _d = unicode()
         self.path_params = _d  # TODO: support parsing path params?
@@ -280,7 +280,7 @@ class URL(object):
     def __iter__(self):
         s = self
         return iter((s.scheme, s.get_authority(idna=True), s.path,
-                     s.path_params, s.get_query_string()
+                     s.path_params, s.get_query_string(),
                      s.fragment))
 
     # TODO: normalize?
@@ -319,7 +319,7 @@ class URL(object):
         full_encode = (not display)
         scheme, path, params = self.scheme, self.path, self.path_params
         authority = self.get_authority(idna=full_encode)
-        query_string = self.get_query_string(to_bytes=full_encode)
+        query_string = self.get_query_string()
         fragment = self.fragment
 
         parts = []
@@ -335,7 +335,7 @@ class URL(object):
         if path:
             if parts and path[:1] != '/':
                 _add('/')
-            _add(escape_path(path, to_bytes=full_encode))
+            _add(escape_path(path))
         if params:
             _add(';')
             _add(params)
