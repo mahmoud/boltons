@@ -10,11 +10,6 @@ an average of one 33-commit release every 6.5 weeks.
 
 Several tweaks and enhancements to ring in the new year.
 
-JSON serializability for tbutils (Callpoint in particular), SpooledIO
-booleanability, iterutils.bucketize features, cachedproperty
-maintaines docstring, keep reference to wrapped function on
-funcutils.wraps functions, python 3.3 compatibility
-
 * [tbutils][tbutils] objects like the
   [ExceptionInfo][tbutils.ExceptionInfo] are now more easily
   JSON-serializable thanks to a tweak to [Callpoint][tbutils.Callpoint].
@@ -596,7 +591,7 @@ added in this release.
   * fix a slightly nasty namedlist bug
   * make OrderedMultiDict.get()'s default allow singulars
   * sync over ExceptionInfo
-  * add from_current() classmethod with depth option to Callpoint class
+  * add from_current() classmethod with depth option to [Callpoint][tbutils.Callpoint] class
     for easier instantiation
   * it's called a numeronym
   * add a repr to ParsedTB. A bit verbose, but better than nothing.
@@ -604,7 +599,7 @@ added in this release.
     out to logs, the command line, etc.
   * improve test output and make assertion that new except hook is the
     same as the builtin.
-  * update tbutils to use the more-powerful Callpoint type.
+  * update tbutils to use the more-powerful [Callpoint][tbutils.Callpoint] type.
   * copy_function
   * partially clean up partial stuff
   * first version of the namedlist
