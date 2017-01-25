@@ -1,8 +1,33 @@
 boltons Changelog
 =================
 
-Since February 20, 2013 there have been 30 releases and 1010 commits for
-an average of one 33-commit release every 6.1 weeks.
+Since February 20, 2013 there have been 31 releases and 1043 commits for
+an average of one 33-commit release every 6.5 weeks.
+
+17.0.0
+------
+*(January 24, 2017)*
+
+Several tweaks and enhancements to ring in the new year.
+
+JSON serializability for tbutils (Callpoint in particular), SpooledIO
+booleanability, iterutils.bucketize features, cachedproperty
+maintaines docstring, keep reference to wrapped function on
+funcutils.wraps functions, python 3.3 compatibility
+
+* [tbutils][tbutils] objects like the
+  [ExceptionInfo][tbutils.ExceptionInfo] are now more easily
+  JSON-serializable thanks to a tweak to [Callpoint][tbutils.Callpoint].
+* SpooledIO objects like
+  [ioutils.SpooledBytesIO][ioutils.SpooledBytesIO] are now
+  `bool`-able.
+* [iterutils.bucketize][iterutils.bucketize] gains the
+  `value_transform` and `key_filter` arguments.
+* [cachedproperty][cacheutils.cachedproperty] properly maintains
+  docstring
+* [funcutils.wraps][funcutils.wraps] maintains a reference to the
+  wrapped function with `__wrapped__` attribute.
+* A bit of cleanup to be backwards compatible to Python 3.3
 
 16.5.1
 ------
@@ -820,6 +845,7 @@ added in this release.
 [tableutils]: http://boltons.readthedocs.org/en/latest/tableutils.html
 [tableutils.Table]: http://boltons.readthedocs.org/en/latest/tableutils.html#boltons.tableutils.Table
 [tbutils]: http://boltons.readthedocs.org/en/latest/tbutils.html
+[tbutils.Callpoint]: http://boltons.readthedocs.org/en/latest/tbutils.html#boltons.tbutils.Callpoint
 [tbutils.ExceptionInfo]: http://boltons.readthedocs.org/en/latest/tbutils.html#boltons.tbutils.ExceptionInfo
 [tbutils.ParsedException]: http://boltons.readthedocs.org/en/latest/tbutils.html#boltons.tbutils.ParsedException
 [tbutils.ParsedException.to_string]: http://boltons.readthedocs.org/en/latest/tbutils.html#boltons.tbutils.ParsedException.to_string
