@@ -172,6 +172,7 @@ def parse_hostinfo(au_str):
 
 
 def parse_userinfo(au_str):
+    # TODO: unquote username/password (maybe a lil later)
     userinfo, _, hostinfo = au_str.partition('@')
     if hostinfo:
         username, _, password = userinfo.partition(':')
@@ -288,13 +289,13 @@ class URL(object):
     def get_query_string(self):
         return self.query_params.to_text()
 
-    def get_authority(self, idna=True):
+    def get_authority(self, idna=True, with_userinfo=False):
         parts = []
         _add = parts.append
-        if self.username:
+        if self.username and with_userinfo:
             _add(self.username)
+            _add(':')
             if self.password:
-                _add(':')
                 _add(self.password)
             _add('@')
         if self.host:
