@@ -30,6 +30,10 @@ and more:
   (including on txurl an empty port)
 * is userinfo percent encoded or idna encoded?
 * interesting how IDNA is only mentioned <5 times in RFC3986
+* surprising lack of error handling on .fromText(), given that it's
+  the most common dev interface
+* per _percentDecode if a string can't be encoded to ascii, then it
+  won't be unquoted.
 
 
 # inno
@@ -45,3 +49,11 @@ and more:
   split)
 * with_port to force port to be in the output, even if it's the default
 * larger default port map
+* the new URL carries with it a more usable API, with the possible
+  limitation that you can't create a URL without knowing its
+  underlying encoding. While URLs may technically be able to store
+  binary data, I did not find any instances of this in the
+  wild. Binary data in URLs is usually represented with base64-encoded
+  data.
+* TODO: what's up with uses_netloc (e.g., urn is not urn://a:b:c, but
+  rather urn:a:b:c)
