@@ -122,3 +122,25 @@ def test_invalid_ipv6():
     for ip in invalid_ipv6_ips:
         with pytest.raises(ValueError):
             URL('http://[' + ip + ']')
+
+
+def test_roundtrip():
+    # fully quoted urls that should round trip
+    tests = ("http://localhost",
+             "http://localhost/",
+             "http://localhost/foo",
+             "http://localhost/foo/",
+             "http://localhost/foo!!bar/",
+             "http://localhost/foo%20bar/",
+             "http://localhost/foo%2Fbar/",
+             "http://localhost/foo?n",
+             "http://localhost/foo?n=v",
+             "http://localhost/foo?n=/a/b",
+             "http://example.com/foo!@$bar?b!@z=123",
+             "http://localhost/asd?a=asd%20sdf/345",
+             "http://(%2525)/(%2525)?(%2525)&(%2525)=(%2525)#(%2525)",
+             "http://(%C3%A9)/(%C3%A9)?(%C3%A9)&(%C3%A9)=(%C3%A9)#(%C3%A9)")
+
+    for test in tests:
+        result = URL(test).to_text(full_quote=True)
+        assert test == result

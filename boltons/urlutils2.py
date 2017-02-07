@@ -30,15 +30,9 @@ _ALLOWED_CHARS = _UNRESERVED_CHARS | _RESERVED_CHARS | _PCT_ENCODING
 # URL parsing regex (per RFC 3986)
 _URL_RE = re.compile(r'^((?P<scheme>[^:/?#]+):)?'
                      r'((?P<_uses_netloc>//)(?P<authority>[^/?#]*))?'
-                     r'(?P<path>[^?#]*)'
+                     r'(?P<path_parts>[^?#]*)'
                      r'(\?(?P<_query>[^#]*))?'
                      r'(#(?P<fragment>.*))?')
-
-_SCHEME_CHARS = re.escape(''.join(_ALLOWED_CHARS - set(':/?#')))
-_AUTH_CHARS = re.escape(''.join(_ALLOWED_CHARS - set(':/?#')))
-_PATH_CHARS = re.escape(''.join(_ALLOWED_CHARS - set('?#')))
-_QUERY_CHARS = re.escape(''.join(_ALLOWED_CHARS - set('#')))
-_FRAG_CHARS = re.escape(''.join(_ALLOWED_CHARS))
 
 
 _HEX_CHAR_MAP = dict([(a + b, chr(int(a + b, 16)))
@@ -80,8 +74,7 @@ def quote_path_part(text, full_quote=True):
         return u''.join([_PATH_PART_QUOTE_MAP[t] for t in text])
 
     bytestr = normalize('NFC', text).encode('utf8')
-    return u''.join([_PATH_PART_QUOTE_MAP[b] if b != '%' else '%'
-                     for b in bytestr])
+    return u''.join([_PATH_PART_QUOTE_MAP[b] for b in bytestr])
 
 
 def quote_query_part(text, full_quote=True):
@@ -89,8 +82,7 @@ def quote_query_part(text, full_quote=True):
         return u''.join([_QUERY_PART_QUOTE_MAP[t] for t in text])
 
     bytestr = normalize('NFC', text).encode('utf8')
-    return u''.join([_QUERY_PART_QUOTE_MAP[b] if b != '%' else '%'
-                     for b in bytestr])
+    return u''.join([_QUERY_PART_QUOTE_MAP[b] for b in bytestr])
 
 
 def quote_fragment_part(text, full_quote=True):
@@ -98,8 +90,7 @@ def quote_fragment_part(text, full_quote=True):
         return u''.join([_FRAGMENT_QUOTE_MAP[t] for t in text])
 
     bytestr = normalize('NFC', text).encode('utf8')
-    return u''.join([_FRAGMENT_QUOTE_MAP[b] if b != '%' else '%'
-                     for b in bytestr])
+    return u''.join([_FRAGMENT_QUOTE_MAP[b] for b in bytestr])
 
 
 def unquote(s, encoding='utf8'):
@@ -123,7 +114,7 @@ def unquote(s, encoding='utf8'):
 
     bits = s.split('%')
     if len(bits) == 1:
-        return s
+        return s  # fast path for empty/no percents
     res = [bits[0]]
     append = res.append
     for item in bits[1:]:
@@ -140,7 +131,7 @@ DEFAULT_NETLOC = True
 NETLOC_SCHEMES = ['ftp', 'http', 'gopher', 'nntp', 'telnet',
                   'imap', 'wais', 'file', 'mms', 'https', 'shttp',
                   'snews', 'prospero', 'rtsp', 'rtspu', 'rsync', '',
-                  'svn', 'svn+ssh', 'sftp','nfs','git', 'git+ssh']
+                  'svn', 'svn+ssh', 'sftp', 'nfs', 'git', 'git+ssh']
 NO_NETLOC_SCHEMES = ['urn', 'tel', 'news', 'mailto']  # TODO: others?
 
 DEFAULT_PORT_MAP = {'http': 80, 'https': 443}
@@ -208,8 +199,8 @@ class cachedproperty(object):
 class URL(object):
 
     _attrs = ('scheme', '_uses_netloc', 'username', 'password', 'family',
-              'host', 'port', 'path', '_query', 'fragment')
-    _quotable_attrs = ('username', 'password', 'path', 'query', 'fragment')
+              'host', 'port', 'path_parts', '_query', 'fragment')
+    _quotable_attrs = ('username', 'password', 'query', 'fragment')
 
     def __init__(self, url):
         # TODO: encoding param. The encoding that underlies the
@@ -233,7 +224,10 @@ class URL(object):
         for attr in self._attrs:
             # TODO: possibly use None as marker for empty vs missing
             val = url_dict.get(attr, _d) or _d
-            if attr in self._quotable_attrs and '%' in val:
+            if attr == 'path_parts':
+                val = tuple([unquote(p) if '%' in p else p
+                             for p in val.split(u'/')])
+            elif attr in self._quotable_attrs and '%' in val:
                 val = unquote(val)
             elif attr == 'host' and val:
                 try:
@@ -312,10 +306,12 @@ class URL(object):
         return u''.join(parts)
 
     def to_text(self, full_quote=False):
-        scheme, path = self.scheme, self.path
+        scheme = self.scheme
+        path = u'/'.join([quote_path_part(p, full_quote=full_quote)
+                          for p in self.path_parts])
         authority = self.get_authority(full_quote=full_quote)
         query_string = self.query_params.to_text(full_quote=full_quote)
-        fragment = self.fragment
+        fragment = quote_fragment_part(self.fragment, full_quote=full_quote)
 
         parts = []
         _add = parts.append
@@ -328,12 +324,11 @@ class URL(object):
         elif (scheme and path[:2] != '//' and self.uses_netloc):
             _add('//')
         if path:
-            if scheme and authority:  # and path[:1] != '/':
+            if scheme and authority and path[:1] != '/':
                 _add('/')
                 # TODO: i think this is here because relative paths
                 # with absolute authorities = undefined
-            _add(u'/'.join([quote_path_part(p, full_quote=full_quote)
-                            for p in path.split('/') if p]))
+            _add(path)
         if query_string:
             _add('?')
             _add(query_string)
@@ -343,15 +338,8 @@ class URL(object):
         return u''.join(parts)
 
     @property
-    def path_parts(self):
-        return tuple(self.path.split(u'/'))
-
-    @path_parts.setter
-    def path_parts(self, part_iterable):
-        """
-        url.path_parts += ('c', 'd',)
-        """
-        self.path = u'/'.join(part_iterable)
+    def path(self):
+        return u'/'.join([quote_path_part(p) for p in self.path_parts])
 
     def __repr__(self):
         cn = self.__class__.__name__
@@ -461,14 +449,13 @@ def parse_qsl(qs, keep_blank_values=True, encoding=DEFAULT_ENCODING):
         key, _, value = pair.partition('=')
         if not value:
             if keep_blank_values:
-                value = ''
+                value = None
             else:
                 continue
-        if value or keep_blank_values:
-            # TODO: really always convert plus signs to spaces?
-            key = unquote(key.replace('+', ' '))
+        key = unquote(key.replace('+', ' '))
+        if value:
             value = unquote(value.replace('+', ' '))
-            ret.append((key, value))
+        ret.append((key, value))
     return ret
 
 
@@ -1048,8 +1035,11 @@ class QueryParamDict(OrderedMultiDict):
         ret_list = []
         for k, v in self.iteritems(multi=True):
             key = quote_query_part(to_unicode(k), full_quote=full_quote)
-            val = quote_query_part(to_unicode(v), full_quote=full_quote)
-            ret_list.append(u'='.join((key, val)))
+            if v is None:
+                ret_list.append(key)
+            else:
+                val = quote_query_part(to_unicode(v), full_quote=full_quote)
+                ret_list.append(u'='.join((key, val)))
         return u'&'.join(ret_list)
 
 
