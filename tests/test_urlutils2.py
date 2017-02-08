@@ -154,3 +154,20 @@ def test_parse_equals_in_qp_value():
     u = URL('http://localhost/?foo=x=x=x&bar=y')
     assert u.q['foo'] == 'x=x=x'
     assert u.q['bar'] == 'y'
+
+
+def test_identical_equal():
+    u = URL('http://example.com/path?query=param#frag')
+    assert u == u
+
+
+def test_equal():
+    u = URL('http://example.com/path?query=param#frag')
+    bono = URL('http://example.com/path?query=param#frag')
+    assert bono == u
+
+
+def test_not_equal():
+    u = URL('http://example.com/path?query=param1#frag')
+    bono = URL('http://example.com/path?query=param2#frag')
+    assert bono != u
