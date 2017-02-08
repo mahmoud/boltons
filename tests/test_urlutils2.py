@@ -144,3 +144,13 @@ def test_roundtrip():
     for test in tests:
         result = URL(test).to_text(full_quote=True)
         assert test == result
+
+
+def test_parse_equals_in_qp_value():
+    u = URL('http://localhost/?=x=x=x')
+    assert u.q[''] == 'x=x=x'
+    assert u.to_text() == 'http://localhost/?=x%3Dx%3Dx'
+
+    u = URL('http://localhost/?foo=x=x=x&bar=y')
+    assert u.q['foo'] == 'x=x=x'
+    assert u.q['bar'] == 'y'
