@@ -57,3 +57,4 @@ and more:
   data.
 * TODO: what's up with uses_netloc (e.g., urn is not urn://a:b:c, but
   rather urn:a:b:c)
+* _url.URL(u'lol0l0lxyz:asdfk@bcd') silently makes a URL obj with a scheme

@@ -171,3 +171,35 @@ def test_not_equal():
     u = URL('http://example.com/path?query=param1#frag')
     bono = URL('http://example.com/path?query=param2#frag')
     assert bono != u
+
+
+def _test_bad_utf8():  # not part of the API
+    bad_bin_url = 'http://xn--9ca.com/%00%FF/%C3%A9'
+    url = URL(bad_bin_url)
+
+    expected = ('http://\N{LATIN SMALL LETTER E WITH ACUTE}.com/'
+                '%00%FF/'
+                '\N{LATIN SMALL LETTER E WITH ACUTE}')
+
+    actual = url.to_text()
+
+    assert expected == actual
+
+
+def test_userinfo():
+    url = URL('http://someuser:somepassword@example.com/some-segment@ignore')
+    assert url.username == 'someuser'
+    assert url.password == 'somepassword'
+    assert url.to_text() == 'http://someuser:somepassword@example.com/some-segment@ignore'
+
+
+def test_quoted_userinfo():
+    url = URL('http://wikipedia.org')
+    url.username = u'user'
+    url.password = u'p@ss'
+    assert url.to_text(full_quote=True) == 'http://user:p%40ss@wikipedia.org'
+
+
+def test_mailto():
+    mt = 'mailto:mahmoud@hatnote.com'
+    assert URL(mt).to_text() == mt

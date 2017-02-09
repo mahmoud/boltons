@@ -6,6 +6,7 @@ tests:
   * txurl: valid "http://a"
   * urlparse: does not parse ports
 * git+https://git.example.com
+* _url.URL(u'lol0l0lxyz:asdfk@bcd') silently makes a URL obj with a scheme
 """
 
 import re
@@ -45,6 +46,7 @@ _GEN_DELIMS = frozenset(u':/?#[]@')
 _SUB_DELIMS = frozenset(u"!$&'()*+,;=")
 _ALL_DELIMS = _GEN_DELIMS | _SUB_DELIMS
 
+_USERINFO_SAFE = _UNRESERVED_CHARS | _SUB_DELIMS
 _PATH_SAFE = _UNRESERVED_CHARS | _SUB_DELIMS | set(u':@')
 _FRAGMENT_SAFE = _UNRESERVED_CHARS | _PATH_SAFE | set(u'/?')
 _QUERY_SAFE = _UNRESERVED_CHARS | _FRAGMENT_SAFE - set(u'&=+')
@@ -62,6 +64,7 @@ def _make_quote_map(safe_chars):
     return ret
 
 
+_USERINFO_PART_QUOTE_MAP = _make_quote_map(_USERINFO_SAFE)
 _PATH_PART_QUOTE_MAP = _make_quote_map(_PATH_SAFE)
 _QUERY_PART_QUOTE_MAP = _make_quote_map(_QUERY_SAFE)
 _FRAGMENT_QUOTE_MAP = _make_quote_map(_FRAGMENT_SAFE)
@@ -91,6 +94,14 @@ def quote_fragment_part(text, full_quote=True):
 
     bytestr = normalize('NFC', text).encode('utf8')
     return u''.join([_FRAGMENT_QUOTE_MAP[b] for b in bytestr])
+
+
+def quote_userinfo_part(text, full_quote=True):
+    if not full_quote:
+        return u''.join([_USERINFO_PART_QUOTE_MAP[t] for t in text])
+
+    bytestr = normalize('NFC', text).encode('utf8')
+    return u''.join([_USERINFO_PART_QUOTE_MAP[b] for b in bytestr])
 
 
 def unquote(s, encoding='utf8'):
@@ -263,6 +274,10 @@ class URL(object):
     q = query_params
 
     @property
+    def path(self):
+        return u'/'.join([quote_path_part(p) for p in self.path_parts])
+
+    @property
     def uses_netloc(self):
         default = self._uses_netloc
         if self.scheme in NETLOC_SCHEMES:
@@ -278,29 +293,26 @@ class URL(object):
         except KeyError:
             return DEFAULT_PORT_MAP.get(self.scheme.split('+')[-1])
 
-    def get_authority(self, with_userinfo=True, full_quote=True, idna=None):
-        idna = full_quote if idna is None else idna
+    def get_authority(self, full_quote=True, with_userinfo=True):
         parts = []
         _add = parts.append
         if self.username and with_userinfo:
-            # TODO: quoting
-            _add(self.username)
+            _add(quote_userinfo_part(self.username))
             _add(':')
             if self.password:
-                _add(self.password)
+                _add(quote_userinfo_part(self.password))
             _add('@')
         if self.host:
             if self.family == socket.AF_INET6:
                 _add('[')
                 _add(self.host)
                 _add(']')
-            elif idna:
+            elif full_quote:
                 _add(self.host.encode('idna'))
             else:
                 _add(self.host)
-            # TODO: default port check
-            # TODO: port == 0?
-            if self.port:
+            # TODO: 0 port?
+            if self.port and self.port != self.default_port:
                 _add(':')
                 _add(unicode(self.port))
         return u''.join(parts)
@@ -336,10 +348,6 @@ class URL(object):
             _add('#')
             _add(fragment)
         return u''.join(parts)
-
-    @property
-    def path(self):
-        return u'/'.join([quote_path_part(p) for p in self.path_parts])
 
     def __repr__(self):
         cn = self.__class__.__name__
