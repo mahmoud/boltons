@@ -2,7 +2,7 @@
 
 import pytest
 
-from boltons.urlutils2 import URL, _URL_RE
+from boltons.urlutils import URL, _URL_RE
 
 
 TEST_URLS = [
@@ -29,13 +29,6 @@ TEST_URLS = [
      'tr=udp://tracker.ccc.de:80&tr=udp://open.demonii.com:1337')]
 
 
-UNICODE_URLS = [
-    # 'http://مثال.آزمایشی'
-    ('\xd9\x85\xd8\xab\xd8\xa7\xd9\x84'
-     '.\xd8\xa2\xd8\xb2\xd9\x85\xd8\xa7'
-     '\xdb\x8c\xd8\xb4\xdb\x8c')]
-
-
 @pytest.fixture(scope="module", params=TEST_URLS)
 def test_url(request):
     param = request.param
@@ -57,6 +50,14 @@ def test_basic():
     u1 = URL('http://googlewebsite.com/e-shops.aspx')
     assert isinstance(u1.to_text(), unicode)
     assert u1.host == 'googlewebsite.com'
+
+
+def test_utf8_url():
+    url = URL('http://\xd9\x85\xd8\xab\xd8\xa7\xd9\x84'
+              '.\xd8\xa2\xd8\xb2\xd9\x85\xd8\xa7'
+              '\xdb\x8c\xd8\xb4\xdb\x8c')
+    assert url.scheme == 'http'
+    assert url.host == u'مثال.آزمایشی'
 
 
 def test_idna():

@@ -1,58 +1,32 @@
-# -*- coding: utf-8 -*-
+"""
+tests:
+
+* http://a:b:c
+  * new: fail on invalid port "c"
+  * txurl: valid "http://a"
+  * urlparse: does not parse ports
+* git+https://git.example.com
+"""
+
 import re
 import socket
 import string
+from unicodedata import normalize
 
-try:
-    unicode, str, bytes, basestring = unicode, str, str, basestring
-except NameError:  # basestring not defined in Python 3
-    unicode, str, bytes, basestring = str, bytes, bytes, (str, bytes)
-
-
-"""TODO:
-
-- url.path_params (semicolon separated) http://www.w3.org/TR/REC-html40/appendix/notes.html#h-B.2.2
-- support python compiled without IPv6
-- support empty port (e.g., http://gweb.com:/)
-
-The URL class isn't really for validation at the moment, though it
-aims to be standards-compliant and will only emit valid URLs.
-"""
-
-DEFAULT_ENCODING = 'utf8'
+unicode = type(u'')
 
 # The unreserved URI characters (per RFC 3986)
 _UNRESERVED_CHARS = (frozenset(string.uppercase)
                      | frozenset(string.lowercase)
                      | frozenset(string.digits)
                      | frozenset('-._~'))
-_RESERVED_CHARS = frozenset(":/?#[]@!$&'()*+,;=")
-_PCT_ENCODING = (frozenset('%')
-                 | frozenset(string.digits)
-                 | frozenset(string.uppercase[:6])
-                 | frozenset(string.lowercase[:6]))
-_ALLOWED_CHARS = _UNRESERVED_CHARS | _RESERVED_CHARS | _PCT_ENCODING
 
 # URL parsing regex (per RFC 3986)
 _URL_RE = re.compile(r'^((?P<scheme>[^:/?#]+):)?'
-                     r'(//(?P<authority>[^/?#]*))?'
-                     r'(?P<path>[^?#]*)'
-                     r'(\?(?P<query>[^#]*))?'
+                     r'((?P<_uses_netloc>//)(?P<authority>[^/?#]*))?'
+                     r'(?P<path_parts>[^?#]*)'
+                     r'(\?(?P<_query>[^#]*))?'
                      r'(#(?P<fragment>.*))?')
-
-_SCHEME_CHARS = re.escape(''.join(_ALLOWED_CHARS - set(':/?#')))
-_AUTH_CHARS = re.escape(''.join(_ALLOWED_CHARS - set(':/?#')))
-_PATH_CHARS = re.escape(''.join(_ALLOWED_CHARS - set('?#')))
-_QUERY_CHARS = re.escape(''.join(_ALLOWED_CHARS - set('#')))
-_FRAG_CHARS = re.escape(''.join(_ALLOWED_CHARS))
-
-_ABS_PATH_RE = (r'(?P<path>[' + _PATH_CHARS + ']*)'
-                r'(\?(?P<query>[' + _QUERY_CHARS + ']*))?'
-                r'(#(?P<fragment>[' + _FRAG_CHARS + '])*)?')
-
-_URL_RE_STRICT = re.compile(r'^(?:(?P<scheme>[' + _SCHEME_CHARS + ']+):)?'
-                            r'(//(?P<authority>[' + _AUTH_CHARS + ']*))?'
-                            + _ABS_PATH_RE)
 
 
 _HEX_CHAR_MAP = dict([(a + b, chr(int(a + b, 16)))
@@ -60,15 +34,145 @@ _HEX_CHAR_MAP = dict([(a + b, chr(int(a + b, 16)))
 _ASCII_RE = re.compile('([\x00-\x7f]+)')
 
 
-def _make_quote_map(allowed_chars):
+# RFC 3986 section 2.2, Reserved Characters
+_GEN_DELIMS = frozenset(u':/?#[]@')
+_SUB_DELIMS = frozenset(u"!$&'()*+,;=")
+_ALL_DELIMS = _GEN_DELIMS | _SUB_DELIMS
+
+_USERINFO_SAFE = _UNRESERVED_CHARS | _SUB_DELIMS
+_PATH_SAFE = _UNRESERVED_CHARS | _SUB_DELIMS | set(u':@')
+_FRAGMENT_SAFE = _UNRESERVED_CHARS | _PATH_SAFE | set(u'/?')
+_QUERY_SAFE = _UNRESERVED_CHARS | _FRAGMENT_SAFE - set(u'&=+')
+
+DEFAULT_NETLOC = True
+NETLOC_SCHEMES = ['ftp', 'http', 'gopher', 'nntp', 'telnet',
+                  'imap', 'wais', 'file', 'mms', 'https', 'shttp',
+                  'snews', 'prospero', 'rtsp', 'rtspu', 'rsync', '',
+                  'svn', 'svn+ssh', 'sftp', 'nfs', 'git', 'git+ssh']
+NO_NETLOC_SCHEMES = ['urn', 'tel', 'news', 'mailto']  # TODO: others?
+
+DEFAULT_PORT_MAP = {'http': 80, 'https': 443}
+
+
+class URLParseError(ValueError):
+    pass
+
+
+def _make_quote_map(safe_chars):
     ret = {}
+    # TODO: this str(bytearray) thing breaks on py3 i think
     for i, c in zip(range(256), str(bytearray(range(256)))):
-        ret[c] = c if c in allowed_chars else '%{0:02X}'.format(i)
+        ret[c] = c if c in safe_chars else '%{0:02X}'.format(i)
     return ret
 
 
-_PATH_QUOTE_MAP = _make_quote_map(_ALLOWED_CHARS - set('?#'))
-_QUERY_ELEMENT_QUOTE_MAP = _make_quote_map(_ALLOWED_CHARS - set('#&='))
+_USERINFO_PART_QUOTE_MAP = _make_quote_map(_USERINFO_SAFE)
+_PATH_PART_QUOTE_MAP = _make_quote_map(_PATH_SAFE)
+_QUERY_PART_QUOTE_MAP = _make_quote_map(_QUERY_SAFE)
+_FRAGMENT_QUOTE_MAP = _make_quote_map(_FRAGMENT_SAFE)
+
+
+DEFAULT_ENCODING = 'utf8'
+
+
+def to_unicode(obj):
+    try:
+        return unicode(obj)
+    except UnicodeDecodeError:
+        return unicode(obj, encoding=DEFAULT_ENCODING)
+
+
+def quote_path_part(text, full_quote=True):
+    # TODO: why does one route allow percents through and not the
+    # other?
+    if not full_quote:
+        return u''.join([_PATH_PART_QUOTE_MAP.get(t, t) for t in text])
+
+    bytestr = normalize('NFC', to_unicode(text)).encode('utf8')
+    return u''.join([_PATH_PART_QUOTE_MAP[b] for b in bytestr])
+
+
+def quote_query_part(text, full_quote=True):
+    if not full_quote:
+        return u''.join([_QUERY_PART_QUOTE_MAP.get(t, t) for t in text])
+
+    bytestr = normalize('NFC', to_unicode(text)).encode('utf8')
+    return u''.join([_QUERY_PART_QUOTE_MAP[b] for b in bytestr])
+
+
+# fragments don't really have parts, there are no official
+# subdelimiters within fragments, I believe
+def quote_fragment_part(text, full_quote=True):
+    if not full_quote:
+        return u''.join([_FRAGMENT_QUOTE_MAP.get(t, t) for t in text])
+
+    bytestr = normalize('NFC', to_unicode(text)).encode('utf8')
+    return u''.join([_FRAGMENT_QUOTE_MAP[b] for b in bytestr])
+
+
+def quote_userinfo_part(text, full_quote=True):
+    if not full_quote:
+        return u''.join([_USERINFO_PART_QUOTE_MAP.get(t, t) for t in text])
+
+    bytestr = normalize('NFC', to_unicode(text)).encode('utf8')
+    return u''.join([_USERINFO_PART_QUOTE_MAP[b] for b in bytestr])
+
+
+def unquote(s, encoding='utf8'):
+    "unquote('abc%20def') -> 'abc def'. aka percent decoding."
+    # I don't like that this is recursive and isn't specific about
+    # whether it accepts bytes or text. its current structure is an
+    # artifact of porting from the stdlib
+    if isinstance(s, unicode):
+        if '%' not in s:
+            return s
+        bits = _ASCII_RE.split(s)
+        res = [bits[0]]
+        append = res.append
+        for i in range(1, len(bits), 2):
+            if '%' in bits[i]:
+                append(unquote(str(bits[i])).decode(encoding))
+            else:
+                append(bits[i])
+            append(bits[i + 1])
+        return u''.join(res)
+
+    bits = s.split('%')
+    if len(bits) == 1:
+        return s  # fast path for empty/no percents
+    res = [bits[0]]
+    append = res.append
+    for item in bits[1:]:
+        try:
+            append(_HEX_CHAR_MAP[item[:2]])
+            append(item[2:])
+        except KeyError:
+            append('%')
+            append(item)
+    return ''.join(res)
+
+
+def register_scheme(text, uses_netloc=None, default_port=None):
+    text = text.lower()
+    if default_port is not None:
+        try:
+            default_port = int(default_port)
+        except ValueError:
+            raise ValueError('default_port expected integer or None, not %r'
+                             % (default_port,))
+
+    if uses_netloc is True:
+        if text not in NETLOC_SCHEMES:
+            NETLOC_SCHEMES.append(text)
+    elif uses_netloc is False:
+        if text not in NO_NETLOC_SCHEMES:
+            NO_NETLOC_SCHEMES.append(text)
+    elif uses_netloc is not None:
+        raise ValueError('uses_netloc expected True, False, or None')
+
+    DEFAULT_PORT_MAP[text] = default_port
+
+    return
 
 
 class cachedproperty(object):
@@ -97,231 +201,123 @@ class cachedproperty(object):
         return '<%s func=%s>' % (cn, self.func)
 
 
-def escape_path(text):
-    try:
-        bytestr = text.encode(DEFAULT_ENCODING)
-    except UnicodeDecodeError:
-        # DecodeError from an encode means we already had bytes
-        bytestr = text
-    except:
-        raise ValueError('expected text, not %r' % text)
-    return u''.join([_PATH_QUOTE_MAP[b] for b in bytestr])
-
-
-def escape_query_element(text):
-    try:
-        bytestr = text.encode(DEFAULT_ENCODING)
-    except UnicodeDecodeError:
-        # DecodeError from an encode means we already had bytes
-        bytestr = text
-    except:
-        raise ValueError('expected text, not %r' % text)
-    return u''.join([_QUERY_ELEMENT_QUOTE_MAP[b] for b in bytestr])
-
-
-def parse_authority(au_str):  # TODO: namedtuple?
-    user, pw, hostinfo = parse_userinfo(au_str)
-    family, host, port = parse_hostinfo(hostinfo)
-    return user, pw, family, host, port
-
-
-def parse_hostinfo(au_str):
-    """\
-    returns:
-      family (socket constant or None), host (string), port (int or None)
-
-    >>> parse_hostinfo('googlewebsite.com:443')
-    (None, 'googlewebsite.com', 443)
-    >>> parse_hostinfo('[::1]:22')
-    (10, '::1', 22)
-    >>> parse_hostinfo('192.168.1.1:5000')
-    (2, '192.168.1.1', 5000)
-
-    TODO: check validity of non-IP host before returning?
-    TODO: exception types for parse exceptions
-    """
-    family, host, port = None, '', None
-    if not au_str:
-        return family, host, port
-    if ':' in au_str:  # for port-explicit and IPv6 authorities
-        host, _, port_str = au_str.rpartition(':')
-        if port_str and ']' not in port_str:
-            try:
-                port = int(port_str)
-            except ValueError:
-                raise ValueError('invalid authority in URL %r expected int'
-                                 ' for port, not %r)' % (au_str, port_str))
-        else:
-            host, port = au_str, None
-        if host and '[' == host[0] and ']' == host[-1]:
-            host = host[1:-1]
-            try:
-                socket.inet_pton(socket.AF_INET6, host)
-            except socket.error:
-                raise ValueError('invalid IPv6 host: %r' % host)
-            else:
-                family = socket.AF_INET6
-                return family, host, port
-    try:
-        socket.inet_pton(socket.AF_INET, host)
-    except socket.error:
-        host = host if (host or port) else au_str
-    else:
-        family = socket.AF_INET
-    return family, host, port
-
-
-def parse_userinfo(au_str):
-    # TODO: unquote username/password (maybe a lil later)
-    userinfo, _, hostinfo = au_str.partition('@')
-    if hostinfo:
-        username, _, password = userinfo.partition(':')
-    else:
-        username, password, hostinfo = None, None, au_str
-    return username, password, hostinfo
-
-
-def parse_url(url_str, encoding=DEFAULT_ENCODING, strict=False):
-    if isinstance(url_str, str):
-        url_str = url_str.decode(encoding)
-    else:
-        url_str = unicode(url_str)
-    #raise TypeError('parse_url expected unicode or bytes, not %r' % url_str)
-    um = (_URL_RE_STRICT if strict else _URL_RE).match(url_str)
-    try:
-        gs = um.groupdict()
-    except AttributeError:
-        raise ValueError('could not parse url: %r' % url_str)
-    if gs['authority']:
-        try:
-            gs['authority'] = gs['authority'].decode('idna')
-        except:
-            pass
-    else:
-        gs['authority'] = ''
-    user, pw, family, host, port = parse_authority(gs['authority'])
-    gs['username'] = user
-    gs['password'] = pw
-    gs['family'] = family
-    gs['host'] = host
-    gs['port'] = port
-    return gs
-
-
-class URLError(ValueError):
-    pass
-
-
 class URL(object):
-    # TODO: removed bytestring helper, so may need to figure something
-    # else out for __bytes__/__str__
 
-    # XXX encoded query strings and paths have an encoding behind the
-    # percent-escaping, and we assume that it is utf8 here. how bad is
-    # that really? should urls keep track of input encoding and be
-    # able to reserialize back out to latin-1 percent encoded urls?
+    _attrs = ('scheme', '_uses_netloc', 'username', 'password', 'family',
+              'host', 'port', 'path_parts', '_query', 'fragment')
 
-    _attrs = ('scheme', 'username', 'password', 'family',
-              'host', 'port', 'path', 'query', 'fragment')
-    _quotable_attrs = ('username', 'password', 'path', 'query')  # fragment?
-
-    def __init__(self, url_str=None, strict=False):
+    def __init__(self, url):
+        # TODO: encoding param. The encoding that underlies the
+        # percent-encoding is always utf8 for IRIs, but can be Latin-1
+        # for other usage schemes.
         url_dict = {}
-        if url_str:
-            if isinstance(url_str, URL):
-                url_str = url_str.to_text()  # better way to copy URLs?
-            elif isinstance(url_str, bytes):
+        if url:
+            if isinstance(url, URL):
+                url = url.to_text()  # better way to copy URLs?
+            elif isinstance(url, bytes):
                 try:
-                    url_str = url_str.decode(DEFAULT_ENCODING)
+                    url = url.decode(DEFAULT_ENCODING)
                 except UnicodeDecodeError as ude:
-                    raise URLError('expected text or %s-encoded bytes.'
-                                   ' try decoding the url bytes and passing in'
-                                   ' the result. (got: %s)'
-                                   % (DEFAULT_ENCODING, ude))
-            url_dict = parse_url(url_str, strict=strict)
+                    raise URLParseError('expected text or %s-encoded bytes.'
+                                        ' try decoding the url bytes and'
+                                        ' passing the result. (got: %s)'
+                                        % (DEFAULT_ENCODING, ude))
+            url_dict = parse_url(url)
 
         _d = unicode()
-        self.path_params = _d  # TODO: support parsing path params?
         for attr in self._attrs:
+            # TODO: possibly use None as marker for empty vs missing
             val = url_dict.get(attr, _d) or _d
-            if attr in self._quotable_attrs and '%' in val:
+            if attr == 'path_parts':
+                val = tuple([unquote(p) if '%' in p else p
+                             for p in val.split(u'/')])
+            elif attr in ('username', 'password', 'fragment') and '%' in val:
                 val = unquote(val)
+            elif attr == 'host' and val:
+                try:
+                    val = val.encode("ascii")
+                except UnicodeEncodeError:
+                    pass  # already non-ascii text
+                else:
+                    val = val.decode("idna")
             setattr(self, attr, val)
+        return
+
+    @classmethod
+    def from_parts(cls, scheme=None, host=None, path=u'', query=u'',
+                   fragment=u'', port=None, username=None, password=None):
+        ret = cls()
+
+        ret.scheme = scheme
+        ret.host = host
+        ret.path = path
+        ret._query = query
+        # TODO: query dict
+        ret.fragment = fragment
+        ret.port = port
+        ret.username = username
+        ret.password = password
+
+        return ret
 
     @cachedproperty
     def query_params(self):
-        return QueryParamDict.from_string(self.query)
+        return QueryParamDict.from_text(self._query)
 
-    q = query_params  # handy alias?
-
-    @property
-    def is_absolute(self):
-        return bool(self.scheme)  # RFC2396 3.1
+    q = query_params
 
     @property
-    def http_request_url(self):  # TODO: name
-        parts = [escape_path(self.path)]
-        query_string = self.get_query_string()
-        if query_string:
-            parts.append(query_string)
-        return '?'.join(parts)
+    def path(self):
+        return u'/'.join([quote_path_part(p, full_quote=False)
+                          for p in self.path_parts])
 
     @property
-    def http_request_host(self):  # TODO: name
-        ret = []
-        host = self.host.encode('idna')
-        if self.family == socket.AF_INET6:
-            ret.extend(['[', host, ']'])
-        else:
-            ret.append(host)
-        if self.port:
-            ret.extend([':', unicode(self.port)])
-        return ''.join(ret)
+    def uses_netloc(self):
+        default = self._uses_netloc
+        if self.scheme in NETLOC_SCHEMES:
+            return True
+        if self.scheme.split('+') in NETLOC_SCHEMES:
+            return True
+        return default
 
-    def __iter__(self):
-        s = self
-        return iter((s.scheme, s.get_authority(idna=True), s.path,
-                     s.path_params, s.get_query_string(),
-                     s.fragment))
+    @property
+    def default_port(self):
+        try:
+            return DEFAULT_PORT_MAP[self.scheme]
+        except KeyError:
+            return DEFAULT_PORT_MAP.get(self.scheme.split('+')[-1])
 
-    # TODO: normalize?
-
-    def get_query_string(self):
-        return self.query_params.to_text()
-
-    def get_authority(self, idna=True, with_userinfo=False):
+    def get_authority(self, full_quote=True, with_userinfo=True):
         parts = []
         _add = parts.append
         if self.username and with_userinfo:
-            _add(self.username)
+            _add(quote_userinfo_part(self.username))
             _add(':')
             if self.password:
-                _add(self.password)
+                _add(quote_userinfo_part(self.password))
             _add('@')
         if self.host:
             if self.family == socket.AF_INET6:
                 _add('[')
                 _add(self.host)
                 _add(']')
-            elif idna:
+            elif full_quote:
                 _add(self.host.encode('idna'))
             else:
                 _add(self.host)
-            if self.port:
+            # TODO: 0 port?
+            if self.port and self.port != self.default_port:
                 _add(':')
                 _add(unicode(self.port))
         return u''.join(parts)
 
-    def to_text(self, display=False):
-        """\
-        This method takes the place of urlparse.urlunparse/urlunsplit.
-        It's a tricky business.
-        """
-        full_encode = (not display)
-        scheme, path, params = self.scheme, self.path, self.path_params
-        authority = self.get_authority(idna=full_encode)
-        query_string = self.get_query_string()
-        fragment = self.fragment
+    def to_text(self, full_quote=False):
+        scheme = self.scheme
+        path = u'/'.join([quote_path_part(p, full_quote=full_quote)
+                          for p in self.path_parts])
+        authority = self.get_authority(full_quote=full_quote)
+        query_string = self.query_params.to_text(full_quote=full_quote)
+        fragment = quote_fragment_part(self.fragment, full_quote=full_quote)
 
         parts = []
         _add = parts.append
@@ -331,15 +327,14 @@ class URL(object):
         if authority:
             _add('//')
             _add(authority)
-        elif (scheme and path[:2] != '//'):
+        elif (scheme and path[:2] != '//' and self.uses_netloc):
             _add('//')
         if path:
-            if parts and path[:1] != '/':
+            if scheme and authority and path[:1] != '/':
                 _add('/')
-            _add(escape_path(path))
-        if params:
-            _add(';')
-            _add(params)
+                # TODO: i think this is here because relative paths
+                # with absolute authorities = undefined
+            _add(path)
         if query_string:
             _add('?')
             _add(query_string)
@@ -349,7 +344,8 @@ class URL(object):
         return u''.join(parts)
 
     def __repr__(self):
-        return '%s(%r)' % (self.__class__.__name__, self.to_text())
+        cn = self.__class__.__name__
+        return u'%s(%r)' % (cn, self.to_text())
 
     def __eq__(self, other):
         for attr in self._attrs:
@@ -361,35 +357,89 @@ class URL(object):
         return not self == other
 
 
-def unquote(s, encoding=DEFAULT_ENCODING):
-    "unquote('abc%20def') -> 'abc def'. aka percent decoding."
-    if isinstance(s, unicode):
-        if '%' not in s:
-            return s
-        bits = _ASCII_RE.split(s)
-        res = [bits[0]]
-        append = res.append
-        for i in range(1, len(bits), 2):
-            if '%' in bits[i]:
-                append(unquote(str(bits[i])).decode(encoding))
-            else:
-                append(bits[i])
-            append(bits[i + 1])
-        return u''.join(res)
+def parse_host(host):
+    """\
+    returns:
+      family (socket constant or None), host (string)
 
-    bits = s.split('%')
-    if len(bits) == 1:
-        return s
-    res = [bits[0]]
-    append = res.append
-    for item in bits[1:]:
+    >>> parse_host('googlewebsite.com')
+    (None, 'googlewebsite.com')
+    >>> parse_host('[::1])
+    (10, '::1', 22)
+    >>> parse_host('192.168.1.1')
+    (2, '192.168.1.1')
+    """
+    if not host:
+        return None, u''
+    if u':' in host and u'[' == host[0] and u']' == host[-1]:
+        host = host[1:-1]
         try:
-            append(_HEX_CHAR_MAP[item[:2]])
-            append(item[2:])
-        except KeyError:
-            append('%')
-            append(item)
-    return ''.join(res)
+            socket.inet_pton(socket.AF_INET6, host)
+        except socket.error:
+            raise URLParseError('invalid IPv6 host: %r' % host)
+        except UnicodeEncodeError:
+            pass  # TODO: this can't be a real host right?
+        else:
+            family = socket.AF_INET6
+            return family, host
+    try:
+        socket.inet_pton(socket.AF_INET, host)
+    except (socket.error, UnicodeEncodeError):
+        family = None  # not an IP
+    else:
+        family = socket.AF_INET
+    print family, host
+    return family, host
+
+
+def parse_url(url_text):
+    """
+    >>> urlutils2.parse_url('http://127.0.0.1:3000/?a=1')
+    {'username': None, 'password': None, 'family': 2, 'fragment': None,
+    'authority': u'127.0.0.1:3000', 'host': u'127.0.0.1', 'query': u'a=1',
+    'path': u'/', 'scheme': u'http', 'port': 3000}
+    """
+    url_text = unicode(url_text)
+    # raise TypeError('parse_url expected text, not %r' % url_str)
+    um = _URL_RE.match(url_text)
+    try:
+        gs = um.groupdict()
+    except AttributeError:
+        raise ValueError('could not parse url: %r' % url_text)
+
+    au_text = gs['authority']
+    user, pw, hostinfo = None, None, au_text
+
+    if au_text:
+        userinfo, sep, hostinfo = au_text.rpartition('@')
+        if sep:
+            # TODO: empty userinfo error?
+            user, _, pw = userinfo.partition(':')
+
+    host, port = None, None
+    if hostinfo:
+        host, sep, port_str = hostinfo.partition(u':')
+        if sep:
+            if u']' in port_str:
+                host = hostinfo  # wrong split, was an ipv6
+            else:
+                try:
+                    port = int(port_str)
+                except ValueError:
+                    if not port_str:  # TODO: excessive?
+                        raise URLParseError('port must not be empty')
+                    raise URLParseError('expected integer for port, not %r)'
+                                        % port_str)
+
+    family, host = parse_host(host)
+
+    gs['username'] = user
+    gs['password'] = pw
+    gs['family'] = family
+    gs['host'] = host
+    gs['port'] = port
+    print gs
+    return gs
 
 
 def parse_qsl(qs, keep_blank_values=True, encoding=DEFAULT_ENCODING):
@@ -401,14 +451,13 @@ def parse_qsl(qs, keep_blank_values=True, encoding=DEFAULT_ENCODING):
         key, _, value = pair.partition('=')
         if not value:
             if keep_blank_values:
-                value = ''
+                value = None
             else:
                 continue
-        if value or keep_blank_values:
-            # TODO: really always convert plus signs to spaces?
-            key = unquote(key.replace('+', ' '))
+        key = unquote(key.replace('+', ' '))
+        if value:
             value = unquote(value.replace('+', ' '))
-            ret.append((key, value))
+        ret.append((key, value))
     return ret
 
 
@@ -432,9 +481,6 @@ except ImportError:
 
 
 PREV, NEXT, KEY, VALUE, SPREV, SNEXT = range(6)
-
-
-__all__ = ['MultiDict', 'OMD', 'OrderedMultiDict']
 
 
 class OrderedMultiDict(dict):
@@ -980,27 +1026,23 @@ OMD = OrderedMultiDict
 
 class QueryParamDict(OrderedMultiDict):
     # TODO: caching
-    # TODO: self.update_extend_from_string()?
+    # TODO: self.update_extend_from_text()?
 
     @classmethod
-    def from_string(cls, query_string):
+    def from_text(cls, query_string):
         pairs = parse_qsl(query_string, keep_blank_values=True)
         return cls(pairs)
 
-    def to_text(self):
+    def to_text(self, full_quote=True):
         ret_list = []
         for k, v in self.iteritems(multi=True):
-            key = escape_query_element(to_unicode(k))
-            val = escape_query_element(to_unicode(v))
-            ret_list.append(u'='.join((key, val)))
+            key = quote_query_part(to_unicode(k), full_quote=full_quote)
+            if v is None:
+                ret_list.append(key)
+            else:
+                val = quote_query_part(to_unicode(v), full_quote=full_quote)
+                ret_list.append(u'='.join((key, val)))
         return u'&'.join(ret_list)
-
-
-def to_unicode(obj):
-    try:
-        return unicode(obj)
-    except UnicodeDecodeError:
-        return unicode(obj, encoding=DEFAULT_ENCODING)
 
 
 # end urlutils.py
