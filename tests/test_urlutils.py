@@ -5,8 +5,8 @@ import pytest
 from boltons.urlutils import URL, _URL_RE
 
 
+# fully quoted urls that should round trip
 TEST_URLS = [
-    '*',  # e.g., OPTIONS *
     'http://googlewebsite.com/e-shops.aspx',
     'http://example.com:8080/search?q=123&business=Nothing%20Special',
     'http://hatnote.com:9000?arg=1&arg=2&arg=3',
@@ -26,7 +26,23 @@ TEST_URLS = [
     ('magnet:?xt=urn:btih:1a42b9e04e122b97a5254e3df77ab3c4b7da725f&dn=Puppy%'
      '20Linux%20precise-5.7.1.iso&tr=udp://tracker.openbittorrent.com:80&'
      'tr=udp://tracker.publicbt.com:80&tr=udp://tracker.istole.it:6969&'
-     'tr=udp://tracker.ccc.de:80&tr=udp://open.demonii.com:1337')]
+     'tr=udp://tracker.ccc.de:80&tr=udp://open.demonii.com:1337'),
+    # from twisted:
+    "http://localhost",
+    "http://localhost/",
+    "http://localhost/foo",
+    "http://localhost/foo/",
+    "http://localhost/foo!!bar/",
+    "http://localhost/foo%20bar/",
+    "http://localhost/foo%2Fbar/",
+    "http://localhost/foo?n",
+    "http://localhost/foo?n=v",
+    "http://localhost/foo?n=/a/b",
+    "http://example.com/foo!@$bar?b!@z=123",
+    "http://localhost/asd?a=asd%20sdf/345",
+    "http://(%2525)/(%2525)?(%2525)&(%2525)=(%2525)#(%2525)",
+    "http://(%C3%A9)/(%C3%A9)?(%C3%A9)&(%C3%A9)=(%C3%A9)#(%C3%A9)"
+    ]
 
 
 @pytest.fixture(scope="module", params=TEST_URLS)
@@ -44,6 +60,12 @@ def test_authority(request):
 def test_regex(test_url):
     match = _URL_RE.match(test_url)
     assert match.groupdict()
+
+
+@pytest.fixture(scope='module', params=TEST_URLS)
+def test_roundtrip(test_url):
+    result = URL(test_url).to_text(full_quote=True)
+    assert test_url == result
 
 
 def test_basic():
@@ -80,9 +102,10 @@ def test_idna():
 
 def test_query_params(test_url):
     url_obj = URL(test_url)
-    if not url_obj.query_params:
+    if not url_obj.query_params or url_obj.fragment:
         return True
-    assert test_url.endswith(url_obj.query_params.to_text())
+    qp_text = url_obj.query_params.to_text(full_quote=True)
+    assert test_url.endswith(qp_text)
 
 
 def test_iri_query():
@@ -123,28 +146,6 @@ def test_invalid_ipv6():
     for ip in invalid_ipv6_ips:
         with pytest.raises(ValueError):
             URL('http://[' + ip + ']')
-
-
-def test_roundtrip():
-    # fully quoted urls that should round trip
-    tests = ("http://localhost",
-             "http://localhost/",
-             "http://localhost/foo",
-             "http://localhost/foo/",
-             "http://localhost/foo!!bar/",
-             "http://localhost/foo%20bar/",
-             "http://localhost/foo%2Fbar/",
-             "http://localhost/foo?n",
-             "http://localhost/foo?n=v",
-             "http://localhost/foo?n=/a/b",
-             "http://example.com/foo!@$bar?b!@z=123",
-             "http://localhost/asd?a=asd%20sdf/345",
-             "http://(%2525)/(%2525)?(%2525)&(%2525)=(%2525)#(%2525)",
-             "http://(%C3%A9)/(%C3%A9)?(%C3%A9)&(%C3%A9)=(%C3%A9)#(%C3%A9)")
-
-    for test in tests:
-        result = URL(test).to_text(full_quote=True)
-        assert test == result
 
 
 def test_parse_equals_in_qp_value():
