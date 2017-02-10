@@ -794,6 +794,7 @@ added in this release.
 [iterutils.GUIDerator]: http://boltons.readthedocs.org/en/latest/iterutils.html#boltons.iterutils.GUIDerator
 [iterutils.SequentialGUIDerator]: http://boltons.readthedocs.org/en/latest/iterutils.html#boltons.iterutils.SequentialGUIDerator
 [iterutils.is_container]: http://boltons.readthedocs.org/en/latest/iterutils.html#boltons.iterutils.is_container
+[iterutils.bucketize]: http://boltons.readthedocs.org/en/latest/iterutils.html#boltons.iterutils.bucketize
 [iterutils.one]: http://boltons.readthedocs.org/en/latest/iterutils.html#boltons.iterutils.one
 [iterutils.pairwise]: http://boltons.readthedocs.org/en/latest/iterutils.html#boltons.iterutils.pairwise
 [iterutils.same]: http://boltons.readthedocs.org/en/latest/iterutils.html#boltons.iterutils.same
