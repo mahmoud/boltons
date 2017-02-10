@@ -6,7 +6,6 @@ tests:
   * txurl: valid "http://a"
   * urlparse: does not parse ports
 * git+https://git.example.com
-* _url.URL(u'lol0l0lxyz:asdfk@bcd') silently makes a URL obj with a scheme
 """
 
 import re
@@ -21,12 +20,6 @@ _UNRESERVED_CHARS = (frozenset(string.uppercase)
                      | frozenset(string.lowercase)
                      | frozenset(string.digits)
                      | frozenset('-._~'))
-_RESERVED_CHARS = frozenset(":/?#[]@!$&'()*+,;=")
-_PCT_ENCODING = (frozenset('%')
-                 | frozenset(string.digits)
-                 | frozenset(string.uppercase[:6])
-                 | frozenset(string.lowercase[:6]))
-_ALLOWED_CHARS = _UNRESERVED_CHARS | _RESERVED_CHARS | _PCT_ENCODING
 
 # URL parsing regex (per RFC 3986)
 _URL_RE = re.compile(r'^((?P<scheme>[^:/?#]+):)?'
@@ -51,6 +44,15 @@ _PATH_SAFE = _UNRESERVED_CHARS | _SUB_DELIMS | set(u':@')
 _FRAGMENT_SAFE = _UNRESERVED_CHARS | _PATH_SAFE | set(u'/?')
 _QUERY_SAFE = _UNRESERVED_CHARS | _FRAGMENT_SAFE - set(u'&=+')
 
+DEFAULT_NETLOC = True
+NETLOC_SCHEMES = ['ftp', 'http', 'gopher', 'nntp', 'telnet',
+                  'imap', 'wais', 'file', 'mms', 'https', 'shttp',
+                  'snews', 'prospero', 'rtsp', 'rtspu', 'rsync', '',
+                  'svn', 'svn+ssh', 'sftp', 'nfs', 'git', 'git+ssh']
+NO_NETLOC_SCHEMES = ['urn', 'tel', 'news', 'mailto']  # TODO: others?
+
+DEFAULT_PORT_MAP = {'http': 80, 'https': 443}
+
 
 class URLParseError(ValueError):
     pass
@@ -70,37 +72,49 @@ _QUERY_PART_QUOTE_MAP = _make_quote_map(_QUERY_SAFE)
 _FRAGMENT_QUOTE_MAP = _make_quote_map(_FRAGMENT_SAFE)
 
 
+DEFAULT_ENCODING = 'utf8'
+
+
+def to_unicode(obj):
+    try:
+        return unicode(obj)
+    except UnicodeDecodeError:
+        return unicode(obj, encoding=DEFAULT_ENCODING)
+
+
 def quote_path_part(text, full_quote=True):
     # TODO: why does one route allow percents through and not the
     # other?
     if not full_quote:
-        return u''.join([_PATH_PART_QUOTE_MAP[t] for t in text])
+        return u''.join([_PATH_PART_QUOTE_MAP.get(t, t) for t in text])
 
-    bytestr = normalize('NFC', text).encode('utf8')
+    bytestr = normalize('NFC', to_unicode(text)).encode('utf8')
     return u''.join([_PATH_PART_QUOTE_MAP[b] for b in bytestr])
 
 
 def quote_query_part(text, full_quote=True):
     if not full_quote:
-        return u''.join([_QUERY_PART_QUOTE_MAP[t] for t in text])
+        return u''.join([_QUERY_PART_QUOTE_MAP.get(t, t) for t in text])
 
-    bytestr = normalize('NFC', text).encode('utf8')
+    bytestr = normalize('NFC', to_unicode(text)).encode('utf8')
     return u''.join([_QUERY_PART_QUOTE_MAP[b] for b in bytestr])
 
 
+# fragments don't really have parts, there are no official
+# subdelimiters within fragments, I believe
 def quote_fragment_part(text, full_quote=True):
     if not full_quote:
-        return u''.join([_FRAGMENT_QUOTE_MAP[t] for t in text])
+        return u''.join([_FRAGMENT_QUOTE_MAP.get(t, t) for t in text])
 
-    bytestr = normalize('NFC', text).encode('utf8')
+    bytestr = normalize('NFC', to_unicode(text)).encode('utf8')
     return u''.join([_FRAGMENT_QUOTE_MAP[b] for b in bytestr])
 
 
 def quote_userinfo_part(text, full_quote=True):
     if not full_quote:
-        return u''.join([_USERINFO_PART_QUOTE_MAP[t] for t in text])
+        return u''.join([_USERINFO_PART_QUOTE_MAP.get(t, t) for t in text])
 
-    bytestr = normalize('NFC', text).encode('utf8')
+    bytestr = normalize('NFC', to_unicode(text)).encode('utf8')
     return u''.join([_USERINFO_PART_QUOTE_MAP[b] for b in bytestr])
 
 
@@ -138,16 +152,6 @@ def unquote(s, encoding='utf8'):
     return ''.join(res)
 
 
-DEFAULT_NETLOC = True
-NETLOC_SCHEMES = ['ftp', 'http', 'gopher', 'nntp', 'telnet',
-                  'imap', 'wais', 'file', 'mms', 'https', 'shttp',
-                  'snews', 'prospero', 'rtsp', 'rtspu', 'rsync', '',
-                  'svn', 'svn+ssh', 'sftp', 'nfs', 'git', 'git+ssh']
-NO_NETLOC_SCHEMES = ['urn', 'tel', 'news', 'mailto']  # TODO: others?
-
-DEFAULT_PORT_MAP = {'http': 80, 'https': 443}
-
-
 def register_scheme(text, uses_netloc=None, default_port=None):
     text = text.lower()
     if default_port is not None:
@@ -169,16 +173,6 @@ def register_scheme(text, uses_netloc=None, default_port=None):
     DEFAULT_PORT_MAP[text] = default_port
 
     return
-
-
-DEFAULT_ENCODING = 'utf8'
-
-
-def to_unicode(obj):
-    try:
-        return unicode(obj)
-    except UnicodeDecodeError:
-        return unicode(obj, encoding=DEFAULT_ENCODING)
 
 
 class cachedproperty(object):
@@ -211,7 +205,6 @@ class URL(object):
 
     _attrs = ('scheme', '_uses_netloc', 'username', 'password', 'family',
               'host', 'port', 'path_parts', '_query', 'fragment')
-    _quotable_attrs = ('username', 'password', 'query', 'fragment')
 
     def __init__(self, url):
         # TODO: encoding param. The encoding that underlies the
@@ -238,7 +231,7 @@ class URL(object):
             if attr == 'path_parts':
                 val = tuple([unquote(p) if '%' in p else p
                              for p in val.split(u'/')])
-            elif attr in self._quotable_attrs and '%' in val:
+            elif attr in ('username', 'password', 'fragment') and '%' in val:
                 val = unquote(val)
             elif attr == 'host' and val:
                 try:
@@ -275,7 +268,8 @@ class URL(object):
 
     @property
     def path(self):
-        return u'/'.join([quote_path_part(p) for p in self.path_parts])
+        return u'/'.join([quote_path_part(p, full_quote=False)
+                          for p in self.path_parts])
 
     @property
     def uses_netloc(self):
