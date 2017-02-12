@@ -175,6 +175,29 @@ def register_scheme(text, uses_netloc=None, default_port=None):
     return
 
 
+def resolve_path_parts(path_parts):
+    """
+    Normalize the URL path by resolving segments of '.' and '..'.
+    See RFC 3986 section 5.2.4, Remove Dot Segments.
+    """
+    # TODO: what to do with multiple slashes
+    ret = []
+
+    for part in path_parts:
+        if part == u'.':
+            pass
+        elif part == u'..':
+            if ret and (len(ret) > 1 or ret[0]):  # prevent unrooting
+                ret.pop()
+        else:
+            ret.append(part)
+
+    if list(path_parts[-1:]) in ([u'.'], [u'..']):
+        ret.append(u'')
+
+    return ret
+
+
 class cachedproperty(object):
     """The ``cachedproperty`` is used similar to :class:`property`, except
     that the wrapped method is only called once. This is commonly used
@@ -286,6 +309,32 @@ class URL(object):
             return DEFAULT_PORT_MAP[self.scheme]
         except KeyError:
             return DEFAULT_PORT_MAP.get(self.scheme.split('+')[-1])
+
+    def normalize(self, suffix=None):
+        """Resolve any "." and ".." references in the path, with an optional
+        suffix to the existing path.
+        """
+        if not suffix:
+            new_path_parts = self.path_parts
+        else:
+            suffix = to_unicode(suffix)
+            suffix_path_parts = tuple([unquote(p) if '%' in p else p
+                                       for p in suffix.split(u'/')])
+            if suffix_path_parts[0]:
+                new_path_parts = self.path_parts[:-1] + suffix_path_parts
+            else:
+                # first element is only empty if the path is absolute
+                if suffix_path_parts[1]:
+                    new_path_parts = suffix_path_parts
+                else:
+                    raise URLParseError('expected zero or one leading slashes,'
+                                        ' not multiple. url.normalize does not'
+                                        ' support authority alteration: %r'
+                                        % suffix)
+
+        resolved_path_parts = resolve_path_parts(new_path_parts)
+        self.path_parts = resolved_path_parts
+        return
 
     def get_authority(self, full_quote=True, with_userinfo=True):
         parts = []

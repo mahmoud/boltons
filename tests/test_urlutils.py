@@ -83,7 +83,7 @@ def test_utf8_url():
 
 
 def test_idna():
-    u1 = URL('http://bücher.ch')
+    u1 = URL(u'http://bücher.ch')
     assert u1.host == u'bücher.ch'
     assert u1.to_text(full_quote=True) == 'http://xn--bcher-kva.ch'
     assert u1.to_text(full_quote=False) == u'http://bücher.ch'
@@ -205,3 +205,65 @@ def test_quoted_userinfo():
 def test_mailto():
     mt = 'mailto:mahmoud@hatnote.com'
     assert URL(mt).to_text() == mt
+
+
+# Examples from RFC 3986 section 5.4, Reference Resolution Examples
+# painstakingly copied from the lovingly transcribed version in
+# twisted's test_url, with inapplicable cases removed
+REL_URL_BASE = 'http://a/b/c/d;p?q'
+REL_URL_TEST_CASES = [
+    # "Normal"
+    #('g:h', 'g:h'),     # Not supported:  scheme with relative path
+    ('g', 'http://a/b/c/g'),
+    ('./g', 'http://a/b/c/g'),
+    ('g/', 'http://a/b/c/g/'),
+    ('/g', 'http://a/g'),
+    (';x', 'http://a/b/c/;x'),
+    ('g;x', 'http://a/b/c/g;x'),
+    ('', 'http://a/b/c/d;p?q'),
+    ('.', 'http://a/b/c/'),
+    ('./', 'http://a/b/c/'),
+    ('..', 'http://a/b/'),
+    ('../', 'http://a/b/'),
+    ('../g', 'http://a/b/g'),
+    ('../..', 'http://a/'),
+    ('../../', 'http://a/'),
+    ('../../g', 'http://a/g'),
+
+    # Abnormal examples
+    # ".." cannot be used to change the authority component of a URI.
+    ('../../../g', 'http://a/g'),  # TODO (rooted?)
+    ('../../../../g', 'http://a/g'),  # TODO (rooted)?
+
+    # Only include "." and ".." when they are only part of a larger segment,
+    # not by themselves.
+    ('/./g', 'http://a/g'),
+    ('/../g', 'http://a/g'),
+    ('g.', 'http://a/b/c/g.'),
+    ('.g', 'http://a/b/c/.g'),
+    ('g..', 'http://a/b/c/g..'),
+    ('..g', 'http://a/b/c/..g'),
+
+    # Unnecessary or nonsensical forms of "." and "..".
+    ('./../g', 'http://a/b/g'),
+    ('./g/.', 'http://a/b/c/g/'),
+    ('g/./h', 'http://a/b/c/g/h'),
+    ('g/../h', 'http://a/b/c/h'),
+    ('g;x=1/./y', 'http://a/b/c/g;x=1/y'),
+    ('g;x=1/../y', 'http://a/b/c/y'),
+]
+
+
+def test_suffix_normalize():
+    for suffix, expected in REL_URL_TEST_CASES:
+        url = URL(REL_URL_BASE)
+        url.normalize(suffix)
+        assert url.path == URL(expected).path
+
+    return
+
+
+def test_self_normalize():
+    url = URL('http://hatnote.com/a/../../b?k=v#hashtags')
+    url.normalize()
+    assert url.to_text() == 'http://hatnote.com/b?k=v#hashtags'
