@@ -267,3 +267,34 @@ def test_self_normalize():
     url = URL('http://hatnote.com/a/../../b?k=v#hashtags')
     url.normalize()
     assert url.to_text() == 'http://hatnote.com/b?k=v#hashtags'
+
+
+def test_netloc_slashes():
+    # basic sanity checks
+    url = URL('mailto:mahmoud@hatnote.com')
+    assert url.scheme == 'mailto'
+    assert url.to_text() == 'mailto:mahmoud@hatnote.com'
+
+    url = URL('http://hatnote.com')
+    assert url.scheme == 'http'
+    assert url.to_text() == 'http://hatnote.com'
+
+    # test that unrecognized schemes stay consistent with '//'
+    url = URL('newscheme:a:b:c')
+    assert url.scheme == 'newscheme'
+    assert url.to_text() == 'newscheme:a:b:c'
+
+    url = URL('newerscheme://a/b/c')
+    assert url.scheme == 'newerscheme'
+    assert url.to_text() == 'newerscheme://a/b/c'
+
+    # test that reasonable guesses are made
+    url = URL('git+ftp://gitstub.biz/glyph/lefkowitz')
+    assert url.scheme == 'git+ftp'
+    assert url.to_text() == 'git+ftp://gitstub.biz/glyph/lefkowitz'
+
+    url = URL('what+mailto:freerealestate@enotuniq.org')
+    assert url.scheme == 'what+mailto'
+    assert url.to_text() == 'what+mailto:freerealestate@enotuniq.org'
+
+    return
