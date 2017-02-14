@@ -483,7 +483,7 @@ def parse_host(host):
     if u':' in host and u'[' == host[0] and u']' == host[-1]:
         host = host[1:-1]
         try:
-            socket.inet_pton(socket.AF_INET6, host)
+            inet_pton(socket.AF_INET6, host)
         except socket.error:
             raise URLParseError('invalid IPv6 host: %r' % host)
         except UnicodeEncodeError:
@@ -492,7 +492,7 @@ def parse_host(host):
             family = socket.AF_INET6
             return family, host
     try:
-        socket.inet_pton(socket.AF_INET, host)
+        inet_pton(socket.AF_INET, host)
     except (socket.error, UnicodeEncodeError):
         family = None  # not an IP
     else:
