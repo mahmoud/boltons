@@ -14,12 +14,14 @@ import string
 from unicodedata import normalize
 
 unicode = type(u'')
+try:
+    unichr
+except NameError:
+    unichr = chr
 
 # The unreserved URI characters (per RFC 3986)
-_UNRESERVED_CHARS = (frozenset(string.uppercase)
-                     | frozenset(string.lowercase)
-                     | frozenset(string.digits)
-                     | frozenset('-._~'))
+_UNRESERVED_CHARS = frozenset('~-._0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+                              'abcdefghijklmnopqrstuvwxyz')
 
 # URL parsing regex (per RFC 3986)
 _URL_RE = re.compile(r'^((?P<scheme>[^:/?#]+):)?'
@@ -29,7 +31,8 @@ _URL_RE = re.compile(r'^((?P<scheme>[^:/?#]+):)?'
                      r'(#(?P<fragment>.*))?')
 
 
-_HEX_CHAR_MAP = dict([(a + b, chr(int(a + b, 16)))
+_HEX_CHAR_MAP = dict([((a + b).encode('ascii'),
+                       unichr(int(a + b, 16)).encode('charmap'))
                       for a in string.hexdigits for b in string.hexdigits])
 _ASCII_RE = re.compile('([\x00-\x7f]+)')
 
@@ -61,8 +64,12 @@ class URLParseError(ValueError):
 def _make_quote_map(safe_chars):
     ret = {}
     # TODO: this str(bytearray) thing breaks on py3 i think
-    for i, c in zip(range(256), str(bytearray(range(256)))):
-        ret[c] = c if c in safe_chars else '%{0:02X}'.format(i)
+    for i, v in zip(range(256), range(256)):
+        c = chr(v)
+        if c in safe_chars:
+            ret[c] = ret[v] = c
+        else:
+            ret[c] = ret[v] = '%{0:02X}'.format(i)
     return ret
 
 
@@ -118,38 +125,57 @@ def quote_userinfo_part(text, full_quote=True):
     return u''.join([_USERINFO_PART_QUOTE_MAP[b] for b in bytestr])
 
 
-def unquote(s, encoding='utf8'):
-    "unquote('abc%20def') -> 'abc def'. aka percent decoding."
-    # I don't like that this is recursive and isn't specific about
-    # whether it accepts bytes or text. its current structure is an
-    # artifact of porting from the stdlib
-    if isinstance(s, unicode):
-        if '%' not in s:
-            return s
-        bits = _ASCII_RE.split(s)
-        res = [bits[0]]
-        append = res.append
-        for i in range(1, len(bits), 2):
-            if '%' in bits[i]:
-                append(unquote(str(bits[i])).decode(encoding))
-            else:
-                append(bits[i])
-            append(bits[i + 1])
-        return u''.join(res)
+def unquote(string, encoding='utf-8', errors='replace'):
+    """Replace %xx escapes by their single-character equivalent. The optional
+    encoding and errors parameters specify how to decode percent-encoded
+    sequences into Unicode characters, as accepted by the bytes.decode()
+    method.
+    By default, percent-encoded sequences are decoded with UTF-8, and invalid
+    sequences are replaced by a placeholder character.
 
-    bits = s.split('%')
-    if len(bits) == 1:
-        return s  # fast path for empty/no percents
+    unquote('abc%20def') -> 'abc def'.
+    """
+    if '%' not in string:
+        string.split
+        return string
+    if encoding is None:
+        encoding = 'utf-8'
+    if errors is None:
+        errors = 'replace'
+    bits = _ASCII_RE.split(string)
     res = [bits[0]]
     append = res.append
+    for i in range(1, len(bits), 2):
+        append(unquote_to_bytes(bits[i]).decode(encoding, errors))
+        append(bits[i + 1])
+    return ''.join(res)
+
+
+def unquote_to_bytes(string):
+    """unquote_to_bytes('abc%20def') -> b'abc def'."""
+    # Note: strings are encoded as UTF-8. This is only an issue if it contains
+    # unescaped non-ASCII characters, which URIs should not.
+    if not string:
+        # Is it a string-like object?
+        string.split
+        return b''
+    if isinstance(string, unicode):
+        string = string.encode('utf-8')
+    bits = string.split(b'%')
+    if len(bits) == 1:
+        return string
+    # import pdb;pdb.set_trace()
+    res = [bits[0]]
+    append = res.append
+
     for item in bits[1:]:
         try:
             append(_HEX_CHAR_MAP[item[:2]])
             append(item[2:])
         except KeyError:
-            append('%')
+            append(b'%')
             append(item)
-    return ''.join(res)
+    return b''.join(res)
 
 
 def register_scheme(text, uses_netloc=None, default_port=None):
@@ -351,7 +377,7 @@ class URL(object):
                 _add(self.host)
                 _add(']')
             elif full_quote:
-                _add(self.host.encode('idna'))
+                _add(self.host.encode('idna').decode('ascii'))
             else:
                 _add(self.host)
             # TODO: 0 port?
@@ -437,7 +463,6 @@ def parse_host(host):
         family = None  # not an IP
     else:
         family = socket.AF_INET
-    print family, host
     return family, host
 
 
@@ -487,7 +512,6 @@ def parse_url(url_text):
     gs['family'] = family
     gs['host'] = host
     gs['port'] = port
-    print gs
     return gs
 
 

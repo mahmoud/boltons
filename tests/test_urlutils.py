@@ -4,6 +4,11 @@ import pytest
 
 from boltons.urlutils import URL, _URL_RE
 
+try:
+    unicode
+except NameError:
+    unicode = str
+
 
 # fully quoted urls that should round trip
 TEST_URLS = [
@@ -75,9 +80,10 @@ def test_basic():
 
 
 def test_utf8_url():
-    url = URL('http://\xd9\x85\xd8\xab\xd8\xa7\xd9\x84'
-              '.\xd8\xa2\xd8\xb2\xd9\x85\xd8\xa7'
-              '\xdb\x8c\xd8\xb4\xdb\x8c')
+    url_bytes = (b'http://\xd9\x85\xd8\xab\xd8\xa7\xd9\x84'
+                 b'.\xd8\xa2\xd8\xb2\xd9\x85\xd8\xa7'
+                 b'\xdb\x8c\xd8\xb4\xdb\x8c')
+    url = URL(url_bytes)
     assert url.scheme == 'http'
     assert url.host == u'مثال.آزمایشی'
 
@@ -94,12 +100,6 @@ def test_idna():
     assert u2.to_text(full_quote=False) == u'https://bücher.ch'
 
 
-#def test_urlparse_equiv(test_url):
-#    from urlparse import urlparse, urlunparse
-#    url_obj = URL(test_url)
-#    assert urlunparse(urlparse(test_url)) == urlunparse(url_obj)
-
-
 def test_query_params(test_url):
     url_obj = URL(test_url)
     if not url_obj.query_params or url_obj.fragment:
@@ -113,20 +113,11 @@ def test_iri_query():
     assert url.query_params['mountain'] == u'\N{MOUNTAIN}'
     assert url.query_params.to_text().endswith(u'%E2%9B%B0')  # \N{MOUNTAIN}')
 
-    # fails because urlparse assumes query strings are encoded with latin1
-    # url2 = URL(url.to_bytes())
-    # assert url2.query_params['mountain'] == u'\N{MOUNTAIN}'
-
 
 def test_iri_path():
     url = URL(u'http://minerals.rocks.ore/mountain/\N{MOUNTAIN}/')
     assert url.path == u'/mountain/\N{MOUNTAIN}/'
     # assert url.to_bytes().endswith('%E2%9B%B0/')
-
-
-#def test_urlparse_obj_input():  # TODO
-#    with pytest.raises(TypeError):
-#        URL(object())
 
 
 def test_url_copy():
