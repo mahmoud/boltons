@@ -484,8 +484,8 @@ def parse_host(host):
         host = host[1:-1]
         try:
             inet_pton(socket.AF_INET6, host)
-        except socket.error:
-            raise URLParseError('invalid IPv6 host: %r' % host)
+        except socket.error as se:
+            raise URLParseError('invalid IPv6 host: %r (%r)' % (host, se))
         except UnicodeEncodeError:
             pass  # TODO: this can't be a real host right?
         else:
