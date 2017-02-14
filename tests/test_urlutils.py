@@ -2,6 +2,7 @@
 
 import pytest
 
+from boltons import urlutils
 from boltons.urlutils import URL, _URL_RE
 
 try:
@@ -109,15 +110,15 @@ def test_query_params(test_url):
 
 
 def test_iri_query():
-    url = URL(u'http://minerals.rocks.ore/?mountain=\N{MOUNTAIN}')
-    assert url.query_params['mountain'] == u'\N{MOUNTAIN}'
-    assert url.query_params.to_text().endswith(u'%E2%9B%B0')  # \N{MOUNTAIN}')
+    url = URL(u'http://minerals.mountain.ore/?rock=\N{SHAMROCK}')
+    assert url.query_params['rock'] == u'\N{SHAMROCK}'
+    assert url.query_params.to_text(full_quote=True).endswith(u'%E2%98%98')
 
 
 def test_iri_path():
-    url = URL(u'http://minerals.rocks.ore/mountain/\N{MOUNTAIN}/')
-    assert url.path == u'/mountain/\N{MOUNTAIN}/'
-    # assert url.to_bytes().endswith('%E2%9B%B0/')
+    url = URL(u'http://minerals.mountain.ore/rock/\N{SHAMROCK}/')
+    assert url.path == u'/rock/\N{SHAMROCK}/'
+    assert url.to_text(full_quote=True).endswith('%E2%98%98/')
 
 
 def test_url_copy():
@@ -137,6 +138,15 @@ def test_invalid_ipv6():
     for ip in invalid_ipv6_ips:
         with pytest.raises(ValueError):
             URL('http://[' + ip + ']')
+
+
+def test_parse_url():
+    expected = {'family': 2, 'password': None, 'fragment': None,
+                'authority': u'127.0.0.1:3000', 'port': 3000, '_query': u'a=1',
+                '_uses_netloc': u'//', 'path_parts': u'/', 'scheme': u'http',
+                'host': u'127.0.0.1', 'username': None}
+    res = urlutils.parse_url('http://127.0.0.1:3000/?a=1')
+    assert res == expected
 
 
 def test_parse_equals_in_qp_value():

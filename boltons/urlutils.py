@@ -437,12 +437,15 @@ def parse_host(host):
     returns:
       family (socket constant or None), host (string)
 
-    >>> parse_host('googlewebsite.com')
-    (None, 'googlewebsite.com')
-    >>> parse_host('[::1])
-    (10, '::1', 22)
-    >>> parse_host('192.168.1.1')
-    (2, '192.168.1.1')
+    >>> parse_host('googlewebsite.com') == (None, 'googlewebsite.com')
+    True
+    >>> parse_host('[::1]') == (socket.AF_INET6, '::1')
+    True
+    >>> parse_host('192.168.1.1') == (socket.AF_INET, '192.168.1.1')
+    True
+
+    (odd doctest formatting above due to py3's switch from int to enums
+    for socket constants)
     """
     if not host:
         return None, u''
@@ -467,12 +470,6 @@ def parse_host(host):
 
 
 def parse_url(url_text):
-    """
-    >>> urlutils2.parse_url('http://127.0.0.1:3000/?a=1')
-    {'username': None, 'password': None, 'family': 2, 'fragment': None,
-    'authority': u'127.0.0.1:3000', 'host': u'127.0.0.1', 'query': u'a=1',
-    'path': u'/', 'scheme': u'http', 'port': 3000}
-    """
     url_text = unicode(url_text)
     # raise TypeError('parse_url expected text, not %r' % url_str)
     um = _URL_RE.match(url_text)
@@ -1106,7 +1103,7 @@ class QueryParamDict(OrderedMultiDict):
         pairs = parse_qsl(query_string, keep_blank_values=True)
         return cls(pairs)
 
-    def to_text(self, full_quote=True):
+    def to_text(self, full_quote=False):
         ret_list = []
         for k, v in self.iteritems(multi=True):
             key = quote_query_part(to_unicode(k), full_quote=full_quote)
