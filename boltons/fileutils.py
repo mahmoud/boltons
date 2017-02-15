@@ -471,7 +471,7 @@ def iter_find_files(directory, patterns, ignored=None):
 
     >>> filenames = sorted(iter_find_files(_CUR_DIR, '*.py'))
     >>> os.path.basename(filenames[-1])
-    'typeutils.py'
+    'urlutils.py'
 
     Or, Python files while ignoring emacs lockfiles:
 
