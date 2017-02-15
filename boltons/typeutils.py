@@ -53,8 +53,11 @@ def make_sentinel(name='_MISSING', var_name=None):
             def __reduce__(self):
                 return self.var_name
 
-        def __len__(self):
-            return 0
+        def __nonzero__(self):
+            return False
+
+        __bool__ = __nonzero__
+
     return Sentinel()
 
 
