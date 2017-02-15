@@ -63,7 +63,8 @@ class URLParseError(ValueError):
 
 def _make_quote_map(safe_chars):
     ret = {}
-    # TODO: this str(bytearray) thing breaks on py3 i think
+    # v is included in the dict for py3 mostly, because bytestrings
+    # are iterables of ints, of course!
     for i, v in zip(range(256), range(256)):
         c = chr(v)
         if c in safe_chars:
@@ -450,6 +451,7 @@ except ImportError:
 
     def inet_pton(address_family, ip_string):
         addr = _sockaddr()
+        ip_string = ip_string.encode('ascii')  # TODO
         addr.sa_family = address_family
         addr_size = ctypes.c_int(ctypes.sizeof(addr))
 
