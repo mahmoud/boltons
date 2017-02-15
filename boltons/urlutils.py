@@ -1,11 +1,6 @@
+# -*- coding: utf-8 -*-
 """
-tests:
-
-* http://a:b:c
-  * new: fail on invalid port "c"
-  * txurl: valid "http://a"
-  * urlparse: does not parse ports
-* git+https://git.example.com
+TODO: docs
 """
 
 import re
@@ -47,12 +42,11 @@ _PATH_SAFE = _UNRESERVED_CHARS | _SUB_DELIMS | set(u':@')
 _FRAGMENT_SAFE = _UNRESERVED_CHARS | _PATH_SAFE | set(u'/?')
 _QUERY_SAFE = _UNRESERVED_CHARS | _FRAGMENT_SAFE - set(u'&=+')
 
-DEFAULT_NETLOC = True
 NETLOC_SCHEMES = ['ftp', 'http', 'gopher', 'nntp', 'telnet',
                   'imap', 'wais', 'file', 'mms', 'https', 'shttp',
                   'snews', 'prospero', 'rtsp', 'rtspu', 'rsync', '',
                   'svn', 'svn+ssh', 'sftp', 'nfs', 'git', 'git+ssh']
-NO_NETLOC_SCHEMES = ['urn', 'tel', 'news', 'mailto']  # TODO: others?
+NO_NETLOC_SCHEMES = ['urn', 'tel', 'news', 'mailto', 'magnet']  # TODO: others?
 
 DEFAULT_PORT_MAP = {'http': 80, 'https': 443}
 
@@ -256,7 +250,7 @@ class URL(object):
     _attrs = ('scheme', '_uses_netloc', 'username', 'password', 'family',
               'host', 'port', 'path_parts', '_query', 'fragment')
 
-    def __init__(self, url):
+    def __init__(self, url=''):
         # TODO: encoding param. The encoding that underlies the
         # percent-encoding is always utf8 for IRIs, but can be Latin-1
         # for other usage schemes.
@@ -321,12 +315,20 @@ class URL(object):
         return u'/'.join([quote_path_part(p, full_quote=False)
                           for p in self.path_parts])
 
+    @path.setter
+    def path(self, path_text):
+        self.path_parts = tuple([unquote(p) if '%' in p else p
+                                 for p in to_unicode(path_text).split(u'/')])
+        return
+
     @property
     def uses_netloc(self):
         default = self._uses_netloc
         if self.scheme in NETLOC_SCHEMES:
             return True
-        if self.scheme.split('+') in NETLOC_SCHEMES:
+        if self.scheme in NO_NETLOC_SCHEMES:
+            return False
+        if self.scheme.split('+')[-1] in NETLOC_SCHEMES:
             return True
         return default
 
@@ -509,7 +511,7 @@ def parse_url(url_text):
     try:
         gs = um.groupdict()
     except AttributeError:
-        raise ValueError('could not parse url: %r' % url_text)
+        raise URLParseError('could not parse url: %r' % url_text)
 
     au_text = gs['authority']
     user, pw, hostinfo = None, None, au_text

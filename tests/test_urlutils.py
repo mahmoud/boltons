@@ -1,4 +1,14 @@
 # -*- coding: utf-8 -*-
+"""
+tests:
+
+* http://a:b:c
+  * new: fail on invalid port "c"
+  * txurl: valid "http://a"
+  * urlparse: does not parse ports
+* git+https://git.example.com
+"""
+
 
 import pytest
 
@@ -297,5 +307,21 @@ def test_netloc_slashes():
     url = URL('what+mailto:freerealestate@enotuniq.org')
     assert url.scheme == 'what+mailto'
     assert url.to_text() == 'what+mailto:freerealestate@enotuniq.org'
+
+    url = URL()
+    url.scheme = 'ztp'
+    url.path = '/x/y/z'
+    assert url.to_text() == 'ztp:/x/y/z'
+
+    # also works when the input doesn't includ '//'
+    url = URL()
+    url.scheme = 'git+ftp'
+    url.path = '/x/y/z/'
+    assert url.to_text() == 'git+ftp:///x/y/z/'
+
+    # really why would this ever come up but ok
+    url = URL('file:///path/to/heck')
+    url.scheme = 'mailto'
+    assert url.to_text() == 'mailto:/path/to/heck'
 
     return
