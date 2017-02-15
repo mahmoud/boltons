@@ -55,6 +55,9 @@ def make_sentinel(name='_MISSING', var_name=None):
 
         def __nonzero__(self):
             return False
+
+        __bool__ = __nonzero__
+
     return Sentinel()
 
 
