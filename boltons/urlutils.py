@@ -339,9 +339,11 @@ class URL(object):
         except KeyError:
             return DEFAULT_PORT_MAP.get(self.scheme.split('+')[-1])
 
-    def normalize(self, suffix=None):
+    def normalize(self, suffix=None, with_case=True):
         """Resolve any "." and ".." references in the path, with an optional
         suffix to the existing path.
+
+        More information can be found in Section 6.2.2 of RFC 3986.
         """
         if not suffix:
             new_path_parts = self.path_parts
@@ -361,8 +363,11 @@ class URL(object):
                                         ' support authority alteration: %r'
                                         % suffix)
 
-        resolved_path_parts = resolve_path_parts(new_path_parts)
-        self.path_parts = resolved_path_parts
+        self.path_parts = resolve_path_parts(new_path_parts)
+
+        if with_case:
+            self.scheme = self.scheme.lower()
+            self.host = self.host.lower()
         return
 
     def get_authority(self, full_quote=True, with_userinfo=True):
@@ -532,10 +537,10 @@ def parse_url(url_text):
                 try:
                     port = int(port_str)
                 except ValueError:
-                    if not port_str:  # TODO: excessive?
-                        raise URLParseError('port must not be empty')
-                    raise URLParseError('expected integer for port, not %r)'
-                                        % port_str)
+                    if port_str:  # empty ports ok according to RFC 3986 6.2.3
+                        raise URLParseError('expected integer for port, not %r'
+                                            % port_str)
+                    port = None
 
     family, host = parse_host(host)
 

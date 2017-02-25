@@ -280,6 +280,18 @@ def test_self_normalize():
     assert url.to_text() == 'http://hatnote.com/b?k=v#hashtags'
 
 
+def test_normalize_with_case():
+    # from RFC 3986 Section 6.2.2
+    url1 = URL('example://a/b/c/%7Bfoo%7D')
+    url2 = URL('eXAMPLE://a/./b/../b/%63/%7bfoo%7d')
+
+    assert url1 != url2
+
+    url1.normalize()
+    url2.normalize()
+
+    assert url1 == url2
+
 def test_netloc_slashes():
     # basic sanity checks
     url = URL('mailto:mahmoud@hatnote.com')
