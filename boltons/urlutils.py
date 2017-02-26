@@ -50,9 +50,70 @@ NO_NETLOC_SCHEMES = ['urn', 'tel', 'news', 'mailto', 'magnet']  # TODO: others?
 
 DEFAULT_PORT_MAP = {'http': 80, 'https': 443}
 
+DEFAULT_ENCODING = 'utf8'
+
+
+def to_unicode(obj):
+    try:
+        return unicode(obj)
+    except UnicodeDecodeError:
+        return unicode(obj, encoding=DEFAULT_ENCODING)
+
 
 class URLParseError(ValueError):
     pass
+
+
+# regex from gruber via tornado
+# doesn't support ipv6 or mailto (netloc-less schemes)
+_FIND_ALL_URL_RE = re.compile(to_unicode(r"""\b((?:([\w-]+):(/{1,3})|www[.])(?:(?:(?:[^\s&()<>]|&amp;|&quot;)*(?:[^!"#$%'()*+,.:;<=>?@\[\]^`{|}~\s]))|(?:\((?:[^\s&()]|&amp;|&quot;)*\)))+)"""))
+
+
+def find_all_links(text, with_text=False,
+                   require_scheme=False, default_scheme='http', schemes=()):
+    """
+    Heuristic-based link finder.
+    """
+    text = to_unicode(text)
+    prev_end, start, end = 0, None, None
+    ret = []
+    _add = ret.append
+
+    def _add_text(t):
+        if ret and isinstance(ret[-1], unicode):
+            ret[-1] += t
+        else:
+            _add(t)
+
+    for match in _FIND_ALL_URL_RE.finditer(text):
+        start, end = match.start(1), match.end(1)
+        if prev_end < start and with_text:
+            _add(text[prev_end:start])
+        prev_end = end
+        try:
+            cur_url_text = match.group(0)
+            cur_url = URL(cur_url_text)
+            if not cur_url.scheme:
+                if require_scheme:
+                    _add_text(text[start:end])
+                else:
+                    cur_url = URL(default_scheme + '://' + cur_url_text)
+            if schemes and cur_url.scheme not in schemes:
+                _add_text(text[start:end])
+            else:
+                _add(cur_url)
+        except URLParseError:
+            # currently this should only be hit with broken port
+            # strings. the regex above doesn't support ipv6 addresses
+            if with_text:
+                _add_text(text[start:end])
+
+    if with_text:
+        tail = text[prev_end:]
+        if tail:
+            _add_text(tail)
+
+    return ret
 
 
 def _make_quote_map(safe_chars):
@@ -72,16 +133,6 @@ _USERINFO_PART_QUOTE_MAP = _make_quote_map(_USERINFO_SAFE)
 _PATH_PART_QUOTE_MAP = _make_quote_map(_PATH_SAFE)
 _QUERY_PART_QUOTE_MAP = _make_quote_map(_QUERY_SAFE)
 _FRAGMENT_QUOTE_MAP = _make_quote_map(_FRAGMENT_SAFE)
-
-
-DEFAULT_ENCODING = 'utf8'
-
-
-def to_unicode(obj):
-    try:
-        return unicode(obj)
-    except UnicodeDecodeError:
-        return unicode(obj, encoding=DEFAULT_ENCODING)
 
 
 def quote_path_part(text, full_quote=True):

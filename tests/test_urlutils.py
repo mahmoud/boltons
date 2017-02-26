@@ -1,19 +1,11 @@
 # -*- coding: utf-8 -*-
-"""
-tests:
-
-* http://a:b:c
-  * new: fail on invalid port "c"
-  * txurl: valid "http://a"
-  * urlparse: does not parse ports
-* git+https://git.example.com
-"""
 
 
 import pytest
 
 from boltons import urlutils
-from boltons.urlutils import URL, _URL_RE
+from boltons.urlutils import URL, _URL_RE, find_all_links
+
 
 try:
     unicode
@@ -381,3 +373,68 @@ def test_netloc_slashes():
     assert url.to_text() == 'mailto:/path/to/heck'
 
     return
+
+
+# (link_text, expected_urls)
+# adapted from tornado test suite
+FAL_TESTS = [("hello http://world.com/!", ["http://world.com/"]),
+             ("hello http://world.com/with?param=true&stuff=yes", ["http://world.com/with?param=true&stuff=yes"]),
+             ("http://url.com/w(aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", ["http://url.com/w"]),
+             ("http://url.com/withmany.......................................", ["http://url.com/withmany"]),
+             ("http://url.com/withmany((((((((((((((((((((((((((((((((((a)", ["http://url.com/withmany"]),
+             # some examples from http://daringfireball.net/2009/11/liberal_regex_for_matching_urls
+             ("http://foo.com/blah_blah", ["http://foo.com/blah_blah"]),
+             ("http://foo.com/blah_blah/", ["http://foo.com/blah_blah/"]),
+             ("(Something like http://foo.com/blah_blah)", ["http://foo.com/blah_blah"]),
+             ("http://foo.com/blah_blah_(wikipedia)", ["http://foo.com/blah_blah_(wikipedia)"]),
+             ("http://foo.com/blah_(blah)_(wikipedia)_blah", ["http://foo.com/blah_(blah)_(wikipedia)_blah"]),
+             ("http://foo.com/blah_blah.", ["http://foo.com/blah_blah"]),
+             ("http://foo.com/blah_blah/.", ["http://foo.com/blah_blah/"]),
+             ("<http://foo.com/blah_blah>", ["http://foo.com/blah_blah"]),
+             ("<http://foo.com/blah_blah/>", ["http://foo.com/blah_blah/"]),
+             ("http://foo.com/blah_blah,", ["http://foo.com/blah_blah"]),
+             ("http://www.example.com/wpstyle/?p=364.", ["http://www.example.com/wpstyle/?p=364"]),
+             ("rdar://1234", ["rdar://1234"]),
+             ("rdar:/1234", ["rdar:/1234"]),
+             ("http://userid:password@example.com:8080", ["http://userid:password@example.com:8080"]),
+             ("http://userid@example.com", ["http://userid:@example.com"]),
+             ("message://%3c330e7f8409726r6a4ba78dkf1fd71420c1bf6ff@mail.gmail.com%3e", ["message://%3C330e7f8409726r6a4ba78dkf1fd71420c1bf6ff:@mail.gmail.com%3e"]),
+             (u"http://\u27a1.ws/\u4a39", [u"http://\u27a1.ws/\u4a39"]),
+             ("<tag>http://example.com</tag>", ["http://example.com"]),
+             ("Just a www.example.com link.", ["http://www.example.com"]),
+             ("www.a-link.com", ["http://www.a-link.com"]),
+             ("www.a-link.com and www.b-link.com/blogs extra", ["http://www.a-link.com", "http://www.b-link.com/blogs"])
+]
+
+
+def test_find_all_links_basic():
+    target = """hi my name is prince nigeria, please visit my website
+    http://richprince.biz or if that's blocked try
+    http://getprince.ly! Thanks for your attention.bye!
+
+    PS if those ports are blocked, how about trying
+    https://crownbux.afamilycompany:broken/affiliate
+
+    PPS if all else fails you can always mailto:thePrince@machovelli.an
+    """
+
+    urls = find_all_links(target)
+    assert len(urls) == 2
+
+
+def test_find_all_links():
+    prefix = "a little something before, "
+    suffix = " a bit of another after."
+
+    for content, expected_links in FAL_TESTS:
+        text = prefix + content + suffix
+
+        links = find_all_links(text)
+        assert len(links) == len(expected_links)
+
+        for link, expected in zip(links, expected_links):
+            assert link.to_text(full_quote=False) == expected
+
+        link_tokens = find_all_links(text, with_text=True)
+        assert link_tokens[0].startswith(prefix)
+        assert link_tokens[-1].endswith(suffix)
