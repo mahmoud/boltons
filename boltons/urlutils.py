@@ -174,6 +174,9 @@ def unquote_to_bytes(string):
 
 
 def register_scheme(text, uses_netloc=None, default_port=None):
+    """Registers new scheme information, resulting in correct port and
+    slash behavior from the URL object.
+    """
     text = text.lower()
     if default_port is not None:
         try:
@@ -288,15 +291,17 @@ class URL(object):
         return
 
     @classmethod
-    def from_parts(cls, scheme=None, host=None, path=u'', query=u'',
+    def from_parts(cls, scheme=None, host=None, path_parts=(), query_params=(),
                    fragment=u'', port=None, username=None, password=None):
+        """
+        Build a new URL from parts.
+        """
         ret = cls()
 
         ret.scheme = scheme
         ret.host = host
-        ret.path = path
-        ret._query = query
-        # TODO: query dict
+        ret.path_parts = tuple(path_parts) or (u'',)
+        ret.query_params.update(query_params)
         ret.fragment = fragment
         ret.port = port
         ret.username = username
@@ -308,7 +313,7 @@ class URL(object):
     def query_params(self):
         return QueryParamDict.from_text(self._query)
 
-    q = query_params
+    qp = query_params
 
     @property
     def path(self):
@@ -339,36 +344,51 @@ class URL(object):
         except KeyError:
             return DEFAULT_PORT_MAP.get(self.scheme.split('+')[-1])
 
-    def normalize(self, suffix=None, with_case=True):
-        """Resolve any "." and ".." references in the path, with an optional
-        suffix to the existing path.
+    def normalize(self, with_case=True):
+        """Resolve any "." and ".." references in the path, as well as
+        normalize scheme and host casing.
 
         More information can be found in Section 6.2.2 of RFC 3986.
-        """
-        if not suffix:
-            new_path_parts = self.path_parts
-        else:
-            suffix = to_unicode(suffix)
-            suffix_path_parts = tuple([unquote(p) if '%' in p else p
-                                       for p in suffix.split(u'/')])
-            if suffix_path_parts[0]:
-                new_path_parts = self.path_parts[:-1] + suffix_path_parts
-            else:
-                # first element is only empty if the path is absolute
-                if suffix_path_parts[1]:
-                    new_path_parts = suffix_path_parts
-                else:
-                    raise URLParseError('expected zero or one leading slashes,'
-                                        ' not multiple. url.normalize does not'
-                                        ' support authority alteration: %r'
-                                        % suffix)
 
-        self.path_parts = resolve_path_parts(new_path_parts)
+        """
+        self.path_parts = resolve_path_parts(self.path_parts)
 
         if with_case:
             self.scheme = self.scheme.lower()
             self.host = self.host.lower()
         return
+
+    def navigate(self, dest):
+        """Factory method that returns a _new_ URL based on a given
+        destination, *dest*.
+        """
+        if not isinstance(dest, URL):
+            dest = URL(dest)
+        if dest.scheme and dest.host:
+            # TODO: replace all
+            pass
+        query_params = dest.query_params
+
+        if dest.path:
+            if dest.path.startswith(u'/'):   # absolute path
+                new_path_parts = list(dest.path_parts)
+            else:  # relative path
+                new_path_parts = self.path_parts[:-1] + dest.path_parts
+        else:
+            new_path_parts = list(self.path_parts)
+            if not query_params:
+                query_params = self.query_params
+
+        ret = self.from_parts(scheme=dest.scheme or self.scheme,
+                              host=dest.host or self.host,
+                              port=dest.port or self.port,
+                              path_parts=new_path_parts,
+                              query_params=query_params,
+                              fragment=dest.fragment,
+                              username=dest.username or self.username,
+                              password=dest.password or self.password)
+        ret.normalize()
+        return ret
 
     def get_authority(self, full_quote=True, with_userinfo=True):
         parts = []

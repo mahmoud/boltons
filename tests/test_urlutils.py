@@ -161,12 +161,12 @@ def test_parse_url():
 
 def test_parse_equals_in_qp_value():
     u = URL('http://localhost/?=x=x=x')
-    assert u.q[''] == 'x=x=x'
+    assert u.qp[''] == 'x=x=x'
     assert u.to_text() == 'http://localhost/?=x%3Dx%3Dx'
 
     u = URL('http://localhost/?foo=x=x=x&bar=y')
-    assert u.q['foo'] == 'x=x=x'
-    assert u.q['bar'] == 'y'
+    assert u.qp['foo'] == 'x=x=x'
+    assert u.qp['bar'] == 'y'
 
 
 def test_identical_equal():
@@ -265,11 +265,14 @@ REL_URL_TEST_CASES = [
 ]
 
 
-def test_suffix_normalize():
+def test_rel_navigate():
     for suffix, expected in REL_URL_TEST_CASES:
         url = URL(REL_URL_BASE)
-        url.normalize(suffix)
-        assert url.path == URL(expected).path
+        new_url = url.navigate(suffix)
+        assert new_url.to_text() == expected
+
+        new_url = url.navigate(URL(suffix))
+        assert new_url.to_text() == expected
 
     return
 
