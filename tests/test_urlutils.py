@@ -277,6 +277,47 @@ def test_rel_navigate():
     return
 
 
+def test_navigate():
+    orig_text = u'http://a.b/c/d?e#f'
+    orig = URL(orig_text)
+    navd = orig.navigate('')
+    # fragment removed on empty navigate
+    assert navd.to_text() == u'http://a.b/c/d?e'
+
+    # query also removed on non-empty navigate (interp'd as rel path)
+    navd = orig.navigate('dd')
+    assert navd.to_text() == u'http://a.b/c/dd'
+
+    # path removed on absolute path navigate
+    navd = orig.navigate('/C')
+    assert navd.to_text() == u'http://a.b/C'
+
+    # only query string
+    navd = orig.navigate('?e=E&ee=EE')
+    assert navd.to_text() == u'http://a.b/c/d?e=E&ee=EE'
+
+    # only fragment
+    navd = orig.navigate('#FFF')
+    assert navd.to_text() == u'http://a.b/c/d?e#FFF'
+
+    # an odd case, bears more consideration perhaps
+    navd = orig.navigate('https:')
+    assert navd.to_text() == u'https://a.b/c/d?e'
+
+    # another odd one, host only
+    navd = orig.navigate('//newhost')
+    assert navd.to_text() == u'http://newhost/c/d?e'
+
+    # absolute URLs (with scheme + host) replace everything
+    _dest_text = u'http://hatnote.com'
+    _dest = URL(_dest_text)
+    navd = orig.navigate(_dest)
+    assert _dest is not navd  # make sure copies are made
+    assert navd.to_text() == _dest_text
+    navd = orig.navigate(_dest_text)
+    assert navd.to_text() == _dest_text
+
+
 def test_self_normalize():
     url = URL('http://hatnote.com/a/../../b?k=v#hashtags')
     url.normalize()

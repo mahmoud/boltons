@@ -362,11 +362,13 @@ class URL(object):
         """Factory method that returns a _new_ URL based on a given
         destination, *dest*.
         """
+        orig_dest = None
         if not isinstance(dest, URL):
-            dest = URL(dest)
+            dest, orig_dest = URL(dest), dest
         if dest.scheme and dest.host:
-            # TODO: replace all
-            pass
+            # absolute URLs replace everything, but don't make an
+            # extra copy if we don't have to
+            return URL(dest) if orig_dest is None else dest
         query_params = dest.query_params
 
         if dest.path:
