@@ -1,8 +1,21 @@
 boltons Changelog
 =================
 
-Since February 20, 2013 there have been 31 releases and 1043 commits for
-an average of one 33-commit release every 6.5 weeks.
+Since February 20, 2013 there have been 32 releases and 1089 commits for
+an average of one 34-commit release every 6.2 weeks.
+
+17.1.0
+------
+*(February 27, 2017)*
+
+Add urlutils module, with URL type and find_all_links function. also
+update Sentinel for Python 3 falsiness
+
+* Add urlutils module, complete with RFC3986-compliant `URL` type
+* Also add `urlutils.find_all_links` function, which heuristically
+  finds all links in plaintext, and creates URLs out of them.
+* Update typeutils.Sentinel to be appropriately falsy on Python 3
+
 
 17.0.0
 ------
