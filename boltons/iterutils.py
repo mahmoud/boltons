@@ -963,22 +963,23 @@ class GUIDerator(object):
 
     Testing shows it to be around 12x faster than the uuid module. By
     default it is also more compact, partly due to its default 96-bit
-    (12-byte) length. 96 bits of randomness means that there is a 1 in
-    2 ^ 32 chance of collision after 2 ^ 64 iterations. If more or
-    less uniqueness is desired, the *size* argument can be adjusted
+    (24-hexdigit) length. 96 bits of randomness means that there is a
+    1 in 2 ^ 32 chance of collision after 2 ^ 64 iterations. If more
+    or less uniqueness is desired, the *size* argument can be adjusted
     accordingly.
 
     Args:
-        size (int): character length of the GUID, defaults to 12. Lengths
-                    between 10 and 20 are considered valid.
+        size (int): character length of the GUID, defaults to 24. Lengths
+                    between 20 and 36 are considered valid.
 
     The GUIDerator has built-in fork protection that causes it to
     detect a fork on next iteration and reseed accordingly.
+
     """
-    def __init__(self, size=12):
+    def __init__(self, size=24):
         self.size = size
-        if size < 10 or size > 20:
-            raise ValueError('expected 10 < size <= 20')
+        if size < 20 or size > 36:
+            raise ValueError('expected 20 < size <= 36')
         self.count = itertools.count()
         self.reseed()
 
@@ -1025,13 +1026,13 @@ class SequentialGUIDerator(GUIDerator):
     The SequentialGUIDerator is aronud 50% faster than the normal
     GUIDerator, making it almost 20x as fast as the built-in uuid
     module. By default it is also more compact, partly due to its
-    96-bit (12-byte) default length. 96 bits of randomness means that
+    96-bit (24-hexdigit) default length. 96 bits of randomness means that
     there is a 1 in 2 ^ 32 chance of collision after 2 ^ 64
     iterations. If more or less uniqueness is desired, the *size*
     argument can be adjusted accordingly.
 
     Args:
-        size (int): character length of the GUID, defaults to 12.
+        size (int): character length of the GUID, defaults to 24.
 
     Note that with SequentialGUIDerator there is a chance of GUIDs
     growing larger than the size configured. The SequentialGUIDerator

@@ -442,8 +442,8 @@ def test_guiderator():
     assert guid != guid2
 
     # custom size
-    guid_iter = GUIDerator(size=16)
-    assert len(next(guid_iter)) == 16
+    guid_iter = GUIDerator(size=26)
+    assert len(next(guid_iter)) == 26
 
 
 def test_seqguiderator():
@@ -463,5 +463,5 @@ def test_seqguiderator():
 
     # custom size
     for x in range(10000):
-        guid_iter = GUIDerator(size=16)
-        assert len(next(guid_iter)) == 16
+        guid_iter = GUIDerator(size=26)
+        assert len(next(guid_iter)) == 26
