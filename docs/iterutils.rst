@@ -35,6 +35,8 @@ The functions below make working with nested iterables and other
 containers as succinct and powerful as Python itself.
 
 .. autofunction:: remap
+.. autofunction:: get_path
+
 
 Numeric
 -------

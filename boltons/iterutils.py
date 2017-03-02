@@ -902,8 +902,10 @@ def remap(root, visit=default_visit, enter=default_enter, exit=default_exit,
 
 
 class PathAccessError(KeyError, IndexError, TypeError):
-    # TODO: could maybe get fancy with an isinstance
-    # TODO: should accept an idx argument
+    """An amalgamation of KeyError, IndexError, and TypeError,
+    representing what can occur when looking up a path in a nested
+    object.
+    """
     def __init__(self, exc, seg, path):
         self.exc = exc
         self.seg = seg
@@ -919,34 +921,62 @@ class PathAccessError(KeyError, IndexError, TypeError):
 
 
 def get_path(root, path, default=_UNSET):
-    """EAFP is great, but the error message on this isn't:
+    """Retrieve a value from a nested object via a tuple representing the
+    lookup path.
 
-    var_key = 'last_key'
-    x['key'][-1]['other_key'][var_key]
-    KeyError: 'last_key'
+    >>> root = {'a': {'b': {'c': [[1], [2], [3]]}}}
+    >>> get_path(root, ('a', 'b', 'c', 2, 2))
+    3
 
-    One of get_path's chief aims is to have a good exception that is
-    better than a plain old KeyError: 'missing_key'
+    The path format is intentionally consistent with that of
+    :func:`remap`.
+
+    One of get_path's chief aims is improved error messaging. EAFP is
+    great, but the error messages are not.
+
+    For instance, ``root['a']['b']['c'][2][1]`` gives back
+    ``IndexError: list index out of range``
+
+    What went out of range where? get_path currently raises
+    ``PathAccessError: could not access 2 from path ('a', 'b', 'c', 2,
+    1), got error: IndexError('list index out of range',)``, a
+    subclass of IndexError and KeyError.
+
+    You can also pass a default that covers the entire operation,
+    should the lookup fail at any level.
+
+    Args:
+       root: The target nesting of dictionaries, lists, or other
+          objects supporting ``__getitem__``.
+       path (tuple): A list of strings and integers to be successively
+          looked up within *root*.
+       default: The value to be returned should any
+          ``PathAccessError`` exceptions be raised.
     """
-    # TODO: integrate default
-    # TODO: listify kwarg? to allow indexing into sets
-    # TODO: raise better error on not iterable?
     if isinstance(path, basestring):
         path = path.split('.')
     cur = root
-    for seg in path:
-        try:
-            cur = cur[seg]
-        except (KeyError, IndexError) as exc:
-            raise PathAccessError(exc, seg, path)
-        except TypeError as exc:
-            # either string index in a list, or a parent that
-            # doesn't support indexing
+    try:
+        for seg in path:
             try:
-                seg = int(seg)
                 cur = cur[seg]
-            except (ValueError, KeyError, IndexError, TypeError):
+            except (KeyError, IndexError) as exc:
                 raise PathAccessError(exc, seg, path)
+            except TypeError as exc:
+                # either string index in a list, or a parent that
+                # doesn't support indexing
+                try:
+                    seg = int(seg)
+                    cur = cur[seg]
+                except (ValueError, KeyError, IndexError, TypeError):
+                    if not is_iterable(cur):
+                        exc = TypeError('%r object is not indexable'
+                                        % type(cur).__name__)
+                    raise PathAccessError(exc, seg, path)
+    except PathAccessError:
+        if default is _UNSET:
+            raise
+        return default
     return cur
 
 # TODO: get_path/set_path
