@@ -925,7 +925,7 @@ def get_path(root, path, default=_UNSET):
     lookup path.
 
     >>> root = {'a': {'b': {'c': [[1], [2], [3]]}}}
-    >>> get_path(root, ('a', 'b', 'c', 2, 2))
+    >>> get_path(root, ('a', 'b', 'c', 2, 0))
     3
 
     The path format is intentionally consistent with that of
