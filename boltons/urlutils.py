@@ -1,6 +1,40 @@
 # -*- coding: utf-8 -*-
-"""
-TODO: docs
+""":mod:`urlutils` is a module dedicated to one of our most versatile,
+well-aged, and beloved data structures: the URL, also known as the
+Uniform Resource Locator.
+
+The centerpiece of urlutils is the :class:`URL` type. Usage is
+straightforward:
+
+>>> url = URL(u'https://boltons.readthedocs.org/?query_param=True#fragment')
+>>> print(url.scheme)
+https
+>>> print(url.host)
+boltons.readthedocs.org
+
+URLs are so common, that it's easy to overlook their complexity and
+power. There are _ different parts of a URL, each with its own
+semantics and special characters:
+
+  * scheme
+  * username
+  * password
+  * host
+  * port
+  * path
+  * query parameters (query_params)
+  * fragment
+
+These are all exposed as attributes on the URL object.
+
+The approach to encoding is that data passed in to the URL is decoded
+as much as possible, and remains in this decoded state until
+re-encoded using the ``to_text()`` method.
+
+Note that URL instances are mutable objects. If an immutable
+representation of the URL is desired, the string from ``to_text()``
+should be used. At the risk of restating the obvious, there is no
+state of a valid URL object that will not fit into a URL string.
 """
 
 import re
@@ -65,14 +99,15 @@ class URLParseError(ValueError):
 
 
 # regex from gruber via tornado
-# doesn't support ipv6 or mailto (netloc-less schemes)
+# doesn't support ipv6
+# doesn't support mailto (netloc-less schemes)
 _FIND_ALL_URL_RE = re.compile(to_unicode(r"""\b((?:([\w-]+):(/{1,3})|www[.])(?:(?:(?:[^\s&()<>]|&amp;|&quot;)*(?:[^!"#$%'()*+,.:;<=>?@\[\]^`{|}~\s]))|(?:\((?:[^\s&()]|&amp;|&quot;)*\)))+)"""))
 
 
-def find_all_links(text, with_text=False,
-                   require_scheme=False, default_scheme='http', schemes=()):
-    """
-    Heuristic-based link finder.
+def find_all_links(text, with_text=False, default_scheme='http', schemes=()):
+    """This function searches a block of plaintext for items that look
+    like URLs. Heuristic-based link finder.
+
     """
     text = to_unicode(text)
     prev_end, start, end = 0, None, None
@@ -94,10 +129,11 @@ def find_all_links(text, with_text=False,
             cur_url_text = match.group(0)
             cur_url = URL(cur_url_text)
             if not cur_url.scheme:
-                if require_scheme:
-                    _add_text(text[start:end])
-                else:
+                if default_scheme:
                     cur_url = URL(default_scheme + '://' + cur_url_text)
+                else:
+                    _add_text(text[start:end])
+                    continue
             if schemes and cur_url.scheme not in schemes:
                 _add_text(text[start:end])
             else:
@@ -136,6 +172,9 @@ _FRAGMENT_QUOTE_MAP = _make_quote_map(_FRAGMENT_SAFE)
 
 
 def quote_path_part(text, full_quote=True):
+    """
+    Percent-encode a single segment of a URL path.
+    """
     # TODO: why does one route allow percents through and not the
     # other?
     if not full_quote:
@@ -146,6 +185,9 @@ def quote_path_part(text, full_quote=True):
 
 
 def quote_query_part(text, full_quote=True):
+    """
+    Percent-encode a single query string key or value.
+    """
     if not full_quote:
         return u''.join([_QUERY_PART_QUOTE_MAP.get(t, t) for t in text])
 
@@ -153,9 +195,10 @@ def quote_query_part(text, full_quote=True):
     return u''.join([_QUERY_PART_QUOTE_MAP[b] for b in bytestr])
 
 
-# fragments don't really have parts, there are no official
-# subdelimiters within fragments, I believe
 def quote_fragment_part(text, full_quote=True):
+    """Quote the fragment part of the URL. Fragments don't have
+    subdelimiters, so the whole URL fragment can be passed.
+    """
     if not full_quote:
         return u''.join([_FRAGMENT_QUOTE_MAP.get(t, t) for t in text])
 
@@ -164,6 +207,11 @@ def quote_fragment_part(text, full_quote=True):
 
 
 def quote_userinfo_part(text, full_quote=True):
+    """Quote special characters in either the username or password
+    section of the URL. Note that userinfo in URLs is considered
+    deprecated in many circles (especially browsers), and support for
+    percent-encoded userinfo can be spotty.
+    """
     if not full_quote:
         return u''.join([_USERINFO_PART_QUOTE_MAP.get(t, t) for t in text])
 
@@ -172,14 +220,15 @@ def quote_userinfo_part(text, full_quote=True):
 
 
 def unquote(string, encoding='utf-8', errors='replace'):
-    """Replace %xx escapes by their single-character equivalent. The optional
-    encoding and errors parameters specify how to decode percent-encoded
-    sequences into Unicode characters, as accepted by the bytes.decode()
-    method.
-    By default, percent-encoded sequences are decoded with UTF-8, and invalid
-    sequences are replaced by a placeholder character.
+    """Percent-decode a string, by replacing %xx escapes with their
+    single-character equivalent. The optional *encoding* and *errors*
+    parameters specify how to decode percent-encoded sequences into
+    Unicode characters, as accepted by the :meth:`bytes.decode()` method.  By
+    default, percent-encoded sequences are decoded with UTF-8, and
+    invalid sequences are replaced by a placeholder character.
 
     unquote('abc%20def') -> 'abc def'.
+
     """
     if '%' not in string:
         string.split
@@ -378,6 +427,29 @@ class URL(object):
 
     @property
     def uses_netloc(self):
+        """Whether or not a URL uses ``:`` or ``://`` to separate the scheme
+        from the rest of the URL depends on the scheme's own standard
+        definition. There is no way to infer this behavior from other
+        parts of the URL. A scheme either supports network locations
+        or it does not.
+
+        The URL type's approach to this is to check for explicitly
+        registered schemes, with common schemes like HTTP
+        preregistered. This is the same approach taken by
+        :mod:`urlparse`.
+
+        URL adds two additional heuristics if the scheme as a whole is
+        not registered. First, it attempts to check the subpart of the
+        scheme after the last ``+`` character. This adds intuitive
+        behavior for schemes like ``git+ssh``. Second, if a URL with
+        an unrecognized scheme is loaded, it will maintain the
+        separator it sees.
+
+        >>> print(URL('fakescheme://test.com').to_text())
+        fakescheme://test.com
+        >>> print(URL('mockscheme:hello:world').to_text())
+        mockscheme:hello:world
+        """
         default = self._uses_netloc
         if self.scheme in NETLOC_SCHEMES:
             return True
@@ -389,6 +461,12 @@ class URL(object):
 
     @property
     def default_port(self):
+        """Return the default port for the currently-set scheme. Returns
+        ``None`` if the scheme is unrecognized. See
+        :func:`register_scheme` above.
+
+        Applies the same '+' heuristic detailed in :meth:`URL.uses_netloc`.
+        """
         try:
             return DEFAULT_PORT_MAP[self.scheme]
         except KeyError:
@@ -396,10 +474,10 @@ class URL(object):
 
     def normalize(self, with_case=True):
         """Resolve any "." and ".." references in the path, as well as
-        normalize scheme and host casing.
+        normalize scheme and host casing. To turn off case
+        normalization, pass ``with_case=False``.
 
         More information can be found in Section 6.2.2 of RFC 3986.
-
         """
         self.path_parts = resolve_path_parts(self.path_parts)
 
@@ -467,6 +545,21 @@ class URL(object):
         return u''.join(parts)
 
     def to_text(self, full_quote=False):
+        """Render a string representing the current state of the URL
+        object.
+
+        >>> url = URL('http://listen.hatnote.com')
+        >>> url.fragment = 'en'
+        >>> print(url.to_text())
+        http://listen.hatnote.com#en
+
+        By setting the *full_quote* flag, the URL can either be fully
+        quoted or minimally quoted. The most common characteristic of
+        an encoded-URL is the presence of percent-encoded text (e.g.,
+        %60).  Minimally-encoded URLs are more readable and suitable
+        for display, whereas fully-encoded URLs are more conservative
+        and generally necessary for sending over the network.
+        """
         scheme = self.scheme
         path = u'/'.join([quote_path_part(p, full_quote=full_quote)
                           for p in self.path_parts])
@@ -503,6 +596,7 @@ class URL(object):
         return u'%s(%r)' % (cn, self.to_text())
 
     def __eq__(self, other):
+        # TODO
         for attr in self._attrs:
             if not getattr(self, attr) == getattr(other, attr, None):
                 return False
