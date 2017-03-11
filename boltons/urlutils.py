@@ -80,9 +80,16 @@ NETLOC_SCHEMES = ['ftp', 'http', 'gopher', 'nntp', 'telnet',
                   'imap', 'wais', 'file', 'mms', 'https', 'shttp',
                   'snews', 'prospero', 'rtsp', 'rtspu', 'rsync', '',
                   'svn', 'svn+ssh', 'sftp', 'nfs', 'git', 'git+ssh']
-NO_NETLOC_SCHEMES = ['urn', 'tel', 'news', 'mailto', 'magnet']  # TODO: others?
+NO_NETLOC_SCHEMES = ['urn', 'tel', 'news', 'mailto', 'magnet', 'about', 'blob', 'data']  # TODO: others?
 
-DEFAULT_PORT_MAP = {'http': 80, 'https': 443}
+DEFAULT_PORT_MAP = {'acap': 674, 'afp': 548, 'dict': 2628, 'dns': 53,
+                    'file': None, 'ftp': 21, 'git': 9418, 'gopher': 70,
+                    'http': 80, 'https': 443, 'imap': 143, 'irc': 194,
+                    'ldap': 389, 'ldaps': 636, 'mms': 1755, 'nfs': 111,
+                    'nntp': 119, 'nntps': 563, 'prospero': 1525, 'rsync': 873,
+                    'rtsp': 554, 'rtsps': 322, 'rtspu': 5005, 'sftp': 22,
+                    'smb': 445, 'snmp': 161, 'ssh': 22, 'svn': 3690,
+                    'telnet': 23, 'wais': 210}
 
 DEFAULT_ENCODING = 'utf8'
 
