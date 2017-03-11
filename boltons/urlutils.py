@@ -54,9 +54,9 @@ _UNRESERVED_CHARS = frozenset('~-._0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'
 
 # URL parsing regex (per RFC 3986)
 _URL_RE = re.compile(r'^((?P<scheme>[^:/?#]+):)?'
-                     r'((?P<_uses_netloc>//)(?P<authority>[^/?#]*))?'
-                     r'(?P<path_parts>[^?#]*)'
-                     r'(\?(?P<_query>[^#]*))?'
+                     r'((?P<_netloc_sep>//)(?P<authority>[^/?#]*))?'
+                     r'(?P<path>[^?#]*)'
+                     r'(\?(?P<query>[^#]*))?'
                      r'(#(?P<fragment>.*))?')
 
 
@@ -365,14 +365,15 @@ class URL(object):
 
     """
 
-    _attrs = ('scheme', '_uses_netloc', 'username', 'password', 'family',
-              'host', 'port', 'path_parts', '_query', 'fragment')
+    # public attributes (for comparison, see __eq__):
+    _cmp_attrs = ('scheme', '_netloc_sep', 'username', 'password',
+                  'family', 'host', 'port', 'path', 'query_params', 'fragment')
 
     def __init__(self, url=''):
         # TODO: encoding param. The encoding that underlies the
         # percent-encoding is always utf8 for IRIs, but can be Latin-1
         # for other usage schemes.
-        url_dict = {}
+        ud = DEFAULT_PARSED_URL
         if url:
             if isinstance(url, URL):
                 url = url.to_text()  # better way to copy URLs?
@@ -384,25 +385,34 @@ class URL(object):
                                         ' try decoding the url bytes and'
                                         ' passing the result. (got: %s)'
                                         % (DEFAULT_ENCODING, ude))
-            url_dict = parse_url(url)
+            ud = parse_url(url)
 
-        _d = unicode()
-        for attr in self._attrs:
-            # TODO: possibly use None as marker for empty vs missing
-            val = url_dict.get(attr, _d) or _d
-            if attr == 'path_parts':
-                val = tuple([unquote(p) if '%' in p else p
-                             for p in val.split(u'/')])
-            elif attr in ('username', 'password', 'fragment') and '%' in val:
-                val = unquote(val)
-            elif attr == 'host' and val:
-                try:
-                    val = val.encode("ascii")
-                except UnicodeEncodeError:
-                    pass  # already non-ascii text
-                else:
-                    val = val.decode("idna")
-            setattr(self, attr, val)
+        _e = u''
+        self.scheme = ud['scheme'] or _e
+        self._netloc_sep = ud['_netloc_sep'] or _e
+        self.username = (unquote(ud['username'])
+                         if '%' in (ud['username'] or _e) else ud['username'] or _e)
+        self.password = (unquote(ud['password'])
+                         if '%' in (ud['password'] or _e) else ud['password'] or _e)
+        self.family = ud['family']
+
+        if not ud['host']:
+            self.host = _e
+        else:
+            try:
+                self.host = ud['host'].encode("ascii")
+            except UnicodeEncodeError:
+                self.host = ud['host']  # already non-ascii text
+            else:
+                self.host = self.host.decode("idna")
+
+        self.port = ud['port']
+        self.path_parts = tuple([unquote(p) if '%' in p else p for p
+                                 in (ud['path'] or _e).split(u'/')])
+        self._query = ud['query'] or _e
+        self.fragment = (unquote(ud['fragment'])
+                         if '%' in (ud['fragment'] or _e) else ud['fragment'] or _e)
+        # TODO: possibly use None as marker for empty vs missing
         return
 
     @classmethod
@@ -484,7 +494,7 @@ class URL(object):
         >>> print(URL('mockscheme:hello:world').to_text())
         mockscheme:hello:world
         """
-        default = self._uses_netloc
+        default = self._netloc_sep
         if self.scheme in DEFAULT_PORT_MAP:
             return True
         if self.scheme in NO_NETLOC_SCHEMES:
@@ -630,8 +640,7 @@ class URL(object):
         return u'%s(%r)' % (cn, self.to_text())
 
     def __eq__(self, other):
-        # TODO
-        for attr in self._attrs:
+        for attr in self._cmp_attrs:
             if not getattr(self, attr) == getattr(other, attr, None):
                 return False
         return True
@@ -750,6 +759,9 @@ def parse_url(url_text):
     gs['host'] = host
     gs['port'] = port
     return gs
+
+
+DEFAULT_PARSED_URL = parse_url('')
 
 
 def parse_qsl(qs, keep_blank_values=True, encoding=DEFAULT_ENCODING):

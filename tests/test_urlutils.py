@@ -144,8 +144,8 @@ def test_invalid_ipv6():
 
 def test_parse_url():
     expected = {'family': 2, 'password': None, 'fragment': None,
-                'authority': u'127.0.0.1:3000', 'port': 3000, '_query': u'a=1',
-                '_uses_netloc': u'//', 'path_parts': u'/', 'scheme': u'http',
+                'authority': u'127.0.0.1:3000', 'port': 3000, 'query': u'a=1',
+                '_netloc_sep': u'//', 'path': u'/', 'scheme': u'http',
                 'host': u'127.0.0.1', 'username': None}
     res = urlutils.parse_url('http://127.0.0.1:3000/?a=1')
     assert res == expected
