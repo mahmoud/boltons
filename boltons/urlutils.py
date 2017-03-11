@@ -80,16 +80,25 @@ NETLOC_SCHEMES = ['ftp', 'http', 'gopher', 'nntp', 'telnet',
                   'imap', 'wais', 'file', 'mms', 'https', 'shttp',
                   'snews', 'prospero', 'rtsp', 'rtspu', 'rsync', '',
                   'svn', 'svn+ssh', 'sftp', 'nfs', 'git', 'git+ssh']
-NO_NETLOC_SCHEMES = ['urn', 'tel', 'news', 'mailto', 'magnet', 'about', 'blob', 'data']  # TODO: others?
 
+# This port list painstakingly curated by hand searching through
+# https://www.iana.org/assignments/uri-schemes/uri-schemes.xhtml
+# and
+# https://www.iana.org/assignments/service-names-port-numbers/service-names-port-numbers.xhtml
 DEFAULT_PORT_MAP = {'acap': 674, 'afp': 548, 'dict': 2628, 'dns': 53,
                     'file': None, 'ftp': 21, 'git': 9418, 'gopher': 70,
-                    'http': 80, 'https': 443, 'imap': 143, 'irc': 194,
-                    'ldap': 389, 'ldaps': 636, 'mms': 1755, 'nfs': 111,
-                    'nntp': 119, 'nntps': 563, 'prospero': 1525, 'rsync': 873,
+                    'http': 80, 'https': 443, 'imap': 143, 'ipp': 631,
+                    'ipps': 631, 'irc': 194, 'ircs': 6697, 'ldap': 389,
+                    'ldaps': 636, 'mms': 1755, 'msrp': 2855, 'msrps': None,
+                    'mtqp': 1038, 'nfs': 111, 'nntp': 119, 'nntps': 563,
+                    'pop': 110, 'prospero': 1525, 'redis': 6379, 'rsync': 873,
                     'rtsp': 554, 'rtsps': 322, 'rtspu': 5005, 'sftp': 22,
-                    'smb': 445, 'snmp': 161, 'ssh': 22, 'svn': 3690,
-                    'telnet': 23, 'wais': 210}
+                    'smb': 445, 'snmp': 161, 'ssh': 22, 'steam': None,
+                    'svn': 3690, 'telnet': 23, 'ventrilo': 3784, 'vnc': 5900,
+                    'wais': 210, 'ws': 80, 'wss': 443, 'xmpp': None}
+NO_NETLOC_SCHEMES = set(['about', 'bitcoin', 'blob', 'data', 'geo',
+                         'magnet', 'mailto', 'news', 'pkcs11',
+                         'sip', 'sips', 'tel', 'urn'])
 
 DEFAULT_ENCODING = 'utf8'
 
@@ -297,7 +306,7 @@ def register_scheme(text, uses_netloc=None, default_port=None):
             NETLOC_SCHEMES.append(text)
     elif uses_netloc is False:
         if text not in NO_NETLOC_SCHEMES:
-            NO_NETLOC_SCHEMES.append(text)
+            NO_NETLOC_SCHEMES.add(text)
     elif uses_netloc is not None:
         raise ValueError('uses_netloc expected True, False, or None')
 
