@@ -76,10 +76,6 @@ _PATH_SAFE = _UNRESERVED_CHARS | _SUB_DELIMS | set(u':@')
 _FRAGMENT_SAFE = _UNRESERVED_CHARS | _PATH_SAFE | set(u'/?')
 _QUERY_SAFE = _UNRESERVED_CHARS | _FRAGMENT_SAFE - set(u'&=+')
 
-NETLOC_SCHEMES = ['ftp', 'http', 'gopher', 'nntp', 'telnet',
-                  'imap', 'wais', 'file', 'mms', 'https', 'shttp',
-                  'snews', 'prospero', 'rtsp', 'rtspu', 'rsync', '',
-                  'svn', 'svn+ssh', 'sftp', 'nfs', 'git', 'git+ssh']
 
 # This port list painstakingly curated by hand searching through
 # https://www.iana.org/assignments/uri-schemes/uri-schemes.xhtml
@@ -96,9 +92,13 @@ DEFAULT_PORT_MAP = {'acap': 674, 'afp': 548, 'dict': 2628, 'dns': 53,
                     'smb': 445, 'snmp': 161, 'ssh': 22, 'steam': None,
                     'svn': 3690, 'telnet': 23, 'ventrilo': 3784, 'vnc': 5900,
                     'wais': 210, 'ws': 80, 'wss': 443, 'xmpp': None}
-NO_NETLOC_SCHEMES = set(['about', 'bitcoin', 'blob', 'data', 'geo',
+
+# This list of schemes that don't use authorities is also from the link above.
+NO_NETLOC_SCHEMES = set(['urn', 'about', 'bitcoin', 'blob', 'data', 'geo',
                          'magnet', 'mailto', 'news', 'pkcs11',
-                         'sip', 'sips', 'tel', 'urn'])
+                         'sip', 'sips', 'tel'])
+# As of Mar 11, 2017, there were 44 netloc schemes, and 13 non-netloc
+
 
 DEFAULT_ENCODING = 'utf8'
 
@@ -302,15 +302,11 @@ def register_scheme(text, uses_netloc=None, default_port=None):
                              % (default_port,))
 
     if uses_netloc is True:
-        if text not in NETLOC_SCHEMES:
-            NETLOC_SCHEMES.append(text)
+        DEFAULT_PORT_MAP[text] = default_port
     elif uses_netloc is False:
-        if text not in NO_NETLOC_SCHEMES:
-            NO_NETLOC_SCHEMES.add(text)
+        NO_NETLOC_SCHEMES.add(text)
     elif uses_netloc is not None:
         raise ValueError('uses_netloc expected True, False, or None')
-
-    DEFAULT_PORT_MAP[text] = default_port
 
     return
 
@@ -489,11 +485,11 @@ class URL(object):
         mockscheme:hello:world
         """
         default = self._uses_netloc
-        if self.scheme in NETLOC_SCHEMES:
+        if self.scheme in DEFAULT_PORT_MAP:
             return True
         if self.scheme in NO_NETLOC_SCHEMES:
             return False
-        if self.scheme.split('+')[-1] in NETLOC_SCHEMES:
+        if self.scheme.split('+')[-1] in DEFAULT_PORT_MAP:
             return True
         return default
 
