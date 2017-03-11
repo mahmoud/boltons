@@ -348,6 +348,10 @@ class cachedproperty(object):
 
 
 class URL(object):
+    """The URL is one of the most complex data structures taken for
+    granted in the modern landscape.
+
+    """
 
     _attrs = ('scheme', '_uses_netloc', 'username', 'password', 'family',
               'host', 'port', 'path_parts', '_query', 'fragment')
@@ -392,8 +396,26 @@ class URL(object):
     @classmethod
     def from_parts(cls, scheme=None, host=None, path_parts=(), query_params=(),
                    fragment=u'', port=None, username=None, password=None):
-        """
-        Build a new URL from parts.
+        """Build a new URL from parts. Note that the respective arguments are
+        not in the order they would appear in a URL:
+
+        Args:
+           scheme (str): The scheme of a URL, e.g., 'http'
+           host (str): The host string, e.g., 'hatnote.com'
+           path_parts (tuple): The individual text segments of the
+             path, e.g., ('post', '123')
+           query_params (dict): An OMD, dict, or list of (key, value)
+             pairs representing the keys and values of the URL's query
+             parameters.
+           fragment (str): The fragment of the URL, e.g., 'anchor1'
+           port (int): The integer port of URL, automatic defaults are
+             available for registered schemes.
+           username (str): The username for the userinfo part of the URL.
+           password (str): The password for the userinfo part of the URL.
+
+        Note that this method does relatively little
+        validation. :meth:`URL.to_text()` should be used to check if
+        any errors are produced while composing the final textual URL.
         """
         ret = cls()
 
