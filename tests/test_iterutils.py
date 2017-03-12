@@ -4,6 +4,7 @@ import pytest
 from boltons.dictutils import OMD
 from boltons.iterutils import (first,
                                remap,
+                               research,
                                default_enter,
                                default_exit,
                                get_path)
@@ -354,6 +355,27 @@ class TestGetPath(object):
         root = {'key': ['test']}
         assert get_path(root, ('key', 0)) == 'test'
         assert get_path(root, 'key.0') == 'test'
+
+
+def test_research():
+    root = {}
+
+    with pytest.raises(TypeError):
+        research(root, query=None)
+
+    root = {'a': 'a'}
+    res = research(root, query=lambda p, k, v: v == 'a')
+    assert len(res) == 1
+    assert res[0] == (('a',), 'a')
+
+    def broken_query(p, k, v):
+        raise RuntimeError()
+
+    with pytest.raises(RuntimeError):
+        research(root, broken_query, reraise=True)
+
+    # empty results with default, reraise=False
+    assert research(root, broken_query) == []
 
 
 def test_backoff_basic():
