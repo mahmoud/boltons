@@ -36,7 +36,7 @@ containers as succinct and powerful as Python itself.
 
 .. autofunction:: remap
 .. autofunction:: get_path
-
+.. autofunction:: research
 
 Numeric
 -------
