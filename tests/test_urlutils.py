@@ -410,7 +410,7 @@ FAL_TESTS = [("hello http://world.com/!", ["http://world.com/"]),
 def test_find_all_links_basic():
     target = """hi my name is prince nigeria, please visit my website
     http://richprince.biz or if that's blocked try
-    http://getprince.ly! Thanks for your attention.bye!
+    https://getprince.ly! Thanks for your attention.bye!
 
     PS if those ports are blocked, how about trying
     https://crownbux.afamilycompany:broken/affiliate
