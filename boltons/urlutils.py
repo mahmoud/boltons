@@ -58,17 +58,17 @@ _QUERY_SAFE = _UNRESERVED_CHARS | _FRAGMENT_SAFE - set(u'&=+')
 # https://www.iana.org/assignments/uri-schemes/uri-schemes.xhtml
 # and
 # https://www.iana.org/assignments/service-names-port-numbers/service-names-port-numbers.xhtml
-DEFAULT_PORT_MAP = {'acap': 674, 'afp': 548, 'dict': 2628, 'dns': 53,
-                    'file': None, 'ftp': 21, 'git': 9418, 'gopher': 70,
-                    'http': 80, 'https': 443, 'imap': 143, 'ipp': 631,
-                    'ipps': 631, 'irc': 194, 'ircs': 6697, 'ldap': 389,
-                    'ldaps': 636, 'mms': 1755, 'msrp': 2855, 'msrps': None,
-                    'mtqp': 1038, 'nfs': 111, 'nntp': 119, 'nntps': 563,
-                    'pop': 110, 'prospero': 1525, 'redis': 6379, 'rsync': 873,
-                    'rtsp': 554, 'rtsps': 322, 'rtspu': 5005, 'sftp': 22,
-                    'smb': 445, 'snmp': 161, 'ssh': 22, 'steam': None,
-                    'svn': 3690, 'telnet': 23, 'ventrilo': 3784, 'vnc': 5900,
-                    'wais': 210, 'ws': 80, 'wss': 443, 'xmpp': None}
+SCHEME_PORT_MAP = {'acap': 674, 'afp': 548, 'dict': 2628, 'dns': 53,
+                   'file': None, 'ftp': 21, 'git': 9418, 'gopher': 70,
+                   'http': 80, 'https': 443, 'imap': 143, 'ipp': 631,
+                   'ipps': 631, 'irc': 194, 'ircs': 6697, 'ldap': 389,
+                   'ldaps': 636, 'mms': 1755, 'msrp': 2855, 'msrps': None,
+                   'mtqp': 1038, 'nfs': 111, 'nntp': 119, 'nntps': 563,
+                   'pop': 110, 'prospero': 1525, 'redis': 6379, 'rsync': 873,
+                   'rtsp': 554, 'rtsps': 322, 'rtspu': 5005, 'sftp': 22,
+                   'smb': 445, 'snmp': 161, 'ssh': 22, 'steam': None,
+                   'svn': 3690, 'telnet': 23, 'ventrilo': 3784, 'vnc': 5900,
+                   'wais': 210, 'ws': 80, 'wss': 443, 'xmpp': None}
 
 # This list of schemes that don't use authorities is also from the link above.
 NO_NETLOC_SCHEMES = set(['urn', 'about', 'bitcoin', 'blob', 'data', 'geo',
@@ -304,7 +304,7 @@ def register_scheme(text, uses_netloc=None, default_port=None):
                              % (default_port,))
 
     if uses_netloc is True:
-        DEFAULT_PORT_MAP[text] = default_port
+        SCHEME_PORT_MAP[text] = default_port
     elif uses_netloc is False:
         NO_NETLOC_SCHEMES.add(text)
     elif uses_netloc is not None:
@@ -532,11 +532,11 @@ class URL(object):
         mockscheme:hello:world
         """
         default = self._netloc_sep
-        if self.scheme in DEFAULT_PORT_MAP:
+        if self.scheme in SCHEME_PORT_MAP:
             return True
         if self.scheme in NO_NETLOC_SCHEMES:
             return False
-        if self.scheme.split('+')[-1] in DEFAULT_PORT_MAP:
+        if self.scheme.split('+')[-1] in SCHEME_PORT_MAP:
             return True
         return default
 
@@ -549,9 +549,9 @@ class URL(object):
         Applies the same '+' heuristic detailed in :meth:`URL.uses_netloc`.
         """
         try:
-            return DEFAULT_PORT_MAP[self.scheme]
+            return SCHEME_PORT_MAP[self.scheme]
         except KeyError:
-            return DEFAULT_PORT_MAP.get(self.scheme.split('+')[-1])
+            return SCHEME_PORT_MAP.get(self.scheme.split('+')[-1])
 
     def normalize(self, with_case=True):
         """Resolve any "." and ".." references in the path, as well as
