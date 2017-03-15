@@ -21,9 +21,14 @@ Atomic File Saving
 ------------------
 
 Ideally, the road to success should never put current progress at
-risk. That's why overwriting a file should only happen after the task
-at hand has completed. And that's exactly what :func:`atomic_save` and
-:class:`AtomicSaver` do.
+risk. And that's exactly why :func:`atomic_save` and
+:class:`AtomicSaver` exist.
+
+Using the same API as a writable file, all output is saved to a
+temporary file, and when the file is closed, the old file is replaced
+by the new file in a single system call, portable across all major
+operating systems. No more partially-written or partially-overwritten
+files.
 
 .. autofunction:: boltons.fileutils.atomic_save
 
