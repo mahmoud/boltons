@@ -12,29 +12,6 @@ https
 >>> print(url.host)
 boltons.readthedocs.org
 
-URLs are so common, that it's easy to overlook their complexity and
-power. There are _ different parts of a URL, each with its own
-semantics and special characters:
-
-  * scheme
-  * username
-  * password
-  * host
-  * port
-  * path
-  * query parameters (query_params)
-  * fragment
-
-These are all exposed as attributes on the URL object.
-
-The approach to encoding is that data passed in to the URL is decoded
-as much as possible, and remains in this decoded state until
-re-encoded using the ``to_text()`` method.
-
-Note that URL instances are mutable objects. If an immutable
-representation of the URL is desired, the string from ``to_text()``
-should be used. At the risk of restating the obvious, there is no
-state of a valid URL object that will not fit into a URL string.
 """
 
 import re
@@ -120,9 +97,34 @@ class URLParseError(ValueError):
 _FIND_ALL_URL_RE = re.compile(to_unicode(r"""\b((?:([\w-]+):(/{1,3})|www[.])(?:(?:(?:[^\s&()<>]|&amp;|&quot;)*(?:[^!"#$%'()*+,.:;<=>?@\[\]^`{|}~\s]))|(?:\((?:[^\s&()]|&amp;|&quot;)*\)))+)"""))
 
 
-def find_all_links(text, with_text=False, default_scheme='http', schemes=()):
-    """This function searches a block of plaintext for items that look
-    like URLs. Heuristic-based link finder.
+def find_all_links(text, with_text=False, default_scheme='https', schemes=()):
+    """This function uses heuristics to searches plain text for strings
+    that look like URLs, returning a :class:`list` of :class:`URL`
+    objects. It supports limiting the accepted schemes, and returning
+    interleaved text as well.
+
+    >>> find_all_links('Visit https://boltons.rtfd.org!')
+    [URL(u'https://boltons.rtfd.org')]
+    >>> find_all_links('Visit https://boltons.rtfd.org!', with_text=True)
+    [u'Visit ', URL(u'https://boltons.rtfd.org'), u'!']
+
+    Args:
+       text (str): The text to search.
+
+       with_text (bool): Whether or not to interleave plaintext blocks
+          with the returned URL objects. Having all tokens can be
+          useful for transforming the text, e.g., replacing links with
+          HTML equivalents. Defaults to ``False``.
+
+       default_scheme (str): Many URLs are written without the scheme
+          component. This function can match a reasonable subset of
+          those, provided *default_scheme* is set to a string. Set to
+          ``False`` to disable matching scheme-less URLs. Defaults to
+          ``'https'``.
+
+       schemes (list): A list of strings that a URL's scheme must
+          match in order to be included in the results. Defaults to
+          empty, which matches all schemes.
 
     """
     text = to_unicode(text)
@@ -360,13 +362,48 @@ class cachedproperty(object):
 
 
 class URL(object):
-    """The URL is one of the most complex data structures taken for
-    granted in the modern landscape.
+    """The URL is one of the most ubiquitous data structures in the
+    virtual and physical landscape. From blogs to billboards, URLs are
+    so common, that it's easy to overlook their complexity and
+    power.
+
+    There are 8 parts of a URL, each with its own semantics and
+    special characters:
+
+      * :attr:`~URL.scheme`
+      * :attr:`~URL.username`
+      * :attr:`~URL.password`
+      * :attr:`~URL.host`
+      * :attr:`~URL.port`
+      * :attr:`~URL.path`
+      * :attr:`~URL.query_params` (query string parameters)
+      * :attr:`~URL.fragment`
+
+    Each is exposed as an attribute on the URL object.
+
+    >>> url = URL('http://blog.hatnote.com/?utm_source=boltons')
+    >>> print(url.host)
+    blog.hatnote.com
+    >>> print(url.qp['utm_source'])  # qp is a synonym for query_params
+    boltons
+
+    URL's approach to encoding is that strings passed in are decoded
+    as much as possible, and data remains in this decoded state until
+    re-encoded using the :meth:`~URL.to_text()` method. In this way,
+    it's similar to Python's current approach of encouraging immediate
+    decoding of bytes to text.
+
+    Note that URL instances are mutable objects. If an immutable
+    representation of the URL is desired, the string from
+    :meth:`~URL.to_text()` may be used. For an immutable, but
+    almost-as-featureful, URL, check out the `hyperlink package`_.
+
+    .. _hyperlink package: https://github.com/mahmoud/hyperlink
 
     """
 
     # public attributes (for comparison, see __eq__):
-    _cmp_attrs = ('scheme', '_netloc_sep', 'username', 'password',
+    _cmp_attrs = ('scheme', 'uses_netloc', 'username', 'password',
                   'family', 'host', 'port', 'path', 'query_params', 'fragment')
 
     def __init__(self, url=''):

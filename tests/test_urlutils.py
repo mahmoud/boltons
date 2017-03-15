@@ -401,9 +401,9 @@ FAL_TESTS = [("hello http://world.com/!", ["http://world.com/"]),
              ("message://%3c330e7f8409726r6a4ba78dkf1fd71420c1bf6ff@mail.gmail.com%3e", ["message://%3C330e7f8409726r6a4ba78dkf1fd71420c1bf6ff:@mail.gmail.com%3e"]),
              (u"http://\u27a1.ws/\u4a39", [u"http://\u27a1.ws/\u4a39"]),
              ("<tag>http://example.com</tag>", ["http://example.com"]),
-             ("Just a www.example.com link.", ["http://www.example.com"]),
-             ("www.a-link.com", ["http://www.a-link.com"]),
-             ("www.a-link.com and www.b-link.com/blogs extra", ["http://www.a-link.com", "http://www.b-link.com/blogs"])
+             ("Just a www.example.com link.", ["https://www.example.com"]),
+             ("www.a-link.com", ["https://www.a-link.com"]),
+             ("www.a-link.com and www.b-link.com/blogs extra", ["https://www.a-link.com", "https://www.b-link.com/blogs"])
 ]
 
 
