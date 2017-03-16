@@ -627,13 +627,30 @@ class URL(object):
         ret.normalize()
         return ret
 
-    def get_authority(self, full_quote=True, with_userinfo=True):
+    def get_authority(self, full_quote=False, with_userinfo=False):
+        """Get the text representation of just the authority part of the
+        URL. Used internally by :meth:`~URL.to_text()` and can be
+        useful for labeling connections.
+
+        >>> url = URL('ftp://user@ftp.debian.org:2121/debian/README')
+        >>> print(url.get_authority())
+        ftp.debian.org:2121
+        >>> print(url.get_authority(with_userinfo=True))
+        user@ftp.debian.org:2121
+
+        Args:
+           full_quote (bool): Whether or not to apply IDNA encoding.
+              Defaults to ``False``.
+           with_userinfo (bool): Whether or not to include username
+              and password, technically part of the
+              authority. Defaults to ``False``.
+        """
         parts = []
         _add = parts.append
         if self.username and with_userinfo:
             _add(quote_userinfo_part(self.username))
-            _add(':')
             if self.password:
+                _add(':')
                 _add(quote_userinfo_part(self.password))
             _add('@')
         if self.host:
@@ -670,7 +687,8 @@ class URL(object):
         scheme = self.scheme
         path = u'/'.join([quote_path_part(p, full_quote=full_quote)
                           for p in self.path_parts])
-        authority = self.get_authority(full_quote=full_quote)
+        authority = self.get_authority(full_quote=full_quote,
+                                       with_userinfo=True)
         query_string = self.query_params.to_text(full_quote=full_quote)
         fragment = quote_fragment_part(self.fragment, full_quote=full_quote)
 
