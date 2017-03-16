@@ -1449,15 +1449,41 @@ OMD = OrderedMultiDict
 
 
 class QueryParamDict(OrderedMultiDict):
-    # TODO: caching
-    # TODO: self.update_extend_from_text()?
+    """A subclass of :class:`~dictutils.OrderedMultiDict` specialized for
+    representing query string values. Everything is fully unquoted on
+    load and all parsed keys and values are strings by default.
+
+    As the name suggests, multiple values are supported and insertion
+    order is preserved.
+
+    >>> qp = QueryParamDict.from_text(u'key=val1&key=val2&utm_source=rtd')
+    >>> qp.getlist('key')
+    [u'val1', u'val2']
+    >>> qp['key']
+    u'val2'
+    >>> qp.add('key', 'val3')
+    >>> qp.to_text()
+    'key=val1&key=val2&utm_source=rtd&key=val3'
+
+    See :class:`~dictutils.OrderedMultiDict` for more API features.
+    """
 
     @classmethod
     def from_text(cls, query_string):
+        """
+        Parse *query_string* and return a new :class:`QueryParamDict`.
+        """
         pairs = parse_qsl(query_string, keep_blank_values=True)
         return cls(pairs)
 
     def to_text(self, full_quote=False):
+        """
+        Render and return a query string.
+
+        Args:
+           full_quote (bool): Whether or not to percent-quote special
+              characters or leave them decoded for readability.
+        """
         ret_list = []
         for k, v in self.iteritems(multi=True):
             key = quote_query_part(to_unicode(k), full_quote=full_quote)
