@@ -6,11 +6,11 @@ Uniform Resource Locator.
 The centerpiece of urlutils is the :class:`URL` type. Usage is
 straightforward:
 
->>> url = URL(u'https://boltons.readthedocs.org/?query_param=True#fragment')
+>>> url = URL(u'https://boltons.readthedocs.io/?query_param=True#fragment')
 >>> print(url.scheme)
 https
 >>> print(url.host)
-boltons.readthedocs.org
+boltons.readthedocs.io
 
 """
 
@@ -491,12 +491,27 @@ class URL(object):
 
     @cachedproperty
     def query_params(self):
+        """The parsed form of the query string of the URL, represented as a
+        :class:`~dictutils.OrderedMultiDict`. Also available as the
+        handy alias ``qp``.
+
+        >>> url = URL('http://boltons.readthedocs.io/?utm_source=doctest&python=great')
+        >>> url.qp.keys()
+        [u'utm_source', u'python']
+        """
         return QueryParamDict.from_text(self._query)
 
     qp = query_params
 
     @property
     def path(self):
+        """
+        The textual path of the URL:
+
+        >>> url = URL('http://github.com/mahmoud/boltons')
+        >>> url.path
+        u'/mahmoud/boltons'
+        """
         return u'/'.join([quote_path_part(p, full_quote=False)
                           for p in self.path_parts])
 
@@ -568,8 +583,19 @@ class URL(object):
         return
 
     def navigate(self, dest):
-        """Factory method that returns a _new_ URL based on a given
-        destination, *dest*.
+        """Factory method that returns a _new_ :class:`URL` based on a given
+        destination, *dest*. Useful for navigating those relative
+        links with ease.
+
+        The newly created :class:`URL` is normalized before being returned.
+
+        >>> url = URL('http://boltons.readthedocs.io')
+        >>> url.navigate('en/latest/')
+        URL(u'http://boltons.readthedocs.io/en/latest/')
+
+        Args:
+           dest (str): A string or URL object representing the destination
+
         """
         orig_dest = None
         if not isinstance(dest, URL):
