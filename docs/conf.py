@@ -104,7 +104,7 @@ version = '17.1'
 release = '17.1.0'
 
 if os.name != 'nt':
-    today_fmt = '%B %e, %Y'
+    today_fmt = '%B %d, %Y'
 
 exclude_patterns = ['_build']
 
