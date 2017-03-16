@@ -764,8 +764,10 @@ except ImportError:
 
 def parse_host(host):
     """\
-    returns:
-      family (socket constant or None), host (string)
+    Low-level function used to parse the host portion of a URL.
+
+    Returns a tuple of (family, host) where *family* is a
+    :mod:`socket` module constant or ``None``, and host is a string.
 
     >>> parse_host('googlewebsite.com') == (None, 'googlewebsite.com')
     True
@@ -774,8 +776,9 @@ def parse_host(host):
     >>> parse_host('192.168.1.1') == (socket.AF_INET, '192.168.1.1')
     True
 
-    (odd doctest formatting above due to py3's switch from int to enums
-    for socket constants)
+    Odd doctest formatting above due to py3's switch from int to enums
+    for :mod:`socket` constants.
+
     """
     if not host:
         return None, u''
@@ -800,6 +803,24 @@ def parse_host(host):
 
 
 def parse_url(url_text):
+    """\
+    Used to parse the text for a single URL into a dictionary, used
+    internally by the :class:`URL` type.
+
+    Note that "URL" has a very narrow, standards-based
+    definition. While :func:`parse_url` may raise
+    :class:`URLParseError` under a very limited number of conditions,
+    such as non-integer port, a surprising number of strings are
+    technically valid URLs. For instance, the text ``"url"`` is a
+    valid URL, because it is a relative path.
+
+    In short, do not expect this function to validate form inputs or
+    other more colloquial usages of URLs.
+
+    >>> res = parse_url('http://127.0.0.1:3000/?a=1')
+    >>> sorted(res.keys())  # res is a basic dictionary
+    ['_netloc_sep', 'authority', 'family', 'fragment', 'host', 'password', 'path', 'port', 'query', 'scheme', 'username']
+    """
     url_text = unicode(url_text)
     # raise TypeError('parse_url expected text, not %r' % url_str)
     um = _URL_RE.match(url_text)
