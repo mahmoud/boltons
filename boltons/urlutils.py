@@ -3,14 +3,11 @@
 well-aged, and beloved data structures: the URL, also known as the
 Uniform Resource Locator.
 
-The centerpiece of urlutils is the :class:`URL` type. Usage is
-straightforward:
-
->>> url = URL(u'https://boltons.readthedocs.io/?query_param=True#fragment')
->>> print(url.scheme)
-https
->>> print(url.host)
-boltons.readthedocs.io
+Among other things, this module is a full reimplementation of URLs,
+without any reliance on the :mod:`urlparse` or :mod:`urllib`
+modules. The centerpiece and top-level interface of urlutils is the
+:class:`URL` type. Also featured is the :func:`find_all_links`
+convenience function.
 
 """
 
@@ -88,6 +85,9 @@ def to_unicode(obj):
 
 
 class URLParseError(ValueError):
+    """Exception inheriting from :exc:`ValueError`, raised when failing to
+    parse a URL. Mostly raised on invalid ports and IPv6 addresses.
+    """
     pass
 
 
@@ -293,7 +293,20 @@ def unquote_to_bytes(string):
 
 def register_scheme(text, uses_netloc=None, default_port=None):
     """Registers new scheme information, resulting in correct port and
-    slash behavior from the URL object.
+    slash behavior from the URL object. There are dozens of standard
+    schemes preregistered, so this function is mostly meant for
+    proprietary internal customizations or stopgaps on missing
+    standards information. If a scheme seems to be missing, file an
+    issue!
+
+    Args:
+        text (str): Text representing the scheme.
+           (the 'http' in 'http://hatnote.com')
+        uses_netloc (bool): Does the scheme support specifying a
+           network host? For instance, "http" does, "mailto" does not.
+        default_port (int): The default port, if any, for netloc-using
+           schemes.
+
     """
     text = text.lower()
     if default_port is not None:
@@ -306,6 +319,9 @@ def register_scheme(text, uses_netloc=None, default_port=None):
     if uses_netloc is True:
         SCHEME_PORT_MAP[text] = default_port
     elif uses_netloc is False:
+        if default_port is not None:
+            raise ValueError('unexpected default port while specifying'
+                             ' non-netloc scheme: %r' % default_port)
         NO_NETLOC_SCHEMES.add(text)
     elif uses_netloc is not None:
         raise ValueError('uses_netloc expected True, False, or None')
@@ -406,6 +422,17 @@ class URL(object):
     _cmp_attrs = ('scheme', 'uses_netloc', 'username', 'password',
                   'family', 'host', 'port', 'path', 'query_params', 'fragment')
 
+    """
+    Usage is
+straightforward:
+
+>>> url = URL(u'https://boltons.readthedocs.io/?query_param=True#fragment')
+>>> print(url.scheme)
+https
+>>> print(url.host)
+boltons.readthedocs.io
+    """
+
     def __init__(self, url=''):
         # TODO: encoding param. The encoding that underlies the
         # percent-encoding is always utf8 for IRIs, but can be Latin-1
@@ -505,13 +532,7 @@ class URL(object):
 
     @property
     def path(self):
-        """
-        The textual path of the URL:
-
-        >>> url = URL('http://github.com/mahmoud/boltons')
-        >>> url.path
-        u'/mahmoud/boltons'
-        """
+        "The URL's path, in text form."
         return u'/'.join([quote_path_part(p, full_quote=False)
                           for p in self.path_parts])
 
@@ -1494,5 +1515,6 @@ class QueryParamDict(OrderedMultiDict):
                 ret_list.append(u'='.join((key, val)))
         return u'&'.join(ret_list)
 
+# TODO: cleanup OMD/cachedproperty etc.?
 
 # end urlutils.py
