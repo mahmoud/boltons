@@ -280,6 +280,10 @@ def test_navigate():
     navd = orig.navigate('dd')
     assert navd.to_text() == u'http://a.b/c/dd'
 
+    # check trailing slash
+    navd = orig.navigate('dd/')
+    assert navd.to_text() == u'http://a.b/c/dd/'
+
     # path removed on absolute path navigate
     navd = orig.navigate('/C')
     assert navd.to_text() == u'http://a.b/C'
