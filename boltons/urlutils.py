@@ -407,7 +407,7 @@ class URL(object):
     this brief structural summary of the main URL components::
 
        foo://example.com:8042/over/there?name=ferret#nose
-       \_/   \__________/\__/\_________/ \_________/ \__/
+       \_/   \_________/ \__/\_________/ \_________/ \__/
         |         |        |      |           |        |
       scheme     host     port   path       query   fragment
 
