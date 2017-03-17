@@ -9,7 +9,15 @@ modules. The centerpiece and top-level interface of urlutils is the
 :class:`URL` type. Also featured is the :func:`find_all_links`
 convenience function.
 
+The implementations in this module are based heavily on `RFC 3986`_ and
+`RFC 3987`_, and incorporates details from several other RFCs and W3C
+documents.
+
+.. RFC 3986: https://tools.ietf.org/html/rfc3986
+.. RFC 3987: https://tools.ietf.org/html/rfc3987
+
 """
+# TODO: add more RFC links throughout
 
 import re
 import socket
@@ -22,11 +30,11 @@ try:
 except NameError:
     unichr = chr
 
-# The unreserved URI characters (per RFC 3986)
+# The unreserved URI characters (per RFC 3986 Section 2.3)
 _UNRESERVED_CHARS = frozenset('~-._0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'
                               'abcdefghijklmnopqrstuvwxyz')
 
-# URL parsing regex (per RFC 3986)
+# URL parsing regex (based on RFC 3986 Appendix B, with modifications)
 _URL_RE = re.compile(r'^((?P<scheme>[^:/?#]+):)?'
                      r'((?P<_netloc_sep>//)(?P<authority>[^/?#]*))?'
                      r'(?P<path>[^?#]*)'
@@ -395,13 +403,23 @@ class URL(object):
       * :attr:`~URL.query_params` (query string parameters)
       * :attr:`~URL.fragment`
 
-    Each is exposed as an attribute on the URL object.
+    Each is exposed as an attribute on the URL object. RFC 3986 offers
+    this brief structural summary of the main URL components::
 
-    >>> url = URL('http://blog.hatnote.com/?utm_source=boltons')
+       foo://example.com:8042/over/there?name=ferret#nose
+       \_/   \__________/\__/\_________/ \_________/ \__/
+        |         |        |      |           |        |
+      scheme     host     port   path       query   fragment
+
+    And here's how that example can be manipulated with the URL type:
+
+    >>> url = URL('foo://example.com:8042/over/there?name=ferret#nose')
     >>> print(url.host)
-    blog.hatnote.com
-    >>> print(url.qp['utm_source'])  # qp is a synonym for query_params
-    boltons
+    example.com
+    >>> print(url.get_authority())
+    example.com:8042
+    >>> print(url.qp['name'])  # qp is a synonym for query_params
+    ferret
 
     URL's approach to encoding is that strings passed in are decoded
     as much as possible, and data remains in this decoded state until
@@ -594,7 +612,9 @@ boltons.readthedocs.io
         normalize scheme and host casing. To turn off case
         normalization, pass ``with_case=False``.
 
-        More information can be found in Section 6.2.2 of RFC 3986.
+        More information can be found in `Section 6.2.2 of RFC 3986`_.
+
+        .. _Section 6.2.2 of RFC 3986: https://tools.ietf.org/html/rfc3986#section-6.2.2
         """
         self.path_parts = resolve_path_parts(self.path_parts)
 
@@ -617,6 +637,9 @@ boltons.readthedocs.io
         Args:
            dest (str): A string or URL object representing the destination
 
+        More information can be found in `Section 5 of RFC 3986`_.
+
+        .. _Section 5 of RFC 3986: https://tools.ietf.org/html/rfc3986#section-5
         """
         orig_dest = None
         if not isinstance(dest, URL):
