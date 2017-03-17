@@ -13,8 +13,8 @@ The implementations in this module are based heavily on `RFC 3986`_ and
 `RFC 3987`_, and incorporates details from several other RFCs and W3C
 documents.
 
-.. RFC 3986: https://tools.ietf.org/html/rfc3986
-.. RFC 3987: https://tools.ietf.org/html/rfc3987
+.. _RFC 3986: https://tools.ietf.org/html/rfc3986
+.. _RFC 3987: https://tools.ietf.org/html/rfc3987
 
 """
 # TODO: add more RFC links throughout
@@ -421,11 +421,11 @@ class URL(object):
     >>> print(url.qp['name'])  # qp is a synonym for query_params
     ferret
 
-    URL's approach to encoding is that strings passed in are decoded
-    as much as possible, and data remains in this decoded state until
-    re-encoded using the :meth:`~URL.to_text()` method. In this way,
-    it's similar to Python's current approach of encouraging immediate
-    decoding of bytes to text.
+    URL's approach to encoding is that inputs are decoded as much as
+    possible, and data remains in this decoded state until re-encoded
+    using the :meth:`~URL.to_text()` method. In this way, it's similar
+    to Python's current approach of encouraging immediate decoding of
+    bytes to text.
 
     Note that URL instances are mutable objects. If an immutable
     representation of the URL is desired, the string from

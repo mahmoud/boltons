@@ -3,6 +3,8 @@
 
 .. automodule:: boltons.urlutils
 
+.. versionadded:: 17.2
+
 The ``URL``
 -----------
 
