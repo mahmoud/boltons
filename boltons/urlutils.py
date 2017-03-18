@@ -1,23 +1,25 @@
 # -*- coding: utf-8 -*-
 """:mod:`urlutils` is a module dedicated to one of our most versatile,
 well-aged, and beloved data structures: the URL, also known as the
-Uniform Resource Locator.
+`Uniform Resource Locator`_.
 
 Among other things, this module is a full reimplementation of URLs,
-without any reliance on the :mod:`urlparse` or :mod:`urllib`
-modules. The centerpiece and top-level interface of urlutils is the
-:class:`URL` type. Also featured is the :func:`find_all_links`
-convenience function.
+without any reliance on the :mod:`urlparse` or :mod:`urllib` standard
+library modules. The centerpiece and top-level interface of urlutils
+is the :class:`URL` type. Also featured is the :func:`find_all_links`
+convenience function. Some low-level functions and constants are also
+below.
 
 The implementations in this module are based heavily on `RFC 3986`_ and
-`RFC 3987`_, and incorporates details from several other RFCs and W3C
-documents.
+`RFC 3987`_, and incorporates details from several other RFCs and `W3C
+documents`_.
 
+.. _Uniform Resource Locator: https://en.wikipedia.org/wiki/Uniform_Resource_Locator
 .. _RFC 3986: https://tools.ietf.org/html/rfc3986
 .. _RFC 3987: https://tools.ietf.org/html/rfc3987
+.. _W3C documents: https://www.w3.org/TR/uri-clarification/
 
 """
-# TODO: add more RFC links throughout
 
 import re
 import socket
@@ -133,6 +135,9 @@ def find_all_links(text, with_text=False, default_scheme='https', schemes=()):
        schemes (list): A list of strings that a URL's scheme must
           match in order to be included in the results. Defaults to
           empty, which matches all schemes.
+
+    .. note:: Currently this function does not support finding IPv6
+      addresses or URLs with netloc-less schemes, like mailto.
 
     """
     text = to_unicode(text)
@@ -253,8 +258,8 @@ def unquote(string, encoding='utf-8', errors='replace'):
     default, percent-encoded sequences are decoded with UTF-8, and
     invalid sequences are replaced by a placeholder character.
 
-    unquote('abc%20def') -> 'abc def'.
-
+    >>> unquote(u'abc%20def')
+    u'abc def'
     """
     if '%' not in string:
         string.split
@@ -304,8 +309,8 @@ def register_scheme(text, uses_netloc=None, default_port=None):
     slash behavior from the URL object. There are dozens of standard
     schemes preregistered, so this function is mostly meant for
     proprietary internal customizations or stopgaps on missing
-    standards information. If a scheme seems to be missing, file an
-    issue!
+    standards information. If a scheme seems to be missing, please
+    `file an issue`_!
 
     Args:
         text (str): Text representing the scheme.
@@ -315,6 +320,7 @@ def register_scheme(text, uses_netloc=None, default_port=None):
         default_port (int): The default port, if any, for netloc-using
            schemes.
 
+    .. _file an issue: https://github.com/mahmoud/boltons/issues
     """
     text = text.lower()
     if default_port is not None:
@@ -338,9 +344,9 @@ def register_scheme(text, uses_netloc=None, default_port=None):
 
 
 def resolve_path_parts(path_parts):
-    """
-    Normalize the URL path by resolving segments of '.' and '..'.
-    See RFC 3986 section 5.2.4, Remove Dot Segments.
+    """Normalize the URL path by resolving segments of '.' and '..',
+    resulting in a dot-free path.  See RFC 3986 section 5.2.4, Remove
+    Dot Segments.
     """
     # TODO: what to do with multiple slashes
     ret = []
@@ -430,7 +436,8 @@ class URL(object):
     Note that URL instances are mutable objects. If an immutable
     representation of the URL is desired, the string from
     :meth:`~URL.to_text()` may be used. For an immutable, but
-    almost-as-featureful, URL, check out the `hyperlink package`_.
+    almost-as-featureful, URL object, check out the `hyperlink
+    package`_.
 
     .. _hyperlink package: https://github.com/mahmoud/hyperlink
 
@@ -439,17 +446,6 @@ class URL(object):
     # public attributes (for comparison, see __eq__):
     _cmp_attrs = ('scheme', 'uses_netloc', 'username', 'password',
                   'family', 'host', 'port', 'path', 'query_params', 'fragment')
-
-    """
-    Usage is
-straightforward:
-
->>> url = URL(u'https://boltons.readthedocs.io/?query_param=True#fragment')
->>> print(url.scheme)
-https
->>> print(url.host)
-boltons.readthedocs.io
-    """
 
     def __init__(self, url=''):
         # TODO: encoding param. The encoding that underlies the
@@ -562,11 +558,11 @@ boltons.readthedocs.io
 
     @property
     def uses_netloc(self):
-        """Whether or not a URL uses ``:`` or ``://`` to separate the scheme
-        from the rest of the URL depends on the scheme's own standard
-        definition. There is no way to infer this behavior from other
-        parts of the URL. A scheme either supports network locations
-        or it does not.
+        """Whether or not a URL uses :code:`:` or :code:`://` to separate the
+        scheme from the rest of the URL depends on the scheme's own
+        standard definition. There is no way to infer this behavior
+        from other parts of the URL. A scheme either supports network
+        locations or it does not.
 
         The URL type's approach to this is to check for explicitly
         registered schemes, with common schemes like HTTP
@@ -584,6 +580,7 @@ boltons.readthedocs.io
         fakescheme://test.com
         >>> print(URL('mockscheme:hello:world').to_text())
         mockscheme:hello:world
+
         """
         default = self._netloc_sep
         if self.scheme in SCHEME_PORT_MAP:
@@ -598,7 +595,9 @@ boltons.readthedocs.io
     def default_port(self):
         """Return the default port for the currently-set scheme. Returns
         ``None`` if the scheme is unrecognized. See
-        :func:`register_scheme` above.
+        :func:`register_scheme` above. If :attr:`~URL.port` matches
+        this value, no port is emitted in the output of
+        :meth:`~URL.to_text()`.
 
         Applies the same '+' heuristic detailed in :meth:`URL.uses_netloc`.
         """
@@ -672,9 +671,14 @@ boltons.readthedocs.io
         return ret
 
     def get_authority(self, full_quote=False, with_userinfo=False):
-        """Get the text representation of just the authority part of the
-        URL. Used internally by :meth:`~URL.to_text()` and can be
-        useful for labeling connections.
+        """Used by URL schemes that have a network location,
+        :meth:`~URL.get_authority` combines :attr:`username`,
+        :attr:`password`, :attr:`host`, and :attr:`port` into one
+        string, the *authority*, that is used for
+        connecting to a network-accessible resource.
+
+        Used internally by :meth:`~URL.to_text()` and can be useful
+        for labeling connections.
 
         >>> url = URL('ftp://user@ftp.debian.org:2121/debian/README')
         >>> print(url.get_authority())
@@ -688,6 +692,7 @@ boltons.readthedocs.io
            with_userinfo (bool): Whether or not to include username
               and password, technically part of the
               authority. Defaults to ``False``.
+
         """
         parts = []
         _add = parts.append
@@ -724,8 +729,8 @@ boltons.readthedocs.io
         By setting the *full_quote* flag, the URL can either be fully
         quoted or minimally quoted. The most common characteristic of
         an encoded-URL is the presence of percent-encoded text (e.g.,
-        %60).  Minimally-encoded URLs are more readable and suitable
-        for display, whereas fully-encoded URLs are more conservative
+        %60).  Unquoted URLs are more readable and suitable
+        for display, whereas fully-quoted URLs are more conservative
         and generally necessary for sending over the network.
         """
         scheme = self.scheme
@@ -911,6 +916,9 @@ DEFAULT_PARSED_URL = parse_url('')
 
 
 def parse_qsl(qs, keep_blank_values=True, encoding=DEFAULT_ENCODING):
+    """
+    Converts a query string into a list of (key, value) pairs.
+    """
     pairs = [s2 for s1 in qs.split('&') for s2 in s1.split(';')]
     ret = []
     for pair in pairs:
