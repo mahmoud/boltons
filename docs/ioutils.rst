@@ -1,5 +1,5 @@
-``ioutils`` - Input/Output Utilities
-====================================
+``ioutils`` - Input/Output enhancements
+=======================================
 
 .. automodule:: boltons.ioutils
 
