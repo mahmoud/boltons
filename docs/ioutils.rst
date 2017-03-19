@@ -1,4 +1,4 @@
-``ioutils`` - Input/Output enhancements
+``ioutils`` - Input/output enhancements
 =======================================
 
 .. automodule:: boltons.ioutils
