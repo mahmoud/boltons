@@ -24,7 +24,7 @@ TEST_URLS = [
     'http://wiki:pedia@hatnote.com',
     'ftp://ftp.rfc-editor.org/in-notes/tar/RFCs0001-0500.tar.gz',
     'http://[1080:0:0:0:8:800:200C:417A]/index.html',
-    'ssh://192.0.2.16:22/',
+    'ssh://192.0.2.16:2222/',
     'https://[::101.45.75.219]:80/?hi=bye',
     'ldap://[::192.9.5.5]/dc=example,dc=com??sub?(sn=Jensen)',
     'mailto:me@example.com?to=me@example.com&body=hi%20http://wikipedia.org',
@@ -59,18 +59,11 @@ def test_url(request):
     return param
 
 
-@pytest.fixture(scope="module", params=TEST_URLS)
-def test_authority(request):
-    match = _URL_RE.match(request.param)
-    return match.groupdict()['authority']
-
-
 def test_regex(test_url):
     match = _URL_RE.match(test_url)
     assert match.groupdict()
 
 
-@pytest.fixture(scope='module', params=TEST_URLS)
 def test_roundtrip(test_url):
     result = URL(test_url).to_text(full_quote=True)
     assert test_url == result
