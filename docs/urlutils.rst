@@ -65,7 +65,7 @@ The URL type
          :func:`~boltons.urlutils.register_scheme`. See
          :attr:`URL.default_port` for more info.
 
-         .. _Section 3.2.3 of RFC 3986:: https://tools.ietf.org/html/rfc3986#section-3.2.3
+         .. _Section 3.2.3 of RFC 3986: https://tools.ietf.org/html/rfc3986#section-3.2.3
 
    .. attribute:: URL.path
 
