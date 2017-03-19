@@ -53,10 +53,10 @@ The URL type
 
       .. note::
 
-         As is the case for 80 for HTTP and 22 for SSH, many schemes have
-         default ports, and RFC 3986 states that when a URL's port is the
-         same as its scheme's default port, the port should not be
-         emitted::
+         As is the case for 80 for HTTP and 22 for SSH, many schemes
+         have default ports, and `Section 3.2.3 of RFC 3986`_ states
+         that when a URL's port is the same as its scheme's default
+         port, the port should not be emitted::
 
            >>> URL(u'https://github.com:443/mahmoud/boltons').to_text()
            u'https://github.com/mahmoud/boltons'
@@ -64,6 +64,8 @@ The URL type
          Custom schemes can register their port with
          :func:`~boltons.urlutils.register_scheme`. See
          :attr:`URL.default_port` for more info.
+
+         .. _Section 3.2.3 of RFC 3986:: https://tools.ietf.org/html/rfc3986#section-3.2.3
 
    .. attribute:: URL.path
 
