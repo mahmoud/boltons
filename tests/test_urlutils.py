@@ -197,6 +197,10 @@ def test_quoted_userinfo():
     url.password = u'p@ss'
     assert url.to_text(full_quote=True) == 'http://user:p%40ss@wikipedia.org'
 
+    url = URL(u'http://beyonc\xe9:b\xe9b@tmp.com')
+    # assert url.to_text(full_quote=False) == u'http://beyoncé:b%C3%A9b@tmp.com'
+    assert url.to_text(full_quote=True) == u'http://beyonc%C3%A9:b%C3%A9b@tmp.com'
+
 
 def test_mailto():
     mt = 'mailto:mahmoud@hatnote.com'
@@ -324,6 +328,7 @@ def test_normalize_with_case():
     url2.normalize()
 
     assert url1 == url2
+
 
 def test_netloc_slashes():
     # basic sanity checks

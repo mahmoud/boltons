@@ -797,7 +797,7 @@ except ImportError:
 
     def inet_pton(address_family, ip_string):
         addr = _sockaddr()
-        ip_string = ip_string.encode('ascii')  # TODO
+        ip_string = ip_string.encode('ascii')
         addr.sa_family = address_family
         addr_size = ctypes.c_int(ctypes.sizeof(addr))
 
