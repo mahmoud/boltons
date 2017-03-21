@@ -50,17 +50,6 @@ _HEX_CHAR_MAP = dict([((a + b).encode('ascii'),
 _ASCII_RE = re.compile('([\x00-\x7f]+)')
 
 
-# RFC 3986 section 2.2, Reserved Characters
-_GEN_DELIMS = frozenset(u':/?#[]@')
-_SUB_DELIMS = frozenset(u"!$&'()*+,;=")
-_ALL_DELIMS = _GEN_DELIMS | _SUB_DELIMS
-
-_USERINFO_SAFE = _UNRESERVED_CHARS | _SUB_DELIMS
-_PATH_SAFE = _UNRESERVED_CHARS | _SUB_DELIMS | set(u':@')
-_FRAGMENT_SAFE = _UNRESERVED_CHARS | _PATH_SAFE | set(u'/?')
-_QUERY_SAFE = _UNRESERVED_CHARS | _FRAGMENT_SAFE - set(u'&=+')
-
-
 # This port list painstakingly curated by hand searching through
 # https://www.iana.org/assignments/uri-schemes/uri-schemes.xhtml
 # and
@@ -83,6 +72,27 @@ NO_NETLOC_SCHEMES = set(['urn', 'about', 'bitcoin', 'blob', 'data', 'geo',
                          'sip', 'sips', 'tel'])
 # As of Mar 11, 2017, there were 44 netloc schemes, and 13 non-netloc
 
+# RFC 3986 section 2.2, Reserved Characters
+_GEN_DELIMS = frozenset(u':/?#[]@')
+_SUB_DELIMS = frozenset(u"!$&'()*+,;=")
+_ALL_DELIMS = _GEN_DELIMS | _SUB_DELIMS
+
+_USERINFO_SAFE = _UNRESERVED_CHARS | _SUB_DELIMS
+_USERINFO_DELIMS = _ALL_DELIMS - _USERINFO_SAFE
+_PATH_SAFE = _UNRESERVED_CHARS | _SUB_DELIMS | set(u':@')
+_PATH_DELIMS = _ALL_DELIMS - _PATH_SAFE
+_FRAGMENT_SAFE = _UNRESERVED_CHARS | _PATH_SAFE | set(u'/?')
+_FRAGMENT_DELIMS = _ALL_DELIMS - _FRAGMENT_SAFE
+_QUERY_SAFE = _UNRESERVED_CHARS | _FRAGMENT_SAFE - set(u'&=+')
+_QUERY_DELIMS = _ALL_DELIMS - _QUERY_SAFE
+
+
+class URLParseError(ValueError):
+    """Exception inheriting from :exc:`ValueError`, raised when failing to
+    parse a URL. Mostly raised on invalid ports and IPv6 addresses.
+    """
+    pass
+
 
 DEFAULT_ENCODING = 'utf8'
 
@@ -92,13 +102,6 @@ def to_unicode(obj):
         return unicode(obj)
     except UnicodeDecodeError:
         return unicode(obj, encoding=DEFAULT_ENCODING)
-
-
-class URLParseError(ValueError):
-    """Exception inheriting from :exc:`ValueError`, raised when failing to
-    parse a URL. Mostly raised on invalid ports and IPv6 addresses.
-    """
-    pass
 
 
 # regex from gruber via tornado
@@ -192,7 +195,7 @@ def _make_quote_map(safe_chars):
         if c in safe_chars:
             ret[c] = ret[v] = c
         else:
-            ret[c] = ret[v] = '%{0:02X}'.format(i)
+            ret[c] = ret[v] = ret[chr(v)] = '%{0:02X}'.format(i)
     return ret
 
 
@@ -206,35 +209,33 @@ def quote_path_part(text, full_quote=True):
     """
     Percent-encode a single segment of a URL path.
     """
-    # TODO: why does one route allow percents through and not the
-    # other?
-    if not full_quote:
-        return u''.join([_PATH_PART_QUOTE_MAP.get(t, t) for t in text])
-
-    bytestr = normalize('NFC', to_unicode(text)).encode('utf8')
-    return u''.join([_PATH_PART_QUOTE_MAP[b] for b in bytestr])
+    if full_quote:
+        bytestr = normalize('NFC', to_unicode(text)).encode('utf8')
+        return u''.join([_PATH_PART_QUOTE_MAP[b] for b in bytestr])
+    return u''.join([_PATH_PART_QUOTE_MAP[t] if t in _PATH_DELIMS else t
+                     for t in text])
 
 
 def quote_query_part(text, full_quote=True):
     """
     Percent-encode a single query string key or value.
     """
-    if not full_quote:
-        return u''.join([_QUERY_PART_QUOTE_MAP.get(t, t) for t in text])
-
-    bytestr = normalize('NFC', to_unicode(text)).encode('utf8')
-    return u''.join([_QUERY_PART_QUOTE_MAP[b] for b in bytestr])
+    if full_quote:
+        bytestr = normalize('NFC', to_unicode(text)).encode('utf8')
+        return u''.join([_QUERY_PART_QUOTE_MAP[b] for b in bytestr])
+    return u''.join([_QUERY_PART_QUOTE_MAP[t] if t in _QUERY_DELIMS else t
+                     for t in text])
 
 
 def quote_fragment_part(text, full_quote=True):
     """Quote the fragment part of the URL. Fragments don't have
     subdelimiters, so the whole URL fragment can be passed.
     """
-    if not full_quote:
-        return u''.join([_FRAGMENT_QUOTE_MAP.get(t, t) for t in text])
-
-    bytestr = normalize('NFC', to_unicode(text)).encode('utf8')
-    return u''.join([_FRAGMENT_QUOTE_MAP[b] for b in bytestr])
+    if full_quote:
+        bytestr = normalize('NFC', to_unicode(text)).encode('utf8')
+        return u''.join([_FRAGMENT_QUOTE_MAP[b] for b in bytestr])
+    return u''.join([_FRAGMENT_QUOTE_MAP[t] if t in _FRAGMENT_DELIMS else t
+                     for t in text])
 
 
 def quote_userinfo_part(text, full_quote=True):
@@ -243,11 +244,11 @@ def quote_userinfo_part(text, full_quote=True):
     deprecated in many circles (especially browsers), and support for
     percent-encoded userinfo can be spotty.
     """
-    if not full_quote:
-        return u''.join([_USERINFO_PART_QUOTE_MAP.get(t, t) for t in text])
-
-    bytestr = normalize('NFC', to_unicode(text)).encode('utf8')
-    return u''.join([_USERINFO_PART_QUOTE_MAP[b] for b in bytestr])
+    if full_quote:
+        bytestr = normalize('NFC', to_unicode(text)).encode('utf8')
+        return u''.join([_USERINFO_PART_QUOTE_MAP[b] for b in bytestr])
+    return u''.join([_USERINFO_PART_QUOTE_MAP[t] if t in _USERINFO_DELIMS
+                     else t for t in text])
 
 
 def unquote(string, encoding='utf-8', errors='replace'):
