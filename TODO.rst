@@ -64,3 +64,10 @@ funcutils
 #    """
 #    def __init__(self, name, code, doc=None):
 #        pass
+
+
+urlutils
+--------
+
+* improve usage of ``encoding`` arg (in parse_qsl for example)
+* normalize unicode on input?
