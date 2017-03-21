@@ -204,7 +204,9 @@ def test_quoted_userinfo():
 
 def test_mailto():
     mt = 'mailto:mahmoud@hatnote.com'
-    assert URL(mt).to_text() == mt
+    url = URL(mt)
+    assert url.scheme == 'mailto'
+    assert url.to_text() == mt
 
 
 # Examples from RFC 3986 section 5.4, Reference Resolution Examples
@@ -440,3 +442,17 @@ def test_find_all_links():
         link_tokens = find_all_links(text, with_text=True)
         assert link_tokens[0].startswith(prefix)
         assert link_tokens[-1].endswith(suffix)
+
+
+def test_unicodey():
+    unicodey = (u'http://\N{LATIN SMALL LETTER E WITH ACUTE}.com/'
+                u'\N{LATIN SMALL LETTER E}\N{COMBINING ACUTE ACCENT}'
+                u'?\N{LATIN SMALL LETTER A}\N{COMBINING ACUTE ACCENT}='
+                u'\N{LATIN SMALL LETTER I}\N{COMBINING ACUTE ACCENT}'
+                u'#\N{LATIN SMALL LETTER U}\N{COMBINING ACUTE ACCENT}')
+    url = URL(unicodey)
+    assert url.host == u'é.com'
+    assert url.path_parts[1] == u'\N{LATIN SMALL LETTER E}\N{COMBINING ACUTE ACCENT}'
+    assert url.to_text(full_quote=False) == unicodey
+    fully_quoted = 'http://xn--9ca.com/%C3%A9?%C3%A1=%C3%AD#%C3%BA'
+    assert url.to_text(full_quote=True) == fully_quoted
