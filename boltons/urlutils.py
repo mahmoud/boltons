@@ -195,7 +195,7 @@ def _make_quote_map(safe_chars):
         if c in safe_chars:
             ret[c] = ret[v] = c
         else:
-            ret[c] = ret[v] = ret[chr(v)] = '%{0:02X}'.format(i)
+            ret[c] = ret[v] = '%{0:02X}'.format(i)
     return ret
 
 
