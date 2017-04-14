@@ -561,16 +561,24 @@ class FunctionBuilder(object):
         Raises a :exc:`ValueError` if the argument is not present.
 
         """
+        args = self.args
         d_dict = self.get_defaults_dict()
         try:
-            self.args.remove(arg_name)
+            args.remove(arg_name)
         except ValueError:
-            exc = MissingArgument('arg %r not found in %s argument list: %r'
-                                  % (arg_name, self.name, self.args))
-            exc.arg_name = arg_name
-            raise exc
-        d_dict.pop(arg_name, None)
-        self.defaults = tuple([d_dict[a] for a in self.args if a in d_dict])
+            try:
+                self.kwonlyargs.remove(arg_name)
+            except (AttributeError, ValueError):
+                # py2, or py3 and missing from both
+                exc = MissingArgument('arg %r not found in %s argument list:'
+                                      ' %r' % (arg_name, self.name, args))
+                exc.arg_name = arg_name
+                raise exc
+            else:
+                self.kwonlydefaults.pop(arg_name, None)
+        else:
+            d_dict.pop(arg_name, None)
+            self.defaults = tuple([d_dict[a] for a in args if a in d_dict])
         return
 
     def _compile(self, src, execdict):
