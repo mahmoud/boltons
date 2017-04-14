@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
-""":mod:`urlutils` is a module dedicated to one of our most versatile,
-well-aged, and beloved data structures: the URL, also known as the
-`Uniform Resource Locator`_.
+""":mod:`urlutils` is a module dedicated to one of software's most
+versatile, well-aged, and beloved data structures: the URL, also known
+as the `Uniform Resource Locator`_.
 
 Among other things, this module is a full reimplementation of URLs,
 without any reliance on the :mod:`urlparse` or :mod:`urllib` standard
@@ -413,10 +413,10 @@ class URL(object):
     Each is exposed as an attribute on the URL object. RFC 3986 offers
     this brief structural summary of the main URL components::
 
-       foo://example.com:8042/over/there?name=ferret#nose
-       \_/   \_________/ \__/\_________/ \_________/ \__/
-        |         |        |      |           |        |
-      scheme     host     port   path       query   fragment
+        foo://user:pass@example.com:8042/over/there?name=ferret#nose
+        \_/   \_______/ \_________/ \__/\_________/ \_________/ \__/
+         |        |          |        |      |           |        |
+       scheme  userinfo     host     port   path       query   fragment
 
     And here's how that example can be manipulated with the URL type:
 
