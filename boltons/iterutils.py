@@ -147,15 +147,19 @@ def split_iter(src, sep=None, maxsplit=None):
         sep_func = sep
     elif not is_scalar(sep):
         sep = frozenset(sep)
-        sep_func = lambda x: x in sep
+
+        def sep_func(x):
+            return x in sep
     else:
-        sep_func = lambda x: x == sep
+        def sep_func(x):
+            return x == sep
 
     cur_group = []
     split_count = 0
     for s in src:
         if maxsplit is not None and split_count >= maxsplit:
-            sep_func = lambda x: False
+            def sep_func(x):
+                return False
         if sep_func(s):
             if sep is None and not cur_group:
                 # If sep is none, str.split() "groups" separators
@@ -224,9 +228,12 @@ def chunked_iter(src, size, **kw):
         raise ValueError('got unexpected keyword arguments: %r' % kw.keys())
     if not src:
         return
-    postprocess = lambda chk: chk
+
+    def postprocess(chk):
+        return chk
     if isinstance(src, basestring):
-        postprocess = lambda chk, _sep=type(src)(): _sep.join(chk)
+        def postprocess(chk, _sep=type(src)()):
+            return _sep.join(chk)
     src_iter = iter(src)
     while True:
         cur_chunk = list(itertools.islice(src_iter, size))
@@ -441,7 +448,7 @@ def backoff_iter(start, stop, count=None, factor=2.0, jitter=False):
         raise ValueError('expected stop >= start, not %r' % stop)
     if count is None:
         denom = start if start else 1
-        count = 1 + math.ceil(math.log(stop/denom, factor))
+        count = 1 + math.ceil(math.log(stop / denom, factor))
         count = count if start else count + 1
     if count != 'repeat' and count < 0:
         raise ValueError('count must be positive or "repeat", not %r' % count)
@@ -579,11 +586,13 @@ def unique_iter(src, key=None):
     if not is_iterable(src):
         raise TypeError('expected an iterable, not %r' % type(src))
     if key is None:
-        key_func = lambda x: x
+        def key_func(x):
+            return x
     elif callable(key):
         key_func = key
     elif isinstance(key, basestring):
-        key_func = lambda x: getattr(x, key, x)
+        def key_func(x):
+            return getattr(x, key, x)
     else:
         raise TypeError('"key" expected a string or callable, not %r' % key)
     seen = set()

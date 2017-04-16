@@ -95,7 +95,7 @@ def test_multi_correctness():
     redun = 5
 
     _rng = range(size)
-    _rng_redun = list(range(size//redun)) * redun
+    _rng_redun = list(range(size // redun)) * redun
     _pairs = zip(_rng_redun, _rng)
 
     omd = OMD(_pairs)
@@ -191,7 +191,8 @@ def test_pop():
     assert omd.pop('odd', 99) == 99
     try:
         omd.pop('odd')
-        import pdb;pdb.set_trace()
+        import pdb
+        pdb.set_trace()
         assert False
     except KeyError:
         pass

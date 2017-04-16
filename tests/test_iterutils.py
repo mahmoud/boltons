@@ -11,11 +11,24 @@ from boltons.iterutils import (first,
 from boltons.namedutils import namedtuple
 
 
-isbool = lambda x: isinstance(x, bool)
-isint = lambda x: isinstance(x, int)
-odd = lambda x: isint(x) and x % 2 != 0
-even = lambda x: isint(x) and x % 2 == 0
-is_meaning_of_life = lambda x: x == 42
+def isbool(x):
+    return isinstance(x, bool)
+
+
+def isint(x):
+    return isinstance(x, int)
+
+
+def even(x):
+    return isint(x) and x % 2 == 0
+
+
+def odd(x):
+    return isint(x) and x % 2 != 0
+
+
+def is_meaning_of_life(x):
+    return x == 42
 
 
 class TestFirst(object):
@@ -191,7 +204,10 @@ class TestRemap(object):
 
     def test_reraise_visit(self):
         root = {'A': 'b', 1: 2}
-        key_to_lower = lambda p, k, v: (k.lower(), v)
+
+        def key_to_lower(p, k, v):
+            return (k.lower(), v)
+
         with pytest.raises(AttributeError):
             remap(root, key_to_lower)
 
@@ -202,7 +218,9 @@ class TestRemap(object):
     def test_drop_nones(self):
         orig = {'a': 1, 'b': None, 'c': [3, None, 4, None]}
         ref = {'a': 1, 'c': [3, 4]}
-        drop_none = lambda p, k, v: v is not None
+
+        def drop_none(p, k, v):
+            return v is not None
         remapped = remap(orig, visit=drop_none)
         assert remapped == ref
 
@@ -303,8 +321,8 @@ class TestRemap(object):
                 'Dr. Who': {'stars': None,
                             'review': "800 episodes is too many to review."}}
         remapped = remap(orig, exit=exit)
-        assert (remapped['Star Trek']['TNG']['review_length']
-                < remapped['Star Trek']['DS9']['review_length'])
+        assert (remapped['Star Trek']['TNG']['review_length'] <
+                remapped['Star Trek']['DS9']['review_length'])
 
     def test_prepop(self):
         """Demonstrating normalization and ID addition through prepopulating

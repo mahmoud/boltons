@@ -149,9 +149,13 @@ def wrap_trace(obj, hook=trace_print_hook,
     # TODO: wrap __dict__ for old-style classes?
 
     if isinstance(which, basestring):
-        which_func = lambda attr_name, attr_val: attr_name == which
+        def which_func(attr_name, attr_val):
+            return attr_name == which
+
     elif callable(getattr(which, '__contains__', None)):
-        which_func = lambda attr_name, attr_val: attr_name in which
+        def which_func(attr_name, attr_val):
+            return attr_name in which
+
     elif which is None or callable(which):
         which_func = which
     else:
@@ -271,4 +275,5 @@ if __name__ == '__main__':
     obj = wrap_trace({})
     obj['hi'] = 'hello'
     obj.fail
-    import pdb;pdb.set_trace()
+    import pdb
+    pdb.set_trace()

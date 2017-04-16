@@ -230,17 +230,18 @@ class MathError(ExceptionCauseMixin, ValueError):
 
 
 def whoops_math():
-    return 1/0
+    return 1 / 0
 
 
 def math_lol(n=0):
     if n < 3:
-        return math_lol(n=n+1)
+        return math_lol(n=n + 1)
     try:
         return whoops_math()
     except ZeroDivisionError as zde:
         exc = MathError(zde, 'ya done messed up')
         raise exc
+
 
 def main():
     try:
@@ -254,5 +255,6 @@ if __name__ == '__main__':
     try:
         main()
     except Exception:
-        import pdb;pdb.post_mortem()
+        import pdb
+        pdb.post_mortem()
         raise

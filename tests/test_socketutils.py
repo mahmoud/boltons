@@ -284,7 +284,10 @@ def test_socketutils_netstring():
     server_socket.bind(('127.0.0.1', 0))  # localhost with ephemeral port
     server_socket.listen(100)
     ip, port = server_socket.getsockname()
-    start_server = lambda: netstring_server(server_socket)
+
+    def start_server():
+        return netstring_server(server_socket)
+
     threading.Thread(target=start_server).start()
 
     # set up client

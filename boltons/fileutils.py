@@ -115,7 +115,9 @@ class FilePerms(object):
                                  ' or one or more of %r'
                                  % (invalid_chars, value, self._perm_chars))
 
-            sort_key = lambda c: self._perm_val[c]
+            def sort_key(c):
+                return self._perm_val[c]
+
             new_value = ''.join(sorted(set(value),
                                        key=sort_key, reverse=True))
             setattr(fp_obj, self.attribute, new_value)

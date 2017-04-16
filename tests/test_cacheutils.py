@@ -181,7 +181,9 @@ def test_unscoped_cached_dec():
 
 def test_callable_cached_dec():
     lru = LRU()
-    get_lru = lambda: lru
+
+    def get_lru():
+        return lru
 
     inner_func = CountingCallable()
     func = cached(get_lru)(inner_func)

@@ -287,7 +287,7 @@ class IndexedSet(MutableSet):
         ret = self.union(*others)
         return ret.difference(self.intersection(*others))
 
-    __or__  = __ror__  = union
+    __or__ = __ror__ = union
     __and__ = __rand__ = intersection
     __sub__ = __rsub__ = difference
     __xor__ = __rxor__ = symmetric_difference

@@ -18,7 +18,8 @@ try:
     make_method = MethodType
 except NameError:
     # Python 3
-    make_method = lambda desc, obj, obj_type: MethodType(desc, obj)
+    def make_method(desc, obj, obj_type):
+        return MethodType(desc, obj)
     basestring = (str, bytes)  # Python 3 compat
     _IS_PY2 = False
 else:
@@ -142,13 +143,23 @@ def partial_ordering(cls):
     >>> c > a
     False
     """
-    def __lt__(self, other): return self <= other and not self >= other
-    def __gt__(self, other): return self >= other and not self <= other
-    def __eq__(self, other): return self >= other and self <= other
+    def __lt__(self, other):
+        return self <= other and not self >= other
 
-    if not hasattr(cls, '__lt__'): cls.__lt__ = __lt__
-    if not hasattr(cls, '__gt__'): cls.__gt__ = __gt__
-    if not hasattr(cls, '__eq__'): cls.__eq__ = __eq__
+    def __gt__(self, other):
+        return self >= other and not self <= other
+
+    def __eq__(self, other):
+        return self >= other and self <= other
+
+    if not hasattr(cls, '__lt__'):
+        cls.__lt__ = __lt__
+
+    if not hasattr(cls, '__gt__'):
+        cls.__gt__ = __gt__
+
+    if not hasattr(cls, '__eq__'):
+        cls.__eq__ = __eq__
 
     return cls
 
