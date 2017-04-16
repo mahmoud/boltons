@@ -1,6 +1,7 @@
 """This module provides useful math functions on top of Python's
 built-in :mod:`math` module.
 """
+from decimal import Decimal
 from math import ceil as _ceil, floor as _floor
 import bisect
 
@@ -85,3 +86,23 @@ def floor(x, options=None):
     if not i:
         raise ValueError("no floor options less than or equal to: %r" % x)
     return options[i - 1]
+
+
+def precision(number):
+    """ Return the maximum precision of the fractional part of a number.
+
+    Precision is extracted from the fractional part only.
+
+    >>> precision('0.110')
+    2
+    >>> precision('1.0')
+    0
+    >>> precision('10000')
+    0
+    """
+    if not isinstance(number, Decimal):
+        number = Decimal(str(number))
+    decimal_tuple = number.normalize().as_tuple()
+    if decimal_tuple.exponent >= 0:
+        return 0
+    return abs(decimal_tuple.exponent)

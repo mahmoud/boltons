@@ -1,6 +1,6 @@
 
 from pytest import raises
-from boltons.mathutils import ceil, floor
+from boltons.mathutils import ceil, floor, precision
 
 
 OPTIONS = [1618, 1378, 166, 1521, 2347, 2016, 879, 2123,
@@ -54,3 +54,30 @@ def test_floor_oor_upper():
 def test_floor_oor_lower():
     with raises(ValueError):
         floor(OUT_OF_RANGE_LOWER, OPTIONS)
+
+
+def test_precision():
+    test_data = [
+        ('10000', 0),
+        ('1', 0),
+        ('1.0', 0),
+        ('1.1', 1),
+        ('1.11', 2),
+        ('1.110', 2),
+        ('1.001', 3),
+        ('1.00100', 3),
+        ('01.00100', 3),
+        ('101.00100', 3),
+        ('00000', 0),
+        ('0', 0),
+        ('0.0', 0),
+        ('0.1', 1),
+        ('0.11', 2),
+        ('0.110', 2),
+        ('0.001', 3),
+        ('0.00100', 3),
+        ('00.00100', 3),
+        ('000.00100', 3),
+    ]
+    for input_value, expected_value in test_data:
+        assert precision(input_value) == expected_value
