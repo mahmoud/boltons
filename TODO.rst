@@ -1,15 +1,6 @@
 TODO
 ====
 
-- dummy context manager
-- dummy file
-- urlutils
-
-cacheutils
-----------
-
-- counting dictionary (with sys.modules example)
-
 dictutils
 ---------
 
@@ -32,8 +23,6 @@ misc?
   everything callable, with a hook. Needs an enable/disable flag.
   - get/set/call/return/exception
   - __slots__
-
-- Tracking proxy. An object that always succeeds for all operations, saving the call history.
 - Top/Bottom singletons (greater than and less than everything)
 
 
@@ -53,18 +42,6 @@ statsutils
 
 - dirty bit auto clears cache on property access
 - geometric mean (2 ** sum(log(a, b, ...))
-
-funcutils
----------
-
-#class FunctionDef(object):
-#    """
-#    general blocker: accept a bunch of fine-grained arguments, or just
-#    accept a whole ArgSpec? or a whole signature?
-#    """
-#    def __init__(self, name, code, doc=None):
-#        pass
-
 
 urlutils
 --------
