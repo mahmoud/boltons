@@ -313,6 +313,13 @@ def test_navigate():
     assert navd.to_text() == _dest_text
 
 
+# TODO: RFC3986 6.2.3 (not just for query add, either)
+# def test_add_query():
+#     url = URL('http://www.example.com')
+#     url.qp['key'] = 'value'
+#     assert url.to_text() == 'http://www.example.com/?key=value'
+
+
 def test_self_normalize():
     url = URL('http://hatnote.com/a/../../b?k=v#hashtags')
     url.normalize()
