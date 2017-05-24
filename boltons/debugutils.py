@@ -36,7 +36,10 @@ def pdb_on_signal(signalnum=None):
             with pdb. Defaults to :mod:`signal.SIGINT`, see
             :mod:`signal` for more information.
     """
-    import pdb
+    try:
+        import ipdb as pdb
+    except:
+        import pdb
     import signal
     if not signalnum:
         signalnum = signal.SIGINT
@@ -71,7 +74,10 @@ def pdb_on_exception(limit=100):
 
       sys.excepthook = sys.__excepthook__
     """
-    import pdb
+    try:
+        import ipdb as pdb
+    except:
+        import pdb
     import sys
     import traceback
 
@@ -271,4 +277,8 @@ if __name__ == '__main__':
     obj = wrap_trace({})
     obj['hi'] = 'hello'
     obj.fail
-    import pdb;pdb.set_trace()
+    try:
+        import ipdb as pdb
+    except:
+        import pdb
+    pdb.set_trace()
