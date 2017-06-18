@@ -23,6 +23,8 @@ def clamp(x, lower=float('-inf'), upper=float('inf')):
     0
     >>> clamp(101.0, 0, 5)
     5
+    >>> clamp(123, upper=5)
+    5
 
     Similar to `numpy's clip`_ function.
 
