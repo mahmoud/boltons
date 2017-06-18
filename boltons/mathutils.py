@@ -5,7 +5,7 @@ from math import ceil as _ceil, floor as _floor
 import bisect
 
 
-def clamp(x, lower=None, upper=None):
+def clamp(x, lower=float('-inf'), upper=float('inf')):
     """Limit a value to a given range.
 
     Args:
