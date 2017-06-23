@@ -50,9 +50,9 @@ class SpooledIOBase(object):
     """
     __metaclass__ = ABCMeta
 
-    def __init__(self, max_size=5000000, temp_dir=None):
+    def __init__(self, max_size=5000000, dir=None):
         self._max_size = max_size
-        self._temp_dir = temp_dir
+        self._dir = dir
 
     @abstractmethod
     def read(self, n=-1):
@@ -230,7 +230,7 @@ class SpooledBytesIO(SpooledIOBase):
     def rollover(self):
         """Roll the StringIO over to a TempFile"""
         if not self._rolled:
-            tmp = TemporaryFile(dir=self._temp_dir)
+            tmp = TemporaryFile(dir=self._dir)
             pos = self.buffer.tell()
             tmp.write(self.buffer.getvalue())
             tmp.seek(pos)
@@ -379,7 +379,7 @@ class SpooledStringIO(SpooledIOBase):
     def rollover(self):
         """Roll the StringIO over to a TempFile"""
         if not self._rolled:
-            tmp = EncodedFile(TemporaryFile(dir=self._temp_dir),
+            tmp = EncodedFile(TemporaryFile(dir=self._dir),
                               data_encoding='utf-8')
             pos = self.buffer.tell()
             tmp.write(self.buffer.getvalue())
