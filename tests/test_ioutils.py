@@ -46,8 +46,8 @@ class BaseTestMixin(object):
         custom_dir = mkdtemp()
         try:
             # Re-instantiate self.spooled_flo with the custom dir argument
-            _spooled_flo = type(self.spooled_flo)(temp_dir=custom_dir)
-            self.assertEqual(_spooled_flo._temp_dir, custom_dir)
+            _spooled_flo = type(self.spooled_flo)(dir=custom_dir)
+            self.assertEqual(_spooled_flo._dir, custom_dir)
             # TemporaryFile is kind of a black box, we can't really test it
             # since the directory entry for the file is removed immediately
             # after the file is created. So we can't check path using fd.name
