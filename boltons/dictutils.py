@@ -69,7 +69,7 @@ class OrderedMultiDict(dict):
       * stacking data from multiple dictionaries in a non-destructive way
 
     The OrderedMultiDict constructor is identical to the built-in
-    :class:`dict`, and overall the API is constitutes an intuitive
+    :class:`dict`, and overall the API constitutes an intuitive
     superset of the built-in type:
 
     >>> omd = OrderedMultiDict()
