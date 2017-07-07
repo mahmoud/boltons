@@ -401,8 +401,16 @@ class FunctionBuilder(object):
         @classmethod
         def _argspec_to_dict(cls, f):
             argspec = inspect.getfullargspec(f)
-            return dict((attr, getattr(argspec, attr))
-                        for attr in cls._argspec_defaults)
+            result = dict((attr, getattr(argspec, attr))
+                          for attr in cls._argspec_defaults)
+            escaped_annotations = {}
+            for annotation, value in argspec.annotations.items():
+                if isinstance(value, type):
+                    escaped_annotations[annotation] = value.__name__
+                else:
+                    escaped_annotations[annotation] = str(value)
+            result['annotations'] = escaped_annotations
+            return result
 
     _defaults = {'doc': str,
                  'dict': dict,

@@ -1,5 +1,6 @@
 
 import inspect
+from typing import Optional, Tuple
 
 import pytest
 
@@ -24,8 +25,19 @@ def test_wraps_py3():
         return a, b
 
     annotations(0) == (True, "annotations", (0, 1))
-    annotations.__annotations__ == {'a': int, 'b': float,
-                                    'return': 'tuple'}
+    assert annotations.__annotations__ == {'a': 'int', 'b': 'float',
+                                           'return': 'tuple'}
+
+    @pita_wrap(flag=True)
+    def typed_annotations(a: int, b: Optional[int] = 42) -> Tuple[int, int]:
+        return a, b or 0
+
+    typed_annotations(0) == (True, "annotations", (0, 42))
+    assert typed_annotations.__annotations__ == {
+        'a': 'int',
+        'b': 'typing.Union[int, NoneType]',
+        'return': 'Tuple'
+    }
 
     @pita_wrap(flag=False)
     def kwonly_arg(a, *, b, c=2):
