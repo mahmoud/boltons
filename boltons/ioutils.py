@@ -16,7 +16,7 @@ from abc import (
     abstractproperty,
 )
 from errno import EINVAL
-from io import BytesIO
+from io import BytesIO, TextIOBase
 from codecs import EncodedFile
 from tempfile import TemporaryFile
 
@@ -404,3 +404,41 @@ class SpooledStringIO(SpooledIOBase):
             total += len(ret)
         self.buffer.seek(pos)
         return total
+
+
+class MultiFileReader(object):
+
+    def __init__(self, *fileobjs):
+        if all(isinstance(f, TextIOBase) for f in fileobjs):
+            self._joiner = ''
+        elif any(isinstance(f, TextIOBase) for f in fileobjs):
+            raise ValueError('All arguments to MultiFileReader must be either '
+                             'bytes IO or text IO, not a mix')
+        else:
+            self._joiner = b''
+        self._fileobjs = fileobjs
+        self._index = 0
+
+    def read(self, amt=None):
+        if not amt:
+            return self._joiner.join(f.read() for f in self._fileobjs)
+        parts = []
+        while amt > 0 and self._index < len(self._fileobjs):
+            parts.append(self._fileobjs[self._index].read(amt))
+            got = len(parts[-1])
+            if got < amt:
+                self._index += 1
+            amt -= got
+        return self._joiner.join(parts)
+
+    def seek(self, offset, whence=os.SEEK_SET):
+        if whence != os.SEEK_SET:
+            raise NotImplementedError(
+                'fileprepender does not support anything other'
+                ' than os.SEEK_SET for whence on seek()')
+        if offset != 0:
+            raise NotImplementedError(
+                'fileprepender only supports seeking to start, but that '
+                'could be fixed if you need it')
+        for f in self._fileobjs:
+            f.seek(0)

@@ -1,3 +1,4 @@
+import io
 import os
 import random
 import string
@@ -391,3 +392,23 @@ class TestSpooledStringIO(TestCase, BaseTestMixin, AssertionsMixin):
         self.spooled_flo.write(test_str)
         self.spooled_flo.seek(0)
         self.assertEqual(self.spooled_flo.read(3), test_str)
+
+
+class TestMultiFileReader(TestCase):
+    def test_read_seek_bytes(self):
+        r = ioutils.MultiFileReader(io.BytesIO(b'narf'), io.BytesIO(b'troz'))
+        self.assertEqual([b'nar', b'ftr', b'oz'],
+                         list(iter(lambda: r.read(3), b'')))
+        r.seek(0)
+        self.assertEqual(b'narftroz', r.read())
+
+    def test_read_seek_text(self):
+        r = ioutils.MultiFileReader(io.StringIO(u'narf'), io.StringIO(u'troz'))
+        self.assertEqual([u'nar', u'ftr', u'oz'],
+                         list(iter(lambda: r.read(3), u'')))
+        r.seek(0)
+        self.assertEqual(u'narftroz', r.read())
+
+    def test_no_mixed_bytes_and_text(self):
+        with self.assertRaises(ValueError):
+            ioutils.MultiFileReader(io.BytesIO(b'narf'), io.StringIO(u'troz'))
