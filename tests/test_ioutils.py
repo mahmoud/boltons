@@ -410,5 +410,5 @@ class TestMultiFileReader(TestCase):
         self.assertEqual(u'narftroz', r.read())
 
     def test_no_mixed_bytes_and_text(self):
-        with self.assertRaises(ValueError):
-            ioutils.MultiFileReader(io.BytesIO(b'narf'), io.StringIO(u'troz'))
+        self.assertRaises(ValueError, ioutils.MultiFileReader,
+                          io.BytesIO(b'narf'), io.StringIO(u'troz'))
