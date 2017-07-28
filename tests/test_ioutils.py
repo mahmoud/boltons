@@ -2,6 +2,7 @@ import os
 import random
 import string
 import sys
+from tempfile import mkdtemp
 from unittest import TestCase
 from zipfile import ZipFile, ZIP_DEFLATED
 
@@ -39,6 +40,29 @@ class BaseTestMixin(object):
         self.spooled_flo.rollover()
         self.assertEqual(self.spooled_flo.getvalue(), self.test_str)
         self.assertTrue(self.spooled_flo._rolled)
+
+    def test_rollover_custom_directory(self):
+        """dir keyword argument is passed to TemporaryFile instantiation"""
+        custom_dir = mkdtemp()
+        try:
+            # Re-instantiate self.spooled_flo with the custom dir argument
+            _spooled_flo = type(self.spooled_flo)(dir=custom_dir)
+            self.assertEqual(_spooled_flo._dir, custom_dir)
+            # TemporaryFile is kind of a black box, we can't really test it
+            # since the directory entry for the file is removed immediately
+            # after the file is created. So we can't check path using fd.name
+            # or listdir(custom_dir). We could either convert rollover() to
+            # use NamedtemporaryFile-s or assume it's well tested enough that
+            # passing dir= into the constructor will work as expected. We'll
+            # call rollover() with the dir attribute set just to ensure
+            # nothing has gone absurdly wrong.
+            _spooled_flo.write(self.test_str)
+            _spooled_flo.rollover()
+            self.assertEqual(_spooled_flo.getvalue(), self.test_str)
+            self.assertTrue(_spooled_flo._rolled)
+            _spooled_flo.close()
+        finally:
+            os.rmdir(custom_dir)
 
     def test_truncate_noargs_norollover(self):
         """Test truncating with no args with in-memory flo"""

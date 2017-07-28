@@ -7,7 +7,7 @@ Spooled Temporary Files
 -----------------------
 Spooled Temporary Files are file-like objects that start out mapped to
 in-memory objects, but automatically roll over to a temporary file once they
-reach a certain (configurable) threshhold. Unfortunately the built-in
+reach a certain (configurable) threshold. Unfortunately the built-in
 SpooledTemporaryFile class in Python does not implement the exact API that some
 common classes like StringIO do. SpooledTemporaryFile also spools all of it's
 in-memory files as cStringIO instances. cStringIO instances cannot be
@@ -35,7 +35,7 @@ Examples
 --------
 It's not uncommon to find excessive usage of StringIO in older Python code. A
 SpooledTemporaryFile would be a nice replacement if one wanted to reduce memory
-overhead, but unfortunately it's api differs too much. This is a good candidate
+overhead, but unfortunately its api differs too much. This is a good candidate
 for :ref:`spooledbytesio` as it is api compatible and thus may be used as a
 drop-in replacement.
 
@@ -46,7 +46,7 @@ Old Code::
 
 Updated::
 
-    from boltions.ioutils import SpooledBytesIO
+    from boltons.ioutils import SpooledBytesIO
 
     flo = SpooledBytesIO()
     flo.write(gigantic_string)
@@ -64,20 +64,17 @@ Here is a simple example using the requests library to download a zip file::
     import requests
     from boltons import ioutils
 
-    s = requests.Session()
-    r = s.get("http://127.0.0.1/test_file.zip", stream=True)
-    if r.status_code == 200:
-        flo = SpooledBytesIO()
+    # Using a context manager with stream=True ensures the connection is closed. See:
+    # http://docs.python-requests.org/en/master/user/advanced/#body-content-workflow
+    with requests.get("http://127.0.0.1/test_file.zip", stream=True) as r:
+        if r.status_code == 200:
+            with ioutils.SpooledBytesIO() as flo:
+                for chunk in r.iter_content(chunk_size=64000):
+                    flo.write(chunk)
 
-    r = self._get(url, stream=True)
-    if r.status_code == 200:
-        with ioutils.SpooledBytesIO() as flo:
-            for chunk in r.iter_content(chunk_size=64000):
-                flo.write(chunk)
+                flo.seek(0)
 
-            flo.seek(0)
+                zip_doc = ZipFile(flo)
 
-            zip_doc = ZipFile(flo)
-
-            # Print all the files in the zip
-            print zip_doc.namelist()
+                # Print all the files in the zip
+                print(zip_doc.namelist())

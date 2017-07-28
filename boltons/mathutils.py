@@ -5,7 +5,7 @@ from math import ceil as _ceil, floor as _floor
 import bisect
 
 
-def clamp(x, lower=None, upper=None):
+def clamp(x, lower=float('-inf'), upper=float('inf')):
     """Limit a value to a given range.
 
     Args:
@@ -22,6 +22,8 @@ def clamp(x, lower=None, upper=None):
     >>> clamp(-1.0, 0, 5)
     0
     >>> clamp(101.0, 0, 5)
+    5
+    >>> clamp(123, upper=5)
     5
 
     Similar to `numpy's clip`_ function.
