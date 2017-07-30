@@ -1,12 +1,25 @@
+import io
 import os
+import sys
+import codecs
 import random
 import string
-import sys
+
+try:
+    from StringIO import StringIO
+except:
+    # py3
+    StringIO = io.StringIO
+
 from tempfile import mkdtemp
 from unittest import TestCase
 from zipfile import ZipFile, ZIP_DEFLATED
 
+
 from boltons import ioutils
+
+CUR_FILE_PATH = os.path.abspath(__file__)
+
 
 # Python2/3 compat
 if sys.version_info[0] == 3:
@@ -391,3 +404,51 @@ class TestSpooledStringIO(TestCase, BaseTestMixin, AssertionsMixin):
         self.spooled_flo.write(test_str)
         self.spooled_flo.seek(0)
         self.assertEqual(self.spooled_flo.read(3), test_str)
+
+
+class TestMultiFileReader(TestCase):
+    def test_read_seek_bytes(self):
+        r = ioutils.MultiFileReader(io.BytesIO(b'narf'), io.BytesIO(b'troz'))
+        self.assertEqual([b'nar', b'ftr', b'oz'],
+                         list(iter(lambda: r.read(3), b'')))
+        r.seek(0)
+        self.assertEqual(b'narftroz', r.read())
+
+    def test_read_seek_text(self):
+        # also tests StringIO.StringIO on py2
+        r = ioutils.MultiFileReader(StringIO(u'narf'),
+                                    io.StringIO(u'troz'))
+        self.assertEqual([u'nar', u'ftr', u'oz'],
+                         list(iter(lambda: r.read(3), u'')))
+        r.seek(0)
+        self.assertEqual(u'narftroz', r.read())
+
+    def test_no_mixed_bytes_and_text(self):
+        self.assertRaises(ValueError, ioutils.MultiFileReader,
+                          io.BytesIO(b'narf'), io.StringIO(u'troz'))
+
+    def test_open(self):
+        with open(CUR_FILE_PATH, 'r') as f:
+            r_file_str = f.read()
+        with open(CUR_FILE_PATH, 'r') as f1:
+            with open(CUR_FILE_PATH, 'r') as f2:
+                mfr = ioutils.MultiFileReader(f1, f2)
+                r_double_file_str = mfr.read()
+
+        assert r_double_file_str == (r_file_str * 2)
+
+        with open(CUR_FILE_PATH, 'rb') as f:
+            rb_file_str = f.read()
+        with open(CUR_FILE_PATH, 'rb') as f1:
+            with open(CUR_FILE_PATH, 'rb') as f2:
+                mfr = ioutils.MultiFileReader(f1, f2)
+                rb_double_file_str = mfr.read()
+
+        assert rb_double_file_str == (rb_file_str * 2)
+
+        utf8_file_str = codecs.open(CUR_FILE_PATH, encoding='utf8').read()
+        f1, f2 = (codecs.open(CUR_FILE_PATH, encoding='utf8'),
+                  codecs.open(CUR_FILE_PATH, encoding='utf8'))
+        mfr = ioutils.MultiFileReader(f1, f2)
+        utf8_double_file_str = mfr.read()
+        assert utf8_double_file_str == (utf8_file_str * 2)

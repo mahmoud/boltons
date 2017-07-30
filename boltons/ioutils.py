@@ -1,4 +1,4 @@
-# -*- coding: UTF-8 -*-
+# -*- coding: utf-8 -*-
 
 # Coding decl above needed for rendering the emdash properly in the
 # documentation.
@@ -10,13 +10,13 @@ ways.
 """
 import os
 import sys
+from io import BytesIO
 from abc import (
     ABCMeta,
     abstractmethod,
     abstractproperty,
 )
 from errno import EINVAL
-from io import BytesIO
 from codecs import EncodedFile
 from tempfile import TemporaryFile
 
@@ -404,3 +404,82 @@ class SpooledStringIO(SpooledIOBase):
             total += len(ret)
         self.buffer.seek(pos)
         return total
+
+
+def is_text_fileobj(fileobj):
+    if getattr(fileobj, 'encoding', False):
+        # codecs.open and io.TextIOBase
+        return True
+    if getattr(fileobj, 'getvalue', False):
+        # StringIO.StringIO / cStringIO.StringIO / io.StringIO
+        try:
+            if isinstance(fileobj.getvalue(), type(u'')):
+                return True
+        except Exception:
+            pass
+    return False
+
+
+class MultiFileReader(object):
+    """Takes a list of open files or file-like objects and provides an
+    interface to read from them all contiguously. Like
+    :func:`itertools.chain()`, but for reading files.
+
+       >>> mfr = MultiFileReader(BytesIO(b'ab'), BytesIO(b'cd'), BytesIO(b'e'))
+       >>> mfr.read(3).decode('ascii')
+       u'abc'
+       >>> mfr.read(3).decode('ascii')
+       u'de'
+
+    The constructor takes as many fileobjs as you hand it, and will
+    raise a TypeError on non-file-like objects. A ValueError is raised
+    when file-like objects are a mix of bytes- and text-handling
+    objects (for instance, BytesIO and StringIO).
+    """
+
+    def __init__(self, *fileobjs):
+        if not all([callable(getattr(f, 'read', None)) and
+                    callable(getattr(f, 'seek', None)) for f in fileobjs]):
+            raise TypeError('MultiFileReader expected file-like objects'
+                            ' with .read() and .seek()')
+        if all([is_text_fileobj(f) for f in fileobjs]):
+            # codecs.open and io.TextIOBase
+            self._joiner = u''
+        elif any([is_text_fileobj(f) for f in fileobjs]):
+            raise ValueError('All arguments to MultiFileReader must handle'
+                             ' bytes OR text, not a mix')
+        else:
+            # open/file and io.BytesIO
+            self._joiner = b''
+        self._fileobjs = fileobjs
+        self._index = 0
+
+    def read(self, amt=None):
+        """Read up to the specified *amt*, seamlessly bridging across
+        files. Returns the appropriate type of string (bytes or text)
+        for the input, and returns an empty string when the files are
+        exhausted.
+        """
+        if not amt:
+            return self._joiner.join(f.read() for f in self._fileobjs)
+        parts = []
+        while amt > 0 and self._index < len(self._fileobjs):
+            parts.append(self._fileobjs[self._index].read(amt))
+            got = len(parts[-1])
+            if got < amt:
+                self._index += 1
+            amt -= got
+        return self._joiner.join(parts)
+
+    def seek(self, offset, whence=os.SEEK_SET):
+        """Enables setting position of the file cursor to a given
+        *offset*. Currently only supports ``offset=0``.
+        """
+        if whence != os.SEEK_SET:
+            raise NotImplementedError(
+                'MultiFileReader.seek() only supports os.SEEK_SET')
+        if offset != 0:
+            raise NotImplementedError(
+                'MultiFileReader only supports seeking to start at this time')
+        for f in self._fileobjs:
+            f.seek(0)
