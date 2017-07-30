@@ -421,6 +421,21 @@ def is_text_fileobj(fileobj):
 
 
 class MultiFileReader(object):
+    """Takes a list of open files or file-like objects and provides an
+    interface to read from them all contiguously. Like
+    :func:`itertools.chain()`, but for reading files.
+
+       >>> mfr = MultiFileReader(BytesIO(b'ab'), BytesIO(b'cd'), BytesIO(b'e'))
+       >>> mfr.read(3).decode('ascii')
+       u'abc'
+       >>> mfr.read(3).decode('ascii')
+       u'de'
+
+    The constructor takes as many fileobjs as you hand it, and will
+    raise a TypeError on non-file-like objects. A ValueError is raised
+    when file-like objects are a mix of bytes- and text-handling
+    objects (for instance, BytesIO and StringIO).
+    """
 
     def __init__(self, *fileobjs):
         if not all([callable(getattr(f, 'read', None)) and
@@ -440,6 +455,11 @@ class MultiFileReader(object):
         self._index = 0
 
     def read(self, amt=None):
+        """Read up to the specified *amt*, seamlessly bridging across
+        files. Returns the appropriate type of string (bytes or text)
+        for the input, and returns an empty string when the files are
+        exhausted.
+        """
         if not amt:
             return self._joiner.join(f.read() for f in self._fileobjs)
         parts = []
@@ -452,6 +472,9 @@ class MultiFileReader(object):
         return self._joiner.join(parts)
 
     def seek(self, offset, whence=os.SEEK_SET):
+        """Enables setting position of the file cursor to a given
+        *offset*. Currently only supports ``offset=0``.
+        """
         if whence != os.SEEK_SET:
             raise NotImplementedError(
                 'MultiFileReader.seek() only supports os.SEEK_SET')
