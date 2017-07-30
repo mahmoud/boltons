@@ -407,10 +407,10 @@ class SpooledStringIO(SpooledIOBase):
 
 
 def is_text_fileobj(fileobj):
-    if hasattr(fileobj, 'encoding'):
+    if getattr(fileobj, 'encoding', False):
         # codecs.open and io.TextIOBase
         return True
-    if hasattr(fileobj, 'getvalue'):
+    if getattr(fileobj, 'getvalue', False):
         # StringIO.StringIO / cStringIO.StringIO / io.StringIO
         try:
             if isinstance(fileobj.getvalue(), type(u'')):
