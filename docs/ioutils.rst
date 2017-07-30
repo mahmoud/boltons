@@ -78,3 +78,13 @@ Here is a simple example using the requests library to download a zip file::
 
                 # Print all the files in the zip
                 print(zip_doc.namelist())
+
+
+Multiple Files
+--------------
+
+.. _multifilereader:
+
+MultiFileReader
+^^^^^^^^^^^^^^^
+.. autoclass:: boltons.ioutils.MultiFileReader
