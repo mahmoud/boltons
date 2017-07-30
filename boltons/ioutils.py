@@ -1,4 +1,4 @@
-# -*- coding: UTF-8 -*-
+# -*- coding: utf-8 -*-
 
 # Coding decl above needed for rendering the emdash properly in the
 # documentation.
@@ -409,11 +409,16 @@ class SpooledStringIO(SpooledIOBase):
 class MultiFileReader(object):
 
     def __init__(self, *fileobjs):
-        if all(isinstance(f, TextIOBase) for f in fileobjs):
-            self._joiner = ''
-        elif any(isinstance(f, TextIOBase) for f in fileobjs):
-            raise ValueError('All arguments to MultiFileReader must be either '
-                             'bytes IO or text IO, not a mix')
+        if not all([callable(getattr(f, 'read', None)) and
+                    callable(getattr(f, 'seek', None)) for f in fileobjs]):
+            raise TypeError('MultiFileReader expected file-like objects'
+                            ' with .read() and .seek()')
+        if all([hasattr(f, 'encoding') for f in fileobjs]):
+            # codecs.open and io.TextIOBase
+            self._joiner = u''
+        elif any([hasattr(f, 'encoding') for f in fileobjs]):
+            raise ValueError('All arguments to MultiFileReader must handle'
+                             ' bytes OR text, not a mix')
         else:
             self._joiner = b''
         self._fileobjs = fileobjs
@@ -434,11 +439,9 @@ class MultiFileReader(object):
     def seek(self, offset, whence=os.SEEK_SET):
         if whence != os.SEEK_SET:
             raise NotImplementedError(
-                'fileprepender does not support anything other'
-                ' than os.SEEK_SET for whence on seek()')
+                'MultiFileReader.seek() only supports os.SEEK_SET')
         if offset != 0:
             raise NotImplementedError(
-                'fileprepender only supports seeking to start, but that '
-                'could be fixed if you need it')
+                'MultiFileReader only supports seeking to start at this time')
         for f in self._fileobjs:
             f.seek(0)
