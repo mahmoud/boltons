@@ -4,9 +4,17 @@ import sys
 import codecs
 import random
 import string
+
+try:
+    from StringIO import StringIO
+except:
+    # py3
+    StringIO = io.StringIO
+
 from tempfile import mkdtemp
 from unittest import TestCase
 from zipfile import ZipFile, ZIP_DEFLATED
+
 
 from boltons import ioutils
 
@@ -407,7 +415,9 @@ class TestMultiFileReader(TestCase):
         self.assertEqual(b'narftroz', r.read())
 
     def test_read_seek_text(self):
-        r = ioutils.MultiFileReader(io.StringIO(u'narf'), io.StringIO(u'troz'))
+        # also tests StringIO.StringIO on py2
+        r = ioutils.MultiFileReader(StringIO(u'narf'),
+                                    io.StringIO(u'troz'))
         self.assertEqual([u'nar', u'ftr', u'oz'],
                          list(iter(lambda: r.read(3), u'')))
         r.seek(0)

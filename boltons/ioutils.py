@@ -10,13 +10,13 @@ ways.
 """
 import os
 import sys
+from io import BytesIO
 from abc import (
     ABCMeta,
     abstractmethod,
     abstractproperty,
 )
 from errno import EINVAL
-from io import BytesIO, TextIOBase
 from codecs import EncodedFile
 from tempfile import TemporaryFile
 
@@ -406,6 +406,20 @@ class SpooledStringIO(SpooledIOBase):
         return total
 
 
+def is_text_fileobj(fileobj):
+    if hasattr(fileobj, 'encoding'):
+        # codecs.open and io.TextIOBase
+        return True
+    if hasattr(fileobj, 'getvalue'):
+        # StringIO.StringIO / cStringIO.StringIO / io.StringIO
+        try:
+            if isinstance(fileobj.getvalue(), type(u'')):
+                return True
+        except Exception:
+            pass
+    return False
+
+
 class MultiFileReader(object):
 
     def __init__(self, *fileobjs):
@@ -413,13 +427,14 @@ class MultiFileReader(object):
                     callable(getattr(f, 'seek', None)) for f in fileobjs]):
             raise TypeError('MultiFileReader expected file-like objects'
                             ' with .read() and .seek()')
-        if all([hasattr(f, 'encoding') for f in fileobjs]):
+        if all([is_text_fileobj(f) for f in fileobjs]):
             # codecs.open and io.TextIOBase
             self._joiner = u''
-        elif any([hasattr(f, 'encoding') for f in fileobjs]):
+        elif any([is_text_fileobj(f) for f in fileobjs]):
             raise ValueError('All arguments to MultiFileReader must handle'
                              ' bytes OR text, not a mix')
         else:
+            # open/file and io.BytesIO
             self._joiner = b''
         self._fileobjs = fileobjs
         self._index = 0
