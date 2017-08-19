@@ -756,15 +756,17 @@ class OneToOne(dict):
         if isinstance(dict_or_iterable, dict):
             for val in dict_or_iterable.values():
                 hash(val)
+                keys_vals = dict_or_iterable.items()
         else:
             for key, val in dict_or_iterable:
                 hash(key)
                 hash(val)
+                keys_vals = list(dict_or_iterable)
         for val in kw.values():
             hash(val)
-        dict.clear(self.inv)
-        dict.update(self, dict_or_iterable, **kw)
-        dict.update(self.inv, [(v, k) for k, v in self.items()])
+        keys_vals += kw.items()
+        for key, val in keys_vals:
+            self[key] = val
 
     def __repr__(self):
         return "OneToOne(" + dict.__repr__(self) + ")" 
