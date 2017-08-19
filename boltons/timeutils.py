@@ -131,18 +131,18 @@ def parse_timedelta(text):
     Raises:
         ValueError: on parse failure.
 
-    >>> parse_td('1d 2h 3.5m 0s')
-    datetime.timedelta(1, 7410)
+    >>> parse_td('1d 2h 3.5m 0s') == timedelta(days=1, seconds=7410)
+    True
 
     Also supports full words and whitespace.
 
-    >>> parse_td('2 weeks 1 day')
-    datetime.timedelta(15)
+    >>> parse_td('2 weeks 1 day') == timedelta(days=15)
+    True
 
     Negative times are supported, too:
 
-    >>> parse_td('-1.5 weeks 3m 20s')
-    datetime.timedelta(-11, 43400)
+    >>> parse_td('-1.5 weeks 3m 20s') == timedelta(days=-11, seconds=43400)
+    True
     """
     td_kwargs = {}
     for match in _PARSE_TD_RE.finditer(text):
