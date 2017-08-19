@@ -693,4 +693,80 @@ class FastIterOrderedMultiDict(OrderedMultiDict):
             yield curr[KEY]
             curr = curr[PREV]
 
+
+_UNSET = object()
+_SELF_INIT_MARKER = object()
+
+
+class OneToOne(dict):
+    '''
+    Implements a one to one mapping dictionary.
+    Keys and values are always 1:1.
+    Writing an old value under a new key overwrites.
+    '''
+    __slots__ = ('inv')
+
+    def __init__(self, *a, **kw):
+        if a and a[0] is _SELF_INIT_MARKER:
+            self.inv = a[1]
+            dict.__init__(self, [(v, k) for k, v in self.inv.items()])
+        else:
+            dict.__init__(self, *a, **kw)
+            self.inv = OneToOne(_SELF_INIT_MARKER, self)
+
+    def __setitem__(self, key, val):
+        hash(val)  # ensure val is a valid key
+        if key in self:
+            dict.__delitem__(self.inv, self[key])
+        if val in self.inv:
+            del self.inv[val]
+        dict.__setitem__(self, key, val)
+        dict.__setitem__(self.inv, val, key)
+
+    def __delitem__(self, key):
+        dict.__delitem__(self.inv, self[key])
+        dict.__delitem__(self, key)
+
+    def clear(self):
+        dict.clear(self)
+        dict.clear(self.inv)
+
+    def copy(self):
+        return OneToOne(self)
+
+    def pop(self, key, default=_UNSET):
+        if key in self:
+            dict.__delitem__(self.inv, self[key])
+            return dict.pop(self, key)
+        if default is not _UNSET:
+            return default
+        raise KeyError()
+
+    def popitem(self):
+        key, val = dict.popitem(self)
+        dict.__delitem__(self.inv, val)
+        return key, val
+
+    def setdefault(self, key, default=None):
+        if key not in self:
+            self[key] = default
+        return self[key]
+
+    def update(self, dict_or_iterable, **kw):
+        if isinstance(dict_or_iterable, dict):
+            for val in dict_or_iterable.values():
+                hash(val)
+        else:
+            for key, val in dict_or_iterable:
+                hash(key)
+                hash(val)
+        for val in kw.values():
+            hash(val)
+        dict.clear(self.inv)
+        dict.update(self, dict_or_iterable, **kw)
+        dict.update(self.inv, [(v, k) for k, v in self.items()])
+
+    def __repr__(self):
+        return "OneToOne(" + dict.__repr__(self) + ")" 
+
 # end dictutils.py

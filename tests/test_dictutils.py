@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from boltons.dictutils import OMD
+from boltons.dictutils import OMD, OneToOne
 
 _ITEMSETS = [[],
              [('a', 1), ('b', 2), ('c', 3)],
@@ -255,3 +255,44 @@ def test_setdefault():
     y = omd.setdefault('2')
     assert y is None
     assert omd.setdefault('1', None) is empty_list
+
+
+def test_one_to_one():
+    e = OneToOne({1:2})
+    def ck(val, inv):
+        assert (e, e.inv) == (val, inv)
+    ck({1:2}, {2:1})
+    e[2] = 3
+    ck({1:2, 2:3}, {3:2, 2:1})
+    e.clear()
+    ck({}, {})
+    e[1] = 1
+    ck({1:1}, {1:1})
+    e[1] = 2
+    ck({1:2}, {2:1})
+    e[3] = 2
+    ck({3:2}, {2:3})
+    del e[3]
+    ck({}, {})
+    e[1] = 2
+    e.inv[2] = 3
+    ck({3:2}, {2:3})
+    del e.inv[2]
+    ck({}, {})
+    assert OneToOne({1:2, 3:4}).copy().inv == {2:1, 4:3}
+    e[1] = 2
+    e.pop(1)
+    ck({}, {})
+    e[1] = 2
+    e.inv.pop(2)
+    ck({}, {})
+    e[1] = 2
+    e.popitem()
+    ck({}, {})
+    e.setdefault(1)
+    ck({1: None}, {None: 1})
+    e.inv.setdefault(2)
+    ck({1: None, None: 2}, {None: 1, 2: None})
+    e.clear()
+    e.update({1:2}, cat="dog")
+    ck({1:2, "cat":"dog"}, {2:1, "dog":"cat"})
