@@ -756,7 +756,7 @@ class OneToOne(dict):
         if isinstance(dict_or_iterable, dict):
             for val in dict_or_iterable.values():
                 hash(val)
-                keys_vals = dict_or_iterable.items()
+                keys_vals = list(dict_or_iterable.items())
         else:
             for key, val in dict_or_iterable:
                 hash(key)
@@ -764,11 +764,13 @@ class OneToOne(dict):
                 keys_vals = list(dict_or_iterable)
         for val in kw.values():
             hash(val)
-        keys_vals += kw.items()
+        keys_vals.extend(kw.items())
         for key, val in keys_vals:
             self[key] = val
 
     def __repr__(self):
-        return "OneToOne(" + dict.__repr__(self) + ")" 
+        cn = self.__class__.__name__
+        dict_repr = dict.__repr__(self)
+        return "%s(%s)" % (cn, dict_repr)
 
 # end dictutils.py
