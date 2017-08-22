@@ -41,6 +41,10 @@ from __future__ import print_function
 import re
 from string import Formatter
 
+try:
+    from boltons.namedutils import namedtuple
+except ImportError:
+    from collections import namedtuple
 
 __all__ = ['DeferredValue', 'get_format_args', 'tokenize_format_str',
            'construct_format_field_str', 'infer_positional_format_args',
@@ -117,6 +121,10 @@ _TYPE_MAP = dict([(x, int) for x in _INTCHARS] +
                  [(x, float) for x in _FLOATCHARS])
 _TYPE_MAP['s'] = str
 
+FormatArgs = namedtuple('FormatArgs', ('positional', 'named'))
+PositionalFormatArg = namedtuple('PositionalFormatArg', ('index', 'type'))
+NamedFormatArg = namedtuple('NamedFormatArg', ('key', 'type'))
+
 
 def get_format_args(fstr):
     """
@@ -142,9 +150,9 @@ def get_format_args(fstr):
             _dedup.add(argname)
             argtype = _TYPE_MAP.get(type_char, str)  # TODO: unicode
             try:
-                fargs.append((int(argname), argtype))
+                fargs.append(PositionalFormatArg(int(argname), argtype))
             except ValueError:
-                fkwargs.append((argname, argtype))
+                fkwargs.append(NamedFormatArg(argname, argtype))
 
     for lit, fname, fspec, conv in formatter.parse(fstr):
         if fname is not None:
@@ -162,7 +170,7 @@ def get_format_args(fstr):
                 # TODO: positional and anon args not allowed here.
                 if subfname is not None:
                     _add_arg(subfname)
-    return fargs, fkwargs
+    return FormatArgs(fargs, fkwargs)
 
 
 def tokenize_format_str(fstr, resolve_pos=True):

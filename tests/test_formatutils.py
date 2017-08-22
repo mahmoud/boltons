@@ -3,10 +3,14 @@
 import re
 from collections import namedtuple
 
+import pytest
 from boltons.formatutils import (get_format_args,
                                  split_format_str,
                                  tokenize_format_str,
-                                 infer_positional_format_args)
+                                 infer_positional_format_args,
+                                 FormatArgs,
+                                 NamedFormatArg,
+                                 PositionalFormatArg)
 
 
 PFAT = namedtuple("PositionalFormatArgTest", "fstr arg_vals res")
@@ -46,6 +50,40 @@ def test_get_fstr_args():
         res = get_format_args(inferred_t)
         results.append(res)
     return results
+
+
+@pytest.mark.parametrize(('sample', 'expected'), zip(_TEST_TMPLS, [
+        ([], [('hello', str)]),
+        ([], [('hello', str)]),
+        ([], [('hello', str), ('width', str)]),
+        ([], [('hello', str), ('fchar', str), ('width', str)]),
+        ([(0, str), (1, int), (2, float)], []),
+        # example 6 is skipped
+]))
+def test_get_format_args(sample, expected):
+    """Test `get_format_args` result as tuples."""
+    assert get_format_args(sample) == expected
+
+
+@pytest.mark.parametrize(('sample', 'expected'), zip(_TEST_TMPLS, [
+        FormatArgs([], [NamedFormatArg('hello', str)]),
+        FormatArgs([], [NamedFormatArg('hello', str)]),
+        FormatArgs([], [NamedFormatArg('hello', str),
+                        NamedFormatArg('width', str)]),
+        FormatArgs([], [NamedFormatArg('hello', str),
+                        NamedFormatArg('fchar', str),
+                        NamedFormatArg('width', str)]),
+        FormatArgs([PositionalFormatArg(0, str),
+                    PositionalFormatArg(1, int),
+                    PositionalFormatArg(2, float)], []),
+        # example 6 is skipped
+]))
+def test_get_format_args_namedtuples(sample, expected):
+    """Test `get_format_args` result as `namedtuples`."""
+    result = get_format_args(sample)
+    assert result == expected
+    assert result.positional == expected.positional
+    assert result.named == expected.named
 
 
 def test_split_fstr():
