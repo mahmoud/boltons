@@ -6,7 +6,8 @@ from collections import namedtuple
 from boltons.formatutils import (get_format_args,
                                  split_format_str,
                                  tokenize_format_str,
-                                 infer_positional_format_args)
+                                 infer_positional_format_args,
+                                 DeferredValue as DV)
 
 
 PFAT = namedtuple("PositionalFormatArgTest", "fstr arg_vals res")
@@ -62,3 +63,22 @@ def test_tokenize_format_str():
         res = tokenize_format_str(t)
         results.append(res)
     return results
+
+
+def test_deferredvalue():
+    def myfunc():
+        myfunc.called += 1
+        return 123
+
+    myfunc.called = 0
+
+    dv = DV(myfunc)
+    assert str(dv) == '123'
+    assert myfunc.called == 1
+    assert str(dv) == '123'
+    assert myfunc.called == 1
+    dv.cache_value = False
+    assert str(dv) == '123'
+    assert myfunc.called == 2
+    assert str(dv) == '123'
+    assert myfunc.called == 3
