@@ -291,10 +291,12 @@ class DeferredValue(object):
         value may be returned depending on the *cache_value* option
         passed to the constructor.
         """
-        if self._value is _UNSET or not self.cache_value:
+        if self._value is not _UNSET and self.cache_value:
+            value = self._value
+        else:
             value = self.func()
-        if self.cache_value:
-            self._value = value
+            if self.cache_value:
+                self._value = value
         return value
 
     def __int__(self):
