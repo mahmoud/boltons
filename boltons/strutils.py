@@ -77,7 +77,7 @@ def slugify(text, delim='_', lower=True, ascii=False):
     True
 
     """
-    ret = delim.join(split_punct_ws(text))
+    ret = delim.join(split_punct_ws(text)) or delim if text else ''
     if ascii:
         ret = asciify(ret)
     if lower:
