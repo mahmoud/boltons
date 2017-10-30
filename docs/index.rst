@@ -122,5 +122,6 @@ Section listing
    tableutils
    tbutils
    timeutils
+   threadutils
    typeutils
    urlutils
