@@ -116,7 +116,15 @@ class SpooledIOBase(object):
         return self.buffer.isatty()
 
     def next(self):
-        return self.readline()
+        line = self.readline()
+        if not line:
+            pos = self.buffer.tell()
+            self.buffer.seek(0, os.SEEK_END)
+            if pos == self.buffer.tell():
+                raise StopIteration
+            else:
+                self.buffer.seek(pos)
+        return line
 
     @property
     def closed(self):
@@ -161,11 +169,13 @@ class SpooledIOBase(object):
         self.seek(pos)
         return val
 
+    __next__ = next
+
     def __len__(self):
         return self.len
 
     def __iter__(self):
-        yield self.readline()
+        return self
 
     def __enter__(self):
         return self
@@ -184,7 +194,7 @@ class SpooledIOBase(object):
     def __bool__(self):
         return True
 
-    __nonzero__=__bool__
+    __nonzero__ = __bool__
 
 
 class SpooledBytesIO(SpooledIOBase):
