@@ -142,13 +142,6 @@ class BaseTestMixin(object):
         self.spooled_flo.softspace = True
         self.assertTrue(self.spooled_flo.softspace)
 
-    def test_iter(self):
-        """Make sure iter works as expected"""
-        self.spooled_flo.write(self.test_str)
-        self.spooled_flo.seek(0)
-        self.assertEqual([x for x in self.spooled_flo][0], self.test_str)
-        self.assertEqual([x for x in self.spooled_flo][0], self.data_type())
-
     def test_buf_property(self):
         """'buf' property returns the same value as getvalue()"""
         self.assertEqual(self.spooled_flo.buf, self.spooled_flo.getvalue())
@@ -272,6 +265,12 @@ class TestSpooledBytesIO(TestCase, BaseTestMixin, AssertionsMixin):
         doc.writestr("content.txt", "test")
         self.assertTrue('content.txt' in doc.namelist())
         doc.close()
+
+    def test_iter(self):
+        """Make sure iter works as expected"""
+        self.spooled_flo.write(b"a\nb")
+        self.spooled_flo.seek(0)
+        self.assertEqual([x for x in self.spooled_flo], [b"a\n", b"b"])
 
 
 class TestSpooledStringIO(TestCase, BaseTestMixin, AssertionsMixin):
@@ -404,6 +403,12 @@ class TestSpooledStringIO(TestCase, BaseTestMixin, AssertionsMixin):
         self.spooled_flo.write(test_str)
         self.spooled_flo.seek(0)
         self.assertEqual(self.spooled_flo.read(3), test_str)
+
+    def test_iter(self):
+        """Make sure iter works as expected"""
+        self.spooled_flo.write(u"a\nb")
+        self.spooled_flo.seek(0)
+        self.assertEqual([x for x in self.spooled_flo], [u"a\n", u"b"])
 
 
 class TestMultiFileReader(TestCase):
