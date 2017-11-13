@@ -698,7 +698,7 @@ def default_enter(path, key, value):
     # print('enter(%r, %r)' % (key, value))
     try:
         iter(value)
-    except TypeError:
+    except (TypeError, ValueError):
         return value, False
     if isinstance(value, basestring):
         return value, False
