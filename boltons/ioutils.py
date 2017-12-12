@@ -232,7 +232,10 @@ class SpooledBytesIO(SpooledIOBase):
         return self.buffer.seek(pos, mode)
 
     def readline(self, length=None):
-        return self.buffer.readline(length)
+        if length:
+            return self.buffer.readline(length)
+        else:
+            return self.buffer.readline()
 
     def readlines(self, sizehint=0):
         return self.buffer.readlines(sizehint)
