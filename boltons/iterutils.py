@@ -696,10 +696,6 @@ _orig_default_visit = default_visit
 
 def default_enter(path, key, value):
     # print('enter(%r, %r)' % (key, value))
-    try:
-        iter(value)
-    except TypeError:
-        return value, False
     if isinstance(value, basestring):
         return value, False
     elif isinstance(value, Mapping):
@@ -708,6 +704,14 @@ def default_enter(path, key, value):
         return value.__class__(), enumerate(value)
     elif isinstance(value, Set):
         return value.__class__(), enumerate(value)
+    elif hasattr(value, 'read'):
+        # presume this is a file-like object
+        return value, False
+    else:
+        try:
+            iter(value)
+        except TypeError:
+            return value, False
     return value, False
 
 
