@@ -696,10 +696,6 @@ _orig_default_visit = default_visit
 
 def default_enter(path, key, value):
     # print('enter(%r, %r)' % (key, value))
-    try:
-        iter(value)
-    except TypeError:
-        return value, False
     if isinstance(value, basestring):
         return value, False
     elif isinstance(value, Mapping):
@@ -708,7 +704,10 @@ def default_enter(path, key, value):
         return value.__class__(), enumerate(value)
     elif isinstance(value, Set):
         return value.__class__(), enumerate(value)
-    return value, False
+    else:
+        # files, strings, other iterables, and scalars are not
+        # traversed
+        return value, False
 
 
 def default_exit(path, key, old_parent, new_parent, new_items):
