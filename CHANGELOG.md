@@ -4,6 +4,29 @@ boltons Changelog
 Since February 20, 2013 there have been 32 releases and 1089 commits for
 an average of one 34-commit release every 6.2 weeks.
 
+17.2.0
+------
+*(December 16, 2017)*
+
+A big release with a lot of features and bugfixes, big and small. Just
+in time for the holidays!
+
+* Better handling of `file` and `file`-like objects in [remap][iterutils.remap]'s `default_enter`
+* Fix line-by-line iteration in [ioutils][ioutils] types
+* Change [strutils.slugify][strutils.slugify] to always output at
+  least a single-character slug (in cases of
+  all-punctuation/whitespace inputs).
+* Fix [DeferredValue][formatutils.DeferredValue] caching in [formatutils][formatutils]
+* Add [OneToOne][dictutils.OneToOne] to [dictutils][dictutils]
+* Add [MultiFileReader][ioutils.MultiFileReader] to [ioutils][ioutils] (see [#135][i135])
+* Support passing `dir` argument to [ioutils][ioutils] SpooledIO types
+* fix default arguments for [mathutils.clamp][mathutils.clamp] (see [#128][i128])
+* Add [iterutils.research][iterutils.research], a
+  [remap][iterutils.remap]-based recursive search function for nested
+  data
+* Improved and expanded [urlutils.SCHEME_PORT_MAP][urlutils.SCHEME_PORT_MAP]
+* Simplify [urlutils.find_all_links][urlutils.find_all_links] signature
+
 17.1.0
 ------
 *(February 27, 2017)*
@@ -750,6 +773,7 @@ added in this release.
 [os.replace]: https://docs.python.org/3/library/os.html#os.replace
 [functools.total_ordering]: https://docs.python.org/2/library/functools.html#functools.total_ordering
 [StringIO]: https://docs.python.org/2/library/stringio.html
+[zscore]: https://en.wikipedia.org/wiki/Standard_score
 
 [cacheutils]: http://boltons.readthedocs.org/en/latest/cacheutils.html
 [cacheutils.LRU]: http://boltons.readthedocs.org/en/latest/cacheutils.html#boltons.cacheutils.LRU
@@ -758,12 +782,14 @@ added in this release.
 [cacheutils.cachedmethod]: http://boltons.readthedocs.org/en/latest/cacheutils.html#boltons.cacheutils.cachedmethod
 [cacheutils.cachedproperty]: http://boltons.readthedocs.org/en/latest/cacheutils.html#boltons.cacheutils.cachedproperty
 [debugutils.pdb_on_signal]: http://boltons.readthedocs.org/en/latest/debugutils.html#boltons.debugutils.pdb_on_signal
+[dictutils]: http://boltons.readthedocs.org/en/latest/dictutils.html
 [dictutils.OMD]: http://boltons.readthedocs.org/en/latest/dictutils.html#boltons.dictutils.OMD
 [dictutils.OMD.pop]: http://boltons.readthedocs.org/en/latest/dictutils.html#boltons.dictutils.OrderedMultiDict.pop
 [dictutils.OMD.popall]: http://boltons.readthedocs.org/en/latest/dictutils.html#boltons.dictutils.OrderedMultiDict.popall
 [dictutils.OMD.setdefault]: http://boltons.readthedocs.org/en/latest/dictutils.html#boltons.dictutils.OrderedMultiDict.setdefault
 [dictutils.OrderedMultiDict]: http://boltons.readthedocs.org/en/latest/dictutils.html#boltons.dictutils.OrderedMultiDict
 [dictutils.OrderedMultiDict.get_inverted]: http://boltons.readthedocs.org/en/latest/dictutils.html#boltons.dictutils.OrderedMultiDict.get_inverted
+[dictutils.OneToOne]: http://boltons.readthedocs.org/en/latest/dictutils.html#boltons.dictutils.OneToOne
 [ecoutils]: http://boltons.readthedocs.org/en/latest/ecoutils.html
 [excutils.ParsedException]: http://boltons.readthedocs.org/en/latest/excutils.html#boltons.excutils.ParsedException
 [fileutils]: http://boltons.readthedocs.org/en/latest/fileutils.html
@@ -775,6 +801,8 @@ added in this release.
 [fileutils.iter_find_files]: http://boltons.readthedocs.org/en/latest/fileutils.html#boltons.fileutils.iter_find_files
 [fileutils.mkdir_p]: http://boltons.readthedocs.org/en/latest/fileutils.html#boltons.fileutils.mkdir_p
 [fileutils.DummyFile]: http://boltons.readthedocs.org/en/latest/fileutils.html#boltons.fileutils.DummyFile
+[formatutils]: http://boltons.readthedocs.org/en/latest/formatutils.html
+[formatutils.DeferredValue]: http://boltons.readthedocs.org/en/latest/formatutils.html#boltons.fileutils.DeferredValue
 [funcutils.FunctionBuilder]: http://boltons.readthedocs.org/en/latest/funcutils.html#boltons.funcutils.FunctionBuilder
 [funcutils.partial_ordering]: http://boltons.readthedocs.org/en/latest/funcutils.html#boltons.funcutils.partial_ordering
 [funcutils.total_ordering]: http://boltons.readthedocs.org/en/latest/funcutils.html#boltons.funcutils.total_ordering
@@ -793,7 +821,10 @@ added in this release.
 [i83]: https://github.com/mahmoud/boltons/issues/83
 [i84]: https://github.com/mahmoud/boltons/issues/84
 [i86]: https://github.com/mahmoud/boltons/issues/86
+[i128]: https://github.com/mahmoud/boltons/issues/128
+[i135]: https://github.com/mahmoud/boltons/issues/135
 [ioutils]: http://boltons.readthedocs.org/en/latest/ioutils.html
+[ioutils.MultiFileReader]: http://boltons.readthedocs.org/en/latest/ioutils.html#boltons.ioutils.MultiFileReader
 [ioutils.SpooledBytesIO]: http://boltons.readthedocs.org/en/latest/ioutils.html#boltons.ioutils.SpooledBytesIO
 [ioutils.SpooledStringIO]: http://boltons.readthedocs.org/en/latest/ioutils.html#boltons.ioutils.SpooledStringIO
 [iterutils]: http://boltons.readthedocs.org/en/latest/iterutils.html
@@ -812,6 +843,7 @@ added in this release.
 [iterutils.pairwise]: http://boltons.readthedocs.org/en/latest/iterutils.html#boltons.iterutils.pairwise
 [iterutils.same]: http://boltons.readthedocs.org/en/latest/iterutils.html#boltons.iterutils.same
 [iterutils.remap]: http://boltons.readthedocs.org/en/latest/iterutils.html#boltons.iterutils.remap
+[iterutils.research]: http://boltons.readthedocs.org/en/latest/iterutils.html#boltons.iterutils.research
 [iterutils.split]: http://boltons.readthedocs.org/en/latest/iterutils.html#boltons.iterutils.split
 [iterutils.split_iter]: http://boltons.readthedocs.org/en/latest/iterutils.html#boltons.iterutils.split_iter
 [iterutils.unique]: http://boltons.readthedocs.org/en/latest/iterutils.html#boltons.iterutils.unique
@@ -851,6 +883,7 @@ added in this release.
 [strutils.is_uuid]: http://boltons.readthedocs.org/en/latest/strutils.html#boltons.strutils.is_uuid
 [strutils.parse_int_list]: http://boltons.readthedocs.org/en/latest/strutils.html#boltons.strutils.parse_int_list
 [strutils.format_int_list]: http://boltons.readthedocs.org/en/latest/strutils.html#boltons.strutils.format_int_list
+[strutils.slugify]: http://boltons.readthedocs.org/en/latest/strutils.html#boltons.strutils.slugify
 [tableutils]: http://boltons.readthedocs.org/en/latest/tableutils.html
 [tableutils.Table]: http://boltons.readthedocs.org/en/latest/tableutils.html#boltons.tableutils.Table
 [tbutils]: http://boltons.readthedocs.org/en/latest/tbutils.html
@@ -867,4 +900,6 @@ added in this release.
 [timeutils.strpdate]: http://boltons.readthedocs.org/en/latest/timeutils.html#boltons.timeutils.strpdate
 [typeutils.get_all_subclasses]: http://boltons.readthedocs.org/en/latest/typeutils.html#boltons.typeutils.get_all_subclasses
 [typeutils.make_sentinel]: http://boltons.readthedocs.org/en/latest/typeutils.html#boltons.typeutils.make_sentinel
-[zscore]: https://en.wikipedia.org/wiki/Standard_score
+[urlutils]: http://boltons.readthedocs.org/en/latest/urlutils.html
+[urlutils.SCHEME_PORT_MAP]: http://boltons.readthedocs.org/en/latest/urlutils.html#boltons.urlutils.SCHEME_PORT_MAP
+[urlutils.find_all_links]: http://boltons.readthedocs.org/en/latest/urlutils.html#boltons.urlutils.find_all_links
