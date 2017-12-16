@@ -1,4 +1,6 @@
 
+import os
+
 import pytest
 
 from boltons.dictutils import OMD
@@ -10,6 +12,7 @@ from boltons.iterutils import (first,
                                get_path)
 from boltons.namedutils import namedtuple
 
+CUR_PATH = os.path.abspath(__file__)
 
 isbool = lambda x: isinstance(x, bool)
 isint = lambda x: isinstance(x, int)
@@ -339,6 +342,18 @@ class TestRemap(object):
 
         fs = frozenset([1, 2, 3])
         assert remap(fs) == fs
+
+    def test_remap_file(self):
+        with open(CUR_PATH, 'rb') as f:
+            x = {'a': [1, 2, 3], 'f': [f]}
+            assert remap(x) == x
+
+            f.read()
+            assert remap(x) == x
+
+            f.close()  # see #146
+            assert remap(x) == x
+        return
 
 
 class TestGetPath(object):
