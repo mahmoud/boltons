@@ -15,9 +15,10 @@ The following module defines usable forms of the timezones in those
 docs, as well as a couple other useful ones, :data:`UTC` (aka GMT) and
 :data:`LocalTZ` (representing the local timezone as configured in the
 operating system). For timezones beyond these, as well as a higher
-degree of accuracy in corner cases, check out `pytz`_.
+degree of accuracy in corner cases, check out `pytz`_ and `dateutil`_.
 
 .. _pytz: https://pypi.python.org/pypi/pytz
+.. _dateutil: https://dateutil.readthedocs.io/en/stable/index.html
 """
 
 import re

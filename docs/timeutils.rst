@@ -38,8 +38,9 @@ US timezones
 
 These four US timezones were implemented in the :mod:`datetime`
 documentation and have been reproduced here in boltons for
-convenience. More in-depth support is provided by `pytz`_.
+convenience. More in-depth support is provided by `dateutil`_ and `pytz`_.
 
+.. _dateutil: https://dateutil.readthedocs.io/en/stable/index.html
 .. _pytz: https://pypi.python.org/pypi/pytz
 
 .. autoattribute:: boltons.timeutils.Eastern
