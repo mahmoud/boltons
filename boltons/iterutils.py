@@ -704,15 +704,10 @@ def default_enter(path, key, value):
         return value.__class__(), enumerate(value)
     elif isinstance(value, Set):
         return value.__class__(), enumerate(value)
-    elif hasattr(value, 'read'):
-        # presume this is a file-like object
-        return value, False
     else:
-        try:
-            iter(value)
-        except TypeError:
-            return value, False
-    return value, False
+        # files, strings, other iterables, and scalars are not
+        # traversed
+        return value, False
 
 
 def default_exit(path, key, old_parent, new_parent, new_items):
