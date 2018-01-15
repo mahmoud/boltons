@@ -30,8 +30,12 @@ usages, including as a basic unordered MultiDict. Special
 thanks to `Mark Williams`_ for all his help.
 
 .. [1] As of 2015, `basic dicts on PyPy are ordered
-   <http://morepypy.blogspot.com/2015/01/faster-more-memory-efficient-and-more.html>`_.
+   <http://morepypy.blogspot.com/2015/01/faster-more-memory-efficient-and-more.html>`_,
+   and as of December 2017, `basic dicts in CPython 3 are now ordered
+   <https://mail.python.org/pipermail/python-dev/2017-December/151283.html>`_, as
+   well.
 .. _Mark Williams: https://github.com/markrwilliams
+
 """
 
 from collections import KeysView, ValuesView, ItemsView
