@@ -51,7 +51,7 @@ except ImportError:
 PREV, NEXT, KEY, VALUE, SPREV, SNEXT = range(6)
 
 
-__all__ = ['MultiDict', 'OMD', 'OrderedMultiDict']
+__all__ = ['MultiDict', 'OMD', 'OrderedMultiDict', 'OneToOne']
 
 try:
     profile
@@ -694,15 +694,34 @@ class FastIterOrderedMultiDict(OrderedMultiDict):
             curr = curr[PREV]
 
 
-_UNSET = object()
 _SELF_INIT_MARKER = object()
 
 
 class OneToOne(dict):
-    '''
-    Implements a one to one mapping dictionary.
-    Keys and values are always 1:1.
-    Writing an old value under a new key overwrites.
+    '''Implements a one-to-one mapping dictionary. In addition to
+    inheriting from and behaving exactly like the builtin
+    :class:`dict`, all values are automatically added as keys on a
+    reverse mapping, available as the `inv` attribute. This
+    arrangement keeps key and value namespaces distinct.
+
+    Basic operations are intuitive::
+
+    >>> oto = OneToOne({'a': 1, 'b': 2})
+    >>> print(oto['a'])
+    1
+    >>> print(oto.inv[1])
+    a
+    >>> len(oto)
+    2
+
+    Overwrites happens in both directions::
+
+    >>> oto.inv[1] = 'c'
+    >>> print(oto.get('a'))
+    None
+    >>> len(oto)
+    2
+
     '''
     __slots__ = ('inv')
 
@@ -712,7 +731,7 @@ class OneToOne(dict):
             dict.__init__(self, [(v, k) for k, v in self.inv.items()])
         else:
             dict.__init__(self, *a, **kw)
-            self.inv = OneToOne(_SELF_INIT_MARKER, self)
+            self.inv = self.__class__(_SELF_INIT_MARKER, self)
 
     def __setitem__(self, key, val):
         hash(val)  # ensure val is a valid key
@@ -732,13 +751,13 @@ class OneToOne(dict):
         dict.clear(self.inv)
 
     def copy(self):
-        return OneToOne(self)
+        return self.__class__(self)
 
-    def pop(self, key, default=_UNSET):
+    def pop(self, key, default=_MISSING):
         if key in self:
             dict.__delitem__(self.inv, self[key])
             return dict.pop(self, key)
-        if default is not _UNSET:
+        if default is not _MISSING:
             return default
         raise KeyError()
 
