@@ -702,13 +702,13 @@ _SELF_INIT_MARKER = object()
 
 
 class OneToOne(dict):
-    '''Implements a one-to-one mapping dictionary. In addition to
+    """Implements a one-to-one mapping dictionary. In addition to
     inheriting from and behaving exactly like the builtin
     :class:`dict`, all values are automatically added as keys on a
     reverse mapping, available as the `inv` attribute. This
     arrangement keeps key and value namespaces distinct.
 
-    Basic operations are intuitive::
+    Basic operations are intuitive:
 
     >>> oto = OneToOne({'a': 1, 'b': 2})
     >>> print(oto['a'])
@@ -718,7 +718,7 @@ class OneToOne(dict):
     >>> len(oto)
     2
 
-    Overwrites happens in both directions::
+    Overwrites happens in both directions:
 
     >>> oto.inv[1] = 'c'
     >>> print(oto.get('a'))
@@ -726,7 +726,7 @@ class OneToOne(dict):
     >>> len(oto)
     2
 
-    '''
+    """
     __slots__ = ('inv')
 
     def __init__(self, *a, **kw):
