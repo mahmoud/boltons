@@ -796,4 +796,33 @@ class OneToOne(dict):
         dict_repr = dict.__repr__(self)
         return "%s(%s)" % (cn, dict_repr)
 
+
+def subdict(d, restrict_to=None, omit=None):
+    """Compute the 'sub-dictionnary' of a dict.
+
+    A 'sub-dictionnary' is to a dictionnary what a subset is a to set. If _A_
+    is a 'sub-dictionnary' of _B_, that means that all keys of _A_ are present
+    in _B_.
+
+    >>> from pprint import pprint as pp
+    >>> pp(subdict({'a': 1, 'b': 2}))
+    {'a': 1, 'b': 2}
+    >>> subdict({'a': 1, 'b': 2, 'c': 3}, omit=['b', 'c'])
+    {'a': 1}
+    >>> pp(subdict({'a': 1, 'b': 2, 'c': 3}, restrict_to=['a', 'c']))
+    {'a': 1, 'c': 3}
+    """
+    if restrict_to is None:
+        restrict_to = d.keys()
+    if omit is None:
+        omit = []
+
+    restrict_to = set(restrict_to)
+    omit = set(omit)
+    keys = restrict_to - omit
+
+    # d.iteritems in Python 2, d.items in Python 3
+    d_iteritems = getattr(d, 'iteritems', d.items)
+    return dict((k, v) for k, v in d_iteritems() if k in keys)
+
 # end dictutils.py
