@@ -804,6 +804,8 @@ def subdict(d, keep=None, drop=None):
     is a 'sub-dictionnary' of _B_, that means that all keys of _A_ are present
     in _B_.
 
+    This does NOT mutate the original dictionnary in any way.
+
     >>> from pprint import pprint as pp
     >>> pp(subdict({'a': 1, 'b': 2}))
     {'a': 1, 'b': 2}
