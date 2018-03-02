@@ -1,8 +1,19 @@
 boltons Changelog
 =================
 
-Since February 20, 2013 there have been 32 releases and 1089 commits for
+Since February 20, 2013 there have been 33 releases and 1191 commits for
 an average of one 34-commit release every 6.2 weeks.
+
+18.0.0
+------
+*(March 2, 2018)*
+
+* Add `<thead>` and `<tbody>` structure to tableutils.Table HTML
+  output, which helps with styling and other functionality (e.g.,
+  jQuery datatables).
+* Add dictutils.subdict() to get a filtered version of a dictionary
+  based on a subset of keys.
+* Add beta version of cacheutils.MinIDMap.
 
 17.2.0
 ------
