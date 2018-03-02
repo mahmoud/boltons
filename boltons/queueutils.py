@@ -93,9 +93,10 @@ class BasePriorityQueue(object):
         pass  # abstract
 
     def add(self, task, priority=None):
-        """Add a task to the queue, or change the *task*'s priority if
-        *task* is already in the queue. *task* can be any type, and
-        *priority* defaults to ``0``. Higher values representing
+        """
+        Add a task to the queue, or change the *task*'s priority if *task*
+        is already in the queue. *task* can be any hashable object,
+        and *priority* defaults to ``0``. Higher values representing
         higher priority, but this behavior can be controlled by
         setting *priority_key* in the constructor.
         """
