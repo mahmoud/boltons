@@ -2,7 +2,7 @@
 
 import string
 
-from boltons.cacheutils import LRU, LRI, cached, cachedmethod, cachedproperty
+from boltons.cacheutils import LRU, LRI, cached, cachedmethod, cachedproperty, MinIDMap
 
 
 class CountingCallable(object):
@@ -293,3 +293,24 @@ def test_cachedproperty():
     assert prop.expensive_func.call_count == 2
 
     repr(Proper.useful_attr)
+
+
+def test_min_id_map():
+    import sys
+    if '__pypy__' in sys.builtin_module_names:
+        return  # TODO: pypy still needs some work
+
+    midm = MinIDMap()
+
+    class Foo(object):
+        pass
+
+    # use this circular array to have them periodically collected
+    ref_wheel = [None, None, None]
+
+    for i in range(1000):
+        nxt = Foo()
+        ref_wheel[i % len(ref_wheel)] = nxt
+        assert midm.get(nxt) <= len(ref_wheel)
+        if i % 10 == 0:
+            midm.drop(nxt)

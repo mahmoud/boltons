@@ -34,6 +34,8 @@ Learn more about `caching algorithms on Wikipedia
 # TODO: support 0 max_size?
 
 
+import heapq
+import weakref
 import itertools
 from collections import deque
 from operator import attrgetter
@@ -836,5 +838,58 @@ class ThresholdCounter(object):
                     self.add(key)
         if kwargs:
             self.update(kwargs)
+
+
+class MinIDMap(object):
+    """
+    Assigns arbitrary weakref-able objects the smallest possible unique
+    integer IDs, such that no two objects have the same ID at the same
+    time.
+
+    Based on https://gist.github.com/kurtbrose/25b48114de216a5e55df
+    """
+    def __init__(self):
+        self.mapping = weakref.WeakKeyDictionary()
+        self.ref_map = {}
+        self.free = []
+
+    def get(self, a):
+        try:
+            return self.mapping[a][0]  # if object is mapped, return ID
+        except KeyError:
+            pass
+
+        if self.free:  # if there are any free IDs, use the smallest
+            nxt = heapq.heappop(self.free)
+        else:  # if there are no free numbers, use the next highest ID
+            nxt = len(self.mapping)
+        ref = weakref.ref(a, self._clean)
+        self.mapping[a] = (nxt, ref)
+        self.ref_map[ref] = nxt
+        return nxt
+
+    def drop(self, a):
+        freed, ref = self.mapping[a]
+        del self.mapping[a]
+        del self.ref_map[ref]
+        heapq.heappush(self.free, freed)
+
+    def _clean(self, ref):
+        print(self.ref_map[ref])
+        heapq.heappush(self.free, self.ref_map[ref])
+        del self.ref_map[ref]
+
+    def __contains__(self, a):
+        return a in self.mapping
+
+    def __iter__(self):
+        return self.mapping.itervalues()
+
+    def __len__(self):
+        return self.mapping.__len__()
+
+    def iteritems(self):
+        return self.mapping.iteritems()
+
 
 # end cacheutils.py
