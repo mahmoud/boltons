@@ -798,13 +798,17 @@ class OneToOne(dict):
 
 
 def subdict(d, keep=None, drop=None):
-    """Compute the 'sub-dictionnary' of a dict.
+    """Compute the "subdictionary" of a dict, *d*.
 
-    A 'sub-dictionnary' is to a dictionnary what a subset is a to set. If _A_
-    is a 'sub-dictionnary' of _B_, that means that all keys of _A_ are present
-    in _B_.
+    A subdict is to a dict what a subset is a to set. If _A_ is a
+    subdict of _B_, that means that all keys of _A_ are present in
+    _B_.
 
-    This does NOT mutate the original dictionnary in any way.
+    Returns a new dict with any keys in *drop* removed, and any keys
+    in *keep* still present, provided they were in the original
+    dict. *keep* defaults to all keys, *drop* defaults to empty, so
+    without one of these arguments, calling this function is
+    equivalent to calling ``dict()``.
 
     >>> from pprint import pprint as pp
     >>> pp(subdict({'a': 1, 'b': 2}))
@@ -813,18 +817,15 @@ def subdict(d, keep=None, drop=None):
     {'a': 1}
     >>> pp(subdict({'a': 1, 'b': 2, 'c': 3}, keep=['a', 'c']))
     {'a': 1, 'c': 3}
+
     """
     if keep is None:
         keep = d.keys()
     if drop is None:
         drop = []
 
-    keep = set(keep)
-    drop = set(drop)
-    keys = keep - drop
+    keys = set(keep) - set(drop)
 
-    # d.iteritems in Python 2, d.items in Python 3
-    d_iteritems = getattr(d, 'iteritems', d.items)
-    return dict((k, v) for k, v in d_iteritems() if k in keys)
+    return dict([(k, v) for k, v in d.items() if k in keys])
 
 # end dictutils.py
