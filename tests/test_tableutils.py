@@ -18,11 +18,15 @@ T2_REF_HTML = """<table>
 </table>"""
 
 T3_REF_HTML = """<table>
+<thead>
 <tr><th>id</th><th>name</th></tr>
+</thead>
+<tbody>
 <tr><td>1</td><td>John Doe</td></tr>
 <tr><td>2</td><td>Dale Simmons</td></tr>
 <tr><td>3</td><td>Kurt Rose</td></tr>
 <tr><td>4</td><td>None</td></tr>
+</tbody>
 </table>"""
 
 

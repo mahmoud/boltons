@@ -232,7 +232,9 @@ class Table(object):
     _html_tr, _html_tr_close = '<tr>', '</tr>'
     _html_th, _html_th_close = '<th>', '</th>'
     _html_td, _html_td_close = '<td>', '</td>'
-    # _html_thead, _html_thead_close = '<thead>', '</thead>'
+    _html_thead, _html_thead_close = '<thead>', '</thead>'
+    _html_tbody, _html_tbody_close = '<tbody>', '</tbody>'
+
     # _html_tfoot, _html_tfoot_close = '<tfoot>', '</tfoot>'
     _html_table_tag, _html_table_tag_close = '<table>', '</table>'
 
@@ -485,12 +487,15 @@ class Table(object):
             new_depth = max_depth - 1
         if headers:
             _thth = self._html_th_close + self._html_th
+            lines.append(self._html_thead)
             lines.append(self._html_tr + self._html_th +
                          _thth.join([esc(h) for h in headers]) +
                          self._html_th_close + self._html_tr_close)
+            lines.append(self._html_thead_close)
         trtd, _tdtd, _td_tr = (self._html_tr + self._html_td,
                                self._html_td_close + self._html_td,
                                self._html_td_close + self._html_tr_close)
+        lines.append(self._html_tbody)
         for row in self._data:
             if max_depth > 1:
                 _fill_parts = []
@@ -502,6 +507,7 @@ class Table(object):
             else:
                 _fill_parts = [esc(c) for c in row]
             lines.append(''.join([trtd, _tdtd.join(_fill_parts), _td_tr]))
+        lines.append(self._html_tbody_close)
 
     def _add_vertical_html_lines(self, lines, headers, max_depth):
         esc = self.get_cell_html
