@@ -13,8 +13,8 @@ from setuptools import setup
 
 
 __author__ = 'Mahmoud Hashemi'
-__version__ = '17.2.1dev'
-__contact__ = 'mahmoudrhashemi@gmail.com'
+__version__ = '18.0.0'
+__contact__ = 'mahmoud@hatnote.com'
 __url__ = 'https://github.com/mahmoud/boltons'
 __license__ = 'BSD'
 
