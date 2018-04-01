@@ -55,7 +55,7 @@ except ImportError:
 PREV, NEXT, KEY, VALUE, SPREV, SNEXT = range(6)
 
 
-__all__ = ['MultiDict', 'OMD', 'OrderedMultiDict', 'OneToOne']
+__all__ = ['MultiDict', 'OMD', 'OrderedMultiDict', 'OneToOne', 'subdict']
 
 try:
     profile
@@ -802,9 +802,9 @@ class OneToOne(dict):
 def subdict(d, keep=None, drop=None):
     """Compute the "subdictionary" of a dict, *d*.
 
-    A subdict is to a dict what a subset is a to set. If _A_ is a
-    subdict of _B_, that means that all keys of _A_ are present in
-    _B_.
+    A subdict is to a dict what a subset is a to set. If *A* is a
+    subdict of *B*, that means that all keys of *A* are present in
+    *B*.
 
     Returns a new dict with any keys in *drop* removed, and any keys
     in *keep* still present, provided they were in the original
