@@ -30,6 +30,20 @@ def test_lri():
     assert len(bc) == 10
 
 
+def test_lri_eviction():
+    cache = LRI(max_size=10)
+    for char in string.ascii_letters:
+        cache[char] == char.upper()
+    assert len(cache) == 10
+
+
+def test_lru_eviction():
+    cache = LRU(max_size=10)
+    for char in string.ascii_letters:
+        cache[char] == char.upper()
+    assert len(cache) == 10
+
+
 def test_lru_basic():
     lru = LRU(max_size=1)
     repr(lru)                   # sanity
