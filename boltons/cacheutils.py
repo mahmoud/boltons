@@ -351,10 +351,11 @@ class LRI(dict):
 
     def __setitem__(self, key, value):
         # TODO: pop support (see above)
-        if len(self) >= self.max_size:
-            old = self._queue.popleft()
-            del self[old]
         super(LRI, self).__setitem__(key, value)
+        while len(self) > self.max_size:
+            # Keep attempting to remove the least recently inserted
+            # items until we are under max_size.
+            self.pop(self._queue.popleft())
         self._queue.append(key)
 
     def update(self, E, **F):

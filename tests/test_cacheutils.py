@@ -97,6 +97,13 @@ def test_lru_basic():
     assert second_lru != lru
 
 
+def test_lri_with_dupes():
+    cache = LRI(max_size=2)
+    for char in ('a', 'b', 'c'):
+        cache[char] = char
+        cache[char] = char
+
+
 def test_lru_with_dupes():
     SIZE = 2
     lru = LRU(max_size=SIZE)
