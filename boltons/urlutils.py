@@ -654,7 +654,8 @@ class URL(object):
             if dest.path.startswith(u'/'):   # absolute path
                 new_path_parts = list(dest.path_parts)
             else:  # relative path
-                new_path_parts = self.path_parts[:-1] + dest.path_parts
+                new_path_parts = list(self.path_parts[:-1]) \
+                               + list(dest.path_parts)
         else:
             new_path_parts = list(self.path_parts)
             if not query_params:
