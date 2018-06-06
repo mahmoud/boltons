@@ -285,7 +285,7 @@ else:
             os.rename(src, dst)
         else:
             os.link(src, dst)
-            os.unlink(dst)
+            os.unlink(src)
         return
 
 
