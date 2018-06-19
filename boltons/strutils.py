@@ -972,3 +972,85 @@ def format_int_list(int_list, delim=',', range_delim='-', delim_space=False):
         output_str = delim.join(output)
 
     return output_str
+
+
+class MultiSub(object):
+    """
+    Multisub is a tool for doing multiple find/replace actions in one pass.
+
+    Given a mapping of values to be replaced it allows for all of the matching
+    values to be replaced in a single pass which can save a lot of performance
+    on very large strings. In addition to simple replace, it also allows for
+    replacing based on regular expressions.
+
+    Dictionary Usage::
+
+        from lrmslib import stringutils
+        s = stringutils.MultiSub({
+            'foo': 'zoo',
+            'cat': 'hat',
+            'bat': 'kraken'
+        })
+        new = s.sub('The foo bar cat ate a bat')
+        new == 'The zoo bar hat ate a kraken'
+
+    Iterable Usage::
+
+        from lrmslib import stringutils
+        s = stringutils.MultiSub([
+            ('foo', 'zoo'),
+            ('cat', 'hat'),
+            ('bat', 'kraken)'
+        ])
+        new = s.sub('The foo bar cat ate a bat')
+        new == 'The zoo bar hat ate a kraken'
+
+
+    The constructor can be passed a dictionary or other mapping as well as
+    an iterable of tuples. If given an iterable, the substitution will be run
+    in the order the replacement values are specified in the iterable. This is
+    also true if it is given an OrderedDict. If given a dictionary then the
+    order will be non-deterministic::
+
+        >>> 'foo bar baz'.replace('foo', 'baz').replace('baz', 'bar')
+        'bar bar bar'
+        >>> m = MultiSub({'foo': 'baz', 'baz': 'bar'})
+        >>> m.sub('foo bar baz')
+        'baz bar bar'
+
+    This is because the order of replacement can matter if you're inserting
+    something that might be replaced by a later substitution. Pay attention and
+    if you need to rely on order then consider using a list of tuples instead
+    of a dictionary.
+    """
+
+    def __init__(self, sub_map):
+        """Compile any regular expressions that have been passed."""
+        self.sub_map = collections.OrderedDict()
+        if not isinstance(sub_map, collections.Mapping):
+            sub_map = collections.OrderedDict(sub_map)
+        for exp, replacement in collections.OrderedDict(sub_map).items():
+            if isinstance(exp, basestring):
+                exp = re.compile(exp)
+            self.sub_map[exp] = replacement
+
+        self.combined_pattern = re.compile('|'.join([
+            '(?:{})'.format(x.pattern) for x
+            in self.sub_map.keys()
+        ]))
+
+    def __call__(self, match):
+        value = match.string[match.start():match.end()]
+        for exp, replacement in self.sub_map.items():
+            if exp.match(value):
+                return replacement
+        return value
+
+    def sub(self, input_string):
+        """
+        Run substitutions.
+
+        Given an input string, run all substitutions given in the
+        constructor.
+        """
+        return self.combined_pattern.sub(self, input_string)
