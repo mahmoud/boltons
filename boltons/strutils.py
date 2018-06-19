@@ -1026,22 +1026,24 @@ class MultiSub(object):
 
     def __init__(self, sub_map):
         """Compile any regular expressions that have been passed."""
-        self.sub_map = collections.OrderedDict()
-        if not isinstance(sub_map, collections.Mapping):
-            sub_map = collections.OrderedDict(sub_map)
-        for exp, replacement in collections.OrderedDict(sub_map).items():
+        self.sub_data = []
+
+        if isinstance(sub_map, collections.Mapping):
+            sub_map = sub_map.items()
+
+        for exp, replacement in sub_map:
             if isinstance(exp, basestring):
                 exp = re.compile(exp)
-            self.sub_map[exp] = replacement
+            self.sub_data.append((exp, replacement))
 
         self.combined_pattern = re.compile('|'.join([
-            '(?:{})'.format(x.pattern) for x
-            in self.sub_map.keys()
+            '(?:{})'.format(x.pattern) for x, _
+            in self.sub_data
         ]))
 
     def __call__(self, match):
         value = match.string[match.start():match.end()]
-        for exp, replacement in self.sub_map.items():
+        for exp, replacement in self.sub_data:
             if exp.match(value):
                 return replacement
         return value
