@@ -1037,7 +1037,7 @@ class MultiSub(object):
             self.sub_data.append((exp, replacement))
 
         self.combined_pattern = re.compile('|'.join([
-            '(?:{})'.format(x.pattern) for x, _
+            '(?:{0})'.format(x.pattern) for x, _
             in self.sub_data
         ]))
 
