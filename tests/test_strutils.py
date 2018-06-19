@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 
+import re
 import uuid
+from unittest import TestCase
 
 from boltons import strutils
 
@@ -43,3 +45,53 @@ def test_format_int_list():
 
     assert strutils.format_int_list([1, 3, 5, 6, 7, 8, 10, 11, 15], delim_space=True) == '1, 3, 5-8, 10-11, 15'
     assert strutils.format_int_list([5, 6, 7, 8], delim_space=True) == '5-8'
+
+
+class TestMultiSub(TestCase):
+
+    def test_simple_substitutions(self):
+        """Test replacing multiple values."""
+        m = strutils.MultiSub({r'cat': 'kedi', r'purple': 'mor', })
+        self.assertEqual(m.sub('The cat is purple'), 'The kedi is mor')
+
+    def test_substitutions_in_word(self):
+        """Test replacing multiple values that are substrings of a word."""
+        m = strutils.MultiSub({r'cat': 'kedi', r'purple': 'mor', })
+        self.assertEqual(m.sub('Thecatispurple'), 'Thekediismor')
+
+    def test_sub_with_regex(self):
+        """Test substitutions with a regular expression."""
+        m = strutils.MultiSub({
+            r'cat': 'kedi',
+            r'purple': 'mor',
+            r'q\w+?t': 'dinglehopper'
+        })
+        self.assertEqual(
+            m.sub('The purple cat ate a quart of jelly'),
+            'The mor kedi ate a dinglehopper of jelly'
+        )
+
+    def test_sub_with_list(self):
+        """Test substitutions from an iterable instead of a dictionary."""
+        m = strutils.MultiSub([
+            (r'cat', 'kedi'),
+            (r'purple', 'mor'),
+            (r'q\w+?t', 'dinglehopper'),
+        ])
+        self.assertEqual(
+            m.sub('The purple cat ate a quart of jelly'),
+            'The mor kedi ate a dinglehopper of jelly'
+        )
+
+    def test_sub_with_compiled_regex(self):
+        """Test substitutions where some regular expressiosn are compiled."""
+        exp = re.compile(r'q\w+?t')
+        m = strutils.MultiSub([
+            (r'cat', 'kedi'),
+            (r'purple', 'mor'),
+            (exp, 'dinglehopper'),
+        ])
+        self.assertEqual(
+            m.sub('The purple cat ate a quart of jelly'),
+            'The mor kedi ate a dinglehopper of jelly'
+        )
