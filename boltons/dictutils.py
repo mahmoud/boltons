@@ -726,6 +726,8 @@ class OneToOne(dict):
     >>> len(oto)
     2
 
+    For a very similar project, with even more one-to-one
+    functionality, check out `bidict <https://github.com/jab/bidict>`_.
     """
     __slots__ = ('inv')
 
