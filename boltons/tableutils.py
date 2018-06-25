@@ -541,7 +541,6 @@ class Table(object):
             with_headers (bool): Whether to include a header row at the top.
             maxlen (int): Max length of data in each cell.
         """
-        # TODO: verify this works for markdown
         lines = []
         widths = []
         headers = list(self.headers)
@@ -555,7 +554,7 @@ class Table(object):
         if with_headers:
             lines.append(' | '.join([h.center(widths[i])
                                      for i, h in enumerate(headers)]))
-            lines.append('-+-'.join(['-' * w for w in widths]))
+            lines.append('-|-'.join(['-' * w for w in widths]))
         for row in text_data:
             lines.append(' | '.join([cell.center(widths[j])
                                      for j, cell in enumerate(row)]))
