@@ -974,19 +974,26 @@ def format_int_list(int_list, delim=',', range_delim='-', delim_space=False):
     return output_str
 
 
-class MultiSub(object):
+class MultiReplace(object):
     """
-    Multisub is a tool for doing multiple find/replace actions in one pass.
+    MultiReplace is a tool for doing multiple find/replace actions in one pass.
 
     Given a mapping of values to be replaced it allows for all of the matching
     values to be replaced in a single pass which can save a lot of performance
     on very large strings. In addition to simple replace, it also allows for
     replacing based on regular expressions.
 
+    Keyword Arguments:
+
+    :type regex: bool
+    :param regex: Treat search keys as regular expressions [Default: False]
+    :type flags: int
+    :param flags: flags to pass to the regex engine during compile
+
     Dictionary Usage::
 
         from lrmslib import stringutils
-        s = stringutils.MultiSub({
+        s = stringutils.MultiReplace({
             'foo': 'zoo',
             'cat': 'hat',
             'bat': 'kraken'
@@ -997,7 +1004,7 @@ class MultiSub(object):
     Iterable Usage::
 
         from lrmslib import stringutils
-        s = stringutils.MultiSub([
+        s = stringutils.MultiReplace([
             ('foo', 'zoo'),
             ('cat', 'hat'),
             ('bat', 'kraken)'
@@ -1014,7 +1021,7 @@ class MultiSub(object):
 
         >>> 'foo bar baz'.replace('foo', 'baz').replace('baz', 'bar')
         'bar bar bar'
-        >>> m = MultiSub({'foo': 'baz', 'baz': 'bar'})
+        >>> m = MultiReplace({'foo': 'baz', 'baz': 'bar'})
         >>> m.sub('foo bar baz')
         'baz bar bar'
 
@@ -1024,8 +1031,13 @@ class MultiSub(object):
     of a dictionary.
     """
 
-    def __init__(self, sub_map):
+    def __init__(self, sub_map, **kwargs):
         """Compile any regular expressions that have been passed."""
+        options = {
+            'regex': False,
+            'flags': 0,
+        }
+        options.update(kwargs)
         self.sub_data = []
 
         if isinstance(sub_map, collections.Mapping):
@@ -1033,26 +1045,36 @@ class MultiSub(object):
 
         for exp, replacement in sub_map:
             if isinstance(exp, basestring):
-                exp = re.compile(exp)
+                # If we're not treating input strings like a regex, escape it
+                if not options['regex']:
+                    exp = re.escape(exp)
+                exp = re.compile(exp, flags=options['flags'])
             self.sub_data.append((exp, replacement))
 
         self.combined_pattern = re.compile('|'.join([
             '(?:{0})'.format(x.pattern) for x, _
             in self.sub_data
-        ]))
+        ]), flags=options['flags'])
 
-    def __call__(self, match):
+    def _get_value(self, match):
+        """Given a match object find replacement value."""
         value = match.string[match.start():match.end()]
         for exp, replacement in self.sub_data:
             if exp.match(value):
                 return replacement
         return value
 
-    def sub(self, input_string):
+    def sub(self, text):
         """
-        Run substitutions.
+        Run substitutions on the input text.
 
         Given an input string, run all substitutions given in the
         constructor.
         """
-        return self.combined_pattern.sub(self, input_string)
+        return self.combined_pattern.sub(self._get_value, text)
+
+
+def multi_replace(text, sub_map, **kwargs):
+    """Shortcut function to invoke multi-replace in a single command."""
+    m = MultiReplace(sub_map, **kwargs)
+    return m.sub(text)
