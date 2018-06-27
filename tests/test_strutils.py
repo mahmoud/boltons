@@ -47,25 +47,35 @@ def test_format_int_list():
     assert strutils.format_int_list([5, 6, 7, 8], delim_space=True) == '5-8'
 
 
-class TestMultiSub(TestCase):
+class TestMultiReplace(TestCase):
 
     def test_simple_substitutions(self):
         """Test replacing multiple values."""
-        m = strutils.MultiSub({r'cat': 'kedi', r'purple': 'mor', })
+        m = strutils.MultiReplace({r'cat': 'kedi', r'purple': 'mor', })
         self.assertEqual(m.sub('The cat is purple'), 'The kedi is mor')
+
+    def test_shortcut_function(self):
+        """Test replacing multiple values."""
+        self.assertEqual(
+            strutils.multi_replace(
+                'The cat is purple',
+                {r'cat': 'kedi', r'purple': 'mor', }
+            ),
+            'The kedi is mor'
+        )
 
     def test_substitutions_in_word(self):
         """Test replacing multiple values that are substrings of a word."""
-        m = strutils.MultiSub({r'cat': 'kedi', r'purple': 'mor', })
+        m = strutils.MultiReplace({r'cat': 'kedi', r'purple': 'mor', })
         self.assertEqual(m.sub('Thecatispurple'), 'Thekediismor')
 
     def test_sub_with_regex(self):
         """Test substitutions with a regular expression."""
-        m = strutils.MultiSub({
+        m = strutils.MultiReplace({
             r'cat': 'kedi',
             r'purple': 'mor',
             r'q\w+?t': 'dinglehopper'
-        })
+        }, regex=True)
         self.assertEqual(
             m.sub('The purple cat ate a quart of jelly'),
             'The mor kedi ate a dinglehopper of jelly'
@@ -73,11 +83,11 @@ class TestMultiSub(TestCase):
 
     def test_sub_with_list(self):
         """Test substitutions from an iterable instead of a dictionary."""
-        m = strutils.MultiSub([
+        m = strutils.MultiReplace([
             (r'cat', 'kedi'),
             (r'purple', 'mor'),
             (r'q\w+?t', 'dinglehopper'),
-        ])
+        ], regex=True)
         self.assertEqual(
             m.sub('The purple cat ate a quart of jelly'),
             'The mor kedi ate a dinglehopper of jelly'
@@ -86,7 +96,7 @@ class TestMultiSub(TestCase):
     def test_sub_with_compiled_regex(self):
         """Test substitutions where some regular expressiosn are compiled."""
         exp = re.compile(r'q\w+?t')
-        m = strutils.MultiSub([
+        m = strutils.MultiReplace([
             (r'cat', 'kedi'),
             (r'purple', 'mor'),
             (exp, 'dinglehopper'),
@@ -95,3 +105,8 @@ class TestMultiSub(TestCase):
             m.sub('The purple cat ate a quart of jelly'),
             'The mor kedi ate a dinglehopper of jelly'
         )
+
+    def test_substitutions_with_regex_chars(self):
+        """Test replacing values that have special regex characters."""
+        m = strutils.MultiReplace({'cat.+': 'kedi', r'purple': 'mor', })
+        self.assertEqual(m.sub('The cat.+ is purple'), 'The kedi is mor')
