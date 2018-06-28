@@ -1038,31 +1038,39 @@ class MultiReplace(object):
             'flags': 0,
         }
         options.update(kwargs)
-        self.sub_data = []
+        self.group_map = {}
+        regex_values = []
 
         if isinstance(sub_map, collections.Mapping):
             sub_map = sub_map.items()
 
-        for exp, replacement in sub_map:
-            if isinstance(exp, basestring):
+        for idx, vals in enumerate(sub_map):
+            group_name = 'group{0}'.format(idx)
+            if isinstance(vals[0], basestring):
                 # If we're not treating input strings like a regex, escape it
                 if not options['regex']:
-                    exp = re.escape(exp)
-                exp = re.compile(exp, flags=options['flags'])
-            self.sub_data.append((exp, replacement))
+                    exp = re.escape(vals[0])
+                else:
+                    exp = vals[0]
+            else:
+                exp = vals[0].pattern
 
-        self.combined_pattern = re.compile('|'.join([
-            '(?:{0})'.format(x.pattern) for x, _
-            in self.sub_data
-        ]), flags=options['flags'])
+            regex_values.append('(?P<{0}>{1})'.format(
+                group_name,
+                exp
+            ))
+            self.group_map[group_name] = vals[1]
+
+        self.combined_pattern = re.compile(
+            '|'.join(regex_values),
+            flags=options['flags']
+        )
 
     def _get_value(self, match):
         """Given a match object find replacement value."""
-        value = match.string[match.start():match.end()]
-        for exp, replacement in self.sub_data:
-            if exp.match(value):
-                return replacement
-        return value
+        group_dict = match.groupdict()
+        key = [x for x in group_dict if group_dict[x]][0]
+        return self.group_map[key]
 
     def sub(self, text):
         """
