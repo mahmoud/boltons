@@ -1,0 +1,8 @@
+include CHANGELOG.md
+include LICENSE
+include README.md
+include TODO.rst
+include pytest.ini
+include tox.ini
+recursive-include docs 
+recursive-include tests
