@@ -1,7 +1,7 @@
-coverage==4.2
-pluggy==0.3.1
-py==1.4.31
-pytest==2.9.2
-pytest-cov==2.3.0
-tox==2.3.1
+coverage==4.5.1
+py<1.6.0
+pytest==3.0.7
+pytest-cov==2.5.1
+tox==2.9.1
 virtualenv==15.0.2
+tox-virtualenv-no-download==1.0.2
