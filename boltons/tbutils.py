@@ -157,17 +157,19 @@ class _DeferredLine(object):
             used to handle advanced use cases using custom module loaders.
 
     """
+    __slots__ = ('filename', 'lineno', '_line', '_mod_name', '_mod_loader')
+
     def __init__(self, filename, lineno, module_globals=None):
         self.filename = filename
         self.lineno = lineno
         # TODO: this is going away when we fix linecache
         # TODO: (mark) read about loader
-        self.module_globals = {}
-        if module_globals is not None:
-            for k in ('__name__', '__loader__'):
-                v = module_globals.get(k)
-                if v is None:
-                    self.module_globals[k] = v
+        if module_globals is None:
+            self._mod_name = None
+            self._mod_loader = None
+        else:
+            self._mod_name = module_globals.get('__name__')
+            self._mod_loader = module_globals.get('__loader__')
 
     def __eq__(self, other):
         return (self.lineno, self.filename) == (other.lineno, other.filename)
@@ -176,13 +178,16 @@ class _DeferredLine(object):
         return not self == other
 
     def __str__(self):
-        if hasattr(self, '_line'):
-            return self._line
+        ret = getattr(self, '_line', None)
+        if ret is not None:
+            return ret
         try:
             linecache.checkcache(self.filename)
+            mod_globals = {'__name__': self._mod_name,
+                           '__loader__': self._mod_loader}
             line = linecache.getline(self.filename,
                                      self.lineno,
-                                     self.module_globals)
+                                     mod_globals)
             line = line.rstrip()
         except KeyError:
             line = ''
