@@ -4,6 +4,19 @@ boltons Changelog
 Since February 20, 2013 there have been 33 releases and 1191 commits for
 an average of one 34-commit release every 6.2 weeks.
 
+18.0.1
+------
+*(August 29, 2018)*
+
+A few bugfixes and a handy text utility.
+
+* Add MultiSub for multiple string substitutions in a single call
+  ([#162][i162])
+* `tableutils.Table.to_text()` is more Markdown compatible
+* Add LICENSE to package ([#164][i164])
+* `atomic_save` works better with `overwrite=True` ([#161][i161])
+* Reduced memory footprint on `tbutils._DeferredLine` with `__slots__`
+
 18.0.0
 ------
 *(March 2, 2018)*
@@ -12,7 +25,7 @@ an average of one 34-commit release every 6.2 weeks.
   output, which helps with styling and other functionality (e.g.,
   jQuery datatables).
 * Add dictutils.subdict() to get a filtered version of a dictionary
-  based on a subset of keys.
+  based on a subset of keys. ([#150][i150])
 * Add beta version of cacheutils.MinIDMap.
 
 17.2.0
@@ -834,6 +847,9 @@ added in this release.
 [i86]: https://github.com/mahmoud/boltons/issues/86
 [i128]: https://github.com/mahmoud/boltons/issues/128
 [i135]: https://github.com/mahmoud/boltons/issues/135
+[i150]: https://github.com/mahmoud/boltons/issues/150
+[i162]: https://github.com/mahmoud/boltons/issues/162
+[i164]: https://github.com/mahmoud/boltons/issues/164
 [ioutils]: http://boltons.readthedocs.org/en/latest/ioutils.html
 [ioutils.MultiFileReader]: http://boltons.readthedocs.org/en/latest/ioutils.html#boltons.ioutils.MultiFileReader
 [ioutils.SpooledBytesIO]: http://boltons.readthedocs.org/en/latest/ioutils.html#boltons.ioutils.SpooledBytesIO
