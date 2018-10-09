@@ -848,6 +848,7 @@ added in this release.
 [i128]: https://github.com/mahmoud/boltons/issues/128
 [i135]: https://github.com/mahmoud/boltons/issues/135
 [i150]: https://github.com/mahmoud/boltons/issues/150
+[i161]: https://github.com/mahmoud/boltons/issues/161
 [i162]: https://github.com/mahmoud/boltons/issues/162
 [i164]: https://github.com/mahmoud/boltons/issues/164
 [ioutils]: http://boltons.readthedocs.org/en/latest/ioutils.html
