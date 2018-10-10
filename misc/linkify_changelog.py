@@ -1,3 +1,4 @@
+from __future__ import print_function
 
 import re
 import sys
@@ -44,11 +45,11 @@ def main():
     for (name, url) in sorted(URL_MAP.items()):
         link_map_lines.append('[%s]: %s' % (name, url))
 
-    print ret
-    print
-    print
-    print '\n'.join(link_map_lines)
-    print
+    print(ret)
+    print()
+    print()
+    print('\n'.join(link_map_lines))
+    print()
 
 
 if __name__ == '__main__':

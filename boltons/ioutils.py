@@ -9,7 +9,6 @@ are useful when dealing with input, output, and bytestreams in a variety of
 ways.
 """
 import os
-import sys
 from io import BytesIO
 from abc import (
     ABCMeta,
@@ -20,13 +19,12 @@ from errno import EINVAL
 from codecs import EncodedFile
 from tempfile import TemporaryFile
 
-# Python2/3 compat
-if sys.version_info[0] == 3:
-    text_type = str
-    binary_type = bytes
-else:
-    text_type = unicode
+try:
+    text_type = unicode  # Python 2
     binary_type = str
+except NameError:
+    text_type = str      # Python 3
+    binary_type = bytes
 
 READ_CHUNK_SIZE = 21333
 """
