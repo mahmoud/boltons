@@ -19,7 +19,7 @@ import socket
 import hashlib
 import itertools
 
-from collections import Mapping, Sequence, Set, ItemsView
+from collections import Mapping, Sequence, Set, ItemsView, Iterable
 
 try:
     from typeutils import make_sentinel
@@ -657,6 +657,32 @@ def first(iterable, default=None, key=None):
     .. _the original standalone module: https://github.com/hynek/first
     """
     return next(filter(key, iterable), default)
+
+
+def flatten_iter(iterable):
+    """``flatten_iter()`` yields all the elements from *iterable* while
+    collapsing any nested iterables.
+
+    >>> nested = [[1, 2], [[3], [4, 5]]]
+    >>> list(flatten_iter(nested))
+    [1, 2, 3, 4, 5]
+    """
+    for item in iterable:
+        if isinstance(item, Iterable) and not isinstance(item, basestring):
+            for subitem in flatten_iter(item):
+                yield subitem
+        else:
+            yield item
+
+def flatten(iterable):
+    """``flatten_iter()`` returns a collapsed list of all the elements from
+    *iterable* while collapsing any nested iterables.
+
+    >>> nested = [[1, 2], [[3], [4, 5]]]
+    >>> flatten(nested)
+    [1, 2, 3, 4, 5]
+    """
+    return list(flatten_iter(iterable))
 
 
 def same(iterable, ref=_UNSET):
