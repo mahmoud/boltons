@@ -13,8 +13,8 @@ environment:
     - PYTHON: "C:\\Python27-x64"
       TOX_ENV: "py27"
 
-    - PYTHON: "C:\\Python35-x64"
-      TOX_ENV: "py35"
+    - PYTHON: "C:\\Python37-x64"
+      TOX_ENV: "py37"
 
 
 init:
