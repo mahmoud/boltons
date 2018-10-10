@@ -41,6 +41,10 @@ from __future__ import print_function
 import re
 from string import Formatter
 
+try:
+    unicode        # Python 2
+except NameError:
+    unicode = str  # Python 3
 
 __all__ = ['DeferredValue', 'get_format_args', 'tokenize_format_str',
            'construct_format_field_str', 'infer_positional_format_args',

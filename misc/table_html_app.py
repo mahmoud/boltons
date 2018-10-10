@@ -19,6 +19,13 @@ _CA_PATH = _CUR_PATH + '/_clastic_assets'
 _CSS_PATH = _CA_PATH + '/common.css'
 _STYLE = open(_CSS_PATH).read()
 
+try:
+    basestring     # Python 2
+    unicode
+except NameError:  # Python 3
+    basestring = (str, )
+    unicode = str
+
 
 def fetch_json(url):
     import urllib2

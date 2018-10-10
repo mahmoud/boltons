@@ -27,7 +27,7 @@ from itertools import islice
 from collections import Sequence, Mapping, MutableSequence
 try:
     string_types, integer_types = (str, unicode), (int, long)
-except Exception:
+except NameError:
     # Python 3 compat
     unicode = str
     string_types, integer_types = (str, bytes), (int,)

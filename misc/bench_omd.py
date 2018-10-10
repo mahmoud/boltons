@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+from __future__ import print_function
 import string
 import sys
 sys.path.append('/home/mahmoud/projects/lithoxyl/')
@@ -40,7 +41,7 @@ try:
     from werkzeug.datastructures import MultiDict, OrderedMultiDict as WOMD
     MULTI_IMPLS += (WOMD, MultiDict)
 except ImportError:
-    print '(installing werkzeug is recommended for full comparison)'
+    print('(installing werkzeug is recommended for full comparison)')
 ALL_IMPLS = MULTI_IMPLS + (OD, dict)
 
 
@@ -49,8 +50,8 @@ def bench():
         q_sink = lithoxyl.sinks.QuantileSink()
         impl_name = '.'.join([impl.__module__, impl.__name__])
         log = lithoxyl.logger.BaseLogger(impl_name, sinks=[q_sink])
-        print
-        print '+ %s' % impl_name
+        print()
+        print('+ %s' % impl_name)
         for _ in range(times):
             with log.info('total'):
                 for _ in range(times):
@@ -67,14 +68,14 @@ def bench():
         for action in _all_actions:
             try:
                 best_msecs = q_sink.qas[impl_name][action].min * 1000
-                print '   - %s - %g ms' % (action, best_msecs)
+                print('   - %s - %g ms' % (action, best_msecs))
             except KeyError:
                 pass
         best_msecs = q_sink.qas[impl_name]['total'].min * 1000
         median_msecs = q_sink.qas[impl_name]['total'].median * 1000
-        print ' > ran %d loops of %d items each, best time: %g ms, median time: %g ms' % (times, size, best_msecs, median_msecs)
+        print(' > ran %d loops of %d items each, best time: %g ms, median time: %g ms' % (times, size, best_msecs, median_msecs))
 
-    print
+    print()
     return
 
 

@@ -27,10 +27,10 @@ import sys
 import linecache
 
 
-if str is bytes:  # py2
-    text = unicode
-else:  # py3
-    text = str
+try:
+    text = unicode  # Python 2
+except NameError:
+    text = str      # Python 3
 
 
 # TODO: chaining primitives?  what are real use cases where these help?
@@ -601,7 +601,7 @@ def _some_str(value):
     except Exception:
         pass
     try:
-        value = unicode(value)
+        value = text(value)
         return value.encode("ascii", "backslashreplace")
     except Exception:
         pass
