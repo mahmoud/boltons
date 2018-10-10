@@ -8,7 +8,7 @@
 <a href="https://pypi.python.org/pypi/boltons"><img src="https://img.shields.io/pypi/pyversions/boltons.svg"></a>
 <a href="http://calver.org"><img src="https://img.shields.io/badge/calver-YY.MINOR.MICRO-22bfda.svg"></a>
 
-**Boltons** is a set of over 160 BSD-licensed, pure-Python utilities
+**Boltons** is a set of over 220 BSD-licensed, pure-Python utilities
 in the same spirit as — and yet conspicuously missing from —
 [the standard library][stdlib], including:
 
