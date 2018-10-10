@@ -17,22 +17,24 @@ python:
  
   # PyPy2.7: https://doc.pypy.org/en/latest
   # /index-of-release-notes.html#cpython-2-7-compatible-versions
-  - pypy         # Python 2.7.13 on PyPy 5.8.0
-  - pypy-6.0.0   # Python 2.7.13 on PyPy 6.0.0
+  - pypy          # Python 2.7.13 on PyPy 5.8.0
+  #- pypy-6.0.0   # Python 2.7.13 on PyPy 6.0.0  # Travis needs to upgrade!
 
   # PyPy3.3: https://doc.pypy.org/en/latest
   # /index-of-release-notes.html#cpython-3-3-compatible-versions
-  - pypy3        # Python 3.5.3 on PyPy 5.8.0
-  - pypy3-6.0.0  # Python 3.5.3 on PyPy 6.0.0
+  - pypy3         # Python 3.5.3 on PyPy PyPy 5.8.0-beta0
+  #- pypy3-6.0.0  # Python 3.5.3 on PyPy 6.0.0  # Travis needs to upgrade!
 
 matrix:
   include:
     - python: 3.7
-      dist: xenial    # required for Python 3.7 (travis-ci/travis-ci#9069)
-      sudo: required  # required for Python 3.7 (travis-ci/travis-ci#9069)
+      dist: xenial     # required for Python 3.7 (travis-ci/travis-ci#9069)
+      sudo: required   # required for Python 3.7 (travis-ci/travis-ci#9069)
+    - python: nightly  # Python 3.8.0a0
+      dist: xenial     # required for Python 3.8-dev (travis-ci/travis-ci#9069)
+      sudo: required   # required for Python 3.8-dev (travis-ci/travis-ci#9069)
+  allow_failures:
     - python: nightly
-      dist: xenial    # required for Python 3.8-dev (travis-ci/travis-ci#9069)
-      sudo: required  # required for Python 3.8-dev (travis-ci/travis-ci#9069)
 
 install: "pip install -r requirements-test.txt"
 script: "py.test --doctest-modules boltons tests"
