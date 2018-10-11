@@ -74,7 +74,7 @@ def construct_format_field_str(fname, fspec, conv):
 
 
 def split_format_str(fstr):
-    """Does very basic spliting of a format string, returns a list of
+    """Does very basic splitting of a format string, returns a list of
     strings. For full tokenization, see :func:`tokenize_format_str`.
 
     """
@@ -172,7 +172,7 @@ def get_format_args(fstr):
 def tokenize_format_str(fstr, resolve_pos=True):
     """Takes a format string, turns it into a list of alternating string
     literals and :class:`BaseFormatField` tokens. By default, also
-    infers anonymous positional references into explict, numbered
+    infers anonymous positional references into explicit, numbered
     positional references. To disable this behavior set *resolve_pos*
     to ``False``.
     """

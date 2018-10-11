@@ -13,7 +13,7 @@ cooperative/single-threaded use cases.
 The ``queueutils`` module currently provides two Queue
 implementations: :class:`HeapPriorityQueue`, based on a heap, and
 :class:`SortedPriorityQueue`, based on a sorted list. Both use a
-unified API based on :class:`BasePriortyQueue` to facilitate testing
+unified API based on :class:`BasePriorityQueue` to facilitate testing
 the slightly different performance characteristics on various
 application use cases.
 

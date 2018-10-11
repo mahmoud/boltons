@@ -372,7 +372,7 @@ def test_netloc_slashes():
     url.path = '/x/y/z'
     assert url.to_text() == 'ztp:/x/y/z'
 
-    # also works when the input doesn't includ '//'
+    # also works when the input doesn't include '//'
     url = URL()
     url.scheme = 'git+ftp'
     url.path = '/x/y/z/'

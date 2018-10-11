@@ -540,7 +540,7 @@ to community contributions and encouragement.
   * Corrected cases where OMD was not exactly a dropin for OrderedDict
   * conditional availability of [gcutils.get_all][gcutils.get_all] based on pypy or cpython, also
     [gcutils.is_tracked][gcutils.is_tracked] was added in 2.7, so making [gcutils.get_all][gcutils.get_all] work with 2.6
-  * Made namedutils backwards compatibilty for python 2.6 best effort
+  * Made namedutils backwards compatibility for python 2.6 best effort
   * Fix invalid part_path usage in [fileutils.AtomicSaver][fileutils.AtomicSaver]
 
 0.5.0
@@ -680,7 +680,7 @@ added in this release.
   * fix a bug in [dictutils.OrderedMultiDict][dictutils.OrderedMultiDict]'s .add()
   * adding initial reimplementation of OMD
   * adding some tests to dictutils
-  * update boltons formatutils to match what's goin on in lithoxyl
+  * update boltons formatutils to match what's going on in lithoxyl
   * remove infer_pos_args() from strutils (already in formatutils)
   * add formatutils to boltons
   * fix a potential infinite recursion in LocalTZ
