@@ -8,9 +8,8 @@ cache: pip
 python:
   # Standard release https://docs.travis-ci.com/user/languages
   # /python#choosing-python-versions-to-test-against
-  # - "2.6"  # EOL: https://devguide.python.org/#branchstatus
+  - "2.6"  # EOLed 5 years ago. https://www.python.org/dev/peps/pep-0361/#release-lifespan
   - "2.7"
-  # - "3.3"  # EOL: https://devguide.python.org/#branchstatus
   - "3.4"
   - "3.5"
   - "3.6"
@@ -20,7 +19,7 @@ python:
   - pypy          # Python 2.7.13 on PyPy 5.8.0
   #- pypy-6.0.0   # Python 2.7.13 on PyPy 6.0.0  # Travis needs to upgrade!
 
-  # PyPy3.3: https://doc.pypy.org/en/latest
+  # PyPy3.5: https://doc.pypy.org/en/latest
   # /index-of-release-notes.html#cpython-3-3-compatible-versions
   - pypy3         # Python 3.5.3 on PyPy PyPy 5.8.0-beta0
   #- pypy3-6.0.0  # Python 3.5.3 on PyPy 6.0.0  # Travis needs to upgrade!
