@@ -311,7 +311,7 @@ class TestRemap(object):
 
     def test_prepop(self):
         """Demonstrating normalization and ID addition through prepopulating
-        the objects wth an enter callback.
+        the objects with an enter callback.
         """
         base_obj = {'name': None,
                     'rank': None,

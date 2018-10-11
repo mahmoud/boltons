@@ -128,7 +128,7 @@ def wrap_trace(obj, hook=trace_print_hook,
        hook (callable): A function called once for every event. See
            below for details.
        which (str): One or more attribute names to trace, or a
-           function accepting attribute name and value, and returing
+           function accepting attribute name and value, and returning
            True/False.
        events (str): One or more kinds of events to call *hook*
            on. Expected values are ``['get', 'set', 'del', 'call',
