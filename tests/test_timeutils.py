@@ -47,3 +47,9 @@ def test_daterange_years():
 
     assert years_from_2025[0] == date(2025, 1, 1)
     assert years_from_2025[-1] == date(2017, 1, 1)
+
+def test_daterange_infinite():
+    today = date.today()
+    infinite_dates = daterange(today, None)
+    for i in range(10):
+        assert next(infinite_dates) == today + timedelta(days=i)

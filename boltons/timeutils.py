@@ -348,7 +348,7 @@ def daterange(start, stop, step=1, inclusive=False):
                          ' (year, month, day), not: %r' % step)
 
     if stop is None:
-        finished = lambda t: False
+        finished = lambda now, stop: False
     elif start < stop:
         finished = operator.gt if inclusive else operator.ge
     else:
