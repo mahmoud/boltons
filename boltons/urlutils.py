@@ -770,6 +770,12 @@ class URL(object):
         cn = self.__class__.__name__
         return u'%s(%r)' % (cn, self.to_text())
 
+    def __str__(self):
+        return self.to_text()
+
+    def __unicode__(self):
+        return self.to_text()
+
     def __eq__(self, other):
         for attr in self._cmp_attrs:
             if not getattr(self, attr) == getattr(other, attr, None):
