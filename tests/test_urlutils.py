@@ -463,3 +463,6 @@ def test_unicodey():
     assert url.to_text(full_quote=False) == unicodey
     fully_quoted = 'http://xn--9ca.com/%C3%A9?%C3%A1=%C3%AD#%C3%BA'
     assert url.to_text(full_quote=True) == fully_quoted
+
+def test_str_repr():
+    assert str(URL("http://googlewebsite.com/e-shops.aspx")) == "http://googlewebsite.com/e-shops.aspx"
