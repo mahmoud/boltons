@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
-
+import abc
 import string
-from abc import abstractmethod, ABC
+from abc import abstractmethod, ABCMeta
 
 import pytest
 
@@ -267,7 +267,10 @@ def test_cachedmethod():
 
 
 def test_cachedmethod_maintains_func_abstraction():
+    ABC = abc.ABCMeta('ABC', (object,), {})
+
     class Car(ABC):
+
         def __init__(self, cache=None):
             self.h_cache = LRI() if cache is None else cache
             self.hand_count = 0
@@ -314,7 +317,10 @@ def test_cachedproperty():
 
 
 def test_cachedproperty_maintains_func_abstraction():
+    ABC = abc.ABCMeta('ABC', (object,), {})
+
     class AbstractExpensiveCalculator(ABC):
+
         @cachedproperty
         @abstractmethod
         def calculate(self):
