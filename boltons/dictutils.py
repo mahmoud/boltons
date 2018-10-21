@@ -38,7 +38,10 @@ thanks to `Mark Williams`_ for all his help.
 
 """
 
-from collections import KeysView, ValuesView, ItemsView
+try:
+    from collections.abc import KeysView, ValuesView, ItemsView
+except ImportError:
+    from collections import KeysView, ValuesView, ItemsView
 
 try:
     from itertools import izip_longest

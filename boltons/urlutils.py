@@ -949,7 +949,10 @@ def parse_qsl(qs, keep_blank_values=True, encoding=DEFAULT_ENCODING):
 # 20161021, used for the QueryParamDict, toward the bottom.
 """
 
-from collections import KeysView, ValuesView, ItemsView
+try:
+    from collections.abc import KeysView, ValuesView, ItemsView
+except ImportError:
+    from collections import KeysView, ValuesView, ItemsView
 
 try:
     from itertools import izip_longest
