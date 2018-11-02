@@ -39,7 +39,7 @@ class FolderDict(dict):
             if create_new:
                 os.makedirs(folder_path, exist_ok=True)
             else:
-                raise IOError("[Errno 2] No such file or directory: '{}'".format(self.folder_path))
+                raise IOError("[Errno 2] No such file or directory: '{0}'".format(self.folder_path))
 
     def __getitem__(self, item):
         """
@@ -49,7 +49,7 @@ class FolderDict(dict):
         try:
             return self._dict[item]
         except KeyError:
-            raise IOError("[Errno 2] No such file or directory: '{}'".
+            raise IOError("[Errno 2] No such file or directory: '{0}'".
                                     format(os.path.join(self.folder_path, item)))
 
     def __setitem__(self, key, value):
