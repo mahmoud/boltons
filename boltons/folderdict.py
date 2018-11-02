@@ -12,8 +12,6 @@ CONSTRAINT:-
 
 For example
 folder_dict = FolderDict(FOLDER_PATH)
-
-
 """
 import os
 
@@ -24,11 +22,12 @@ class FolderDict(dict):
         return os.path.join(self.folder_path, file_name)
 
     def get_only_files(self):
-        yield from [self.get_absolute_path(file_name) for file_name in os.listdir(self.folder_path)
-                    if os.path.isfile(self.get_absolute_path(file_name))]
+        for file_name in os.listdir(self.folder_path):
+            absolute_file_path = self.get_absolute_path(file_name)
+            if os.path.isfile(absolute_file_path):
+                yield absolute_file_path
 
     def __init__(self, folder_path, create_new=False):
-        super().__init__()
         self.folder_path = folder_path
         self._dict = {}
         if os.path.exists(self.folder_path) and os.path.isdir(self.folder_path):
@@ -40,7 +39,7 @@ class FolderDict(dict):
             if create_new:
                 os.makedirs(folder_path, exist_ok=True)
             else:
-                raise FileNotFoundError("[Errno 2] No such file or directory: '{}'".format(self.folder_path))
+                raise IOError("[Errno 2] No such file or directory: '{}'".format(self.folder_path))
 
     def __getitem__(self, item):
         """
@@ -50,8 +49,8 @@ class FolderDict(dict):
         try:
             return self._dict[item]
         except KeyError:
-            raise FileNotFoundError("[Errno 2] No such file or directory: '{}'".
-                                    format(os.path.join(self.folder_path, item))) from None
+            raise IOError("[Errno 2] No such file or directory: '{}'".
+                                    format(os.path.join(self.folder_path, item)))
 
     def __setitem__(self, key, value):
         """
@@ -66,13 +65,16 @@ class FolderDict(dict):
         return self._dict.keys()
 
     def __iter__(self):
-        yield from self.keys()
+        for key in self.keys():
+            yield key
 
     def values(self):
-        yield from [self._dict[key] for key in self.keys()]
+        for key in self.keys():
+            yield self._dict[key]
 
     def items(self):
-        yield from [(k,self[k]) for k in self.keys()]
+        for key in self.keys():
+            yield key, self[key]
 
     def __contains__(self, item):
         return item in self.keys()

@@ -1,17 +1,25 @@
-"""
-Use named temporary folder to fecilitate test cases,
-Write test cases for
-1) get,set,delete
-2) file not found error
-3) keys
-4) contains
-"""
-import tempfile
 import os
-
+from contextlib import contextmanager
+from tempfile import mkdtemp
+import shutil
 from boltons.folderdict import FolderDict
 
-with tempfile.TemporaryDirectory() as directory_name:
+
+@contextmanager
+def temporary_directory():
+    name = mkdtemp()
+    try:
+        yield name
+    finally:
+        shutil.rmtree(name)
+
+# Dirty hack to support python 2.x
+try:
+    from tempfile import TemporaryDirectory
+except ImportError:
+    TemporaryDirectory = temporary_directory
+
+with TemporaryDirectory() as directory_name:
     folder_dict = FolderDict(directory_name)
     folder_dict["File1"] = "Sample file1"
 
@@ -23,7 +31,7 @@ with tempfile.TemporaryDirectory() as directory_name:
 
     try:
         new_value = folder_dict["Another File"]
-    except FileNotFoundError:
+    except IOError:
         val = "Correct exception raised"
 
     assert val == "Correct exception raised"
