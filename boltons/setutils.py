@@ -419,3 +419,124 @@ class IndexedSet(MutableSet):
         except KeyError:
             cn = self.__class__.__name__
             raise ValueError('%r is not in %s' % (val, cn))
+
+
+def complement(set_):
+    '''
+    given a set, convert it to a complement set
+    where a set keeps track of what it contains,
+    a complement set keeps track of what it
+    doesn't contain
+
+    https://en.wikipedia.org/wiki/Complement_(set_theory)
+
+    complement(complement(set)) == set
+
+    all set methods and operators are supported
+    by complement sets, between other complement sets
+    or regular sets / frozensets
+
+    the only difference is that complement sets
+    are not iterable and do not support __len__
+
+    an empty complement set corresponds to the
+    concept of a universal set (https://en.wikipedia.org/wiki/Universal_set)
+    from mathematics
+
+    many uses of sets can be expressed more simply
+    by using a complement -- rather than trying
+    to work out in your head the proper way
+    to invert an expression, you can just throw
+    a complement on the set
+    '''
+    if type(set_) is _ComplementSet:
+        return type(set_.missing)(set_.missing) 
+    return _ComplementSet(set_)
+
+
+class _ComplementSet(object):
+    '''
+    helper class for complement() that implements the functions
+    '''
+    def __init__(self, missing):
+        assert type(missing) in (set, frozenset)
+        self.missing = missing
+
+    def __repr__(self): return 'complement({})'.repr(self.missing)
+
+    def __contains__(self, item):
+        return not item in self.missing
+
+    def add(self, item):
+        if item in self.missing:
+            self.missing.remove(item)
+
+    def remove(self, item):
+        self.missing.add(item)
+
+    def intersection(self, other):
+        if type(other) in (set, frozenset):
+            return other - self.missing
+        if type(other) is _ComplementSet:
+            return _ComplementSet(self.missing.union(other.missing))
+        raise TypeError()
+
+    def union(self, other):
+        if type(other) in (set, frozenset):
+            return _ComplementSet(self.missing - other)
+        if type(other) is _ComplementSet:
+            return _ComplementSet(self.missing.intersection(other.missing))
+        raise TypeError()
+
+    def symmetric_difference(self, other):
+        if type(other) in (set, frozenset):
+            return _ComplementSet(self.missing.union(other))
+        if type(other) is _ComplementSet:
+            return self.missing.symmetric_difference(other.missing)
+        raise TypeError()
+
+    def isdisjoint(self, other):
+        if type(other) in (set, frozenset):
+            return other.issubset(self.missing)
+        if type(other) is _ComplementSet:
+            return False
+        raise TypeError()
+
+    def issubset(self, other):
+        '''everything missing from other is also missing from self'''
+        if type(other) in (set, frozenset):
+            return False
+        if type(other) is _ComplementSet:
+            return self.missing.issupserset(other.missing)
+        raise TypeError()
+
+    def issuperset(self, other):
+        '''everything missing from self is also missing from super'''
+        if type(other) in (set, frozenset):
+            return not self.missing.intersection(other)
+        if type(other) is _ComplementSet:
+            return self.missing.issubset(other.missing)
+        raise TypeError()
+
+    def __eq__(self, other):
+        return type(self) is type(other) and self.missing == other.missing
+
+    def __hash__(self):
+        return hash(self.missing)
+
+    def __len__(self):
+        raise NotImplemented  # float('inf') - len(self.missing)
+
+    def __iter__(self):
+        raise NotImplemented
+
+
+def test():
+    assert complement({1, 2}).union({1, 2}) == complement(set())
+    everything = complement(frozenset())
+    assert everything in everything  # https://en.wikipedia.org/wiki/Russell%27s_paradox
+
+
+if __name__ == "__main__":
+    test()
+
