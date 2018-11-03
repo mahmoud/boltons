@@ -436,8 +436,10 @@ def complement(set_):
     by complement sets, between other complement sets
     or regular sets / frozensets
 
-    the only difference is that complement sets
-    are not iterable and do not support __len__
+    because a complement set only tracks what elements
+    are not in the set rather than what are, functionality
+    based on the contents of the set is unavailable:
+    len, iteration, pop
 
     an empty complement set corresponds to the
     concept of a universal set (https://en.wikipedia.org/wiki/Universal_set)
@@ -474,33 +476,71 @@ class _ComplementSet(object):
     def remove(self, item):
         self.missing.add(item)
 
+    def pop(self):
+        raise NotImplemented  # self.missing.add(random.choice(gc.objects()))
+
     def intersection(self, other):
         if type(other) in (set, frozenset):
             return other - self.missing
         if type(other) is _ComplementSet:
             return _ComplementSet(self.missing.union(other.missing))
-        raise TypeError()
+        raise NotImplemented
+
+    __and__ = __rand__ = intersection
+
+    def __iand__(self, other):
+        if type(other) in (set, frozenset):
+            self.missing = other - self.missing
+        elif type(other) is _ComplementSet:
+            self.missing |= other.missing
+        else:
+            raise NotImplemented
 
     def union(self, other):
         if type(other) in (set, frozenset):
             return _ComplementSet(self.missing - other)
         if type(other) is _ComplementSet:
             return _ComplementSet(self.missing.intersection(other.missing))
-        raise TypeError()
+        raise NotImplemented
+
+    __or__ = __ror__ = union
+
+    def __ior__(self, other):
+        if type(other) in (set, frozenset):
+            self.missing -= other
+        elif type(other) is _ComplementSet:
+            self.missing &= other.missing
+        else:
+            raise NotImplemented
+
+    def update(self, items):
+        self.missing.discard(items)
+
+    def discard(self, items):
+        self.missing.update(items)
 
     def symmetric_difference(self, other):
         if type(other) in (set, frozenset):
             return _ComplementSet(self.missing.union(other))
         if type(other) is _ComplementSet:
             return self.missing.symmetric_difference(other.missing)
-        raise TypeError()
+        raise NotImplemented
+
+    __xor__ = __rxor__ = symmetric_difference
+
+    def symmetric_difference_udpate(self, other):
+        if type(other) in (set, frozenset):
+            self.missing |= other
+        elif type(other) is _ComplementSet:
+            raise NotImplemented  # this should be a regular set
+        raise NotImplemented
 
     def isdisjoint(self, other):
         if type(other) in (set, frozenset):
             return other.issubset(self.missing)
         if type(other) is _ComplementSet:
             return False
-        raise TypeError()
+        raise NotImplemented
 
     def issubset(self, other):
         '''everything missing from other is also missing from self'''
@@ -508,7 +548,16 @@ class _ComplementSet(object):
             return False
         if type(other) is _ComplementSet:
             return self.missing.issupserset(other.missing)
-        raise TypeError()
+        raise NotImplemented
+
+    __le__ = issubset
+
+    def __lt__(self, other):
+        if type(other) in (set, frozenset):
+            return False
+        if type(other) is _ComplementSet:
+            return self.missing > other.missing
+        raise NotImplemented
 
     def issuperset(self, other):
         '''everything missing from self is also missing from super'''
@@ -516,7 +565,34 @@ class _ComplementSet(object):
             return not self.missing.intersection(other)
         if type(other) is _ComplementSet:
             return self.missing.issubset(other.missing)
-        raise TypeError()
+        raise NotImplemented
+
+    __ge__ = issuperset
+
+    def __gt__(self, other):
+        if type(other) in (set, frozenset):
+            return not self.missing.intersection(other)
+        if type(other) is _ComplementSet:
+            return self.missing < other.missing
+        raise NotImplemented
+
+    def difference(self, other):
+        if type(other) in (set, frozenset):
+            return _ComplementSet(self.missing | other)
+        if type(other) is _ComplementSet:
+            return other.missing - self.missing
+        raise NotImplemented
+
+    __sub__ = difference
+
+    def difference_update(self, other):
+        if type(other) in (set, frozenset):
+            self.missing |= other
+        elif type(other) is _ComplementSet:
+            raise NotImplemented  #TODO: nuts this result should be a regular set
+        raise NotImplemented
+
+    __isub__ = difference_update
 
     def __eq__(self, other):
         return type(self) is type(other) and self.missing == other.missing
