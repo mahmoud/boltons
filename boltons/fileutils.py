@@ -455,9 +455,9 @@ _CUR_DIR = os.path.dirname(os.path.abspath(__file__))
 
 
 def iter_find_files(directory, patterns, ignored=None):
-    """Returns a generator that yields file paths under a *directory*,
-    matching *patterns* using `glob`_ syntax (e.g., ``*.txt``). Also
-    supports *ignored* patterns.
+    """Returns a generator that yields file paths under a *directory*
+    (recursively), matching *patterns* using `glob`_ syntax (e.g., ``*.txt``).
+    Also supports *ignored* patterns.
 
     Args:
         directory (str): Path that serves as the root of the
