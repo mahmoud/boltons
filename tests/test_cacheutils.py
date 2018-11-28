@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-import abc
 import string
 from abc import abstractmethod, ABCMeta
 
@@ -267,7 +266,7 @@ def test_cachedmethod():
 
 
 def test_cachedmethod_maintains_func_abstraction():
-    ABC = abc.ABCMeta('ABC', (object,), {})
+    ABC = ABCMeta('ABC', (object,), {})
 
     class Car(ABC):
 
@@ -317,7 +316,7 @@ def test_cachedproperty():
 
 
 def test_cachedproperty_maintains_func_abstraction():
-    ABC = abc.ABCMeta('ABC', (object,), {})
+    ABC = ABCMeta('ABC', (object,), {})
 
     class AbstractExpensiveCalculator(ABC):
 
