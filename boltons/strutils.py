@@ -175,8 +175,10 @@ def singularize(word):
     """Semi-intelligently converts an English plural *word* to its
     singular form, preserving case pattern.
 
-    >>> singularize('records')
-    'record'
+    >>> singularize('chances')
+    'chance'
+    >>> singularize('Activities')
+    'Activity'
     >>> singularize('FEET')
     'FOOT'
 
@@ -192,10 +194,8 @@ def singularize(word):
         return orig_word
     elif len(word) == 2:
         singular = word[:-1]  # or just return word?
-    elif word.endswith('ies') and word[-5:-4] not in 'aeiou':
+    elif word.endswith('ies') and word[-4:-3] not in 'aeiou':
         singular = word[:-3] + 'y'
-    elif word.endswith('es'):
-        singular = word[:-2]
     else:
         singular = word[:-1]
     return _match_case(orig_word, singular)
