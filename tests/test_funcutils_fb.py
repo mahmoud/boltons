@@ -26,15 +26,15 @@ def test_wraps_basic():
 
     @pita_wrap(flag=True)
     def simple_func():
-        "my doc string"
+        '''"""a tricky docstring"""'''
         return 'hello'
 
     assert simple_func() == (True, 'simple_func', 'hello')
-    assert simple_func.__doc__ == "my doc string"
+    assert simple_func.__doc__ == '''"""a tricky docstring"""'''
 
     assert callable(simple_func.__wrapped__)
     assert simple_func.__wrapped__() == 'hello'
-    assert simple_func.__wrapped__.__doc__ == "my doc string"
+    assert simple_func.__wrapped__.__doc__ == '''"""a tricky docstring"""'''
 
     @pita_wrap(flag=False)
     def less_simple_func(arg='hello'):
