@@ -1139,7 +1139,7 @@ class SequentialGUIDerator(GUIDerator):
     value and increments every iteration. This yields GUIDs which are
     of course unique, but also ordered and lexicographically sortable.
 
-    The SequentialGUIDerator is aronud 50% faster than the normal
+    The SequentialGUIDerator is around 50% faster than the normal
     GUIDerator, making it almost 20x as fast as the built-in uuid
     module. By default it is also more compact, partly due to its
     96-bit (24-hexdigit) default length. 96 bits of randomness means that

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """So much practical programming involves string manipulation, which
-Python readily accomodates. Still, there are dozens of basic and
+Python readily accommodates. Still, there are dozens of basic and
 common capabilities missing from the standard library, several of them
 provided by ``strutils``.
 """

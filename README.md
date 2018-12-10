@@ -53,15 +53,15 @@ Boltons is tested against Python 2.6, 2.7, 3.3, 3.4, 3.5, 3.6,
 
 Boltons can be added to a project in a few ways. There's the obvious one:
 
-```
-    pip install boltons
+```bash
+pip install boltons
 ```
 
 Then, [thanks to PyPI][boltons_pypi], dozens of boltons are just an import away:
 
 ```python
-    from boltons.cacheutils import LRU
-    my_cache = LRU()
+from boltons.cacheutils import LRU
+my_cache = LRU()
 ```
 
 However, due to the nature of utilities, application developers might

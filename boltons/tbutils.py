@@ -35,7 +35,7 @@ except NameError:
 
 # TODO: chaining primitives?  what are real use cases where these help?
 
-# TODO: print_* for backwards compatability
+# TODO: print_* for backwards compatibility
 # __all__ = ['extract_stack', 'extract_tb', 'format_exception',
 #            'format_exception_only', 'format_list', 'format_stack',
 #            'format_tb', 'print_exc', 'format_exc', 'print_exception',

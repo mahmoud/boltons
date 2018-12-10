@@ -315,7 +315,7 @@ class TestSpooledStringIO(TestCase, BaseTestMixin, AssertionsMixin):
         self.assertEqual(self.spooled_flo.len, len(self.test_str))
 
     def test_len_rollover(self):
-        """Make sure len propery works with on-disk flo"""
+        """Make sure len property works with on-disk flo"""
         self.spooled_flo.write(self.test_str)
         self.spooled_flo.rollover()
         self.assertEqual(self.spooled_flo.len, len(self.test_str))

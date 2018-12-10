@@ -25,7 +25,7 @@ def test_clamp_examples():
     assert 1 == clamp(7.7, upper=1)
 
 def test_clamp_transparent():
-    """clamp(x) should equal x beacause both limits are omitted"""
+    """clamp(x) should equal x because both limits are omitted"""
     assert clamp(0) == 0
     assert clamp(1) == 1
     assert clamp(10**100) == 10**100
