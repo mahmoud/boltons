@@ -27,10 +27,12 @@ from itertools import islice
 from collections import Sequence, Mapping, MutableSequence
 try:
     string_types, integer_types = (str, unicode), (int, long)
+    from cgi import escape as html_escape
 except NameError:
     # Python 3 compat
     unicode = str
     string_types, integer_types = (str, bytes), (int,)
+    from html import escape as html_escape
 
 try:
     from typeutils import make_sentinel
@@ -75,7 +77,7 @@ def to_text(obj, maxlen=None):
 
 def escape_html(obj, maxlen=None):
     text = to_text(obj, maxlen=maxlen)
-    return cgi.escape(text, quote=True)
+    return html_escape(text, quote=True)
 
 
 _DNR = set((type(None), bool, complex, float,
