@@ -106,17 +106,11 @@ class OrderedMultiDict(dict):
     >>> omd
     OrderedMultiDict([('b', 2)])
 
-    Note that calling :func:`dict` on an OMD results in a dict of keys
-    to *lists* of values:
+    If you want a safe-to-modify or flat dictionary, use
+    :meth:`OrderedMultiDict.todict()`.
 
-    >>> from pprint import pprint as pp  # ensuring proper key ordering
+    >>> from pprint import pprint as pp  # preserve printed ordering
     >>> omd = OrderedMultiDict([('a', 1), ('b', 2), ('a', 3)])
-    >>> pp(dict(omd))
-    {'a': [1, 3], 'b': [2]}
-
-    Note that modifying those lists will modify the OMD. If you want a
-    safe-to-modify or flat dictionary, use :meth:`OrderedMultiDict.todict()`.
-
     >>> pp(omd.todict())
     {'a': 3, 'b': 2}
     >>> pp(omd.todict(multi=True))
@@ -128,6 +122,19 @@ class OrderedMultiDict(dict):
 
     >>> OrderedMultiDict([('a', 1), ('b', 2), ('a', 3)]).items(multi=False)
     [('a', 3), ('b', 2)]
+
+    .. warning::
+
+       ``dict(omd)`` changed behavior `in Python 3.7
+       <https://bugs.python.org/issue34320>`_ due to changes made to
+       support the transition from :class:`collections.OrderedDict` to
+       the built-in dictionary being ordered. Before 3.7, the result
+       would be a new dictionary, with values that were lists, similar
+       to ``omd.todict(multi=True)`` (but only shallow-copy; the lists
+       were direct references to OMD internal structures). From 3.7
+       onward, the values became singular, like
+       ``omd.todict(multi=False)``. For reliable cross-version
+       behavior, just use :meth:`~OrderedMultiDict.todict()`.
 
     """
     def __init__(self, *args, **kwargs):
