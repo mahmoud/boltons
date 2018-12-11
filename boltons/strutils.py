@@ -179,6 +179,8 @@ def singularize(word):
     'chance'
     >>> singularize('Activities')
     'Activity'
+    >>> singularize('Glasses')
+    'Glass'
     >>> singularize('FEET')
     'FOOT'
 
@@ -196,6 +198,8 @@ def singularize(word):
         singular = word[:-1]  # or just return word?
     elif word.endswith('ies') and word[-4:-3] not in 'aeiou':
         singular = word[:-3] + 'y'
+    elif word.endswith('es') and word[-3] == 's':
+        singular = word[:-2]
     else:
         singular = word[:-1]
     return _match_case(orig_word, singular)
@@ -234,8 +238,8 @@ def _match_case(master, disciple):
         return disciple.lower()
     elif master.upper() == master:
         return disciple.upper()
-    elif master.capitalize() == master:
-        return disciple.capitalize()
+    elif master.title() == master:
+        return disciple.title()
     return disciple
 
 
