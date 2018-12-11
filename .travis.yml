@@ -1,5 +1,4 @@
 language: python
-sudo: false
 cache: pip
 
 # Python targets, as defined by https://github.com/travis-ci/travis-build/blob
@@ -28,10 +27,8 @@ matrix:
   include:
     - python: 3.7
       dist: xenial     # required for Python 3.7 (travis-ci/travis-ci#9069)
-      sudo: required   # required for Python 3.7 (travis-ci/travis-ci#9069)
     - python: nightly  # Python 3.8.0a0
       dist: xenial     # required for Python 3.8-dev (travis-ci/travis-ci#9069)
-      sudo: required   # required for Python 3.8-dev (travis-ci/travis-ci#9069)
   allow_failures:
     - python: nightly
 
