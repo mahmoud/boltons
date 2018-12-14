@@ -1213,7 +1213,7 @@ def soft_sorted(iterable, first=None, last=None, key=None, reverse=False):
     """
     first = first or []
     last = last or []
-    key = key or lambda x: x
+    key = key or (lambda x: x)
     seq = list(iterable)
     other = [x for x in seq if not ((first and key(x) in first) or (last and key(x) in last))]
     other.sort(key=key, reverse=reverse)
