@@ -1182,6 +1182,48 @@ guid_iter = GUIDerator()
 seq_guid_iter = SequentialGUIDerator()
 
 
+def soft_sorted(iterable, first=None, last=None, key=None, reverse=False):
+    """For when you care about the order of some elements, but not about
+    others.
+
+    Use this to float to the top and/or sink to the bottom a specific
+    ordering, while sorting the rest of the elements according to
+    normal :func:`sorted` rules.
+
+    >>> soft_sorted(['two', 'b', 'one', 'a'], first=['one', 'two'])
+    ['one', 'two', 'a', 'b']
+    >>> soft_sorted(range(7), first=[6, 15], last=[2, 4], reverse=True)
+    [6, 5, 3, 1, 0, 2, 4]
+
+    Args:
+       iterable (list): A list or other iterable to sort.
+       first (list): A sequence to enforce for elements which should
+          appear at the beginning of the returned list.
+       last (list): A sequence to enforce for elements which should
+          appear at the end of the returned list.
+       key (callable): Callable used to generate a comparable key for
+          each item to be sorted, same as the key in
+          :func:`sorted`. Note that entries in *first* and *last*
+          should be the keys for the items. Defaults to
+          passthrough/the identity function.
+       reverse (bool): Whether or not elements not explicitly ordered
+          by *first* and *last* should be in reverse order or not.
+
+    Returns a new list in sorted order.
+    """
+    first = first or []
+    last = last or []
+    key = key or lambda x: x
+    seq = list(iterable)
+    other = [x for x in seq if not ((first and key(x) in first) or (last and key(x) in last))]
+    other.sort(key=key, reverse=reverse)
+
+    if first:
+        first = sorted([x for x in seq if key(x) in first], key=first.index)
+    if last:
+        last = sorted([x for x in seq if key(x) in last], key=last.index)
+    return first + other + last
+
 """
 May actually be faster to do an isinstance check for a str path
 
