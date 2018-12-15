@@ -1194,6 +1194,9 @@ def soft_sorted(iterable, first=None, last=None, key=None, reverse=False):
     ['one', 'two', 'a', 'b']
     >>> soft_sorted(range(7), first=[6, 15], last=[2, 4], reverse=True)
     [6, 5, 3, 1, 0, 2, 4]
+    >>> import string
+    >>> ''.join(soft_sorted(string.hexdigits, first='za1', last='b', key=str.lower))
+    'aA1023456789cCdDeEfFbB'
 
     Args:
        iterable (list): A list or other iterable to sort.
@@ -1219,9 +1222,9 @@ def soft_sorted(iterable, first=None, last=None, key=None, reverse=False):
     other.sort(key=key, reverse=reverse)
 
     if first:
-        first = sorted([x for x in seq if key(x) in first], key=first.index)
+        first = sorted([x for x in seq if key(x) in first], key=lambda x: first.index(key(x)))
     if last:
-        last = sorted([x for x in seq if key(x) in last], key=last.index)
+        last = sorted([x for x in seq if key(x) in last], key=lambda x: last.index(key(x)))
     return first + other + last
 
 """
