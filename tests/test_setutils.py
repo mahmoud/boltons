@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from boltons.setutils import IndexedSet, _MISSING
+from boltons.setutils import IndexedSet, _MISSING, complement
 
 
 def test_indexed_set_basic():
@@ -66,3 +66,43 @@ def big_popper():
     print()
     print('popped %s items in %s seconds' % (start_size - end_size,
                                              end_time - start_time))
+
+
+def test_complement_set():
+    '''exercises a bunch of code-paths but doesn't really confirm math identities'''
+    assert complement(complement(set())) == set()
+    sn = {1, 2, 3}
+    c_sn = complement(sn)
+    sa = set('abc')
+    c_sa = complement(sa)
+    repr(c_sn)
+    # non-mutating tests
+    assert complement(c_sn) == sn
+    assert complement(c_sa) == sa
+    assert 1 not in c_sn
+    assert 'a' in c_sn
+    assert not (c_sn < sn)  # complement never subset of set
+    assert not (sn < c_sn)
+    assert not (c_sn < sa)
+    assert not (c_sn < c_sa)  # not subsets of each other
+    assert sa < c_sn
+    assert c_sn < (c_sa | c_sn)
+    assert (c_sa | c_sn) > c_sn
+    assert c_sn > sa
+    assert not (c_sn > sn)
+    assert not c_sn.isdisjoint(c_sa)  # complements never disjoint
+    assert c_sn.isdisjoint(sn)
+    assert not c_sn.isdisjoint(sa)
+    assert (c_sn | sn) == complement(set())
+    assert (c_sn | c_sa) == complement(set())
+    assert c_sn - c_sa == sa
+    assert c_sn - sn == c_sn
+    assert (c_sn ^ c_sa) == (sn | sa)
+    # destructive testing
+    c_sn ^= sa
+    c_sn ^= c_sa
+    c_sn &= sa
+    c_sn &= c_sa
+    c_sn |= sa
+    c_sn |= c_sa
+    c_sn -= sa

@@ -452,7 +452,9 @@ def complement(set_):
     a complement on the set
     '''
     if type(set_) is _ComplementSet:
-        return type(set_.missing)(set_.missing) 
+        if type(set_.missing) is frozenset:
+            return set_.missing
+        return set(set_.missing) 
     return _ComplementSet(set_)
 
 
@@ -464,7 +466,7 @@ class _ComplementSet(object):
         assert type(missing) in (set, frozenset)
         self.missing = missing
 
-    def __repr__(self): return 'complement({})'.repr(self.missing)
+    def __repr__(self): return 'complement({})'.format(repr(self.missing))
 
     def __contains__(self, item):
         return not item in self.missing
@@ -477,14 +479,14 @@ class _ComplementSet(object):
         self.missing.add(item)
 
     def pop(self):
-        raise NotImplemented  # self.missing.add(random.choice(gc.objects()))
+        raise NotImplementedError  # self.missing.add(random.choice(gc.objects()))
 
     def intersection(self, other):
         if type(other) in (set, frozenset):
             return other - self.missing
         if type(other) is _ComplementSet:
             return _ComplementSet(self.missing.union(other.missing))
-        raise NotImplemented
+        raise NotImplementedError
 
     __and__ = __rand__ = intersection
 
@@ -494,14 +496,14 @@ class _ComplementSet(object):
         elif type(other) is _ComplementSet:
             self.missing |= other.missing
         else:
-            raise NotImplemented
+            raise NotImplementedError
 
     def union(self, other):
         if type(other) in (set, frozenset):
             return _ComplementSet(self.missing - other)
         if type(other) is _ComplementSet:
             return _ComplementSet(self.missing.intersection(other.missing))
-        raise NotImplemented
+        raise NotImplementedError
 
     __or__ = __ror__ = union
 
@@ -511,7 +513,7 @@ class _ComplementSet(object):
         elif type(other) is _ComplementSet:
             self.missing &= other.missing
         else:
-            raise NotImplemented
+            raise NotImplementedError
 
     def update(self, items):
         self.missing.discard(items)
@@ -524,7 +526,7 @@ class _ComplementSet(object):
             return _ComplementSet(self.missing.union(other))
         if type(other) is _ComplementSet:
             return self.missing.symmetric_difference(other.missing)
-        raise NotImplemented
+        raise NotImplementedError
 
     __xor__ = __rxor__ = symmetric_difference
 
@@ -532,15 +534,16 @@ class _ComplementSet(object):
         if type(other) in (set, frozenset):
             self.missing |= other
         elif type(other) is _ComplementSet:
-            raise NotImplemented  # this should be a regular set
-        raise NotImplemented
+            raise NotImplementedError  # this should be a regular set
+        else:
+            raise NotImplementedError
 
     def isdisjoint(self, other):
         if type(other) in (set, frozenset):
             return other.issubset(self.missing)
         if type(other) is _ComplementSet:
             return False
-        raise NotImplemented
+        raise NotImplementedError
 
     def issubset(self, other):
         '''everything missing from other is also missing from self'''
@@ -548,7 +551,7 @@ class _ComplementSet(object):
             return False
         if type(other) is _ComplementSet:
             return self.missing.issupserset(other.missing)
-        raise NotImplemented
+        raise NotImplementedError
 
     __le__ = issubset
 
@@ -557,7 +560,7 @@ class _ComplementSet(object):
             return False
         if type(other) is _ComplementSet:
             return self.missing > other.missing
-        raise NotImplemented
+        raise NotImplementedError
 
     def issuperset(self, other):
         '''everything missing from self is also missing from super'''
@@ -565,7 +568,7 @@ class _ComplementSet(object):
             return not self.missing.intersection(other)
         if type(other) is _ComplementSet:
             return self.missing.issubset(other.missing)
-        raise NotImplemented
+        raise NotImplementedError
 
     __ge__ = issuperset
 
@@ -574,14 +577,14 @@ class _ComplementSet(object):
             return not self.missing.intersection(other)
         if type(other) is _ComplementSet:
             return self.missing < other.missing
-        raise NotImplemented
+        raise NotImplementedError
 
     def difference(self, other):
         if type(other) in (set, frozenset):
             return _ComplementSet(self.missing | other)
         if type(other) is _ComplementSet:
             return other.missing - self.missing
-        raise NotImplemented
+        raise NotImplementedError
 
     __sub__ = difference
 
@@ -589,8 +592,9 @@ class _ComplementSet(object):
         if type(other) in (set, frozenset):
             self.missing |= other
         elif type(other) is _ComplementSet:
-            raise NotImplemented  #TODO: nuts this result should be a regular set
-        raise NotImplemented
+            raise NotImplementedError  #TODO: nuts this result should be a regular set
+        else:
+            raise NotImplementedError
 
     __isub__ = difference_update
 
@@ -601,10 +605,10 @@ class _ComplementSet(object):
         return hash(self.missing)
 
     def __len__(self):
-        raise NotImplemented  # float('inf') - len(self.missing)
+        raise NotImplementedError  # float('inf') - len(self.missing)
 
     def __iter__(self):
-        raise NotImplemented
+        raise NotImplementedError
 
 
 def test():
