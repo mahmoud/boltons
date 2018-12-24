@@ -97,6 +97,9 @@ def test_complement_set():
     assert not c_sn.isdisjoint(sa)
     assert (c_sn | sn) == complement(set())
     assert (c_sn | c_sa) == complement(set())
+    assert (sn | c_sn) == (c_sn | sn)
+    assert (sn & c_sn) == (c_sn & sn)
+    assert (sn ^ c_sn) == (c_sn ^ sn)
     assert c_sn - c_sa == sa
     assert c_sn - sn == c_sn
     assert (c_sn ^ c_sa) == (sn | sa)

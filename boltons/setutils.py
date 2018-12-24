@@ -466,7 +466,7 @@ class _ComplementSet(object):
         assert type(missing) in (set, frozenset)
         self.missing = missing
 
-    def __repr__(self): return 'complement({})'.format(repr(self.missing))
+    def __repr__(self): return 'complement({0})'.format(repr(self.missing))
 
     def __contains__(self, item):
         return not item in self.missing
