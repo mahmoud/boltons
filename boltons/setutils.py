@@ -462,6 +462,8 @@ class _ComplementSet(object):
     '''
     helper class for complement() that implements the functions
     '''
+    __slots__ = 'missing',
+
     def __init__(self, missing):
         assert type(missing) in (set, frozenset)
         self.missing = missing
