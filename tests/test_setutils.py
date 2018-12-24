@@ -108,3 +108,8 @@ def test_complement_set():
     c_sn |= sa
     c_sn |= c_sa
     c_sn -= sa
+    c_sn.add(5)
+    c_sn.remove(5)
+    c_sn.update(sa)
+    c_sn.discard(sa)
+    c_sn.update(c_sa)

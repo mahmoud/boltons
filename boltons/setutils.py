@@ -516,10 +516,16 @@ class _ComplementSet(object):
             raise NotImplementedError
 
     def update(self, items):
-        self.missing.discard(items)
+        if type(items) is _ComplementSet:
+            self.missing &= items.missing
+        else:
+            self.missing.discard(items)
 
     def discard(self, items):
-        self.missing.update(items)
+        if type(items) is _ComplementSet:
+            raise NotImplementedError  # would result in positive set, use difference()
+        else:
+            self.missing.update(items)
 
     def symmetric_difference(self, other):
         if type(other) in (set, frozenset):
@@ -592,9 +598,10 @@ class _ComplementSet(object):
         if type(other) in (set, frozenset):
             self.missing |= other
         elif type(other) is _ComplementSet:
-            raise NotImplementedError  #TODO: nuts this result should be a regular set
+            raise NotImplementedError  # would result in regular set, use difference()
         else:
             raise NotImplementedError
+        return self
 
     __isub__ = difference_update
 
