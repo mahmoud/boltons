@@ -609,14 +609,3 @@ class _ComplementSet(object):
 
     def __iter__(self):
         raise NotImplementedError
-
-
-def test():
-    assert complement({1, 2}).union({1, 2}) == complement(set())
-    everything = complement(frozenset())
-    assert everything in everything  # https://en.wikipedia.org/wiki/Russell%27s_paradox
-
-
-if __name__ == "__main__":
-    test()
-

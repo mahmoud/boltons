@@ -71,7 +71,7 @@ def big_popper():
 def test_complement_set():
     '''exercises a bunch of code-paths but doesn't really confirm math identities'''
     assert complement(complement(set())) == set()
-    sn = {1, 2, 3}
+    sn = set([1, 2, 3])
     c_sn = complement(sn)
     sa = set('abc')
     c_sa = complement(sa)
@@ -98,6 +98,8 @@ def test_complement_set():
     assert c_sn - c_sa == sa
     assert c_sn - sn == c_sn
     assert (c_sn ^ c_sa) == (sn | sa)
+    everything = complement(frozenset())
+    assert everything in everything  # https://en.wikipedia.org/wiki/Russell%27s_paradox
     # destructive testing
     c_sn ^= sa
     c_sn ^= c_sa
