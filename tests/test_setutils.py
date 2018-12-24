@@ -77,6 +77,7 @@ def test_complement_set():
     c_sa = complement(sa)
     assert repr(sn) in repr(c_sn)
     # non-mutating tests
+    assert c_sn != c_sa
     assert complement(c_sn) == sn
     assert complement(c_sa) == sa
     assert 1 not in c_sn
@@ -113,3 +114,5 @@ def test_complement_set():
     c_sn.update(sa)
     c_sn.discard(sa)
     c_sn.update(c_sa)
+    c_sn.add(complement(frozenset()))  # frozen complement can be a member of complement set
+    assert len({complement(frozenset()): 1, complement(frozenset()): 2}) == 1  # hash works
