@@ -1,7 +1,13 @@
 # -*- coding: utf-8 -*-
 
-from boltons.setutils import IndexedSet, _MISSING, complement
+import platform
+
 from pytest import raises
+
+from boltons.setutils import IndexedSet, _MISSING, complement
+
+
+_IS_26 = platform.python_version().startswith('2.6')
 
 
 def test_indexed_set_basic():
@@ -84,10 +90,10 @@ def test_complement_set():
     assert 1 not in c_sn
     assert 'a' in c_sn
     assert not (c_sn < sn)  # complement never subset of set
-    assert not (sn < c_sn)
+    if not _IS_26: assert not (sn < c_sn)
     assert not (c_sn < sa)
     assert not (c_sn < c_sa)  # not subsets of each other
-    assert sa < c_sn
+    if not _IS_26: assert sa < c_sn
     assert c_sn < (c_sa | c_sn)
     assert (c_sa | c_sn) > c_sn
     assert c_sn > sa
