@@ -75,7 +75,7 @@ def test_complement_set():
     c_sn = complement(sn)
     sa = set('abc')
     c_sa = complement(sa)
-    repr(c_sn)
+    assert repr(sn) in repr(c_sn)
     # non-mutating tests
     assert complement(c_sn) == sn
     assert complement(c_sa) == sa
