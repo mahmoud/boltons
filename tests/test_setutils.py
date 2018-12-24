@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from boltons.setutils import IndexedSet, _MISSING, complement
+from pytest import raises
 
 
 def test_indexed_set_basic():
@@ -116,3 +117,6 @@ def test_complement_set():
     c_sn.update(c_sa)
     c_sn.add(complement(frozenset()))  # frozen complement can be a member of complement set
     assert len({complement(frozenset()): 1, complement(frozenset()): 2}) == 1  # hash works
+    with raises(NotImplementedError): c_sn.pop()
+    with raises(NotImplementedError): len(c_sn)
+    with raises(NotImplementedError): iter(c_sn)
