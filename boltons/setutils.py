@@ -516,7 +516,7 @@ class _ComplementSet(object):
     def intersection(self, other):
         if type(other) in (set, frozenset):
             inc, exc = other, None
-        elif type(other) is _ComplementSet
+        elif type(other) is _ComplementSet:
             inc, exc = other._included, other._excluded
         else:
             raise TypeError('argument must be another set or complement(set)')
@@ -536,7 +536,7 @@ class _ComplementSet(object):
     def __iand__(self, other):
         if type(other) in (set, frozenset):
             inc, exc = other, None
-        elif type(other) is _ComplementSet
+        elif type(other) is _ComplementSet:
             inc, exc = other._included, other._excluded
         else:
             raise TypeError('argument must be another set or complement(set)')
@@ -555,7 +555,7 @@ class _ComplementSet(object):
     def union(self, other):
         if type(other) in (set, frozenset):
             inc, exc = other, None
-        elif type(other) is _ComplementSet
+        elif type(other) is _ComplementSet:
             inc, exc = other._included, other._excluded
         else:
             raise TypeError('argument must be another set or complement(set)')
@@ -575,7 +575,7 @@ class _ComplementSet(object):
     def __ior__(self, other):
         if type(other) in (set, frozenset):
             inc, exc = other, None
-        elif type(other) is _ComplementSet
+        elif type(other) is _ComplementSet:
             inc, exc = other._included, other._excluded
         else:
             raise TypeError('argument must be another set or complement(set)')
@@ -593,7 +593,7 @@ class _ComplementSet(object):
     def update(self, items):
         if type(items) in (set, frozenset):
             inc, exc = items, None
-        elif type(items) is _ComplementSet
+        elif type(items) is _ComplementSet:
             inc, exc = items._included, items._excluded
         else:
             inc, exc = frozenset(items), None
@@ -612,7 +612,7 @@ class _ComplementSet(object):
     def discard(self, items):
         if type(items) in (set, frozenset):
             inc, exc = items, None
-        elif type(items) is _ComplementSet
+        elif type(items) is _ComplementSet:
             inc, exc = items._included, items._excluded
         else:
             inc, exc = frozenset(items), None
@@ -630,7 +630,7 @@ class _ComplementSet(object):
     def symmetric_difference(self, other):
         if type(other) in (set, frozenset):
             inc, exc = other, None
-        elif type(other) is _ComplementSet
+        elif type(other) is _ComplementSet:
             inc, exc = other._included, other._excluded
         else:
             raise TypeError('argument must be another set or complement(set)')
@@ -650,7 +650,7 @@ class _ComplementSet(object):
     def symmetric_difference_update(self, other):
         if type(other) in (set, frozenset):
             inc, exc = other, None
-        elif type(other) is _ComplementSet
+        elif type(other) is _ComplementSet:
             inc, exc = other._included, other._excluded
         else:
             raise TypeError('argument must be another set or complement(set)')
@@ -670,7 +670,7 @@ class _ComplementSet(object):
     def isdisjoint(self, other):
         if type(other) in (set, frozenset):
             inc, exc = other, None
-        elif type(other) is _ComplementSet
+        elif type(other) is _ComplementSet:
             inc, exc = other._included, other._excluded
         else:
             raise TypeError('argument must be another set or complement(set)')
@@ -689,7 +689,7 @@ class _ComplementSet(object):
         '''everything missing from other is also missing from self'''
         if type(other) in (set, frozenset):
             inc, exc = other, None
-        elif type(other) is _ComplementSet
+        elif type(other) is _ComplementSet:
             inc, exc = other._included, other._excluded
         else:
             raise TypeError('argument must be another set or complement(set)')
@@ -709,7 +709,7 @@ class _ComplementSet(object):
     def __lt__(self, other):
         if type(other) in (set, frozenset):
             inc, exc = other, None
-        elif type(other) is _ComplementSet
+        elif type(other) is _ComplementSet:
             inc, exc = other._included, other._excluded
         else:
             raise TypeError('argument must be another set or complement(set)')
@@ -728,7 +728,7 @@ class _ComplementSet(object):
         '''everything missing from self is also missing from super'''
         if type(other) in (set, frozenset):
             inc, exc = other, None
-        elif type(other) is _ComplementSet
+        elif type(other) is _ComplementSet:
             inc, exc = other._included, other._excluded
         else:
             raise TypeError('argument must be another set or complement(set)')
@@ -748,7 +748,7 @@ class _ComplementSet(object):
     def __gt__(self, other):
         if type(other) in (set, frozenset):
             inc, exc = other, None
-        elif type(other) is _ComplementSet
+        elif type(other) is _ComplementSet:
             inc, exc = other._included, other._excluded
         else:
             raise TypeError('argument must be another set or complement(set)')
@@ -766,7 +766,7 @@ class _ComplementSet(object):
     def difference(self, other):
         if type(other) in (set, frozenset):
             inc, exc = other, None
-        elif type(other) is _ComplementSet
+        elif type(other) is _ComplementSet:
             inc, exc = other._included, other._excluded
         else:
             raise TypeError('argument must be another set or complement(set)')
@@ -786,7 +786,7 @@ class _ComplementSet(object):
     def difference_update(self, other):
         if type(other) in (set, frozenset):
             inc, exc = other, None
-        elif type(other) is _ComplementSet
+        elif type(other) is _ComplementSet:
             inc, exc = other._included, other._excluded
         else:
             raise TypeError('argument must be another set or complement(set)')
@@ -807,7 +807,8 @@ class _ComplementSet(object):
         return (
             type(self) is type(other)
             and self._included == other._included
-            and self._excluded == other._excluded)
+            and self._excluded == other._excluded) or (
+            type(other) in (set, frozenset) and self._included == other)
 
     def __hash__(self):
         return hash(self._included) ^ hash(self._excluded)
