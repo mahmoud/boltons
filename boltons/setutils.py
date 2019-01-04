@@ -452,12 +452,11 @@ def complement(set_):
     a complement on the set
     '''
     if type(set_) is _ComplementSet:
-        if set_._included is None:
-
-        if type(set_.missing) is frozenset:
-            return set_.missing
-        return set(set_.missing) 
-    return _ComplementSet(set_)
+        return set_.complement()
+    if type(set_) is frozenset:
+        return _ComplementSet(excluded=set_)
+    else:
+        return _ComplementSet(excluded=set(set_))
 
 
 class _ComplementSet(object):
@@ -466,7 +465,7 @@ class _ComplementSet(object):
     '''
     __slots__ = ('_included', '_excluded')
 
-    def __init__(self, included, excluded):
+    def __init__(self, included=None, excluded=None):
         if included is None:
             assert type(excluded) in (set, frozenset)
         elif excluded is None:
@@ -543,12 +542,13 @@ class _ComplementSet(object):
             raise TypeError('argument must be another set or complement(set)')
         if self._included is None:
             if exc is None:  # - +
-                self._excluded = inc - self._excluded
+                self._excluded = inc - self._excluded  # TODO: do this in place?
             else:  # - -
                 self._excluded |= exc
         else:
             if inc is None:  # + -
-                self._included, self._excluded = None, self._included - exc
+                self._included -= exc
+                self._included, self._excluded = None, self._included
             else:  # + +
                 self._included &= inc
 
@@ -574,110 +574,250 @@ class _ComplementSet(object):
 
     def __ior__(self, other):
         if type(other) in (set, frozenset):
-            self.missing -= other
-        elif type(other) is _ComplementSet:
-            self.missing &= other.missing
+            inc, exc = other, None
+        elif type(other) is _ComplementSet
+            inc, exc = other._included, other._excluded
         else:
-            raise NotImplementedError
+            raise TypeError('argument must be another set or complement(set)')
+        if self._included is None:
+            if exc is None:  # - +
+                self._excluded -= inc
+            else:  # - -
+                self._excluded &= exc
+        else:
+            if inc is None:  # + -
+                self._included, self._excluded = None, exc - self._included   # TODO: do this in place?
+            else:  # + +
+                self._included |= inc
 
     def update(self, items):
-        if type(items) is _ComplementSet:
-            self.missing &= items.missing
+        if type(items) in (set, frozenset):
+            inc, exc = items, None
+        elif type(items) is _ComplementSet
+            inc, exc = items._included, items._excluded
         else:
-            self.missing.discard(items)
+            inc, exc = frozenset(items), None
+        if self._included is None:
+            if exc is None:  # - +
+                self._excluded &= inc
+            else:  # - -
+                self._excluded.discard(exc)
+        else:
+            if inc is None:  # + -
+                self._included &= exc
+                self._included, self._excluded = None, self._excluded
+            else:  # + +
+                self._included.update(inc)
 
     def discard(self, items):
-        if type(items) is _ComplementSet:
-            raise NotImplementedError  # would result in positive set, use difference()
+        if type(items) in (set, frozenset):
+            inc, exc = items, None
+        elif type(items) is _ComplementSet
+            inc, exc = items._included, items._excluded
         else:
-            self.missing.update(items)
+            inc, exc = frozenset(items), None
+        if self._included is None:
+            if exc is None:  # - +
+                self._excluded.update(inc)
+            else:  # - -
+                self._included, self._excluded = exc - self._excluded, None
+        else:
+            if inc is None:  # + -
+                self._included &= exc
+            else:  # + +
+                self._included.discard(inc)
 
     def symmetric_difference(self, other):
         if type(other) in (set, frozenset):
-            return _ComplementSet(self.missing.union(other))
-        if type(other) is _ComplementSet:
-            return self.missing.symmetric_difference(other.missing)
-        raise NotImplementedError
+            inc, exc = other, None
+        elif type(other) is _ComplementSet
+            inc, exc = other._included, other._excluded
+        else:
+            raise TypeError('argument must be another set or complement(set)')
+        if self._included is None:
+            if exc is None:  # - +
+                return _ComplementSet(excluded=self._excluded.union(inc))
+            else:  # - -
+                return _ComplementSet(excluded=self._excluded.symmetric_difference(exc))
+        else:
+            if inc is None:  # + -
+                return _ComplementSet(excluded=self._included.union(exc))
+            else:  # + +
+                return _ComplementSet(included=self._included.symmetric_difference(inc))
 
     __xor__ = __rxor__ = symmetric_difference
 
-    def symmetric_difference_udpate(self, other):
+    def symmetric_difference_update(self, other):
         if type(other) in (set, frozenset):
-            self.missing |= other
-        elif type(other) is _ComplementSet:
-            raise NotImplementedError  # this should be a regular set
+            inc, exc = other, None
+        elif type(other) is _ComplementSet
+            inc, exc = other._included, other._excluded
         else:
-            raise NotImplementedError
+            raise TypeError('argument must be another set or complement(set)')
+        if self._included is None:
+            if exc is None:  # - +
+                self._excluded |= inc
+            else:  # - -
+                self._excluded.symmetric_difference_update(exc)
+                self._included, self._excluded = self._excluded, None
+        else:
+            if inc is None:  # + -
+                self._included |= exc
+                self._included, self._excluded = None, self._included
+            else:  # + +
+                self._included.symmetric_difference_update(inc)
 
     def isdisjoint(self, other):
         if type(other) in (set, frozenset):
-            return other.issubset(self.missing)
-        if type(other) is _ComplementSet:
-            return False
-        raise NotImplementedError
+            inc, exc = other, None
+        elif type(other) is _ComplementSet
+            inc, exc = other._included, other._excluded
+        else:
+            raise TypeError('argument must be another set or complement(set)')
+        if self._included is None:
+            if exc is None:  # - +
+                return inc.issubset(self._excluded)
+            else:  # - -
+                return False
+        else:
+            if inc is None:  # + -
+                return self._included.issubset(exc)
+            else:  # + +
+                return self._included.isdisjoint(inc)
 
     def issubset(self, other):
         '''everything missing from other is also missing from self'''
         if type(other) in (set, frozenset):
-            return False
-        if type(other) is _ComplementSet:
-            return self.missing.issupserset(other.missing)
-        raise NotImplementedError
+            inc, exc = other, None
+        elif type(other) is _ComplementSet
+            inc, exc = other._included, other._excluded
+        else:
+            raise TypeError('argument must be another set or complement(set)')
+        if self._included is None:
+            if exc is None:  # - +
+                return False
+            else:  # - -
+                return self._excluded.issupserset(exc)
+        else:
+            if inc is None:  # + -
+                return self._included.isdisjoint(exc)
+            else:  # + +
+                return self._included.issubset(inc)
 
     __le__ = issubset
 
     def __lt__(self, other):
         if type(other) in (set, frozenset):
-            return False
-        if type(other) is _ComplementSet:
-            return self.missing > other.missing
-        raise NotImplementedError
+            inc, exc = other, None
+        elif type(other) is _ComplementSet
+            inc, exc = other._included, other._excluded
+        else:
+            raise TypeError('argument must be another set or complement(set)')
+        if self._included is None:
+            if exc is None:  # - +
+                return False
+            else:  # - -
+                return self._excluded > exc
+        else:
+            if inc is None:  # + -
+                return self._included.isdisjoint(exc)
+            else:  # + +
+                return self._included < inc
 
     def issuperset(self, other):
         '''everything missing from self is also missing from super'''
         if type(other) in (set, frozenset):
-            return not self.missing.intersection(other)
-        if type(other) is _ComplementSet:
-            return self.missing.issubset(other.missing)
-        raise NotImplementedError
+            inc, exc = other, None
+        elif type(other) is _ComplementSet
+            inc, exc = other._included, other._excluded
+        else:
+            raise TypeError('argument must be another set or complement(set)')
+        if self._included is None:
+            if exc is None:  # - +
+                return not self._excluded.intersection(inc)
+            else:  # - -
+                return self._excluded.issubset(exc)
+        else:
+            if inc is None:  # + -
+                return False
+            else:  # + +
+                return self._included.issupserset(inc)
 
     __ge__ = issuperset
 
     def __gt__(self, other):
         if type(other) in (set, frozenset):
-            return not self.missing.intersection(other)
-        if type(other) is _ComplementSet:
-            return self.missing < other.missing
-        raise NotImplementedError
+            inc, exc = other, None
+        elif type(other) is _ComplementSet
+            inc, exc = other._included, other._excluded
+        else:
+            raise TypeError('argument must be another set or complement(set)')
+        if self._included is None:
+            if exc is None:  # - +
+                return not self._excluded.intersection(inc)
+            else:  # - -
+                return self._excluded < exc
+        else:
+            if inc is None:  # + -
+                return False
+            else:  # + +
+                return self._included > inc
 
     def difference(self, other):
         if type(other) in (set, frozenset):
-            return _ComplementSet(self.missing | other)
-        if type(other) is _ComplementSet:
-            return other.missing - self.missing
-        raise NotImplementedError
+            inc, exc = other, None
+        elif type(other) is _ComplementSet
+            inc, exc = other._included, other._excluded
+        else:
+            raise TypeError('argument must be another set or complement(set)')
+        if self._included is None:
+            if exc is None:  # - +
+                return _ComplementSet(excluded=self._excluded | inc)
+            else:  # - -
+                return _ComplementSet(included=exc - self._excluded)
+        else:
+            if inc is None:  # + -
+                return _ComplementSet(included=self._included & exc)
+            else:  # + +
+                return _ComplementSet(included=self._included.difference(inc))
 
     __sub__ = difference
 
     def difference_update(self, other):
         if type(other) in (set, frozenset):
-            self.missing |= other
-        elif type(other) is _ComplementSet:
-            raise NotImplementedError  # would result in regular set, use difference()
+            inc, exc = other, None
+        elif type(other) is _ComplementSet
+            inc, exc = other._included, other._excluded
         else:
-            raise NotImplementedError
-        return self
+            raise TypeError('argument must be another set or complement(set)')
+        if self._included is None:
+            if exc is None:  # - +
+                self._excluded |= inc
+            else:  # - -
+                self._included, self._excluded = exc - self._excluded, None
+        else:
+            if inc is None:  # + -
+                self._included &= exc
+            else:  # + +
+                self._included.difference_update(inc)
 
     __isub__ = difference_update
 
     def __eq__(self, other):
-        return type(self) is type(other) and self.missing == other.missing
+        return (
+            type(self) is type(other)
+            and self._included == other._included
+            and self._excluded == other._excluded)
 
     def __hash__(self):
-        return hash(self.missing)
+        return hash(self._included) ^ hash(self._excluded)
 
     def __len__(self):
-        raise NotImplementedError  # float('inf') - len(self.missing)
+        if self._included:
+            return len(self._included)
+        return float('inf')  # length of universal set is infinity?
 
     def __iter__(self):
-        raise NotImplementedError
+        if self._included:
+            return iter(self._included)
+        raise ValueError('cannot iterate over complement set')
