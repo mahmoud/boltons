@@ -78,54 +78,58 @@ def big_popper():
 def test_complement_set():
     '''exercises a bunch of code-paths but doesn't really confirm math identities'''
     assert complement(complement(set())) == set()
-    sn = set([1, 2, 3])
-    c_sn = complement(sn)
-    sa = set('abc')
-    c_sa = complement(sa)
-    assert repr(sn) in repr(c_sn)
+    sab = set('ab')
+    sbc = set('bc')
+    cab = complement('ab')
+    cbc = complement('bc')
+    cc = complement('c')
+    sc = set('c')
+    u = complement(set())
+    assert repr(sab) in repr(cab)
     # non-mutating tests
-    assert c_sn != c_sa
-    assert complement(c_sn) == sn
-    assert complement(c_sa) == sa
-    assert 1 not in c_sn
-    assert 'a' in c_sn
-    assert not (c_sn < sn)  # complement never subset of set
-    if not _IS_26: assert not (sn < c_sn)
-    assert not (c_sn < sa)
-    assert not (c_sn < c_sa)  # not subsets of each other
-    if not _IS_26: assert sa < c_sn
-    assert c_sn < (c_sa | c_sn)
-    assert (c_sa | c_sn) > c_sn
-    assert c_sn > sa
-    assert not (c_sn > sn)
-    assert not c_sn.isdisjoint(c_sa)  # complements never disjoint
-    assert c_sn.isdisjoint(sn)
-    assert not c_sn.isdisjoint(sa)
-    assert (c_sn | sn) == complement(set())
-    assert (c_sn | c_sa) == complement(set())
-    assert (sn | c_sn) == (c_sn | sn)
-    assert (sn & c_sn) == (c_sn & sn)
-    assert (sn ^ c_sn) == (c_sn ^ sn)
-    assert c_sn - c_sa == sa
-    assert c_sn - sn == c_sn
-    assert (c_sn ^ c_sa) == (sn | sa)
+    assert cab != cbc
+    assert complement(cab) == sab
+    assert complement(cbc) == sbc
+    assert 'a' not in cab
+    assert 'c' in cab
+    assert not (cab < sab)  # complement never subset of set
+    if not _IS_26: assert not (sab < cab)
+    assert not (cbc < sab)
+    assert not (cbc < cab)  # not subsets of each other
+    if not _IS_26: assert sab < cc
+    assert cab < (cab | cbc)
+    assert (cab | cbc) > cab
+    assert cc > sab
+    assert not (cab > sab)
+    assert not cab.isdisjoint(cc)  # complements never disjoint
+    assert cab.isdisjoint(sab)
+    assert not cab.isdisjoint(sc)
+    assert (cab | sab) == u
+    assert (cab | cc) == u
+    assert (cab | cbc) == complement('b')
+    assert (sab | cab) == (cbc | sbc)
+    assert (sab & cab) == (cbc & sbc)
+    assert (sab ^ cab) == (cbc ^ sbc)
+    assert cab - cc == sc
+    assert cab - sab == cab
+    assert (cab ^ cbc | set('b')) == (sab | sbc)
     everything = complement(frozenset())
     assert everything in everything  # https://en.wikipedia.org/wiki/Russell%27s_paradox
     # destructive testing
-    c_sn ^= sa
-    c_sn ^= c_sa
-    c_sn &= sa
-    c_sn &= c_sa
-    c_sn |= sa
-    c_sn |= c_sa
-    c_sn -= sa
-    c_sn.add(5)
-    c_sn.remove(5)
-    c_sn.update(sa)
-    c_sn.discard(sa)
-    c_sn.update(c_sa)
-    c_sn.add(complement(frozenset()))  # frozen complement can be a member of complement set
+    cab ^= sab
+    cab ^= sab
+    cab &= sab
+    cab &= cbc
+    cab |= sab
+    cab |= cbc
+    cab -= sab
+    cab.add(5)
+    cab.remove(5)
+    cab.update(sab)
+    cab.discard(sab)
+    cab.update(cbc)
+    cab.add(complement(frozenset()))  # frozen complement can be a member of complement set
     assert len({complement(frozenset()): 1, complement(frozenset()): 2}) == 1  # hash works
-    with raises(NotImplementedError): c_sn.pop()
-    with raises(NotImplementedError): len(c_sn)
-    with raises(NotImplementedError): iter(c_sn)
+    with raises(NotImplementedError): cab.pop()
+    with raises(NotImplementedError): len(cab)
+    with raises(NotImplementedError): iter(cab)

@@ -498,7 +498,8 @@ class _ComplementSet(object):
 
     def add(self, item):
         if self._included is None:
-            self._excluded.remove(item)
+            if item in self._excluded:
+                self._excluded.remove(item)
         else:
             self._included.add(item)
 
@@ -551,6 +552,7 @@ class _ComplementSet(object):
                 self._included, self._excluded = None, self._included
             else:  # + +
                 self._included &= inc
+        return self
 
     def union(self, other):
         if type(other) in (set, frozenset):
@@ -589,6 +591,7 @@ class _ComplementSet(object):
                 self._included, self._excluded = None, exc - self._included   # TODO: do this in place?
             else:  # + +
                 self._included |= inc
+        return self
 
     def update(self, items):
         if type(items) in (set, frozenset):
@@ -636,12 +639,12 @@ class _ComplementSet(object):
             raise TypeError('argument must be another set or complement(set)')
         if self._included is None:
             if exc is None:  # - +
-                return _ComplementSet(excluded=self._excluded.union(inc))
+                return _ComplementSet(excluded=self._excluded - inc)
             else:  # - -
-                return _ComplementSet(excluded=self._excluded.symmetric_difference(exc))
+                return _ComplementSet(included=self._excluded.symmetric_difference(exc))
         else:
             if inc is None:  # + -
-                return _ComplementSet(excluded=self._included.union(exc))
+                return _ComplementSet(excluded=exc - self._included)
             else:  # + +
                 return _ComplementSet(included=self._included.symmetric_difference(inc))
 
@@ -800,6 +803,7 @@ class _ComplementSet(object):
                 self._included &= exc
             else:  # + +
                 self._included.difference_update(inc)
+        return self
 
     __isub__ = difference_update
 
