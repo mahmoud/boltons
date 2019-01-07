@@ -459,6 +459,28 @@ def complement(set_):
         return _ComplementSet(excluded=set(set_))
 
 
+def _norm_args_typeerror(other):
+    '''normalize args and raise type-error if there is a problem'''
+    if type(other) in (set, frozenset):
+        inc, exc = other, None
+    elif type(other) is _ComplementSet:
+        inc, exc = other._included, other._excluded
+    else:
+        raise TypeError('argument must be another set or complement(set)')
+    return inc, exc
+
+
+def _norm_args_notimplemented(other):
+    '''normalize args and return NotImplemented (for overloaded operators)'''
+    if type(other) in (set, frozenset):
+        inc, exc = other, None
+    elif type(other) is _ComplementSet:
+        inc, exc = other._included, other._excluded
+    else:
+        return NotImplemented
+    return inc, exc
+
+
 class _ComplementSet(object):
     '''
     helper class for complement() that implements the set methods
@@ -515,12 +537,13 @@ class _ComplementSet(object):
         return self._included.pop()
 
     def intersection(self, other):
-        if type(other) in (set, frozenset):
-            inc, exc = other, None
-        elif type(other) is _ComplementSet:
-            inc, exc = other._included, other._excluded
-        else:
+        try:
+            return self & other
+        except NotImplementedError:
             raise TypeError('argument must be another set or complement(set)')
+
+    def __and__(self, other):
+        inc, exc = _norm_args_notimplemented(other)
         if self._included is None:
             if exc is None:  # - +
                 return _ComplementSet(included=inc - self._excluded)
@@ -532,15 +555,10 @@ class _ComplementSet(object):
             else:  # + +
                 return _ComplementSet(included=self._included.intersection(inc))
 
-    __and__ = __rand__ = intersection
+    __rand__ = __and__
 
     def __iand__(self, other):
-        if type(other) in (set, frozenset):
-            inc, exc = other, None
-        elif type(other) is _ComplementSet:
-            inc, exc = other._included, other._excluded
-        else:
-            raise TypeError('argument must be another set or complement(set)')
+        inc, exc = _norm_args_notimplemented(other)
         if self._included is None:
             if exc is None:  # - +
                 self._excluded = inc - self._excluded  # TODO: do this in place?
@@ -555,12 +573,13 @@ class _ComplementSet(object):
         return self
 
     def union(self, other):
-        if type(other) in (set, frozenset):
-            inc, exc = other, None
-        elif type(other) is _ComplementSet:
-            inc, exc = other._included, other._excluded
-        else:
+        try:
+            return self | other
+        except NotImplementedError:
             raise TypeError('argument must be another set or complement(set)')
+
+    def __or__(self, other):
+        inc, exc = _norm_args_notimplemented(other)
         if self._included is None:
             if exc is None:  # - +
                 return _ComplementSet(excluded=self._excluded - inc)
@@ -572,15 +591,10 @@ class _ComplementSet(object):
             else:  # + +
                 return _ComplementSet(included=self._included.union(inc))
 
-    __or__ = __ror__ = union
+    __ror__ = __or__
 
     def __ior__(self, other):
-        if type(other) in (set, frozenset):
-            inc, exc = other, None
-        elif type(other) is _ComplementSet:
-            inc, exc = other._included, other._excluded
-        else:
-            raise TypeError('argument must be another set or complement(set)')
+        inc, exc = _norm_args_notimplemented(other)
         if self._included is None:
             if exc is None:  # - +
                 self._excluded -= inc
@@ -631,12 +645,13 @@ class _ComplementSet(object):
                 self._included.discard(inc)
 
     def symmetric_difference(self, other):
-        if type(other) in (set, frozenset):
-            inc, exc = other, None
-        elif type(other) is _ComplementSet:
-            inc, exc = other._included, other._excluded
-        else:
+        try:
+            return self ^ other
+        except NotImplementedError:
             raise TypeError('argument must be another set or complement(set)')
+
+    def __xor__(self, other):
+        inc, exc = _norm_args_notimplemented(other)
         if self._included is None:
             if exc is None:  # - +
                 return _ComplementSet(excluded=self._excluded - inc)
@@ -648,15 +663,10 @@ class _ComplementSet(object):
             else:  # + +
                 return _ComplementSet(included=self._included.symmetric_difference(inc))
 
-    __xor__ = __rxor__ = symmetric_difference
+    __rxor__ = __xor__
 
     def symmetric_difference_update(self, other):
-        if type(other) in (set, frozenset):
-            inc, exc = other, None
-        elif type(other) is _ComplementSet:
-            inc, exc = other._included, other._excluded
-        else:
-            raise TypeError('argument must be another set or complement(set)')
+        inc, exc = _norm_args_typeerror(other)
         if self._included is None:
             if exc is None:  # - +
                 self._excluded |= inc
@@ -671,12 +681,7 @@ class _ComplementSet(object):
                 self._included.symmetric_difference_update(inc)
 
     def isdisjoint(self, other):
-        if type(other) in (set, frozenset):
-            inc, exc = other, None
-        elif type(other) is _ComplementSet:
-            inc, exc = other._included, other._excluded
-        else:
-            raise TypeError('argument must be another set or complement(set)')
+        inc, exc = _norm_args_typeerror(other)
         if self._included is None:
             if exc is None:  # - +
                 return inc.issubset(self._excluded)
@@ -690,12 +695,13 @@ class _ComplementSet(object):
 
     def issubset(self, other):
         '''everything missing from other is also missing from self'''
-        if type(other) in (set, frozenset):
-            inc, exc = other, None
-        elif type(other) is _ComplementSet:
-            inc, exc = other._included, other._excluded
-        else:
+        try:
+            return self <= other
+        except NotImplementedError:
             raise TypeError('argument must be another set or complement(set)')
+
+    def __le__(self, other):
+        inc, exc = _norm_args_notimplemented(other)
         if self._included is None:
             if exc is None:  # - +
                 return False
@@ -707,15 +713,8 @@ class _ComplementSet(object):
             else:  # + +
                 return self._included.issubset(inc)
 
-    __le__ = issubset
-
     def __lt__(self, other):
-        if type(other) in (set, frozenset):
-            inc, exc = other, None
-        elif type(other) is _ComplementSet:
-            inc, exc = other._included, other._excluded
-        else:
-            raise TypeError('argument must be another set or complement(set)')
+        inc, exc = _norm_args_notimplemented(other)
         if self._included is None:
             if exc is None:  # - +
                 return False
@@ -729,12 +728,13 @@ class _ComplementSet(object):
 
     def issuperset(self, other):
         '''everything missing from self is also missing from super'''
-        if type(other) in (set, frozenset):
-            inc, exc = other, None
-        elif type(other) is _ComplementSet:
-            inc, exc = other._included, other._excluded
-        else:
+        try:
+            return self >= other
+        except NotImplementedError:
             raise TypeError('argument must be another set or complement(set)')
+
+    def __ge__(self, other):
+        inc, exc = _norm_args_notimplemented(other)
         if self._included is None:
             if exc is None:  # - +
                 return not self._excluded.intersection(inc)
@@ -746,15 +746,8 @@ class _ComplementSet(object):
             else:  # + +
                 return self._included.issupserset(inc)
 
-    __ge__ = issuperset
-
     def __gt__(self, other):
-        if type(other) in (set, frozenset):
-            inc, exc = other, None
-        elif type(other) is _ComplementSet:
-            inc, exc = other._included, other._excluded
-        else:
-            raise TypeError('argument must be another set or complement(set)')
+        inc, exc = _norm_args_notimplemented(other)
         if self._included is None:
             if exc is None:  # - +
                 return not self._excluded.intersection(inc)
@@ -767,12 +760,13 @@ class _ComplementSet(object):
                 return self._included > inc
 
     def difference(self, other):
-        if type(other) in (set, frozenset):
-            inc, exc = other, None
-        elif type(other) is _ComplementSet:
-            inc, exc = other._included, other._excluded
-        else:
+        try:
+            return self - other
+        except NotImplementedError:
             raise TypeError('argument must be another set or complement(set)')
+
+    def __sub__(self, other):
+        inc, exc = _norm_args_notimplemented(other)
         if self._included is None:
             if exc is None:  # - +
                 return _ComplementSet(excluded=self._excluded | inc)
@@ -784,15 +778,14 @@ class _ComplementSet(object):
             else:  # + +
                 return _ComplementSet(included=self._included.difference(inc))
 
-    __sub__ = difference
-
     def difference_update(self, other):
-        if type(other) in (set, frozenset):
-            inc, exc = other, None
-        elif type(other) is _ComplementSet:
-            inc, exc = other._included, other._excluded
-        else:
+        try:
+            self -= other
+        except NotImplementedError:
             raise TypeError('argument must be another set or complement(set)')
+
+    def __isub__(self, other):
+        inc, exc = _norm_args_notimplemented(other)
         if self._included is None:
             if exc is None:  # - +
                 self._excluded |= inc
@@ -804,8 +797,6 @@ class _ComplementSet(object):
             else:  # + +
                 self._included.difference_update(inc)
         return self
-
-    __isub__ = difference_update
 
     def __eq__(self, other):
         return (
@@ -820,9 +811,9 @@ class _ComplementSet(object):
     def __len__(self):
         if self._included:
             return len(self._included)
-        return float('inf')  # length of universal set is infinity?
+        raise NotImplementedError('complemented sets have undefined length')
 
     def __iter__(self):
         if self._included:
             return iter(self._included)
-        raise ValueError('cannot iterate over complement set')
+        raise NotImplementedError('complemented sets have undefined contents')
