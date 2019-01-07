@@ -595,6 +595,57 @@ def unique_iter(src, key=None):
     return
 
 
+def redundant(src, key=None, distinct=False, sort=True):
+    """The complement of unique(), returns non-unique values. Pass
+    distinct=True to get a list of the *first* redundant value for
+    each key. Results are sorted by default.
+
+    >>> redundant(range(5))
+    []
+    >>> redundant([1, 2, 3, 2, 3, 3])
+    [[2, 2], [3, 3, 3]]
+    >>> redundant([1, 2, 3, 2, 3, 3], distinct=True)
+    [2, 3]
+    >>> redundant(['hi', 'Hi', 'HI', 'hello'], key=str.lower)
+    [['hi', 'Hi', 'HI']]
+    >>> redundant(['hi', 'Hi', 'HI', 'hello'], distinct=True, key=str.lower)
+    ['Hi']
+
+    .. note::
+
+       This output of this function is designed for reporting
+       duplicates in contexts when a unique input is desired. Due to
+       the more-powerful return type, however, there is no
+       streaming equivalent of this function.
+
+    """
+    if key is None:
+        pass
+    elif callable(key):
+        key_func = key
+    elif isinstance(key, basestring):
+        key_func = lambda x: getattr(x, key, x)
+    else:
+        raise TypeError('"key" expected a string or callable, not %r' % key)
+    seen = {}  # key to first seen item
+    redundant_seen = {}
+    for i in src:
+        k = key_func(i) if key else i
+        if k not in seen:
+            seen[k] = i
+        else:
+            if k in redundant_seen:
+                if not distinct:
+                    redundant_seen[k].append(i)
+            else:
+                redundant_seen[k] = [seen[k], i]
+    if distinct:
+        ret = [r[1] for r in redundant_seen.values()]
+    else:
+        ret = redundant_seen.values()
+    return sorted(ret) if sort else ret
+
+
 def one(src, default=None, key=None):
     """Along the same lines as builtins, :func:`all` and :func:`any`, and
     similar to :func:`first`, ``one()`` returns the single object in
