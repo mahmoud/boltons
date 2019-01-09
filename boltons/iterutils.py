@@ -595,28 +595,38 @@ def unique_iter(src, key=None):
     return
 
 
-def redundant(src, key=None, distinct=False, sort=True):
-    """The complement of unique(), returns non-unique values. Pass
-    distinct=True to get a list of the *first* redundant value for
-    each key. Results are sorted by default.
+def redundant(src, key=None, groups=False):
+    """The complement of :func:`unique()`.
 
-    >>> redundant(range(5))
+    By default returns non-unique values as a list of the *first*
+    redundant value in *src*. Pass ``groups=True`` to get groups of
+    all values with redundancies, ordered by position of the first
+    redundant value. This is useful in conjunction with some
+    normalizing *key* function.
+
+    >>> redundant([1, 2, 3, 4])
     []
-    >>> redundant([1, 2, 3, 2, 3, 3])
-    [[2, 2], [3, 3, 3]]
-    >>> redundant([1, 2, 3, 2, 3, 3], distinct=True)
+    >>> redundant([1, 2, 3, 2, 3, 3, 4])
     [2, 3]
+    >>> redundant([1, 2, 3, 2, 3, 3, 4], groups=True)
+    [[2, 2], [3, 3, 3]]
+
+    An example using a *key* function to do case-insensitive
+    redundancy detection.
+
     >>> redundant(['hi', 'Hi', 'HI', 'hello'], key=str.lower)
-    [['hi', 'Hi', 'HI']]
-    >>> redundant(['hi', 'Hi', 'HI', 'hello'], distinct=True, key=str.lower)
     ['Hi']
+    >>> redundant(['hi', 'Hi', 'HI', 'hello'], groups=True, key=str.lower)
+    [['hi', 'Hi', 'HI']]
+
+    *key* should also be used when the values in *src* are not hashable.
 
     .. note::
 
        This output of this function is designed for reporting
        duplicates in contexts when a unique input is desired. Due to
-       the more-powerful return type, however, there is no
-       streaming equivalent of this function.
+       the grouped return type, there is no streaming equivalent of
+       this function at this time.
 
     """
     if key is None:
@@ -628,22 +638,24 @@ def redundant(src, key=None, distinct=False, sort=True):
     else:
         raise TypeError('"key" expected a string or callable, not %r' % key)
     seen = {}  # key to first seen item
-    redundant_seen = {}
+    redundant_order = []
+    redundant_groups = {}
     for i in src:
         k = key_func(i) if key else i
         if k not in seen:
             seen[k] = i
         else:
-            if k in redundant_seen:
-                if not distinct:
-                    redundant_seen[k].append(i)
+            if k in redundant_groups:
+                if groups:
+                    redundant_groups[k].append(i)
             else:
-                redundant_seen[k] = [seen[k], i]
-    if distinct:
-        ret = [r[1] for r in redundant_seen.values()]
+                redundant_order.append(k)
+                redundant_groups[k] = [seen[k], i]
+    if not groups:
+        ret = [redundant_groups[k][1] for k in redundant_order]
     else:
-        ret = redundant_seen.values()
-    return sorted(ret) if sort else ret
+        ret = [redundant_groups[k] for k in redundant_order]
+    return ret
 
 
 def one(src, default=None, key=None):
