@@ -626,7 +626,7 @@ def redundant(src, key=None, groups=False):
        This output of this function is designed for reporting
        duplicates in contexts when a unique input is desired. Due to
        the grouped return type, there is no streaming equivalent of
-       this function at this time.
+       this function for the time being.
 
     """
     if key is None:

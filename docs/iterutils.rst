@@ -3,6 +3,10 @@
 
 .. automodule:: boltons.iterutils
 
+.. contents:: Sections
+   :depth: 3
+   :local:
+
 .. _iteration:
 
 Iteration
