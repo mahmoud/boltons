@@ -136,3 +136,20 @@ def test_complement_set():
     ~cab
     cab.complement()
     cab.complemented()
+    class OpOverloader(object):
+        # tests that operators properly return NotImplemented so they will defer to
+        # another class implementation if available
+        def __and__(self, other): return self
+        __rand__ = __iand__ = __or__ = __ror__ = __ior__ = __xor__ = __rxor__ = __sub__ = __isub__ = __and__
+        def __le__(self, other): return True
+        __lt__ = __ge__ = __gt__ = __le__
+
+    ops = OpOverloader()
+    def opsmash(a, b):
+        a &= b; a |= b; a -= b; a ^= b
+        a > b; a >= b; a < b; a <= b
+        return (((a & b) | b) - b) ^ b
+
+    with raises(TypeError): opsmash(cab, object())
+    assert opsmash(ops, cab) == ops
+    assert opsmash(cab, ops) == ops

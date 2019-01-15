@@ -510,7 +510,7 @@ def _norm_args_notimplemented(other):
     elif type(other) is _ComplementSet:
         inc, exc = other._included, other._excluded
     else:
-        return NotImplemented
+        return NotImplemented, None
     return inc, exc
 
 
@@ -579,6 +579,8 @@ class _ComplementSet(object):
 
     def __and__(self, other):
         inc, exc = _norm_args_notimplemented(other)
+        if inc is NotImplemented:
+            return NotImplemented
         if self._included is None:
             if exc is None:  # - +
                 return _ComplementSet(included=inc - self._excluded)
@@ -594,6 +596,8 @@ class _ComplementSet(object):
 
     def __iand__(self, other):
         inc, exc = _norm_args_notimplemented(other)
+        if inc is NotImplemented:
+            return NotImplemented
         if self._included is None:
             if exc is None:  # - +
                 self._excluded = inc - self._excluded  # TODO: do this in place?
@@ -615,6 +619,8 @@ class _ComplementSet(object):
 
     def __or__(self, other):
         inc, exc = _norm_args_notimplemented(other)
+        if inc is NotImplemented:
+            return NotImplemented
         if self._included is None:
             if exc is None:  # - +
                 return _ComplementSet(excluded=self._excluded - inc)
@@ -630,6 +636,8 @@ class _ComplementSet(object):
 
     def __ior__(self, other):
         inc, exc = _norm_args_notimplemented(other)
+        if inc is NotImplemented:
+            return NotImplemented
         if self._included is None:
             if exc is None:  # - +
                 self._excluded -= inc
@@ -687,6 +695,10 @@ class _ComplementSet(object):
 
     def __xor__(self, other):
         inc, exc = _norm_args_notimplemented(other)
+        if inc is NotImplemented:
+            return NotImplemented
+        if inc is NotImplemented:
+            return NotImplemented
         if self._included is None:
             if exc is None:  # - +
                 return _ComplementSet(excluded=self._excluded - inc)
@@ -717,6 +729,8 @@ class _ComplementSet(object):
 
     def isdisjoint(self, other):
         inc, exc = _norm_args_typeerror(other)
+        if inc is NotImplemented:
+            return NotImplemented
         if self._included is None:
             if exc is None:  # - +
                 return inc.issubset(self._excluded)
@@ -737,6 +751,10 @@ class _ComplementSet(object):
 
     def __le__(self, other):
         inc, exc = _norm_args_notimplemented(other)
+        if inc is NotImplemented:
+            return NotImplemented
+        if inc is NotImplemented:
+            return NotImplemented
         if self._included is None:
             if exc is None:  # - +
                 return False
@@ -750,6 +768,10 @@ class _ComplementSet(object):
 
     def __lt__(self, other):
         inc, exc = _norm_args_notimplemented(other)
+        if inc is NotImplemented:
+            return NotImplemented
+        if inc is NotImplemented:
+            return NotImplemented
         if self._included is None:
             if exc is None:  # - +
                 return False
@@ -770,6 +792,8 @@ class _ComplementSet(object):
 
     def __ge__(self, other):
         inc, exc = _norm_args_notimplemented(other)
+        if inc is NotImplemented:
+            return NotImplemented
         if self._included is None:
             if exc is None:  # - +
                 return not self._excluded.intersection(inc)
@@ -783,6 +807,8 @@ class _ComplementSet(object):
 
     def __gt__(self, other):
         inc, exc = _norm_args_notimplemented(other)
+        if inc is NotImplemented:
+            return NotImplemented
         if self._included is None:
             if exc is None:  # - +
                 return not self._excluded.intersection(inc)
@@ -802,6 +828,8 @@ class _ComplementSet(object):
 
     def __sub__(self, other):
         inc, exc = _norm_args_notimplemented(other)
+        if inc is NotImplemented:
+            return NotImplemented
         if self._included is None:
             if exc is None:  # - +
                 return _ComplementSet(excluded=self._excluded | inc)
@@ -821,6 +849,8 @@ class _ComplementSet(object):
 
     def __isub__(self, other):
         inc, exc = _norm_args_notimplemented(other)
+        if inc is NotImplemented:
+            return NotImplemented
         if self._included is None:
             if exc is None:  # - +
                 self._excluded |= inc
