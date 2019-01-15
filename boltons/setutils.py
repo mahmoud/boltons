@@ -450,9 +450,42 @@ def complement(set_):
     to work out in your head the proper way
     to invert an expression, you can just throw
     a complement on the set
+
+    as one concrete example, consider a name filter object:
+
+    class NamesFilter:
+        def __init__(self, allowed):
+            self._allowed = allowed
+        def filtereself, names):
+            return [name for name in names if name in self._allowed]
+
+    NamesFilter({'alice', 'bob'}).filter(['alice', 'bob', 'carol'])
+    >>> ['alice', 'bob']
+
+    What if we want to just express "let all the names through"?
+    
+    We could try to enumerate all of the expected names:
+
+    NamesFilter({'alice', 'bob', 'carol'})
+    
+    But this is very brittle -- what if at some point over this
+    objects life it gets asked to filter ['alice', 'bob', 'carol', 'dan']?
+
+    Even worse, what about the poor programmer who next works
+    on this piece of code?  They cannot tell whether the purpose
+    of the large allowed set was "allow everything", or if 'dan'
+    was excluded for some subtle reason.
+
+    A complement set lets the programmer intention be expressed
+    very succinctly and directly:
+
+    NamesFilter(complement(set()))
+
+    Not only is this code short and robust to change, it is
+    easy to understand the intention.
     '''
     if type(set_) is _ComplementSet:
-        return set_.complement()
+        return set_.complemented()
     if type(set_) is frozenset:
         return _ComplementSet(excluded=set_)
     else:
@@ -501,7 +534,7 @@ class _ComplementSet(object):
             return 'complement({0})'.format(repr(self._excluded))
         return 'complement(complement({0}))'.format(repr(self._included))
 
-    def complement(self):
+    def complemented(self):
         '''return a complement of the current set'''
         if type(self._included) is frozenset or type(self._excluded) is frozenset:
             return _ComplementSet(included=self._excluded, excluded=self._included)
@@ -509,8 +542,10 @@ class _ComplementSet(object):
             included=None if self._excluded is None else set(self._excluded),
             excluded=None if self._included is None else set(self._included))
 
-    def invert(self):
-        '''invert the current set in-place'''
+    __invert__ = complemented
+
+    def complement(self):
+        '''convert the current set to its complement in-place'''
         self._included, self._excluded = self._excluded, self._included
 
     def __contains__(self, item):

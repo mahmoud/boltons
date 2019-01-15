@@ -133,3 +133,6 @@ def test_complement_set():
     with raises(NotImplementedError): cab.pop()
     with raises(NotImplementedError): len(cab)
     with raises(NotImplementedError): iter(cab)
+    ~cab
+    cab.complement()
+    cab.complemented()
