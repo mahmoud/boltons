@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
-
 import string
+from abc import abstractmethod, ABCMeta
+
+import pytest
 
 from boltons.cacheutils import LRU, LRI, cached, cachedmethod, cachedproperty, MinIDMap
 
@@ -263,6 +265,24 @@ def test_cachedmethod():
     return
 
 
+def test_cachedmethod_maintains_func_abstraction():
+    ABC = ABCMeta('ABC', (object,), {})
+
+    class Car(ABC):
+
+        def __init__(self, cache=None):
+            self.h_cache = LRI() if cache is None else cache
+            self.hand_count = 0
+
+        @cachedmethod('h_cache')
+        @abstractmethod
+        def hand(self, *a, **kw):
+            self.hand_count += 1
+
+    with pytest.raises(TypeError):
+        Car()
+
+
 def test_cachedproperty():
     class Proper(object):
         def __init__(self):
@@ -293,6 +313,20 @@ def test_cachedproperty():
     assert prop.expensive_func.call_count == 2
 
     repr(Proper.useful_attr)
+
+
+def test_cachedproperty_maintains_func_abstraction():
+    ABC = ABCMeta('ABC', (object,), {})
+
+    class AbstractExpensiveCalculator(ABC):
+
+        @cachedproperty
+        @abstractmethod
+        def calculate(self):
+            pass
+
+    with pytest.raises(TypeError):
+        AbstractExpensiveCalculator()
 
 
 def test_min_id_map():

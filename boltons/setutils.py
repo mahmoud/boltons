@@ -402,9 +402,9 @@ class IndexedSet(MutableSet):
             self.item_index_map[item] = i
         del self.dead_indices[:]
 
-    def sort(self):
+    def sort(self, **kwargs):
         "sort() -> sort the contents of the set in-place"
-        sorted_list = sorted(self)
+        sorted_list = sorted(self, **kwargs)
         if sorted_list == self.item_list:
             return
         self.item_list[:] = sorted_list

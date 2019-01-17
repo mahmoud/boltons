@@ -595,6 +595,69 @@ def unique_iter(src, key=None):
     return
 
 
+def redundant(src, key=None, groups=False):
+    """The complement of :func:`unique()`.
+
+    By default returns non-unique values as a list of the *first*
+    redundant value in *src*. Pass ``groups=True`` to get groups of
+    all values with redundancies, ordered by position of the first
+    redundant value. This is useful in conjunction with some
+    normalizing *key* function.
+
+    >>> redundant([1, 2, 3, 4])
+    []
+    >>> redundant([1, 2, 3, 2, 3, 3, 4])
+    [2, 3]
+    >>> redundant([1, 2, 3, 2, 3, 3, 4], groups=True)
+    [[2, 2], [3, 3, 3]]
+
+    An example using a *key* function to do case-insensitive
+    redundancy detection.
+
+    >>> redundant(['hi', 'Hi', 'HI', 'hello'], key=str.lower)
+    ['Hi']
+    >>> redundant(['hi', 'Hi', 'HI', 'hello'], groups=True, key=str.lower)
+    [['hi', 'Hi', 'HI']]
+
+    *key* should also be used when the values in *src* are not hashable.
+
+    .. note::
+
+       This output of this function is designed for reporting
+       duplicates in contexts when a unique input is desired. Due to
+       the grouped return type, there is no streaming equivalent of
+       this function for the time being.
+
+    """
+    if key is None:
+        pass
+    elif callable(key):
+        key_func = key
+    elif isinstance(key, basestring):
+        key_func = lambda x: getattr(x, key, x)
+    else:
+        raise TypeError('"key" expected a string or callable, not %r' % key)
+    seen = {}  # key to first seen item
+    redundant_order = []
+    redundant_groups = {}
+    for i in src:
+        k = key_func(i) if key else i
+        if k not in seen:
+            seen[k] = i
+        else:
+            if k in redundant_groups:
+                if groups:
+                    redundant_groups[k].append(i)
+            else:
+                redundant_order.append(k)
+                redundant_groups[k] = [seen[k], i]
+    if not groups:
+        ret = [redundant_groups[k][1] for k in redundant_order]
+    else:
+        ret = [redundant_groups[k] for k in redundant_order]
+    return ret
+
+
 def one(src, default=None, key=None):
     """Along the same lines as builtins, :func:`all` and :func:`any`, and
     similar to :func:`first`, ``one()`` returns the single object in
@@ -1181,6 +1244,51 @@ class SequentialGUIDerator(GUIDerator):
 guid_iter = GUIDerator()
 seq_guid_iter = SequentialGUIDerator()
 
+
+def soft_sorted(iterable, first=None, last=None, key=None, reverse=False):
+    """For when you care about the order of some elements, but not about
+    others.
+
+    Use this to float to the top and/or sink to the bottom a specific
+    ordering, while sorting the rest of the elements according to
+    normal :func:`sorted` rules.
+
+    >>> soft_sorted(['two', 'b', 'one', 'a'], first=['one', 'two'])
+    ['one', 'two', 'a', 'b']
+    >>> soft_sorted(range(7), first=[6, 15], last=[2, 4], reverse=True)
+    [6, 5, 3, 1, 0, 2, 4]
+    >>> import string
+    >>> ''.join(soft_sorted(string.hexdigits, first='za1', last='b', key=str.lower))
+    'aA1023456789cCdDeEfFbB'
+
+    Args:
+       iterable (list): A list or other iterable to sort.
+       first (list): A sequence to enforce for elements which should
+          appear at the beginning of the returned list.
+       last (list): A sequence to enforce for elements which should
+          appear at the end of the returned list.
+       key (callable): Callable used to generate a comparable key for
+          each item to be sorted, same as the key in
+          :func:`sorted`. Note that entries in *first* and *last*
+          should be the keys for the items. Defaults to
+          passthrough/the identity function.
+       reverse (bool): Whether or not elements not explicitly ordered
+          by *first* and *last* should be in reverse order or not.
+
+    Returns a new list in sorted order.
+    """
+    first = first or []
+    last = last or []
+    key = key or (lambda x: x)
+    seq = list(iterable)
+    other = [x for x in seq if not ((first and key(x) in first) or (last and key(x) in last))]
+    other.sort(key=key, reverse=reverse)
+
+    if first:
+        first = sorted([x for x in seq if key(x) in first], key=lambda x: first.index(key(x)))
+    if last:
+        last = sorted([x for x in seq if key(x) in last], key=lambda x: last.index(key(x)))
+    return first + other + last
 
 """
 May actually be faster to do an isinstance check for a str path

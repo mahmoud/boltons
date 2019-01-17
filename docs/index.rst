@@ -28,7 +28,8 @@ including:
 
 And that's just a small selection. As of |today|, ``boltons`` is
 |b_type_count| types and |b_func_count| functions, spread across
-|b_mod_count| modules. See what's new by `checking the CHANGELOG`_.
+|b_mod_count| modules. See them all in the :ref:`genindex`, and see
+what's new by `checking the CHANGELOG`_.
 
 .. counts are appx 50, 75, and 23, respectively, as of initial docs writing
 .. in mid 2016, the counts are now 62, 112, and 25, respectively
@@ -124,3 +125,5 @@ Section listing
    timeutils
    typeutils
    urlutils
+
+(For a quick reference you can ctrl-F, see the :ref:`genindex`.)

@@ -514,8 +514,6 @@ class FunctionBuilder(object):
         body = self.body or self._default_body
 
         tmpl = 'def {name}{sig_str}:'
-        if self.doc:
-            tmpl += '\n    """{doc}"""'
         tmpl += '\n{body}'
 
         body = _indent(self.body, ' ' * self.indent)

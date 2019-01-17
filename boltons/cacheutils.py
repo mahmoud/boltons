@@ -511,6 +511,7 @@ class CachedMethod(object):
     """
     def __init__(self, func, cache, scoped=True, typed=False, key=None):
         self.func = func
+        self.__isabstractmethod__ = getattr(func, '__isabstractmethod__', False)
         if isinstance(cache, basestring):
             self.get_cache = attrgetter(cache)
         elif callable(cache):
@@ -652,6 +653,7 @@ class cachedproperty(object):
     """
     def __init__(self, func):
         self.__doc__ = getattr(func, '__doc__')
+        self.__isabstractmethod__ = getattr(func, '__isabstractmethod__', False)
         self.func = func
 
     def __get__(self, obj, objtype=None):

@@ -27,7 +27,7 @@ def test_todict():
     assert len(omd) == 1
     assert omd['A'] == 'One'
 
-    d = dict(omd)
+    d = omd.todict(multi=True)
     assert len(d) == 1
     assert d['A'] == ['One', 'One', 'One']
 
@@ -40,6 +40,7 @@ def test_todict():
 
         flat = omd.todict()
         assert flat == d
+    return
 
 
 def test_eq():
