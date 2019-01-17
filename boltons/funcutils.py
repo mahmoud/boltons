@@ -25,6 +25,13 @@ else:
     _IS_PY2 = True
 
 
+try:
+    _inspect_iscoroutinefunction = inspect.iscoroutinefunction
+except AttributeError:
+    # Python 3.4
+    _inspect_iscoroutinefunction = lambda func: False
+
+
 def get_module_callables(mod, ignore=None):
     """Returns two maps of (*types*, *funcs*) from *mod*, optionally
     ignoring based on the :class:`bool` return value of the *ignore*
@@ -406,6 +413,7 @@ class FunctionBuilder(object):
 
     _defaults = {'doc': str,
                  'dict': dict,
+                 'is_coroutine': lambda: False,
                  'module': lambda: None,
                  'body': lambda: 'pass',
                  'indent': lambda: 4,
@@ -491,6 +499,9 @@ class FunctionBuilder(object):
 
         kwargs.update(cls._argspec_to_dict(func))
 
+        if _inspect_iscoroutinefunction(func):
+            kwargs['is_coroutine'] = True
+
         return cls(**kwargs)
 
     def get_func(self, execdict=None, add_source=True, with_dict=True):
@@ -515,6 +526,9 @@ class FunctionBuilder(object):
 
         tmpl = 'def {name}{sig_str}:'
         tmpl += '\n{body}'
+
+        if self.is_coroutine:
+            tmpl = 'async ' + tmpl
 
         body = _indent(self.body, ' ' * self.indent)
 
