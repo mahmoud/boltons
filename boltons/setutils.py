@@ -456,18 +456,18 @@ def complement(set_):
     >>> class NamesFilter:
     ...    def __init__(self, allowed):
     ...        self._allowed = allowed
-    ...    def filtereself, names):
+    ...    def filter(self, names):
     ...        return [name for name in names if name in self._allowed]
 
-    >>> NamesFilter({'alice', 'bob'}).filter(['alice', 'bob', 'carol'])
+    >>> NamesFilter(set(['alice', 'bob'])).filter(['alice', 'bob', 'carol'])
     ['alice', 'bob']
 
     What if we want to just express "let all the names through"?
-    
+
     We could try to enumerate all of the expected names:
 
     NamesFilter({'alice', 'bob', 'carol'})
-    
+
     But this is very brittle -- what if at some point over this
     objects life it gets asked to filter ['alice', 'bob', 'carol', 'dan']?
 
