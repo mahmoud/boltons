@@ -100,25 +100,3 @@ def test_FunctionBuilder_KWONLY_MARKER(signature, should_match):
     message = "{!r}: should_match was {}, but result was {}".format(
         signature, should_match, matched)
     assert bool(matched) == should_match, message
-
-
-def test_wraps_async():
-    import asyncio
-
-    def delayed(func):
-        @wraps(func)
-        async def wrapped(*args, **kw):
-            await asyncio.sleep(1.0)
-            return await func(*args, **kw)
-
-        return wrapped
-
-
-    async def f():
-        await asyncio.sleep(0.1)
-
-    assert asyncio.iscoroutinefunction(f)
-
-    f2 = delayed(f)
-
-    assert asyncio.iscoroutinefunction(f2)

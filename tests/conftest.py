@@ -19,8 +19,8 @@ def pytest_ignore_collect(path, config):
     minor_version = match.group('minor_version')
 
     if minor_version:
-        version_match = (major_version, minor_version) == sys.version_info[:2]
+        version_match = (int(major_version), int(minor_version)) == sys.version_info[:2]
     else:
-        version_match = major_version == sys.version_info[0]
+        version_match = int(major_version) == sys.version_info[0]
 
     return not version_match  # because this is an _ignore_ (not an include)
