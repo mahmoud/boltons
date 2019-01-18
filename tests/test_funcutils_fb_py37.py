@@ -25,3 +25,26 @@ def test_wraps_async():
     f2 = delayed(f)
 
     assert asyncio.iscoroutinefunction(f2)
+
+    import time
+
+    # from https://github.com/mahmoud/boltons/pull/195
+    def yolo():
+        def make_time_decorator(wrapped):
+            @wraps(wrapped)
+            async def decorator(*args, **kw):
+                return (await wrapped(*args, **kw))
+            return decorator
+
+        return make_time_decorator
+
+
+    @yolo()
+    async def foo(x):
+        await asyncio.sleep(x)
+
+    start_time = time.time()
+    asyncio.run(foo(0.3))
+    duration = time.time() - start_time
+
+    assert duration > 0.3
