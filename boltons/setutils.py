@@ -422,40 +422,39 @@ class IndexedSet(MutableSet):
 
 
 def complement(set_):
-    '''
-    given a set, convert it to a complement set
-    where a set keeps track of what it contains,
-    a complement set keeps track of what it
-    doesn't contain
+    """Given a :class:`set`, convert it to a **complement set**.
 
-    https://en.wikipedia.org/wiki/Complement_(set_theory)
+    Whereas a :class:`set` keeps track of what it contains, a
+    `complement set <https://en.wikipedia.org/wiki/Complement_(set_theory)>`_
+    keeps track of what it does *not* contain. For example::
+
+    # >>> set(range(5)) | complement(set([2, 3]))
+    # set([0, 1, 4])
 
     complement(complement(set)) == set
 
-    all set methods and operators are supported
-    by complement sets, between other complement sets
-    or regular sets / frozensets
+    All set methods and operators are supported by complement sets,
+    between other :func:`complement`-wrapped sets and/or regular :class:`sets`
+    / :class:`frozenset`
 
-    because a complement set only tracks what elements
+    Because a complement set only tracks what elements
     are not in the set rather than what are, functionality
     based on the contents of the set is unavailable:
     len, iteration, pop
 
-    an empty complement set corresponds to the
-    concept of a universal set (https://en.wikipedia.org/wiki/Universal_set)
-    from mathematics
+    An empty complement set corresponds to the concept of a
+    `universal set <https://en.wikipedia.org/wiki/Universal_set>`_
+    from mathematics.
 
-    many uses of sets can be expressed more simply
-    by using a complement -- rather than trying
-    to work out in your head the proper way
-    to invert an expression, you can just throw
-    a complement on the set
+    Many uses of sets can be expressed more simply by using a
+    complement. Rather than trying to work out in your head the proper
+    way to invert an expression, you can just throw a complement on
+    the set. Consider this example of a name filter::
 
-    as one concrete example, consider a name filter object:
-
-    >>> class NamesFilter:
+    >>> class NamesFilter(object):
     ...    def __init__(self, allowed):
     ...        self._allowed = allowed
+    ...
     ...    def filter(self, names):
     ...        return [name for name in names if name in self._allowed]
 
@@ -464,12 +463,12 @@ def complement(set_):
 
     What if we want to just express "let all the names through"?
 
-    We could try to enumerate all of the expected names:
+    We could try to enumerate all of the expected names::
 
-    NamesFilter({'alice', 'bob', 'carol'})
+       ``NamesFilter({'alice', 'bob', 'carol'})``
 
     But this is very brittle -- what if at some point over this
-    objects life it gets asked to filter ['alice', 'bob', 'carol', 'dan']?
+    objects life it gets asked to filter ``['alice', 'bob', 'carol', 'dan']``?
 
     Even worse, what about the poor programmer who next works
     on this piece of code?  They cannot tell whether the purpose
@@ -477,13 +476,14 @@ def complement(set_):
     was excluded for some subtle reason.
 
     A complement set lets the programmer intention be expressed
-    very succinctly and directly:
+    very succinctly and directly::
 
-    NamesFilter(complement(set()))
+       NamesFilter(complement(set()))
 
     Not only is this code short and robust to change, it is
     easy to understand the intention.
-    '''
+
+    """
     if type(set_) is _ComplementSet:
         return set_.complemented()
     if type(set_) is frozenset:
@@ -515,9 +515,9 @@ def _norm_args_notimplemented(other):
 
 
 class _ComplementSet(object):
-    '''
+    """
     helper class for complement() that implements the set methods
-    '''
+    """
     __slots__ = ('_included', '_excluded')
 
     def __init__(self, included=None, excluded=None):
