@@ -428,8 +428,8 @@ def complement(set_):
     `complement set <https://en.wikipedia.org/wiki/Complement_(set_theory)>`_
     keeps track of what it does *not* contain. For example::
 
-    # >>> set(range(5)) | complement(set([2, 3]))
-    # set([0, 1, 4])
+    >>> set('abcd') & complement(set('bc')) == {'a', 'd'}
+    True
 
     complement(complement(set)) == set
 
