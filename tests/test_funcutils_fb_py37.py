@@ -1,4 +1,5 @@
 
+import time
 import inspect
 
 from boltons.funcutils import wraps, FunctionBuilder
@@ -26,8 +27,6 @@ def test_wraps_async():
 
     assert asyncio.iscoroutinefunction(f2)
 
-    import time
-
     # from https://github.com/mahmoud/boltons/pull/195
     def yolo():
         def make_time_decorator(wrapped):
@@ -43,8 +42,8 @@ def test_wraps_async():
     async def foo(x):
         await asyncio.sleep(x)
 
-    start_time = time.time()
+    start_time = time.monotonic()
     asyncio.run(foo(0.3))
-    duration = time.time() - start_time
+    duration = time.monotonic() - start_time
 
     assert duration > 0.3
