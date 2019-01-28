@@ -24,7 +24,7 @@ except ImportError:
     _MISSING = object()
 
 
-__all__ = ['IndexedSet']
+__all__ = ['IndexedSet', 'complement']
 
 
 _COMPACTION_FACTOR = 8
@@ -421,30 +421,48 @@ class IndexedSet(MutableSet):
             raise ValueError('%r is not in %s' % (val, cn))
 
 
-def complement(set_):
+def complement(wrapped):
     """Given a :class:`set`, convert it to a **complement set**.
 
     Whereas a :class:`set` keeps track of what it contains, a
-    `complement set <https://en.wikipedia.org/wiki/Complement_(set_theory)>`_
-    keeps track of what it does *not* contain. For example::
+    `complement set
+    <https://en.wikipedia.org/wiki/Complement_(set_theory)>`_ keeps
+    track of what it does *not* contain. For example, look what
+    happens when we intersect a normal set with a complement set::
 
-    # >>> set(range(5)) | complement(set([2, 3]))
-    # set([0, 1, 4])
+    >>> list(set(range(5)) & complement(set([2, 3])))
+    [0, 1, 4]
 
-    complement(complement(set)) == set
+    We get the everything in the left that wasn't in the right,
+    because intersecting with a complement is the same as subtracting
+    a normal set.
+
+    Args:
+        wrapped (set): A set or any other iterable which should be
+           turned into a complement set.
 
     All set methods and operators are supported by complement sets,
-    between other :func:`complement`-wrapped sets and/or regular :class:`sets`
-    / :class:`frozenset`
+    between other :func:`complement`-wrapped sets and/or regular
+    :class:`set` objects.
 
-    Because a complement set only tracks what elements
-    are not in the set rather than what are, functionality
-    based on the contents of the set is unavailable:
-    len, iteration, pop
+    Because a complement set only tracks what elements are *not* in
+    the set, functionality based on set contents is unavailable:
+    :func:`len`, :func:`iter` (and for loops), and ``.pop()``. But a
+    complement set can always be turned back into a regular set by
+    complementing it again:
 
-    An empty complement set corresponds to the concept of a
-    `universal set <https://en.wikipedia.org/wiki/Universal_set>`_
-    from mathematics.
+    >>> s = set(range(5))
+    >>> complement(complement(s)) == s
+    True
+
+    .. note::
+
+       An empty complement set corresponds to the concept of a
+       `universal set <https://en.wikipedia.org/wiki/Universal_set>`_
+       from mathematics.
+
+    Complement sets by example
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
     Many uses of sets can be expressed more simply by using a
     complement. Rather than trying to work out in your head the proper
@@ -468,7 +486,7 @@ def complement(set_):
        ``NamesFilter({'alice', 'bob', 'carol'})``
 
     But this is very brittle -- what if at some point over this
-    objects life it gets asked to filter ``['alice', 'bob', 'carol', 'dan']``?
+    object is changed to filter ``['alice', 'bob', 'carol', 'dan']``?
 
     Even worse, what about the poor programmer who next works
     on this piece of code?  They cannot tell whether the purpose
@@ -476,20 +494,19 @@ def complement(set_):
     was excluded for some subtle reason.
 
     A complement set lets the programmer intention be expressed
-    very succinctly and directly::
+    succinctly and directly::
 
        NamesFilter(complement(set()))
 
-    Not only is this code short and robust to change, it is
-    easy to understand the intention.
+    Not only is this code short and robust, it is easy to understand
+    the intention.
 
     """
-    if type(set_) is _ComplementSet:
-        return set_.complemented()
-    if type(set_) is frozenset:
-        return _ComplementSet(excluded=set_)
-    else:
-        return _ComplementSet(excluded=set(set_))
+    if type(wrapped) is _ComplementSet:
+        return wrapped.complemented()
+    if type(wrapped) is frozenset:
+        return _ComplementSet(excluded=wrapped)
+    return _ComplementSet(excluded=set(wrapped))
 
 
 def _norm_args_typeerror(other):
