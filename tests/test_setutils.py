@@ -92,6 +92,7 @@ def test_complement_set():
     assert complement(cbc) == sbc
     assert 'a' not in cab
     assert 'c' in cab
+    assert (sab & cbc) == (sab - sbc)  # set theory invariant
     assert not (cab < sab)  # complement never subset of set
     if not _IS_26: assert not (sab < cab)
     assert not (cbc < sab)
