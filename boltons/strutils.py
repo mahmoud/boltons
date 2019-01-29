@@ -16,6 +16,11 @@ import unicodedata
 import collections
 
 try:
+    from collections.abc import Mapping
+except ImportError:
+    from collections import Mapping
+
+try:
     unicode, str, bytes, basestring = unicode, str, str, basestring
     from HTMLParser import HTMLParser
     import htmlentitydefs
@@ -1045,7 +1050,7 @@ class MultiReplace(object):
         self.group_map = {}
         regex_values = []
 
-        if isinstance(sub_map, collections.Mapping):
+        if isinstance(sub_map, Mapping):
             sub_map = sub_map.items()
 
         for idx, vals in enumerate(sub_map):

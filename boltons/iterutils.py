@@ -19,7 +19,11 @@ import socket
 import hashlib
 import itertools
 
-from collections import Mapping, Sequence, Set, ItemsView, Iterable
+try:
+    from collections.abc import Mapping, Sequence, Set, ItemsView, Iterable
+except ImportError:
+    from collections import Mapping, Sequence, Set, ItemsView, Iterable
+
 
 try:
     from typeutils import make_sentinel

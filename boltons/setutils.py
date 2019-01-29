@@ -14,8 +14,12 @@ from __future__ import print_function
 
 from bisect import bisect_left
 from itertools import chain, islice
-from collections import MutableSet
 import operator
+
+try:
+    from collections.abc import MutableSet
+except ImportError:
+    from collections import MutableSet
 
 try:
     from typeutils import make_sentinel

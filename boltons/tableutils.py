@@ -21,10 +21,16 @@ For more advanced :class:`Table`-style manipulation check out the
 
 from __future__ import print_function
 
-import cgi
+try:
+    from html import escape as html_escape
+except ImportError:
+    from cgi import escape as html_escape
 import types
 from itertools import islice
-from collections import Sequence, Mapping, MutableSequence
+try:
+    from collections.abc import Sequence, Mapping, MutableSequence
+except ImportError:
+    from collections import Sequence, Mapping, MutableSequence
 try:
     string_types, integer_types = (str, unicode), (int, long)
     from cgi import escape as html_escape
