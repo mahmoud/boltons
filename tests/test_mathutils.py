@@ -74,3 +74,36 @@ def test_floor_oor_upper():
 def test_floor_oor_lower():
     with raises(ValueError):
         floor(OUT_OF_RANGE_LOWER, OPTIONS)
+
+
+def test_bits():
+    def chk(a, b):
+        assert a == b, a
+    chk(Bits('10')[:1], Bits('1'))
+    chk(Bits('10')[1:], Bits('0'))
+    chk(Bits('10')[0], True)
+    chk(Bits('10')[1], False)
+    chk(Bits('0000100')[4], True)
+    chk(Bits('10').as_list(), [True, False])
+    chk(Bits('10').as_int(), 2)
+    chk(Bits('10').as_bin(), '10')
+    chk(Bits('1111').as_hex(), 'F')
+    chk(Bits('10'), Bits([True, False]))
+    chk(Bits('10'), Bits(2))
+    chk(Bits('01') | Bits('10'), Bits('11'))
+    chk(Bits('01') & Bits('10'), Bits('00'))
+    chk(Bits('11') >> 1, Bits('1'))
+    chk(Bits('1') << 1, Bits('10'))
+    assert Bits('0') != Bits('00')
+    chk(
+        Bits.from_bytes(
+            Bits.from_int(
+                Bits.from_hex(
+                    Bits.from_bin(
+                        Bits.from_list(
+                            Bits('101').as_list()
+                        ).as_bin()
+                    ).as_hex()
+                ).as_int()
+            ).as_bytes()
+    ), Bits('101'))

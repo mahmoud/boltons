@@ -3,6 +3,7 @@ built-in :mod:`math` module.
 """
 from math import ceil as _ceil, floor as _floor
 import bisect
+import binascii
 
 
 def clamp(x, lower=float('-inf'), upper=float('inf')):
@@ -87,3 +88,121 @@ def floor(x, options=None):
     if not i:
         raise ValueError("no floor options less than or equal to: %r" % x)
     return options[i - 1]
+
+
+class Bits(object):
+    '''
+    An immutable bit-string or bit-array object.
+    Provides list-like access to bits as bools,
+    as well as bitwise masking and shifting operators.
+    Bits also make it easy to convert between many
+    different useful representations:
+    * bytes -- good for serializing raw binary data
+    * int -- good for incrementing (e.g. to try all possible values)
+    * list of bools -- good for iterating over or treating as flags
+    * hex/bin string -- good for human readability
+    '''
+    __slots__ = ('val', 'len')
+
+    def __init__(self, val=0, len_=None):
+        if type(val) not in (int, long):
+            if type(val) is list:
+                val = ''.join(['1' if e else '0' for e in val])
+            if type(val) is str:
+                if len_ is None:
+                    len_ = len(val)
+                    if val.startswith('0x'):
+                        len_ = (len_ - 2) * 4
+                if val.startswith('0x'):
+                    val = int(val, 16)
+                else:
+                    if val:
+                        val = int(val, 2)
+                    else:
+                        val = 0
+            if type(val) not in (int, long):
+                raise TypeError('initialized with bad type: {}'.format(type(val).__name__))
+        if val < 0:
+            raise ValueError('Bits cannot represent negative values')
+        if len_ is None:
+            len_ = len('{:b}'.format(val))
+        if val > 2 ** len_:
+            raise ValueError('value {} cannot be represented with {} bits'.format(val, len_))
+        self.val = val  # data is stored internally as integer
+        self.len = len_
+
+    def __getitem__(self, k):
+        if type(k) is slice:
+            return Bits(self.as_bin()[k])
+        if type(k) is int:
+            if k >= self.len:
+                raise IndexError(k)
+            return bool((1 << (self.len - k - 1)) & self.val)
+        raise TypeError(type(k))
+
+    def __len__(self):
+        return self.len
+
+    def __eq__(self, other):
+        if type(self) is not type(other):
+            return NotImplemented
+        return self.val == other.val and self.len == other.len
+
+    def __or__(self, other):
+        if type(self) is not type(other):
+            return NotImplemented
+        return Bits(self.val | other.val, max(self.len, other.len))
+
+    def __and__(self, other):
+        if type(self) is not type(other):
+            return NotImplemented
+        return Bits(self.val & other.val, max(self.len, other.len))
+
+    def __lshift__(self, other):
+        return Bits(self.val << other, self.len + other)
+
+    def __rshift__(self, other):
+        return Bits(self.val >> other, self.len - other)
+
+    def __hash__(self):
+        return hash(self.val)
+
+    def as_list(self):
+        return [c is '1' for c in '{:b}'.format(self.val)]
+
+    def as_bin(self):
+        return '{{:0{}b}}'.format(self.len).format(self.val)
+
+    def as_hex(self):
+        return '{{:0{}X}}'.format(self.len / 4 + ((self.len % 4) != 0)).format(self.val)
+
+    def as_int(self):
+        return self.val
+
+    def as_bytes(self):
+        return binascii.unhexlify(self.as_hex())
+
+    @classmethod
+    def from_list(cls, list_):
+        return cls(list_)
+
+    @classmethod
+    def from_bin(cls, bin):
+        return cls(bin)
+
+    @classmethod
+    def from_hex(cls, hex):
+        if not hex.startswith('0x'):
+            hex = '0x' + hex
+        return cls('0x' + hex)
+
+    @classmethod
+    def from_int(cls, int_, len_=None):
+        return cls(int_, len_)
+
+    @classmethod
+    def from_bytes(cls, bytes_):
+        return cls.from_hex(binascii.unhexilfy(bytes_))
+
+    def __repr__(self):
+        return "Bits('{}')".format(self.as_bin())
