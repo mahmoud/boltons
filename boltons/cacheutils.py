@@ -312,6 +312,33 @@ class LRU(dict):
         return ('%s(max_size=%r, on_miss=%r, values=%s)'
                 % (cn, self.max_size, self.on_miss, val_map))
 
+class InheritingLRI(LRU):
+    """
+    The LRI is similar to a LRU except that we don't take
+    into consideration when an object was last inserted
+
+    The above class is used as a comparison of performance to
+    any LRI I try to build myself.  Unfortunately it requires
+    knowing quite a lot about the internals of LRU to work,
+    should the implementation details of LRU change, LRI
+    has a dependency on __getitem__ being the crux of the
+    access part of the algorith, and that the __setitem__
+    continues to treat inserts as "use" and move the key
+    to the front of the cache
+    """
+    def __getitem__(self, key):
+        with self._lock:
+            try:
+                link = self._link_lookup[key]
+            except KeyError:
+                self.miss_count += 1
+                if not self.on_miss:
+                    raise
+                ret = self[key] = self.on_miss(key)
+                return ret
+
+            self.hit_count += 1
+            return link[VALUE]
 
 class LRI(dict):
     """The ``LRI`` implements the basic *Least Recently Inserted* strategy to
