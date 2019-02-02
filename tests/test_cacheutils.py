@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import string
+import sys
 from abc import abstractmethod, ABCMeta
 
 import pytest
@@ -30,6 +31,60 @@ def test_lri():
         x = bc[char]
         assert x == char.upper()
     assert len(bc) == 10
+
+
+def test_lri_cache_eviction():
+    """
+    Regression test
+    Original LRI implementation had a bug where the specified cache
+    size only supported `max_size` number of inserts to the cache,
+    rather than support `max_size` number of keys in the cache. This
+    would result in some unintuitive behavior, where a key is evicted
+    recently inserted value would be evicted from the cache if the key
+    inserted was inserted `max_size` keys earlier.
+    """
+    test_cache = LRI(2)
+    # dequeue: (key1); dict keys: (key1)
+    test_cache["key1"] = "value1"
+    # dequeue: (key1, key1); dict keys: (key1)
+    test_cache["key1"] = "value1"
+    # dequeue: (key1, key1, key2); dict keys: (key1, key2)
+    test_cache["key2"] = "value2"
+    # dequeue: (key1, key2, key3); dict keys: (key2, key3)
+    test_cache["key3"] = "value3"
+    # will error here since we evict key1 from the cache and it doesn't
+    # exist in the dict anymore
+    test_cache["key3"] = "value3"
+
+
+def test_cache_sizes_on_repeat_insertions():
+    """
+    Regression test
+    Original LRI implementation had an unbounded size of memory
+    regardless of the value for it's `max_size` parameter due to a naive
+    insertion algorithm onto an underlying deque data structure. To
+    prevent memory leaks, this test will assert that a cache does not
+    grow past it's max size given values of a uniform memory footprint
+    """
+    caches_to_test = (LRU, LRI)
+    for cache_type in caches_to_test:
+        test_cache = cache_type(2)
+        # note strings are used to force allocation of memory
+        test_cache["key1"] = "1"
+        test_cache["key2"] = "1"
+        # sys.getsizeof object does not fully capture memory footprint
+        initial_key_sizes = {
+            k: sys.getsizeof(test_cache.__dict__[k])
+            for k in test_cache.__dict__
+        }
+        for k in test_cache:
+            for __ in range(100):
+                test_cache[k] = "1"
+        key_sizes_after_inserts = {
+            k: sys.getsizeof(test_cache.__dict__[k])
+            for k in test_cache.__dict__
+        }
+        assert initial_key_sizes == key_sizes_after_inserts
 
 
 def test_lru_basic():
