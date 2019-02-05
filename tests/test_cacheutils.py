@@ -26,11 +26,31 @@ def test_lru_add():
 
 
 def test_lri():
-    bc = LRI(10, on_miss=lambda k: k.upper())
-    for char in string.ascii_letters:
+    cache_size = 10
+    bc = LRI(cache_size, on_miss=lambda k: k.upper())
+    for idx, char in enumerate(string.ascii_letters):
         x = bc[char]
         assert x == char.upper()
-    assert len(bc) == 10
+        least_recent_insert_index = idx - cache_size
+        if least_recent_insert_index >= 0:
+            # least recently inserted object evicted
+            assert len(bc) == cache_size
+            for char in string.ascii_letters[least_recent_insert_index+1:idx]:
+                assert char in bc
+
+    # test that reinserting an exising key changes eviction behavior
+    bc[string.ascii_letters[-cache_size+1]] = "new value"
+    least_recently_inserted_key = string.ascii_letters[-cache_size+2]
+    bc["unreferenced_key"] = "value"
+    keys_in_cache = [
+        string.ascii_letters[i]
+        for i in range(-cache_size + 1, 0)
+        if string.ascii_letters[i] != least_recently_inserted_key
+    ]
+    keys_in_cache.append("unreferenced_key")
+    assert len(bc) == cache_size
+    for k in keys_in_cache:
+        assert k in bc
 
 
 def test_lri_cache_eviction():
