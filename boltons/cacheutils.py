@@ -312,19 +312,27 @@ class LRU(dict):
         return ('%s(max_size=%r, on_miss=%r, values=%s)'
                 % (cn, self.max_size, self.on_miss, val_map))
 
-class InheritingLRI(LRU):
-    """
-    The LRI is similar to a LRU except that we don't take
-    into consideration when an object was last inserted
+class LRI(LRU):
+    """The ``LRI`` implements the basic *Least Recently Inserted* strategy to
+    caching. One could also think of this as a ``SizeLimitedDefaultDict``.
 
-    The above class is used as a comparison of performance to
-    any LRI I try to build myself.  Unfortunately it requires
-    knowing quite a lot about the internals of LRU to work,
-    should the implementation details of LRU change, LRI
-    has a dependency on __getitem__ being the crux of the
-    access part of the algorith, and that the __setitem__
-    continues to treat inserts as "use" and move the key
-    to the front of the cache
+    *on_miss* is a callable that accepts the missing key (as opposed
+    to :class:`collections.defaultdict`'s "default_factory", which
+    accepts no arguments.) Also note that, like the :class:`LRU`,
+    the ``LRI`` is instrumented with statistics tracking.
+
+    >>> cap_cache = LRI(max_size=2)
+    >>> cap_cache['a'], cap_cache['b'] = 'A', 'B'
+    >>> from pprint import pprint as pp
+    >>> pp(dict(cap_cache))
+    {'a': 'A', 'b': 'B'}
+    >>> [cap_cache['b'] for i in range(3)][0]
+    'B'
+    >>> cap_cache['c'] = 'C'
+    >>> print(cap_cache.get('a'))
+    None
+    >>> cap_cache.hit_count, cap_cache.miss_count, cap_cache.soft_miss_count
+    (3, 1, 1)
     """
     def __getitem__(self, key):
         with self._lock:
@@ -339,99 +347,6 @@ class InheritingLRI(LRU):
 
             self.hit_count += 1
             return link[VALUE]
-
-class LRI(dict):
-    """The ``LRI`` implements the basic *Least Recently Inserted* strategy to
-    caching. One could also think of this as a ``SizeLimitedDefaultDict``.
-
-    *on_miss* is a callable that accepts the missing key (as opposed
-    to :class:`collections.defaultdict`'s "default_factory", which
-    accepts no arguments.) Also note that, like the :class:`LRU`,
-    the ``LRI`` is instrumented with statistics tracking.
-
-    >>> cap_cache = LRI(max_size=2)
-    >>> cap_cache['a'], cap_cache['b'] = 'A', 'B'
-    >>> from pprint import pprint as pp
-    >>> pp(cap_cache)
-    {'a': 'A', 'b': 'B'}
-    >>> [cap_cache['b'] for i in range(3)][0]
-    'B'
-    >>> cap_cache['c'] = 'C'
-    >>> print(cap_cache.get('a'))
-    None
-    >>> cap_cache.hit_count, cap_cache.miss_count, cap_cache.soft_miss_count
-    (3, 1, 1)
-    """
-    # In order to support delitem andn .pop() setitem will need to
-    # popleft until it finds a key still in the cache. or, only
-    # support popitems and raise an error on pop.
-    def __init__(self, max_size=DEFAULT_MAX_SIZE, values=None,
-                 on_miss=None):
-        super(LRI, self).__init__()
-        self.hit_count = self.miss_count = self.soft_miss_count = 0
-        self.max_size = max_size
-        self.on_miss = on_miss
-        self._queue = deque()
-
-        if values:
-            self.update(values)
-
-    def __setitem__(self, key, value):
-        # TODO: pop support (see above)
-        if len(self) >= self.max_size:
-            old = self._queue.popleft()
-            del self[old]
-        super(LRI, self).__setitem__(key, value)
-        self._queue.append(key)
-
-    def update(self, E, **F):
-        # E and F are throwback names to the dict() __doc__
-        if E is self:
-            return
-        setitem = self.__setitem__
-        if callable(getattr(E, 'keys', None)):
-            for k in E.keys():
-                setitem(k, E[k])
-        else:
-            for k, v in E:
-                setitem(k, v)
-        for k in F:
-            setitem(k, F[k])
-        return
-
-    def copy(self):
-        return self.__class__(max_size=self.max_size, values=self)
-
-    def clear(self):
-        self._queue.clear()
-        super(LRI, self).clear()
-
-    def __getitem__(self, key):
-        try:
-            ret = super(LRI, self).__getitem__(key)
-        except KeyError:
-            self.miss_count += 1
-            if not self.on_miss:
-                raise
-            ret = self[key] = self.on_miss(key)
-            return ret
-        self.hit_count += 1
-        return ret
-
-    def get(self, key, default=None):
-        try:
-            return self[key]
-        except KeyError:
-            self.soft_miss_count += 1
-            return default
-
-    def setdefault(self, key, default=None):
-        try:
-            return self[key]
-        except KeyError:
-            self.soft_miss_count += 1
-            self[key] = default
-            return default
 
 
 ### Cached decorator
