@@ -81,10 +81,10 @@ def test_cache_sizes_on_repeat_insertions():
     """
     Regression test
     Original LRI implementation had an unbounded size of memory
-    regardless of the value for it's `max_size` parameter due to a naive
+    regardless of the value for its `max_size` parameter due to a naive
     insertion algorithm onto an underlying deque data structure. To
     prevent memory leaks, this test will assert that a cache does not
-    grow past it's max size given values of a uniform memory footprint
+    grow past its max size given values of a uniform memory footprint
     """
     caches_to_test = (LRU, LRI)
     for cache_type in caches_to_test:
@@ -92,19 +92,12 @@ def test_cache_sizes_on_repeat_insertions():
         # note strings are used to force allocation of memory
         test_cache["key1"] = "1"
         test_cache["key2"] = "1"
-        # sys.getsizeof object does not fully capture memory footprint
-        initial_key_sizes = {
-            k: sys.getsizeof(test_cache.__dict__[k])
-            for k in test_cache.__dict__
-        }
+        initial_list_size = len(test_cache._get_flattened_ll())
         for k in test_cache:
             for __ in range(100):
                 test_cache[k] = "1"
-        key_sizes_after_inserts = {
-            k: sys.getsizeof(test_cache.__dict__[k])
-            for k in test_cache.__dict__
-        }
-        assert initial_key_sizes == key_sizes_after_inserts
+        list_size_after_inserts = len(test_cache._get_flattened_ll())
+        assert initial_list_size == list_size_after_inserts
 
 
 def test_lru_basic():
