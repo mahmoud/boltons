@@ -1,6 +1,8 @@
 """This module provides useful math functions on top of Python's
 built-in :mod:`math` module.
 """
+from __future__ import division
+
 from math import ceil as _ceil, floor as _floor
 import bisect
 import binascii
@@ -90,6 +92,15 @@ def floor(x, options=None):
     return options[i - 1]
 
 
+try:
+    _int_types = (int, long)
+    bytes = str
+except NameError:
+    # py3 has no long
+    _int_types = (int,)
+    unicode = str
+
+
 class Bits(object):
     '''
     An immutable bit-string or bit-array object.
@@ -105,10 +116,12 @@ class Bits(object):
     __slots__ = ('val', 'len')
 
     def __init__(self, val=0, len_=None):
-        if type(val) not in (int, long):
+        if type(val) not in _int_types:
             if type(val) is list:
                 val = ''.join(['1' if e else '0' for e in val])
-            if type(val) is str:
+            if type(val) is bytes:
+                val = val.decode('ascii')
+            if type(val) is unicode:
                 if len_ is None:
                     len_ = len(val)
                     if val.startswith('0x'):
@@ -120,14 +133,14 @@ class Bits(object):
                         val = int(val, 2)
                     else:
                         val = 0
-            if type(val) not in (int, long):
-                raise TypeError('initialized with bad type: {}'.format(type(val).__name__))
+            if type(val) not in _int_types:
+                raise TypeError('initialized with bad type: {0}'.format(type(val).__name__))
         if val < 0:
             raise ValueError('Bits cannot represent negative values')
         if len_ is None:
-            len_ = len('{:b}'.format(val))
+            len_ = len('{0:b}'.format(val))
         if val > 2 ** len_:
-            raise ValueError('value {} cannot be represented with {} bits'.format(val, len_))
+            raise ValueError('value {0} cannot be represented with {1} bits'.format(val, len_))
         self.val = val  # data is stored internally as integer
         self.len = len_
 
@@ -168,13 +181,16 @@ class Bits(object):
         return hash(self.val)
 
     def as_list(self):
-        return [c is '1' for c in '{:b}'.format(self.val)]
+        return [c == '1' for c in '{0:b}'.format(self.val)]
 
     def as_bin(self):
-        return '{{:0{}b}}'.format(self.len).format(self.val)
+        return '{{0:0{0}b}}'.format(self.len).format(self.val)
 
     def as_hex(self):
-        return '{{:0{}X}}'.format(self.len / 4 + ((self.len % 4) != 0)).format(self.val)
+        # make template to pad out to number of bytes necessary to represent bits
+        tmpl = '%0{0}X'.format(2 * (self.len // 8 + ((self.len % 8) != 0)))
+        ret = tmpl % self.val
+        return ret
 
     def as_int(self):
         return self.val
@@ -192,9 +208,11 @@ class Bits(object):
 
     @classmethod
     def from_hex(cls, hex):
+        if isinstance(hex, bytes):
+            hex = hex.decode('ascii')
         if not hex.startswith('0x'):
             hex = '0x' + hex
-        return cls('0x' + hex)
+        return cls(hex)
 
     @classmethod
     def from_int(cls, int_, len_=None):
@@ -202,7 +220,8 @@ class Bits(object):
 
     @classmethod
     def from_bytes(cls, bytes_):
-        return cls.from_hex(binascii.unhexilfy(bytes_))
+        return cls.from_hex(binascii.hexlify(bytes_))
 
     def __repr__(self):
-        return "Bits('{}')".format(self.as_bin())
+        cn = self.__class__.__name__
+        return "{0}('{1}')".format(cn, self.as_bin())

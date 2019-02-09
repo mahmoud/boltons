@@ -1,6 +1,6 @@
 
 from pytest import raises
-from boltons.mathutils import clamp, ceil, floor
+from boltons.mathutils import clamp, ceil, floor, Bits
 import math
 
 INF, NAN = float('inf'), float('nan')
@@ -87,7 +87,7 @@ def test_bits():
     chk(Bits('10').as_list(), [True, False])
     chk(Bits('10').as_int(), 2)
     chk(Bits('10').as_bin(), '10')
-    chk(Bits('1111').as_hex(), 'F')
+    chk(Bits('1111').as_hex(), '0F')
     chk(Bits('10'), Bits([True, False]))
     chk(Bits('10'), Bits(2))
     chk(Bits('01') | Bits('10'), Bits('11'))
@@ -106,4 +106,4 @@ def test_bits():
                     ).as_hex()
                 ).as_int()
             ).as_bytes()
-    ), Bits('101'))
+    ), Bits('00000101'))
