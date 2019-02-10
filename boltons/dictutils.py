@@ -964,7 +964,7 @@ def subdict(d, keep=None, drop=None):
 
     keys = set(keep) - set(drop)
 
-    return dict([(k, v) for k, v in d.items() if k in keys])
+    return type(d)([(k, v) for k, v in d.items() if k in keys])
 
 
 class FrozenDict(dict):

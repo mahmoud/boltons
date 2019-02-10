@@ -2,7 +2,7 @@
 
 import pytest
 
-from boltons.dictutils import OMD, OneToOne, ManyToMany, FrozenDict
+from boltons.dictutils import OMD, OneToOne, ManyToMany, FrozenDict, subdict
 
 
 _ITEMSETS = [[],
@@ -260,6 +260,24 @@ def test_setdefault():
     assert y is None
     assert omd.setdefault('1', None) is empty_list
 
+## END OMD TESTS
+
+import string
+
+def test_subdict():
+    cap_map = dict([(x, x.upper()) for x in string.hexdigits])
+    assert len(cap_map) == 22
+    assert len(subdict(cap_map, drop=['a'])) == 21
+    assert 'a' not in subdict(cap_map, drop=['a'])
+
+    assert len(subdict(cap_map, keep=['a', 'b'])) == 2
+
+
+def test_subdict_keep_type():
+    omd = OMD({'a': 'A'})
+    assert subdict(omd) == omd
+    assert type(subdict(omd)) is OMD
+
 
 def test_one_to_one():
     e = OneToOne({1:2})
@@ -405,6 +423,7 @@ def test_frozendict_api():
                        '__ne__',
                        '__new__',
                        '__reduce__',
+                       '__reversed__',
                        '__setattr__',
                        '__sizeof__',
                        '__str__',
