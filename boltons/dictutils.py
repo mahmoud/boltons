@@ -972,6 +972,18 @@ class FrozenHashError(TypeError):
 
 
 class FrozenDict(dict):
+    """An immutable dict subtype that is hashable and can itself be used
+    as a :class:`dict` key or :class:`set` entry. What
+    :class:`frozenset` is to :class:`set`, FrozenDict is to
+    :class:`dict`.
+
+    There was once an attempt to introduce such a type to the standard
+    library, but it was rejected: `PEP 416 <https://www.python.org/dev/peps/pep-0416/>`_.
+
+    Because FrozenDict is a :class:`dict` subtype, it automatically
+    works everywhere a dict would, including JSON serialization.
+
+    """
     __slots__ = ('_hash',)
 
     def updated(self, *a, **kw):
