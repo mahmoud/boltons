@@ -808,22 +808,26 @@ class OneToOne(dict):
         return "%s(%s)" % (cn, dict_repr)
 
 
-_PAIRING = object()  # marker
+# marker for the secret handshake used internally to set up the invert ManyToMany
+_PAIRING = object()
 
 
 class ManyToMany(object):
     """
     a dict-like entity that represents a many-to-many relationship
     between two groups of objects
+
     behaves like a dict-of-tuples; also has .inv which is kept
     up to date which is a dict-of-tuples in the other direction
+
+    also, can be used as a directed graph among hashable python objects
     """
     def __init__(self, items=None):
         self.data = {}
         if type(items) is tuple and items and items[0] is _PAIRING:
             self.inv = items[1]
         else:
-            self.inv = ManyToMany((_PAIRING, self))
+            self.inv = self.__class__((_PAIRING, self))
             if items:
                 self.update(items)
 
@@ -838,9 +842,9 @@ class ManyToMany(object):
             self.add(key, val)
 
     def __getitem__(self, key):
-        return tuple(self.data[key])
+        return frozenset(self.data[key])
 
-    def get(self, key, default=()):
+    def get(self, key, default=frozenset()):
         try:
             return self[key]
         except KeyError:
@@ -855,14 +859,24 @@ class ManyToMany(object):
     def update(self, iterable):
         """given an iterable of (key, val), add them all"""
         if type(iterable) is type(self):
-            for k in iterable:
-                self[k] = iterable[k]
+            other = iterable
+            for k in other.data:
+                if k not in self.data:
+                    self.data[k] = other.data[k]
+                else:
+                    self.data[k].update(other.data[k])
+            for k in other.inv.data:
+                if k not in self.inv.data:
+                    self.inv.data[k] = other.inv.data[k]
+                else:
+                    self.inv.data[k].update(other.inv.data[k])
         elif hasattr(iterable, 'keys'):
             for k in iterable:
                 self.add(k, iterable[k])
         else:
             for key, val in iterable:
                 self.add(key, val)
+        return
 
     def add(self, key, val):
         if key not in self.data:
@@ -880,70 +894,40 @@ class ManyToMany(object):
         if not self.inv.data[val]:
             del self.inv.data[val]
 
-    def __contains__(self, key):
-        return key in self.data
+    def replace(self, key, newkey):
+        """
+        replace instances of key by newkey
+        """
+        if key not in self.data:
+            return
+        self.data[newkey] = fwdset = self.data.pop(key)
+        for val in fwdset:
+            revset = self.inv.data[val]
+            revset.remove(key)
+            revset.add(newkey)
 
     def iteritems(self):
         for key in self.data:
             for val in self.data[key]:
                 yield key, val
 
+    def keys(self):
+        return self.data.keys()
+
+    def __contains__(self, key):
+        return key in self.data
+
     def __iter__(self):
         return self.data.__iter__()
+
+    def __len__(self):
+        return self.data.__len__()
 
     def __eq__(self, other):
         return type(self) == type(other) and self.data == other.data
 
-
-class ManyToManySeq(object):
-    """
-    Represents a sequence of ManyToMany relationships
-    Constructed with an ordered sequence of columns,
-    relationships between values of those columns are stored.
-    """
-    def __init__(self, *cols):
-        if len(cols) < 2:
-            raise ValueError('need at least two columns; got {}'.format(cols))
-        self.data = {}
-        self.cols = cols
-        col_pairs = zip(cols[:-1], cols[1:])
-        for lhs, rhs in col_pairs:
-            self.data[lhs, rhs] = ManyToMany()
-
-    def __getitem__(self, key):
-        if type(key) is tuple:
-            if len(key) == 2:
-                if key in self.data:
-                    return self.data[key]
-                return self.data[key[1], key[0]].inv
-        #if type(key) is _ResultSet:
-        #    return self._filter(key)
-        #assert key in self.cols
-        #return _Col(self, key)
-
-    #def _filter(self, result_set):
-    #    assert result_set.src is self
-
-    def __iter__(self):
-        """
-        iterate over all of the subsequences
-        """
-        col_pairs = zip(self.cols[:-1], self.cols[1:])
-        m2ms = [self.data[pair] for pair in col_pairs]
-        return itertools.chain.from_iterable(
-            [_join_all(key, m2ms[0], m2ms[1:]) for key in m2ms[0]])
-
-
-def _join_all(key, nxt, rest, sofar=()):
-    if not rest:
-        row = []
-        while sofar:
-            row.append(sofar[0])
-            sofar = sofar[1]
-        row.reverse()
-        return [row + [key, val] for val in nxt[key]]
-    return itertools.chain.from_iterable(
-[_join_all(val, rest[0], rest[1:], (key, sofar)) for val in nxt[key]])
+    def __repr__(self):
+        return "{}({})".format(self.__class__.__name__, list(self.iteritems()))
 
 
 def subdict(d, keep=None, drop=None):

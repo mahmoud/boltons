@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from boltons.dictutils import OMD, OneToOne, ManyToMany, ManyToManySeq
+from boltons.dictutils import OMD, OneToOne, ManyToMany
 
 _ITEMSETS = [[],
              [('a', 1), ('b', 2), ('c', 3)],
@@ -303,10 +303,10 @@ def test_many_to_many():
     m2m = ManyToMany()
     m2m.add(1, 'a')
     m2m.add(1, 'b')
-    assert m2m[1] == ('a', 'b')
-    assert m2m.inv['a'] == (1,)
+    assert m2m[1] == frozenset(['a', 'b'])
+    assert m2m.inv['a'] == frozenset([1])
     del m2m.inv['a']
-    assert m2m[1] == ('b',)
+    assert m2m[1] == frozenset(['b'])
     assert 1 in m2m
     del m2m.inv['b']
     assert 1 not in m2m
@@ -316,29 +316,7 @@ def test_many_to_many():
     m2m.remove(1, 'b')
     assert 1 not in m2m
     m2m.update([(1, 'a'), (2, 'b')])
-    assert m2m.get(2) == ('b',)
-    assert m2m.get(3) == ()
-    ManyToMany(['ab', 'cd']) == ManyToMany(['ba', 'dc']).inv
+    assert m2m.get(2) == frozenset(('b',))
+    assert m2m.get(3) == frozenset(())
+    assert ManyToMany(['ab', 'cd']) == ManyToMany(['ba', 'dc']).inv
     assert ManyToMany(ManyToMany(['ab', 'cd'])) == ManyToMany(['ab', 'cd'])
-
-
-def test_many_to_many_sequence():
-    m2ms = ManyToManySeq('employee', 'manager', 'director')
-    m2ms['employee', 'manager'].add('alice', 'bob')
-    m2ms['manager', 'director'].add('bob', 'carol')
-    m2ms['employee', 'manager'].add('dave', 'bob')
-    m2ms['employee', 'manager'].add('eve', 'bob')
-    assert sorted(m2ms) == sorted([
-        ['alice', 'bob', 'carol'],
-        ['dave', 'bob', 'carol'],
-        ['eve', 'bob', 'carol'],
-    ])
-
-    m2ms = ManyToManySeq('letters', 'numbers', 'greek', 'roman')
-    m2ms['letters', 'numbers'].add('a', 1)
-    m2ms['numbers', 'greek'].add(1, 'alpha')
-    m2ms['greek', 'roman'].add('alpha', 'I')
-    m2ms['letters', 'numbers'].add('b', 2)
-    m2ms['numbers', 'greek'].add(2, 'beta')
-    m2ms['greek', 'roman'].add('beta', 'II')
-    assert list(m2ms) == [['a', 1, 'alpha', 'I'], ['b', 2, 'beta', 'II']]
