@@ -967,8 +967,12 @@ def subdict(d, keep=None, drop=None):
     return type(d)([(k, v) for k, v in d.items() if k in keys])
 
 
+class FrozenHashError(TypeError):
+    pass
+
+
 class FrozenDict(dict):
-    _hash = None
+    __slots__ = ('_hash',)
 
     def updated(self, *a, **kw):
         """Make a copy and add items from a dictionary or iterable (and/or
@@ -992,9 +996,18 @@ class FrozenDict(dict):
         return type(self), (dict(self),)
 
     def __hash__(self):
-        if self._hash is None:
-            self._hash = hash(frozenset(self.items()))
-        return self._hash
+        try:
+            ret = self._hash
+        except AttributeError:
+            try:
+                ret = self._hash = hash(frozenset(self.items()))
+            except Exception as e:
+                ret = self._hash = FrozenHashError(e)
+
+        if ret.__class__ is FrozenHashError:
+            raise ret
+
+        return ret
 
     def __copy__(self):
         return self  # immutable types don't copy, see tuple's behavior

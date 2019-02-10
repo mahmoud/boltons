@@ -2,7 +2,7 @@
 
 import pytest
 
-from boltons.dictutils import OMD, OneToOne, ManyToMany, FrozenDict, subdict
+from boltons.dictutils import OMD, OneToOne, ManyToMany, FrozenDict, subdict, FrozenHashError
 
 
 _ITEMSETS = [[],
@@ -399,6 +399,15 @@ def test_frozendict():
 
     assert sorted(fkfd.updated({8: 0}).keys()) == [2, 4, 6, 8]
 
+    # try something with an unhashable value
+    unfd = FrozenDict({'a': ['A']})
+    with pytest.raises(TypeError) as excinfo:
+        {unfd: 'val'}
+    assert excinfo.type is FrozenHashError
+    with pytest.raises(TypeError) as excinfo2:
+        {unfd: 'val'}
+    assert excinfo.value is excinfo2.value  # test cached exception
+
     return
 
 
@@ -443,6 +452,8 @@ def test_frozendict_api():
     fd = FrozenDict()
     ret = []
     for attrname in dir(fd):
+        if attrname is '_hash':  # in the dir, even before it's set
+            continue
         attr = getattr(fd, attrname)
         if not callable(attr):
             continue
