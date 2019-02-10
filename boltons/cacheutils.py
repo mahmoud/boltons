@@ -37,7 +37,6 @@ Learn more about `caching algorithms on Wikipedia
 import heapq
 import weakref
 import itertools
-from collections import deque
 from operator import attrgetter
 
 try:
@@ -128,7 +127,7 @@ class LRI(dict):
 
     def _print_ll(self):
         print('***')
-        for (key, val) in flattened_ll:
+        for (key, val) in self._get_flattened_ll():
             print(key, val)
         print('***')
         return
@@ -305,6 +304,7 @@ class LRI(dict):
         val_map = super(LRI, self).__repr__()
         return ('%s(max_size=%r, on_miss=%r, values=%s)'
                 % (cn, self.max_size, self.on_miss, val_map))
+
 
 class LRU(LRI):
     """The ``LRU`` is :class:`dict` subtype implementation of the
