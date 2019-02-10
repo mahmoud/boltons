@@ -1026,6 +1026,7 @@ class FrozenDict(dict):
 
     # block everything else
     def _raise_frozen_typeerror(self, *a, **kw):
+        "raises a TypeError, because FrozenDicts are immutable"
         raise TypeError('%s object is immutable' % self.__class__.__name__)
 
     __setitem__ = __delitem__ = update = _raise_frozen_typeerror
