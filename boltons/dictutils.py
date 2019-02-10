@@ -257,7 +257,7 @@ class OrderedMultiDict(dict):
                     del self[k]
             for k, v in E.iteritems(multi=True):
                 self_add(k, v)
-        elif hasattr(E, 'keys'):
+        elif callable(getattr(E, 'keys', None)):
             for k in E.keys():
                 self[k] = E[k]
         else:
@@ -830,6 +830,16 @@ class ManyToMany(object):
             self.inv = self.__class__((_PAIRING, self))
             if items:
                 self.update(items)
+        return
+
+    def get(self, key, default=frozenset()):
+        try:
+            return self[key]
+        except KeyError:
+            return default
+
+    def __getitem__(self, key):
+        return frozenset(self.data[key])
 
     def __setitem__(self, key, vals):
         vals = set(vals)
@@ -840,15 +850,6 @@ class ManyToMany(object):
                 self.remove(key, val)
         for val in vals:
             self.add(key, val)
-
-    def __getitem__(self, key):
-        return frozenset(self.data[key])
-
-    def get(self, key, default=frozenset()):
-        try:
-            return self[key]
-        except KeyError:
-            return default
 
     def __delitem__(self, key):
         for val in self.data.pop(key):
@@ -870,8 +871,8 @@ class ManyToMany(object):
                     self.inv.data[k] = other.inv.data[k]
                 else:
                     self.inv.data[k].update(other.inv.data[k])
-        elif hasattr(iterable, 'keys'):
-            for k in iterable:
+        elif callable(getattr(iterable, 'keys', None)):
+            for k in iterable.keys():
                 self.add(k, iterable[k])
         else:
             for key, val in iterable:
@@ -927,7 +928,8 @@ class ManyToMany(object):
         return type(self) == type(other) and self.data == other.data
 
     def __repr__(self):
-        return "{}({})".format(self.__class__.__name__, list(self.iteritems()))
+        cn = self.__class__.__name__
+        return '%s(%r)' % (cn, list(self.iteritems()))
 
 
 def subdict(d, keep=None, drop=None):

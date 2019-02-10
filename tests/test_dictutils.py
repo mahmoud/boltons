@@ -301,8 +301,12 @@ def test_one_to_one():
 
 def test_many_to_many():
     m2m = ManyToMany()
+    assert len(m2m) == 0
+    assert not m2m
     m2m.add(1, 'a')
+    assert m2m
     m2m.add(1, 'b')
+    assert len(m2m) == 1
     assert m2m[1] == frozenset(['a', 'b'])
     assert m2m.inv['a'] == frozenset([1])
     del m2m.inv['a']
@@ -320,3 +324,9 @@ def test_many_to_many():
     assert m2m.get(3) == frozenset(())
     assert ManyToMany(['ab', 'cd']) == ManyToMany(['ba', 'dc']).inv
     assert ManyToMany(ManyToMany(['ab', 'cd'])) == ManyToMany(['ab', 'cd'])
+
+    m2m = ManyToMany({'a': 'b'})
+    m2m.replace('a', 'B')
+    # also test the repr while we're at it
+    assert repr(m2m) == repr(ManyToMany([("B", "b")]))
+    assert repr(m2m).startswith('ManyToMany(') and 'B' in repr(m2m)
