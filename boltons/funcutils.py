@@ -25,6 +25,13 @@ else:
     _IS_PY2 = True
 
 
+try:
+    _inspect_iscoroutinefunction = inspect.iscoroutinefunction
+except AttributeError:
+    # Python 3.4
+    _inspect_iscoroutinefunction = lambda func: False
+
+
 def get_module_callables(mod, ignore=None):
     """Returns two maps of (*types*, *funcs*) from *mod*, optionally
     ignoring based on the :class:`bool` return value of the *ignore*
@@ -300,7 +307,10 @@ def wraps(func, injected=None, **kw):
                 continue  # keyword arg will be caught by the varkw
             raise
 
-    fb.body = 'return _call(%s)' % fb.get_invocation_str()
+    if fb.is_async:
+        fb.body = 'return await _call(%s)' % fb.get_invocation_str()
+    else:
+        fb.body = 'return _call(%s)' % fb.get_invocation_str()
 
     def wrapper_wrapper(wrapper_func):
         execdict = dict(_call=wrapper_func, _func=func)
@@ -406,6 +416,7 @@ class FunctionBuilder(object):
 
     _defaults = {'doc': str,
                  'dict': dict,
+                 'is_async': lambda: False,
                  'module': lambda: None,
                  'body': lambda: 'pass',
                  'indent': lambda: 4,
@@ -491,6 +502,9 @@ class FunctionBuilder(object):
 
         kwargs.update(cls._argspec_to_dict(func))
 
+        if _inspect_iscoroutinefunction(func):
+            kwargs['is_async'] = True
+
         return cls(**kwargs)
 
     def get_func(self, execdict=None, add_source=True, with_dict=True):
@@ -515,6 +529,9 @@ class FunctionBuilder(object):
 
         tmpl = 'def {name}{sig_str}:'
         tmpl += '\n{body}'
+
+        if self.is_async:
+            tmpl = 'async ' + tmpl
 
         body = _indent(self.body, ' ' * self.indent)
 
