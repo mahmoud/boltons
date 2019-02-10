@@ -452,7 +452,7 @@ def test_frozendict_api():
     fd = FrozenDict()
     ret = []
     for attrname in dir(fd):
-        if attrname is '_hash':  # in the dir, even before it's set
+        if attrname == '_hash':  # in the dir, even before it's set
             continue
         attr = getattr(fd, attrname)
         if not callable(attr):
