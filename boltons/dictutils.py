@@ -43,6 +43,8 @@ try:
 except ImportError:
     from collections import KeysView, ValuesView, ItemsView
 
+import itertools
+
 try:
     from itertools import izip_longest
 except ImportError:
@@ -258,7 +260,7 @@ class OrderedMultiDict(dict):
                     del self[k]
             for k, v in E.iteritems(multi=True):
                 self_add(k, v)
-        elif hasattr(E, 'keys'):
+        elif callable(getattr(E, 'keys', None)):
             for k in E.keys():
                 self[k] = E[k]
         else:
@@ -807,6 +809,130 @@ class OneToOne(dict):
         cn = self.__class__.__name__
         dict_repr = dict.__repr__(self)
         return "%s(%s)" % (cn, dict_repr)
+
+
+# marker for the secret handshake used internally to set up the invert ManyToMany
+_PAIRING = object()
+
+
+class ManyToMany(object):
+    """
+    a dict-like entity that represents a many-to-many relationship
+    between two groups of objects
+
+    behaves like a dict-of-tuples; also has .inv which is kept
+    up to date which is a dict-of-tuples in the other direction
+
+    also, can be used as a directed graph among hashable python objects
+    """
+    def __init__(self, items=None):
+        self.data = {}
+        if type(items) is tuple and items and items[0] is _PAIRING:
+            self.inv = items[1]
+        else:
+            self.inv = self.__class__((_PAIRING, self))
+            if items:
+                self.update(items)
+        return
+
+    def get(self, key, default=frozenset()):
+        try:
+            return self[key]
+        except KeyError:
+            return default
+
+    def __getitem__(self, key):
+        return frozenset(self.data[key])
+
+    def __setitem__(self, key, vals):
+        vals = set(vals)
+        if key in self:
+            to_remove = self.data[key] - vals
+            vals -= self.data[key]
+            for val in to_remove:
+                self.remove(key, val)
+        for val in vals:
+            self.add(key, val)
+
+    def __delitem__(self, key):
+        for val in self.data.pop(key):
+            self.inv.data[val].remove(key)
+            if not self.inv.data[val]:
+                del self.inv.data[val]
+
+    def update(self, iterable):
+        """given an iterable of (key, val), add them all"""
+        if type(iterable) is type(self):
+            other = iterable
+            for k in other.data:
+                if k not in self.data:
+                    self.data[k] = other.data[k]
+                else:
+                    self.data[k].update(other.data[k])
+            for k in other.inv.data:
+                if k not in self.inv.data:
+                    self.inv.data[k] = other.inv.data[k]
+                else:
+                    self.inv.data[k].update(other.inv.data[k])
+        elif callable(getattr(iterable, 'keys', None)):
+            for k in iterable.keys():
+                self.add(k, iterable[k])
+        else:
+            for key, val in iterable:
+                self.add(key, val)
+        return
+
+    def add(self, key, val):
+        if key not in self.data:
+            self.data[key] = set()
+        self.data[key].add(val)
+        if val not in self.inv.data:
+            self.inv.data[val] = set()
+        self.inv.data[val].add(key)
+
+    def remove(self, key, val):
+        self.data[key].remove(val)
+        if not self.data[key]:
+            del self.data[key]
+        self.inv.data[val].remove(key)
+        if not self.inv.data[val]:
+            del self.inv.data[val]
+
+    def replace(self, key, newkey):
+        """
+        replace instances of key by newkey
+        """
+        if key not in self.data:
+            return
+        self.data[newkey] = fwdset = self.data.pop(key)
+        for val in fwdset:
+            revset = self.inv.data[val]
+            revset.remove(key)
+            revset.add(newkey)
+
+    def iteritems(self):
+        for key in self.data:
+            for val in self.data[key]:
+                yield key, val
+
+    def keys(self):
+        return self.data.keys()
+
+    def __contains__(self, key):
+        return key in self.data
+
+    def __iter__(self):
+        return self.data.__iter__()
+
+    def __len__(self):
+        return self.data.__len__()
+
+    def __eq__(self, other):
+        return type(self) == type(other) and self.data == other.data
+
+    def __repr__(self):
+        cn = self.__class__.__name__
+        return '%s(%r)' % (cn, list(self.iteritems()))
 
 
 def subdict(d, keep=None, drop=None):

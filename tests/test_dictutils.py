@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from boltons.dictutils import OMD, OneToOne
+from boltons.dictutils import OMD, OneToOne, ManyToMany
 
 _ITEMSETS = [[],
              [('a', 1), ('b', 2), ('c', 3)],
@@ -297,3 +297,36 @@ def test_one_to_one():
     e.clear()
     e.update({1:2}, cat="dog")
     ck({1:2, "cat":"dog"}, {2:1, "dog":"cat"})
+
+
+def test_many_to_many():
+    m2m = ManyToMany()
+    assert len(m2m) == 0
+    assert not m2m
+    m2m.add(1, 'a')
+    assert m2m
+    m2m.add(1, 'b')
+    assert len(m2m) == 1
+    assert m2m[1] == frozenset(['a', 'b'])
+    assert m2m.inv['a'] == frozenset([1])
+    del m2m.inv['a']
+    assert m2m[1] == frozenset(['b'])
+    assert 1 in m2m
+    del m2m.inv['b']
+    assert 1 not in m2m
+    m2m[1] = ('a', 'b')
+    assert set(m2m.iteritems()) == set([(1, 'a'), (1, 'b')])
+    m2m.remove(1, 'a')
+    m2m.remove(1, 'b')
+    assert 1 not in m2m
+    m2m.update([(1, 'a'), (2, 'b')])
+    assert m2m.get(2) == frozenset(('b',))
+    assert m2m.get(3) == frozenset(())
+    assert ManyToMany(['ab', 'cd']) == ManyToMany(['ba', 'dc']).inv
+    assert ManyToMany(ManyToMany(['ab', 'cd'])) == ManyToMany(['ab', 'cd'])
+
+    m2m = ManyToMany({'a': 'b'})
+    m2m.replace('a', 'B')
+    # also test the repr while we're at it
+    assert repr(m2m) == repr(ManyToMany([("B", "b")]))
+    assert repr(m2m).startswith('ManyToMany(') and 'B' in repr(m2m)
