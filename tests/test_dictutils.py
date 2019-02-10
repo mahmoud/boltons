@@ -1,6 +1,9 @@
 # -*- coding: utf-8 -*-
 
-from boltons.dictutils import OMD, OneToOne, ManyToMany
+import pytest
+
+from boltons.dictutils import OMD, OneToOne, ManyToMany, FrozenDict, subdict, FrozenHashError
+
 
 _ITEMSETS = [[],
              [('a', 1), ('b', 2), ('c', 3)],
@@ -257,6 +260,24 @@ def test_setdefault():
     assert y is None
     assert omd.setdefault('1', None) is empty_list
 
+## END OMD TESTS
+
+import string
+
+def test_subdict():
+    cap_map = dict([(x, x.upper()) for x in string.hexdigits])
+    assert len(cap_map) == 22
+    assert len(subdict(cap_map, drop=['a'])) == 21
+    assert 'a' not in subdict(cap_map, drop=['a'])
+
+    assert len(subdict(cap_map, keep=['a', 'b'])) == 2
+
+
+def test_subdict_keep_type():
+    omd = OMD({'a': 'A'})
+    assert subdict(omd) == omd
+    assert type(subdict(omd)) is OMD
+
 
 def test_one_to_one():
     e = OneToOne({1:2})
@@ -330,3 +351,116 @@ def test_many_to_many():
     # also test the repr while we're at it
     assert repr(m2m) == repr(ManyToMany([("B", "b")]))
     assert repr(m2m).startswith('ManyToMany(') and 'B' in repr(m2m)
+
+
+def test_frozendict():
+    efd = FrozenDict()
+    assert isinstance(efd, dict)
+    assert len(efd) == 0
+    assert not efd
+    assert repr(efd) == "FrozenDict({})"
+
+    data = {'a': 'A', 'b': 'B'}
+    fd = FrozenDict(data)
+
+    assert bool(fd)
+    assert len(fd) == 2
+    assert fd['a'] == 'A'
+    assert fd['b'] == 'B'
+    assert sorted(fd.keys()) == ['a', 'b']
+    assert sorted(fd.values()) == ['A', 'B']
+    assert sorted(fd.items()) == [('a', 'A'), ('b', 'B')]
+    assert 'a' in fd
+    assert 'c' not in fd
+
+    assert hash(fd)
+    fd_map = {'fd': fd}
+    assert fd_map['fd'] is fd
+
+    with pytest.raises(TypeError):
+        fd['c'] = 'C'
+    with pytest.raises(TypeError):
+        del fd['a']
+    with pytest.raises(TypeError):
+        fd.update(x='X')
+    with pytest.raises(TypeError):
+        fd.setdefault('x', [])
+    with pytest.raises(TypeError):
+        fd.pop('c')
+    with pytest.raises(TypeError):
+        fd.popitem()
+    with pytest.raises(TypeError):
+        fd.clear()
+
+
+    import pickle
+    fkfd = FrozenDict.fromkeys([2, 4, 6], value=0)
+    assert pickle.loads(pickle.dumps(fkfd)) == fkfd
+
+    assert sorted(fkfd.updated({8: 0}).keys()) == [2, 4, 6, 8]
+
+    # try something with an unhashable value
+    unfd = FrozenDict({'a': ['A']})
+    with pytest.raises(TypeError) as excinfo:
+        {unfd: 'val'}
+    assert excinfo.type is FrozenHashError
+    with pytest.raises(TypeError) as excinfo2:
+        {unfd: 'val'}
+    assert excinfo.value is excinfo2.value  # test cached exception
+
+    return
+
+
+def test_frozendict_api():
+    # all the read-only methods that are fine
+    through_methods = ['__class__',
+                       '__cmp__',
+                       '__contains__',
+                       '__delattr__',
+                       '__dir__',
+                       '__eq__',
+                       '__format__',
+                       '__ge__',
+                       '__getattribute__',
+                       '__getitem__',
+                       '__gt__',
+                       '__init__',
+                       '__iter__',
+                       '__le__',
+                       '__len__',
+                       '__lt__',
+                       '__ne__',
+                       '__new__',
+                       '__reduce__',
+                       '__reversed__',
+                       '__setattr__',
+                       '__sizeof__',
+                       '__str__',
+                       'copy',
+                       'get',
+                       'has_key',
+                       'items',
+                       'iteritems',
+                       'iterkeys',
+                       'itervalues',
+                       'keys',
+                       'values',
+                       'viewitems',
+                       'viewkeys',
+                       'viewvalues']
+
+    fd = FrozenDict()
+    ret = []
+    for attrname in dir(fd):
+        if attrname == '_hash':  # in the dir, even before it's set
+            continue
+        attr = getattr(fd, attrname)
+        if not callable(attr):
+            continue
+
+        if getattr(FrozenDict, attrname) == getattr(dict, attrname, None) and attrname not in through_methods:
+            assert attrname == False
+            ret.append(attrname)
+
+    import copy
+    assert copy.copy(fd) is fd
