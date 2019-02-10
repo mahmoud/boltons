@@ -966,4 +966,47 @@ def subdict(d, keep=None, drop=None):
 
     return dict([(k, v) for k, v in d.items() if k in keys])
 
+
+class FrozenDict(dict):
+    _hash = None
+
+    def updated(self, *a, **kw):
+        """Make a copy and add items from a dictionary or iterable (and/or
+        keyword arguments), overwriting values under an existing
+        key. See :meth:`dict.update` for more details.
+        """
+        data = dict(self)
+        data.update(*a, **kw)
+        return type(self)(data)
+
+    @classmethod
+    def fromkeys(cls, keys, value=None):
+        # one of the lesser known and used/useful dict methods
+        return cls(dict.fromkeys(keys, value))
+
+    def __repr__(self):
+        cn = self.__class__.__name__
+        return '%s(%s)' % (cn, dict.__repr__(self))
+
+    def __reduce_ex__(self, protocol):
+        return type(self), (dict(self),)
+
+    def __hash__(self):
+        if self._hash is None:
+            self._hash = hash(frozenset(self.items()))
+        return self._hash
+
+    def __copy__(self):
+        return self  # immutable types don't copy, see tuple's behavior
+
+    # block everything else
+    def _raise_frozen_typeerror(self, *a, **kw):
+        raise TypeError('%s object is immutable' % self.__class__.__name__)
+
+    __setitem__ = __delitem__ = update = _raise_frozen_typeerror
+    setdefault = pop = popitem = clear = _raise_frozen_typeerror
+
+    del _raise_frozen_typeerror
+
+
 # end dictutils.py
