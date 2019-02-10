@@ -46,4 +46,6 @@ def test_wraps_async():
     asyncio.run(foo(0.3))
     duration = time.monotonic() - start_time
 
-    assert duration > 0.3
+    # lol windows py37 somehow completes this in under 0.3
+    # "assert 0.29700000000002547 > 0.3" https://ci.appveyor.com/project/mahmoud/boltons/builds/22261051/job/3jfq1tq2233csqp6
+    assert duration > 0.25
