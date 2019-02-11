@@ -276,6 +276,10 @@ def wraps(func, injected=None, expected=None, **kw):
         func (function): The callable whose attributes are to be copied.
         injected (list): An optional list of argument names which
             should not appear in the new wrapper's signature.
+        expected (list): An optional list of argument names (or (name,
+            default) pairs) representing new arguments introduced by
+            the wrapper (the opposite of *injected*). See
+            :meth:`FunctionBuilder.add_arg()` for more details.
         update_dict (bool): Whether to copy other, non-standard
             attributes of *func* over to the wrapper. Defaults to True.
         inject_to_varkw (bool): Ignore missing arguments when a
