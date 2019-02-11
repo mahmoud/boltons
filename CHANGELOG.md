@@ -27,7 +27,7 @@ A very big release indeed, perhaps the biggest yet. A big, big thank you to all 
     * [dictutils.subdict()][dictutils.subdict] now does its best to return the same type of dictionary it was passed.
     * [urlutils][urlutils] now has better IPv6 support and URL can be used more natively like a string
     * Improve singularization in [strutils][strutils]
-    * Fix some deprecation warnings in Python 3.7 ([#165][i165], [#195][i196])
+    * Fix some deprecation warnings in Python 3.7 ([#165][i165], [#196][i196])
     * Document the change in dict constructor behavior affecting [dictutils.OMD][dictutils.OMD] under Python 3.7+ ([#179][i179])
 
 [i105]: https://github.com/mahmoud/boltons/issues/105
@@ -37,7 +37,9 @@ A very big release indeed, perhaps the biggest yet. A big, big thank you to all 
 [i161]: https://github.com/mahmoud/boltons/issues/161
 [i165]: https://github.com/mahmoud/boltons/issues/165
 [i179]: https://github.com/mahmoud/boltons/issues/179
+[i194]: https://github.com/mahmoud/boltons/issues/194
 [i195]: https://github.com/mahmoud/boltons/issues/195
+[i196]: https://github.com/mahmoud/boltons/issues/196
 [i201]: https://github.com/mahmoud/boltons/issues/201
 
 18.0.1
@@ -836,6 +838,7 @@ added in this release.
 [zscore]: https://en.wikipedia.org/wiki/Standard_score
 
 [cacheutils]: http://boltons.readthedocs.org/en/latest/cacheutils.html
+[cacheutils.LRI]: http://boltons.readthedocs.org/en/latest/cacheutils.html#boltons.cacheutils.LRI
 [cacheutils.LRU]: http://boltons.readthedocs.org/en/latest/cacheutils.html#boltons.cacheutils.LRU
 [cacheutils.ThresholdCounter]: http://boltons.readthedocs.org/en/latest/cacheutils.html#boltons.cacheutils.ThresholdCounter
 [cacheutils.cached]: http://boltons.readthedocs.org/en/latest/cacheutils.html#boltons.cacheutils.cached
@@ -941,6 +944,7 @@ added in this release.
 [statsutils.Stats.get_zscore]: http://boltons.readthedocs.org/en/latest/statsutils.html#boltons.statsutils.Stats.get_zscore
 [statsutils.median]: http://boltons.readthedocs.org/en/latest/statsutils.html#boltons.statsutils.median
 [statsutils.trimean]: http://boltons.readthedocs.org/en/latest/statsutils.html#boltons.statsutils.trimean
+[strutils]: http://boltons.readthedocs.org/en/latest/strutils.html
 [strutils.HTMLTextExtractor]: http://boltons.readthedocs.org/en/latest/strutils.html#boltons.strutils.HTMLTextExtractor
 [strutils.a10n]: http://boltons.readthedocs.org/en/latest/strutils.html#boltons.strutils.a10n
 [strutils.args2cmd]: http://boltons.readthedocs.org/en/latest/strutils.html#boltons.strutils.args2cmd
