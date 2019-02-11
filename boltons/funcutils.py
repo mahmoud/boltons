@@ -12,6 +12,7 @@ import inspect
 import functools
 import itertools
 from types import MethodType, FunctionType
+from collections import OrderedDict
 
 try:
     xrange
@@ -34,9 +35,9 @@ except AttributeError:
 
 try:
     from boltons.typeutils import make_sentinel
-    _MISSING = make_sentinel(var_name='_MISSING')
+    NO_DEFAULT = make_sentinel(var_name='NO_DEFAULT')
 except ImportError:
-    _MISSING = object()
+    NO_DEFAULT = object()
 
 
 def get_module_callables(mod, ignore=None):
@@ -227,7 +228,7 @@ partial = CachedInstancePartial
 # # #
 
 
-def wraps(func, injected=None, **kw):
+def wraps(func, injected=None, expected=None, **kw):
     """Modeled after the built-in :func:`functools.wraps`, this function is
     used to make your decorator's wrapper functions reflect the
     wrapped function's:
@@ -294,6 +295,21 @@ def wraps(func, injected=None, **kw):
     else:
         injected = list(injected)
 
+    if expected is None:
+        expected = []
+    elif isinstance(expected, basestring):
+        expected = [(expected, NO_DEFAULT)]
+
+    try:
+        try:
+            expected = OrderedDict(expected)
+        except (ValueError, TypeError):
+            expected = OrderedDict.fromkeys(expected, NO_DEFAULT)
+    except Exception as e:
+        raise ValueError('"expected" takes string name, sequence of string names,'
+                         ' iterable of (name, default) pairs, or a mapping of '
+                         '{name: default}, not %r (got: %r)' % (expected, e))
+
     if isinstance(func, (classmethod, staticmethod)):
         raise TypeError('wraps does not support wrapping classmethods and'
                         ' staticmethods, change the order of wrapping to'
@@ -313,6 +329,9 @@ def wraps(func, injected=None, **kw):
             if inject_to_varkw and fb.varkw is not None:
                 continue  # keyword arg will be caught by the varkw
             raise
+
+    for arg, default in expected.items():
+        fb.add_arg(arg, default)  # may raise ExistingArgument
 
     if fb.is_async:
         fb.body = 'return await _call(%s)' % fb.get_invocation_str()
@@ -573,26 +592,26 @@ class FunctionBuilder(object):
         return ret
 
     if _IS_PY2:
-        def add_arg(self, arg_name, default=_MISSING):
+        def add_arg(self, arg_name, default=NO_DEFAULT):
             if arg_name in self.args:
                 raise ExistingArgument('arg %r already in func %s arg list' % (arg_name, self.name))
             self.args.append(arg_name)
-            if default is not _MISSING:
+            if default is not NO_DEFAULT:
                 self.defaults = (self.defaults or ()) + (default,)
             return
     else:
-        def add_arg(self, arg_name, default=_MISSING, kwonly=False):
+        def add_arg(self, arg_name, default=NO_DEFAULT, kwonly=False):
             if arg_name in self.args:
                 raise ExistingArgument('arg %r already in func %s arg list' % (arg_name, self.name))
             if arg_name in self.kwonlyargs:
                 raise ExistingArgument('arg %r already in func %s kwonly arg list' % (arg_name, self.name))
             if not kwonly:
                 self.args.append(arg_name)
-                if default is not _MISSING:
+                if default is not NO_DEFAULT:
                     self.defaults = (self.defaults or ()) + (default,)
             else:
                 self.kwonlyargs.append(arg_name)
-                if default is not _MISSING:
+                if default is not NO_DEFAULT:
                     self.kwonlydefaults[arg_name] = default
             return
 
