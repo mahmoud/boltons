@@ -12,7 +12,6 @@ import inspect
 import functools
 import itertools
 from types import MethodType, FunctionType
-from collections import OrderedDict
 
 try:
     xrange
@@ -286,8 +285,6 @@ def wraps(func, injected=None, expected=None, **kw):
     :class:`FunctionBuilder` type, on which wraps was built.
 
     """
-    # TODO: maybe automatically use normal wraps in the very rare case
-    # that the signatures actually match and no adapter is needed.
     if injected is None:
         injected = []
     elif isinstance(injected, basestring):
@@ -295,20 +292,7 @@ def wraps(func, injected=None, expected=None, **kw):
     else:
         injected = list(injected)
 
-    if expected is None:
-        expected = []
-    elif isinstance(expected, basestring):
-        expected = [(expected, NO_DEFAULT)]
-
-    try:
-        try:
-            expected = OrderedDict(expected)
-        except (ValueError, TypeError):
-            expected = OrderedDict.fromkeys(expected, NO_DEFAULT)
-    except Exception as e:
-        raise ValueError('"expected" takes string name, sequence of string names,'
-                         ' iterable of (name, default) pairs, or a mapping of '
-                         '{name: default}, not %r (got: %r)' % (expected, e))
+    expected_items = _parse_wraps_expected(expected)
 
     if isinstance(func, (classmethod, staticmethod)):
         raise TypeError('wraps does not support wrapping classmethods and'
@@ -330,7 +314,7 @@ def wraps(func, injected=None, expected=None, **kw):
                 continue  # keyword arg will be caught by the varkw
             raise
 
-    for arg, default in expected.items():
+    for arg, default in expected_items:
         fb.add_arg(arg, default)  # may raise ExistingArgument
 
     if fb.is_async:
@@ -346,6 +330,46 @@ def wraps(func, injected=None, expected=None, **kw):
         return fully_wrapped
 
     return wrapper_wrapper
+
+
+def _parse_wraps_expected(expected):
+    # expected takes a pretty powerful argument, it's processed
+    # here. admittedly this would be less trouble if I relied on
+    # OrderedDict (there's an impl of that in the commit history if
+    # you look
+    if expected is None:
+        expected = []
+    elif isinstance(expected, basestring):
+        expected = [(expected, NO_DEFAULT)]
+
+    expected_items = []
+    try:
+        expected_iter = iter(expected)
+    except TypeError as e:
+        raise ValueError('"expected" takes string name, sequence of string names,'
+                         ' iterable of (name, default) pairs, or a mapping of '
+                         ' {name: default}, not %r (got: %r)' % (expected, e))
+    for argname in expected_iter:
+        if isinstance(argname, basestring):
+            # dict keys and bare strings
+            try:
+                default = expected[argname]
+            except TypeError:
+                default = NO_DEFAULT
+        else:
+            # pairs
+            try:
+                argname, default = argname
+            except (TypeError, ValueError):
+                raise ValueError('"expected" takes string name, sequence of string names,'
+                                 ' iterable of (name, default) pairs, or a mapping of '
+                                 ' {name: default}, not %r')
+        if not isinstance(argname, basestring):
+            raise ValueError('all "expected" argnames must be strings, not %r' % (argname,))
+
+        expected_items.append((argname, default))
+
+    return expected_items
 
 
 class FunctionBuilder(object):

@@ -177,58 +177,6 @@ def test_wraps_wrappers():
     return
 
 
-def test_wraps_expected():
-    def expect_string(func):
-        @wraps(func, expected="c")
-        def wrapped(*args, **kwargs):
-            args, c = args[:2], args[-1]
-            return func(*args, **kwargs) + (c,)
-        return wrapped
-
-    assert expect_string(wrappable_func)(1, 2, 3) == (1, 2, 3)
-    '''
-    def inject_list(func):
-        @wraps(func, injected=["b"])
-        def wrapped(a, *args, **kwargs):
-            return func(a, 2, *args, **kwargs)
-        return wrapped
-
-    assert inject_list(wrappable_func)(1) == (1, 2)
-
-    def inject_nonexistent_arg(func):
-        @wraps(func, injected=["X"])
-        def wrapped(*args, **kwargs):
-            return func(*args, **kwargs)
-        return wrapped
-
-    with pytest.raises(ValueError):
-        inject_nonexistent_arg(wrappable_func)
-
-    def inject_missing_argument(func):
-        @wraps(func, injected="c")
-        def wrapped(*args, **kwargs):
-            return func(1, *args, **kwargs)
-        return wrapped
-
-    def inject_misc_argument(func):
-        # inject_to_varkw is default True, just being explicit
-        @wraps(func, injected="c", inject_to_varkw=True)
-        def wrapped(*args, **kwargs):
-            return func(c=1, *args, **kwargs)
-        return wrapped
-
-    assert inject_misc_argument(wrappable_varkw_func)(1, 2) == (1, 2)
-
-    def inject_misc_argument_no_varkw(func):
-        @wraps(func, injected="c", inject_to_varkw=False)
-        def wrapped(*args, **kwargs):
-            return func(c=1, *args, **kwargs)
-        return wrapped
-
-    with pytest.raises(ValueError):
-        inject_misc_argument_no_varkw(wrappable_varkw_func)
-    '''
-
 def test_FunctionBuilder_add_arg():
     fb = FunctionBuilder('return_five', doc='returns the integer 5',
                          body='return 5')
@@ -257,3 +205,48 @@ def test_FunctionBuilder_add_arg():
 
     assert better_func('positional') == 'positional'
     assert better_func(val='keyword') == 'keyword'
+
+
+def test_wraps_expected():
+    def expect_string(func):
+        @wraps(func, expected="c")
+        def wrapped(*args, **kwargs):
+            args, c = args[:2], args[-1]
+            return func(*args, **kwargs) + (c,)
+        return wrapped
+
+    expected_string = expect_string(wrappable_func)
+    assert expected_string(1, 2, 3) == (1, 2, 3)
+
+    with pytest.raises(TypeError) as excinfo:
+        expected_string(1, 2)
+
+    # a rough way of making sure we got the kind of error we expected
+    assert 'argument' in repr(excinfo.value)
+
+    def expect_list(func):
+        @wraps(func, expected=["c"])
+        def wrapped(*args, **kwargs):
+            args, c = args[:2], args[-1]
+            return func(*args, **kwargs) + (c,)
+        return wrapped
+
+    assert expect_list(wrappable_func)(1, 2, c=4) == (1, 2, 4)
+
+    def expect_pair(func):
+        @wraps(func, expected=[('c', 5)])
+        def wrapped(*args, **kwargs):
+            args, c = args[:2], args[-1]
+            return func(*args, **kwargs) + (c,)
+        return wrapped
+
+    assert expect_pair(wrappable_func)(1, 2) == (1, 2, 5)
+
+    def expect_dict(func):
+        @wraps(func, expected={'c': 6})
+        def wrapped(*args, **kwargs):
+            args, c = args[:2], args[-1]
+            return func(*args, **kwargs) + (c,)
+        return wrapped
+
+    assert expect_dict(wrappable_func)(1, 2) == (1, 2, 6)
