@@ -116,7 +116,11 @@ def test_FunctionBuilder_add_arg_kwonly():
     better_func = fb.get_func()
     assert better_func() == 'default_val'
 
+    with pytest.raises(ValueError):
+        fb.add_arg('val')
+
     assert better_func(val='keyword') == 'keyword'
 
     with pytest.raises(TypeError):
         assert better_func('positional')
+    return
