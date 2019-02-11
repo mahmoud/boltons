@@ -1,8 +1,34 @@
 boltons Changelog
 =================
 
-Since February 20, 2013 there have been 33 releases and 1191 commits for
-an average of one 34-commit release every 6.2 weeks.
+Since February 20, 2013 there have been 34 releases and 1314 commits for
+an average of one 39-commit release every 9 weeks.
+
+19.0.0
+------
+*(February 10, 2019)*
+
+A very big release indeed.
+
+* New types and utilities
+    * dictutils.ManyToMany arrives, to complement dictutils.OneToOne
+    * dictutils.FrozenDict brings immutable mapping to a module near you
+    * setutils.complement() now allows "negative" sets, useful for exclusion and many other set operations
+    * iterutils.soft_sorted() allows for looser, more flexible sorting of sequences
+    * iterutils.flatten_iter() and iterutils.flatten(), to collapse nested iterables.
+    * mathutils.Bits type for representing a bitstring and translating
+      between integer, bytestring, hex, and boolean sequence representations.
+* funcutils improvements
+    * FunctionBuilder (and funcutils.wraps) now supports coroutines/async
+    * FunctionBuilder.add_arg() allows the addition of arguments to the signature, to match FunctionBuilder.remove_arg()
+    * Similarly funcutils.wraps now takes an "expected" argument, to complement "injected"
+* Other bugfixes and improvements
+    * cacheutils.LRI now evicts correctly when duplicate keys are added
+    * subdict now does its best to return the same type of dictionary it was passed.
+    * urlutils.URL now has better IPv6 support and can be used more natively like a string
+    * Improve singularization in strutils
+    * Fix some deprecation warnings in Python 3.7
+    * Document the change in dict constructor behavior affecting dictutils.OMD under Python 3.7+
 
 18.0.1
 ------
