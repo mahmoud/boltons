@@ -175,3 +175,33 @@ def test_wraps_wrappers():
                 return cls(x + y)
 
     return
+
+
+def test_FunctionBuilder_add_arg():
+    fb = FunctionBuilder('return_five', doc='returns the integer 5',
+                         body='return 5')
+    f = fb.get_func()
+    assert f() == 5
+
+    fb.add_arg('val')
+    f = fb.get_func()
+    assert f(val='ignored') == 5
+
+    with pytest.raises(ValueError) as excinfo:
+        fb.add_arg('val')
+    excinfo.typename == 'ExistingArgument'
+
+    fb = FunctionBuilder('return_val', doc='returns the value',
+                         body='return val')
+
+    broken_func = fb.get_func()
+    with pytest.raises(NameError):
+        broken_func()
+
+    fb.add_arg('val', default='default_val')
+
+    better_func = fb.get_func()
+    assert better_func() == 'default_val'
+
+    assert better_func('positional') == 'positional'
+    assert better_func(val='keyword') == 'keyword'

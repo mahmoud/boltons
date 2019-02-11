@@ -71,6 +71,7 @@ def test_remove_kwonly_arg():
         return loop
 
     fb_example = FunctionBuilder.from_func(example)
+    # import pdb;pdb.set_trace()
     assert 'test' in fb_example.args
     assert fb_example.get_defaults_dict()['test'] == 'default'
 
@@ -100,3 +101,22 @@ def test_FunctionBuilder_KWONLY_MARKER(signature, should_match):
     message = "{!r}: should_match was {}, but result was {}".format(
         signature, should_match, matched)
     assert bool(matched) == should_match, message
+
+
+def test_FunctionBuilder_add_arg_kwonly():
+    fb = FunctionBuilder('return_val', doc='returns the value',
+                         body='return val')
+
+    broken_func = fb.get_func()
+    with pytest.raises(NameError):
+        broken_func()
+
+    fb.add_arg('val', default='default_val', kwonly=True)
+
+    better_func = fb.get_func()
+    assert better_func() == 'default_val'
+
+    assert better_func(val='keyword') == 'keyword'
+
+    with pytest.raises(TypeError):
+        assert better_func('positional')

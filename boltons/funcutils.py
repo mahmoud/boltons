@@ -32,6 +32,13 @@ except AttributeError:
     _inspect_iscoroutinefunction = lambda func: False
 
 
+try:
+    from boltons.typeutils import make_sentinel
+    _MISSING = make_sentinel(var_name='_MISSING')
+except ImportError:
+    _MISSING = object()
+
+
 def get_module_callables(mod, ignore=None):
     """Returns two maps of (*types*, *funcs*) from *mod*, optionally
     ignoring based on the :class:`bool` return value of the *ignore*
@@ -565,6 +572,30 @@ class FunctionBuilder(object):
                                      reversed(self.defaults or [])))))
         return ret
 
+    if _IS_PY2:
+        def add_arg(self, arg_name, default=_MISSING):
+            if arg_name in self.args:
+                raise ExistingArgument('arg %r already in func %s arg list' % (arg_name, self.name))
+            self.args.append(arg_name)
+            if default is not _MISSING:
+                self.defaults = (self.defaults or ()) + (default,)
+            return
+    else:
+        def add_arg(self, arg_name, default=_MISSING, kwonly=False):
+            if arg_name in self.args:
+                raise ExistingArgument('arg %r already in func %s arg list' % (arg_name, self.name))
+            if arg_name in self.kwonlyargs:
+                raise ExistingArgument('arg %r already in func %s kwonly arg list' % (arg_name, self.name))
+            if not kwonly:
+                self.args.append(arg_name)
+                if default is not _MISSING:
+                    self.defaults = (self.defaults or ()) + (default,)
+            else:
+                self.kwonlyargs.append(arg_name)
+                if default is not _MISSING:
+                    self.kwonlydefaults[arg_name] = default
+            return
+
     def remove_arg(self, arg_name):
         """Remove an argument from this FunctionBuilder's argument list. The
         resulting function will have one less argument per call to
@@ -609,6 +640,10 @@ class FunctionBuilder(object):
 
 
 class MissingArgument(ValueError):
+    pass
+
+
+class ExistingArgument(ValueError):
     pass
 
 
