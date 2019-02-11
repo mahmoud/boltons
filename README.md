@@ -8,7 +8,7 @@
 <a href="https://pypi.python.org/pypi/boltons"><img src="https://img.shields.io/pypi/pyversions/boltons.svg"></a>
 <a href="http://calver.org"><img src="https://img.shields.io/badge/calver-YY.MINOR.MICRO-22bfda.svg"></a>
 
-**Boltons** is a set of over 220 BSD-licensed, pure-Python utilities
+**Boltons** is a set of over 230 BSD-licensed, pure-Python utilities
 in the same spirit as — and yet conspicuously missing from —
 [the standard library][stdlib], including:
 
@@ -24,8 +24,8 @@ in the same spirit as — and yet conspicuously missing from —
 **[Full and extensive docs are available on Read The Docs.][rtd]** See
 what's new [by checking the CHANGELOG][changelog].
 
-Boltons is tested against Python 2.6, 2.7, 3.3, 3.4, 3.5, 3.6,
-3.7-dev (aka _nightly_), and PyPy.
+Boltons is tested against Python 2.6, 2.7, 3.4, 3.5, 3.6, and 3.7, as well as CPython
+_nightly_ and PyPy/PyPy3.
 
 [stdlib]: https://docs.python.org/2.7/library/index.html
 [rtd]: https://boltons.readthedocs.org/en/latest/
