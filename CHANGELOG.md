@@ -8,27 +8,37 @@ an average of one 39-commit release every 9 weeks.
 ------
 *(February 10, 2019)*
 
-A very big release indeed.
+A very big release indeed, perhaps the biggest yet. A big, big thank you to all the contributors!
 
 * New types and utilities
     * [dictutils.ManyToMany][dictutils.ManyToMany] arrives, to complement [dictutils.OneToOne][dictutils.OneToOne]
-    * [dictutils.FrozenDict][dictutils.FrozenDict] brings immutable mapping to a module near you
+    * [dictutils.FrozenDict][dictutils.FrozenDict] brings immutable mapping to a module near you ([#105][i105])
     * [setutils.complement()][setutils.complement] introduces "negative" sets, useful for exclusion and many other set operations
     * [iterutils.soft_sorted()][iterutils.soft_sorted] allows for looser, more flexible sorting of sequences
-    * [iterutils.flatten_iter()][iterutils.flatten_iter] and [iterutils.flatten()][iterutils.flatten], to collapse nested iterables.
+    * [iterutils.flatten_iter()][iterutils.flatten_iter] and [iterutils.flatten()][iterutils.flatten], to collapse nested iterables. ([#118][i118])
     * [mathutils.Bits][mathutils.Bits] type for representing a bitstring and translating
       between integer, bytestring, hex, and boolean sequence representations.
 * funcutils improvements
-    * [FunctionBuilder][funcutils.FunctionBuilder] and [funcutils.wraps][funcutils.wraps] now support coroutines/async
-    * [FunctionBuilder.add_arg()][funcutils.FunctionBuilder.add_arg] allows the addition of arguments to the signature, to match [FunctionBuilder.remove_arg()][funcutils.FunctionBuilder.remove_arg]
-    * Similarly [funcutils.wraps()][funcutils.wraps] now takes an "expected" argument, to complement "injected"
+    * [FunctionBuilder][funcutils.FunctionBuilder] and [funcutils.wraps][funcutils.wraps] now support coroutines/async ([#194][i194])
+    * [FunctionBuilder.add_arg()][funcutils.FunctionBuilder.add_arg] allows the addition of arguments to the signature, to match [FunctionBuilder.remove_arg()][funcutils.FunctionBuilder.remove_arg] ([#201][i201])
+    * Similarly [funcutils.wraps()][funcutils.wraps] now takes an "expected" argument, to complement "injected" ([#161][i161])
 * Other bugfixes and improvements
-    * [cacheutils.LRI][cacheutils.LRI] is now threadsafe and correctly evicts when duplicate keys are added
+    * [cacheutils.LRI][cacheutils.LRI] is now threadsafe and correctly evicts when duplicate keys are added ([#155][i155], [#157][i157])
     * [dictutils.subdict()][dictutils.subdict] now does its best to return the same type of dictionary it was passed.
     * [urlutils][urlutils] now has better IPv6 support and URL can be used more natively like a string
     * Improve singularization in [strutils][strutils]
-    * Fix some deprecation warnings in Python 3.7
-    * Document the change in dict constructor behavior affecting [dictutils.OMD][dictutils.OMD] under Python 3.7+
+    * Fix some deprecation warnings in Python 3.7 ([#165][i165], [#195][i196])
+    * Document the change in dict constructor behavior affecting [dictutils.OMD][dictutils.OMD] under Python 3.7+ ([#179][i179])
+
+[i105]: https://github.com/mahmoud/boltons/issues/105
+[i118]: https://github.com/mahmoud/boltons/issues/118
+[i155]: https://github.com/mahmoud/boltons/issues/155
+[i157]: https://github.com/mahmoud/boltons/issues/157
+[i161]: https://github.com/mahmoud/boltons/issues/161
+[i165]: https://github.com/mahmoud/boltons/issues/165
+[i179]: https://github.com/mahmoud/boltons/issues/179
+[i195]: https://github.com/mahmoud/boltons/issues/195
+[i201]: https://github.com/mahmoud/boltons/issues/201
 
 18.0.1
 ------
