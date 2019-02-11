@@ -617,6 +617,7 @@ class FunctionBuilder(object):
 
     if _IS_PY2:
         def add_arg(self, arg_name, default=NO_DEFAULT):
+            "Add an argument with optional *default* (defaults to ``funcutils.NO_DEFAULT``)."
             if arg_name in self.args:
                 raise ExistingArgument('arg %r already in func %s arg list' % (arg_name, self.name))
             self.args.append(arg_name)
@@ -625,6 +626,10 @@ class FunctionBuilder(object):
             return
     else:
         def add_arg(self, arg_name, default=NO_DEFAULT, kwonly=False):
+            """Add an argument with optional *default* (defaults to
+            ``funcutils.NO_DEFAULT``). Pass *kwonly=True* to add a
+            keyword-only argument
+            """
             if arg_name in self.args:
                 raise ExistingArgument('arg %r already in func %s arg list' % (arg_name, self.name))
             if arg_name in self.kwonlyargs:
