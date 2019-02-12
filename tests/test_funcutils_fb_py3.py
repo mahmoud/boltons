@@ -1,6 +1,6 @@
 
 import inspect
-from typing import Tuple
+from collections import defaultdict
 
 import pytest
 
@@ -21,13 +21,13 @@ def pita_wrap(flag=False):
 def test_wraps_py3():
 
     @pita_wrap(flag=True)
-    def annotations(a: int, b: float=1, c: Tuple[int]=()) -> Tuple:
+    def annotations(a: int, b: float=1, c: defaultdict=()) -> defaultdict:
         return a, b, c
 
     assert annotations(0) == (True, "annotations", (0, 1, ()))
     assert annotations.__annotations__ == {'a': int, 'b': float,
-                                           'c': Tuple[int],
-                                           'return': Tuple}
+                                           'c': defaultdict,
+                                           'return': defaultdict}
 
     @pita_wrap(flag=False)
     def kwonly_arg(a, *, b, c=2):
