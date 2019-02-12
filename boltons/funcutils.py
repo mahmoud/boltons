@@ -496,7 +496,12 @@ class FunctionBuilder(object):
     # def get_argspec(self):  # TODO
 
     if _IS_PY2:
-        def get_sig_str(self):
+        def get_sig_str(self, with_annotations=True):
+            """Return function signature as a string.
+
+            with_annotations is ignored on Python 2.  On Python 3 signature
+            will omit annotations if it is set to False.
+            """
             return inspect.formatargspec(self.args, self.varargs,
                                          self.varkw, [])
 
@@ -505,6 +510,11 @@ class FunctionBuilder(object):
                                          self.varkw, [])[1:-1]
     else:
         def get_sig_str(self, with_annotations=True):
+            """Return function signature as a string.
+
+            with_annotations is ignored on Python 2.  On Python 3 signature
+            will omit annotations if it is set to False.
+            """
             if with_annotations:
                 annotations = self.annotations
             else:
