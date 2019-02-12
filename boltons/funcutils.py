@@ -496,7 +496,7 @@ class FunctionBuilder(object):
     # def get_argspec(self):  # TODO
 
     if _IS_PY2:
-        def get_sig_str(self, with_annotations=True):
+        def get_sig_str(self):
             return inspect.formatargspec(self.args, self.varargs,
                                          self.varkw, [])
 
