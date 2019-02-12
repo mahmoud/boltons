@@ -496,7 +496,7 @@ class FunctionBuilder(object):
     # def get_argspec(self):  # TODO
 
     if _IS_PY2:
-        def get_sig_str(self, stringify_annotations=False):
+        def get_sig_str(self, with_annotations=True):
             return inspect.formatargspec(self.args, self.varargs,
                                          self.varkw, [])
 
@@ -504,13 +504,11 @@ class FunctionBuilder(object):
             return inspect.formatargspec(self.args, self.varargs,
                                          self.varkw, [])[1:-1]
     else:
-        def get_sig_str(self, stringify_annotations=False):
-            if stringify_annotations:
-                annotations = {}
-                for key, value in self.annotations.items():
-                    annotations[key] = str(value)
-            else:
+        def get_sig_str(self, with_annotations=True):
+            if with_annotations:
                 annotations = self.annotations
+            else:
+                annotations = {}
             return inspect.formatargspec(self.args,
                                          self.varargs,
                                          self.varkw,
@@ -598,7 +596,7 @@ class FunctionBuilder(object):
         body = _indent(self.body, ' ' * self.indent)
 
         name = self.name.replace('<', '_').replace('>', '_')  # lambdas
-        src = tmpl.format(name=name, sig_str=self.get_sig_str(stringify_annotations=True),
+        src = tmpl.format(name=name, sig_str=self.get_sig_str(with_annotations=False),
                           doc=self.doc, body=body)
         self._compile(src, execdict)
         func = execdict[name]
