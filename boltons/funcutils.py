@@ -474,6 +474,7 @@ class FunctionBuilder(object):
                  'module': lambda: None,
                  'body': lambda: 'pass',
                  'indent': lambda: 4,
+                 "annotations": dict,
                  'filename': lambda: 'boltons.funcutils.FunctionBuilder'}
 
     _defaults.update(_argspec_defaults)
@@ -495,7 +496,12 @@ class FunctionBuilder(object):
     # def get_argspec(self):  # TODO
 
     if _IS_PY2:
-        def get_sig_str(self):
+        def get_sig_str(self, with_annotations=True):
+            """Return function signature as a string.
+
+            with_annotations is ignored on Python 2.  On Python 3 signature
+            will omit annotations if it is set to False.
+            """
             return inspect.formatargspec(self.args, self.varargs,
                                          self.varkw, [])
 
@@ -503,14 +509,23 @@ class FunctionBuilder(object):
             return inspect.formatargspec(self.args, self.varargs,
                                          self.varkw, [])[1:-1]
     else:
-        def get_sig_str(self):
+        def get_sig_str(self, with_annotations=True):
+            """Return function signature as a string.
+
+            with_annotations is ignored on Python 2.  On Python 3 signature
+            will omit annotations if it is set to False.
+            """
+            if with_annotations:
+                annotations = self.annotations
+            else:
+                annotations = {}
             return inspect.formatargspec(self.args,
                                          self.varargs,
                                          self.varkw,
                                          [],
                                          self.kwonlyargs,
                                          {},
-                                         self.annotations)
+                                         annotations)
 
         _KWONLY_MARKER = re.compile(r"""
         \*     # a star
@@ -552,6 +567,7 @@ class FunctionBuilder(object):
         kwargs = {'name': func.__name__,
                   'doc': func.__doc__,
                   'module': func.__module__,
+                  'annotations': getattr(func, "__annotations__", {}),
                   'dict': getattr(func, '__dict__', {})}
 
         kwargs.update(cls._argspec_to_dict(func))
@@ -590,7 +606,7 @@ class FunctionBuilder(object):
         body = _indent(self.body, ' ' * self.indent)
 
         name = self.name.replace('<', '_').replace('>', '_')  # lambdas
-        src = tmpl.format(name=name, sig_str=self.get_sig_str(),
+        src = tmpl.format(name=name, sig_str=self.get_sig_str(with_annotations=False),
                           doc=self.doc, body=body)
         self._compile(src, execdict)
         func = execdict[name]
@@ -600,6 +616,7 @@ class FunctionBuilder(object):
         func.__defaults__ = self.defaults
         if not _IS_PY2:
             func.__kwdefaults__ = self.kwonlydefaults
+            func.__annotations__ = self.annotations
 
         if with_dict:
             func.__dict__.update(self.dict)
