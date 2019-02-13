@@ -1,8 +1,20 @@
 boltons Changelog
 =================
 
-Since February 20, 2013 there have been 34 releases and 1314 commits for
-an average of one 39-commit release every 9 weeks.
+Since February 20, 2013 there have been 35 releases and 1333 commits for
+an average of one 38-commit release every 9 weeks.
+
+19.0.1
+------
+*(February 12, 2019)*
+
+Quick release to enhance [FunctionBuilder][funcutils.FunctionBuilder]
+and [funcutils.wraps][funcutils.wraps] to maintain function
+annotations on Python 3+. ([#133][i333], [#134][i134], [#203][i203])
+
+[i133]: https://github.com/mahmoud/boltons/issues/133
+[i134]: https://github.com/mahmoud/boltons/issues/134
+[i203]: https://github.com/mahmoud/boltons/issues/203
 
 19.0.0
 ------
