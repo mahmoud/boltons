@@ -101,7 +101,7 @@ copyright = u'2019, Mahmoud Hashemi'
 author = u'Mahmoud Hashemi'
 
 version = '19.0'
-release = '19.0.0'
+release = '19.0.1'
 
 if os.name != 'nt':
     today_fmt = '%B %d, %Y'
