@@ -108,10 +108,12 @@ class Bits(object):
     as well as bitwise masking and shifting operators.
     Bits also make it easy to convert between many
     different useful representations:
+
     * bytes -- good for serializing raw binary data
     * int -- good for incrementing (e.g. to try all possible values)
     * list of bools -- good for iterating over or treating as flags
     * hex/bin string -- good for human readability
+
     '''
     __slots__ = ('val', 'len')
 
