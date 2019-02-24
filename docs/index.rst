@@ -64,7 +64,7 @@ consider other integration options. See the :ref:`Integration
 <arch_integration>` section of the architecture document for more
 details.
 
-Boltons is tested against Python 2.6, 2.7, 3.4, 3.5, and PyPy.
+Boltons is tested against Python 2.6-2.7, 3.4-3.7, and PyPy.
 
 Third-party packages
 --------------------
