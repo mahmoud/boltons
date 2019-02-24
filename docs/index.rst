@@ -4,7 +4,7 @@ boltons
 
 *boltons should be builtins.*
 
-|release| |calver|
+|release| |calver| |changelog|
 
 **Boltons** is a set of pure-Python utilities in the same spirit as —
 and yet conspicuously missing from — `the standard library`_,
@@ -43,6 +43,8 @@ what's new by `checking the CHANGELOG`_.
 .. |calver| image:: https://img.shields.io/badge/calver-YY.MINOR.MICRO-22bfda.svg
             :target: http://calver.org
 
+.. |changelog| image:: https://img.shields.io/badge/CHANGELOG-UPDATED-b84ad6.svg
+               :target: https://github.com/mahmoud/boltons/blob/master/CHANGELOG.md
 
 Installation and Integration
 ----------------------------
