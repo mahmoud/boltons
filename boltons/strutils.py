@@ -33,9 +33,9 @@ except NameError:  # basestring not defined in Python 3
 
 __all__ = ['camel2under', 'under2camel', 'slugify', 'split_punct_ws',
            'unit_len', 'ordinalize', 'cardinalize', 'pluralize', 'singularize',
-           'asciify', 'is_ascii', 'is_uuid', 'html2text', 'strip_ansi',
-           'bytes2human', 'find_hashtags', 'a10n', 'gunzip_bytes',
-           'iter_splitlines', 'indent', 'escape_shell_args',
+           'asciify', 'implode', 'is_ascii', 'is_uuid', 'html2text',
+           'strip_ansi', 'bytes2human', 'find_hashtags', 'a10n',
+           'gunzip_bytes', 'iter_splitlines', 'indent', 'escape_shell_args',
            'args2cmd', 'args2sh', 'parse_int_list', 'format_int_list']
 
 
@@ -430,6 +430,19 @@ def asciify(text, ignore=False):
         transd = unicodedata.normalize('NFKD', text.translate(DEACCENT_MAP))
         ret = transd.encode('ascii', mode)
         return ret
+
+
+def assemble(delimiter, *args):
+    """Perform a join on args casted to strings.
+
+    Args:
+        delimiter (str or unicode): The string to use as delimiter between args
+        args: The
+
+    >>> assemble('-', 1, 'b') == '1-b'
+    True
+    """
+    return delimiter.join(map(str, args))
 
 
 def is_ascii(text):

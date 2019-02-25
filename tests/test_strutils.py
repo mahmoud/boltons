@@ -20,6 +20,10 @@ def test_indent():
     assert strutils.indent(to_indent, '  ') == ref
 
 
+def test_assemble():
+    assert strutils.assemble('-', 1, 'b') == '1-b'
+
+
 def test_is_uuid():
     assert strutils.is_uuid(uuid.uuid4()) == True
     assert strutils.is_uuid(uuid.uuid4(), version=1) == False
