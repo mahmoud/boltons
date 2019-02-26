@@ -73,12 +73,23 @@ def test_remove_kwonly_arg():
         return loop
 
     fb_example = FunctionBuilder.from_func(example)
-    # import pdb;pdb.set_trace()
     assert 'test' in fb_example.args
     assert fb_example.get_defaults_dict()['test'] == 'default'
 
     assert 'loop' not in fb_example.kwonlyargs
     assert 'loop' not in fb_example.kwonlydefaults
+
+
+def test_defaults_dict():
+    def example(req, test='default', *, loop='lol'):
+        return loop
+
+    fb_example = FunctionBuilder.from_func(example)
+    assert 'test' in fb_example.args
+    dd = fb_example.get_defaults_dict()
+    assert dd['test'] == 'default'
+    assert dd['loop'] == 'lol'
+    assert 'req' not in dd
 
 
 @pytest.mark.parametrize('signature,should_match',

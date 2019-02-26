@@ -633,7 +633,12 @@ class FunctionBuilder(object):
         respective values.
         """
         ret = dict(reversed(list(zip(reversed(self.args),
-                                     reversed(self.defaults or [])))))
+                                     reversed(list(self.defaults or []))))))
+        kwonlyargs = getattr(self, 'kwonlyargs', None)
+        if kwonlyargs:
+            kwret = dict([(k, self.kwonlydefaults[k]) for k in self.kwonlyargs
+                          if k in self.kwonlydefaults])
+            ret.update(kwret)
         return ret
 
     if _IS_PY2:
