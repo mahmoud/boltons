@@ -633,11 +633,18 @@ class FunctionBuilder(object):
         respective values.
         """
         ret = dict(reversed(list(zip(reversed(self.args),
-                                     reversed(list(self.defaults or []))))))
+                                     reversed(self.defaults or [])))))
         kwonlydefaults = getattr(self, 'kwonlydefaults', None)
         if kwonlydefaults:
             ret.update(kwonlydefaults)
         return ret
+
+    def get_arg_names(self, only_required=False):
+        arg_names = tuple(self.args) + tuple(getattr(self, 'kwonlyargs', ()))
+        if only_required:
+            defaults_dict = self.get_defaults_dict()
+            arg_names = tuple([an for an in arg_names if an not in defaults_dict])
+        return arg_names
 
     if _IS_PY2:
         def add_arg(self, arg_name, default=NO_DEFAULT):

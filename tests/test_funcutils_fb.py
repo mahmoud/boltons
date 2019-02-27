@@ -250,3 +250,24 @@ def test_wraps_expected():
         return wrapped
 
     assert expect_dict(wrappable_func)(1, 2) == (1, 2, 6)
+
+
+def test_defaults_dict():
+    def example(req, test='default'):
+        return req
+
+    fb_example = FunctionBuilder.from_func(example)
+    assert 'test' in fb_example.args
+    dd = fb_example.get_defaults_dict()
+    assert dd['test'] == 'default'
+    assert 'req' not in dd
+
+
+def test_get_arg_names():
+    def example(req, test='default'):
+        return req
+
+    fb_example = FunctionBuilder.from_func(example)
+    assert 'test' in fb_example.args
+    assert fb_example.get_arg_names() == ('req', 'test')
+    assert fb_example.get_arg_names(only_required=True) == ('req',)

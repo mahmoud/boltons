@@ -92,6 +92,16 @@ def test_defaults_dict():
     assert 'req' not in dd
 
 
+def test_get_arg_names():
+    def example(req, test='default', *, loop='lol'):
+        return loop
+
+    fb_example = FunctionBuilder.from_func(example)
+    assert 'test' in fb_example.args
+    assert fb_example.get_arg_names() == ('req', 'test', 'loop')
+    assert fb_example.get_arg_names(only_required=True) == ('req',)
+
+
 @pytest.mark.parametrize('signature,should_match',
                          [('a, *, b', True),
                           ('a,*,b', True),
