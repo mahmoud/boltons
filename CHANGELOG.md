@@ -1,8 +1,23 @@
 boltons Changelog
 =================
 
-Since February 20, 2013 there have been 35 releases and 1333 commits for
-an average of one 38-commit release every 9 weeks.
+Since February 20, 2013 there have been 36 releases and 1347 commits for
+an average of one 37-commit release every 9 weeks.
+
+19.1.0
+------
+*(February 28, 2019)*
+
+Couple of enhancements, couple of cleanups.
+
+* [queueutils][queueutils] now supports float-based priorities ([#204][i204])
+* [FunctionBuilder][funcutils.FunctionBuilder] has a new
+  `get_arg_names()` method, and its `get_defaults_dict()` method
+  finally includes kwonly argument defaults.
+* [strutils.gzip_bytes][strutils.gzip_bytes] arrives to match
+  [strutils.gunzip_bytes][strutils.gunzip_bytes]
+
+[i204]: https://github.com/mahmoud/boltons/issues/204
 
 19.0.1
 ------
@@ -941,6 +956,7 @@ added in this release.
 [mathutils.ceil]: http://boltons.readthedocs.org/en/latest/mathutils.html#boltons.mathutils.ceil
 [mathutils.floor]: http://boltons.readthedocs.org/en/latest/mathutils.html#boltons.mathutils.floor
 [mathutils.clamp]: http://boltons.readthedocs.org/en/latest/mathutils.html#boltons.mathutils.clamp
+[queueutils]: http://boltons.readthedocs.org/en/latest/queueutils.html
 [setutils.complement]: http://boltons.readthedocs.org/en/latest/setutils.html#boltons.setutils.complement
 [socketutils]: http://boltons.readthedocs.org/en/latest/socketutils.html
 [socketutils.BufferedSocket]: http://boltons.readthedocs.org/en/latest/socketutils.html#boltons.socketutils.BufferedSocket
@@ -963,6 +979,7 @@ added in this release.
 [strutils.args2sh]: http://boltons.readthedocs.org/en/latest/strutils.html#boltons.strutils.args2sh
 [strutils.escape_shell_args]: http://boltons.readthedocs.org/en/latest/strutils.html#boltons.strutils.escape_shell_args
 [strutils.find_hashtags]: http://boltons.readthedocs.org/en/latest/strutils.html#boltons.strutils.find_hashtags
+[strutils.gzip_bytes]: http://boltons.readthedocs.org/en/latest/strutils.html#boltons.strutils.gzip_bytes
 [strutils.gunzip_bytes]: http://boltons.readthedocs.org/en/latest/strutils.html#boltons.strutils.gunzip_bytes
 [strutils.html2text]: http://boltons.readthedocs.org/en/latest/strutils.html#boltons.strutils.html2text
 [strutils.indent]: http://boltons.readthedocs.org/en/latest/strutils.html#boltons.strutils.indent
