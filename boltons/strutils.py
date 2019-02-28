@@ -14,6 +14,12 @@ import zlib
 import string
 import unicodedata
 import collections
+from gzip import GzipFile
+
+try:
+    from cStringIO import cStringIO as StringIO
+except ImportError:
+    from io import BytesIO as StringIO
 
 try:
     from collections.abc import Mapping
@@ -34,7 +40,7 @@ except NameError:  # basestring not defined in Python 3
 __all__ = ['camel2under', 'under2camel', 'slugify', 'split_punct_ws',
            'unit_len', 'ordinalize', 'cardinalize', 'pluralize', 'singularize',
            'asciify', 'is_ascii', 'is_uuid', 'html2text', 'strip_ansi',
-           'bytes2human', 'find_hashtags', 'a10n', 'gunzip_bytes',
+           'bytes2human', 'find_hashtags', 'a10n', 'gzip_bytes', 'gunzip_bytes',
            'iter_splitlines', 'indent', 'escape_shell_args',
            'args2cmd', 'args2sh', 'parse_int_list', 'format_int_list']
 
@@ -328,38 +334,6 @@ def a10n(string):
     return '%s%s%s' % (string[0], len(string[1:-1]), string[-1])
 
 
-class StringBuffer(object):
-    """
-    This is meant to be a better file-like string buffer.
-    Faster than StringIO, better encoding handling than cStringIO.
-
-    This one is for unicode text strings. Look for ByteBuffer if you
-    want to handle byte strings.
-
-    (NOTE: not quite done yet)
-    """
-    def __init__(self, default_encoding=None, errors='strict'):
-        self.data = collections.deque()
-        self.default_encoding = default_encoding or 'utf-8'
-        self.errors = errors
-
-    def write(self, s):
-        if not isinstance(s, unicode):
-            enc = self.default_encoding
-            errs = self.errors
-            try:
-                s = s.decode(enc, errs)
-            except AttributeError:
-                raise ValueError('write() expected a unicode or byte string')
-        self.data.append(s)
-
-    def truncate(self):
-        self.data = collections.deque()
-        self.write = self.data.append
-
-    def getvalue(self):
-        return unicode().join(self.data)
-
 ANSI_ESCAPE_BEGIN = '\x1b['
 ANSI_TERMINATORS = ('H', 'f', 'A', 'B', 'C', 'D', 'R', 's', 'u', 'J',
                     'K', 'h', 'l', 'p', 'm')
@@ -636,6 +610,29 @@ def gunzip_bytes(bytestring):
     True
     """
     return zlib.decompress(bytestring, 16 + zlib.MAX_WBITS)
+
+
+def gzip_bytes(bytestring, level=6):
+    """Turn some bytes into some compressed bytes.
+
+    >>> len(gzip_bytes(b'a' * 10000))
+    46
+
+    Args:
+        bytestring (bytes): Bytes to be compressed
+        level (int): An integer, 1-9, controlling the
+          speed/compression. 1 is fastest, least compressed, 9 is
+          slowest, but most compressed.
+
+    Note that all levels of gzip are pretty fast these days, though
+    it's not really a competitor in compression, at any level.
+    """
+    out = StringIO()
+    f = GzipFile(fileobj=out, mode='wb', compresslevel=level)
+    f.write(bytestring)
+    f.close()
+    return out.getvalue()
+
 
 
 _line_ending_re = re.compile(r'(\r\n|\n|\x0b|\f|\r|\x85|\x2028|\x2029)',
