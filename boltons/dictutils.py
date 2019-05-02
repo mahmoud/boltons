@@ -480,10 +480,10 @@ class OrderedMultiDict(dict):
 
         >>> omd = OrderedMultiDict(zip('hello', 'world'))
         >>> omd.sorted(key=lambda i: i[1])  # i[0] is the key, i[1] is the val
-        OrderedMultiDict([('o', 'd'), ('l', 'l'), ('e', 'o'), ('h', 'w')])
+        OrderedMultiDict([('o', 'd'), ('l', 'l'), ('e', 'o'), ('l', 'r'), ('h', 'w')])
         """
         cls = self.__class__
-        return cls(sorted(self.iteritems(), key=key, reverse=reverse))
+        return cls(sorted(self.iteritems(multi=True), key=key, reverse=reverse))
 
     def sortedvalues(self, key=None, reverse=False):
         """Returns a copy of the :class:`OrderedMultiDict` with the same keys
@@ -932,7 +932,7 @@ class ManyToMany(object):
 
     def __repr__(self):
         cn = self.__class__.__name__
-        return '%s(%r)' % (cn, list(self.iteritems()))
+        return '%s(%r)' % (cn, list(self.iteritems(multi=True)))
 
 
 def subdict(d, keep=None, drop=None):
