@@ -932,7 +932,7 @@ class ManyToMany(object):
 
     def __repr__(self):
         cn = self.__class__.__name__
-        return '%s(%r)' % (cn, list(self.iteritems(multi=True)))
+        return '%s(%r)' % (cn, list(self.iteritems()))
 
 
 def subdict(d, keep=None, drop=None):
