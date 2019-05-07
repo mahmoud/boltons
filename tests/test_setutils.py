@@ -117,6 +117,8 @@ def test_complement_set():
     assert (cab ^ cbc | set('b')) == (sab | sbc)
     everything = complement(frozenset())
     assert everything in everything  # https://en.wikipedia.org/wiki/Russell%27s_paradox
+    assert bool(cab)
+    assert not complement(u)
     # destructive testing
     cab ^= sab
     cab ^= sab

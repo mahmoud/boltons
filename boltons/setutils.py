@@ -907,11 +907,18 @@ class _ComplementSet(object):
         return hash(self._included) ^ hash(self._excluded)
 
     def __len__(self):
-        if self._included:
+        if self._included is not None:
             return len(self._included)
         raise NotImplementedError('complemented sets have undefined length')
 
     def __iter__(self):
-        if self._included:
+        if self._included is not None:
             return iter(self._included)
         raise NotImplementedError('complemented sets have undefined contents')
+
+    def __bool__(self):
+        if self._included is not None:
+            return bool(self._included)
+        return True
+
+    __nonzero__ = __bool__  # py2 compat
