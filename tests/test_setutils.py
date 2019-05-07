@@ -113,6 +113,7 @@ def test_complement_set():
     assert (sab ^ cab) == (cbc ^ sbc)
     assert cab - cc == sc
     assert cab - sab == cab
+    assert sab - cab == sab
     assert (cab ^ cbc | set('b')) == (sab | sbc)
     everything = complement(frozenset())
     assert everything in everything  # https://en.wikipedia.org/wiki/Russell%27s_paradox

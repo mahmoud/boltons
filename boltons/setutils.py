@@ -858,6 +858,22 @@ class _ComplementSet(object):
             else:  # + +
                 return _ComplementSet(included=self._included.difference(inc))
 
+    def __rsub__(self, other):
+        inc, exc = _norm_args_notimplemented(other)
+        if inc is NotImplemented:
+            return NotImplemented
+        # rsub, so the expression being evaluated is "other - self"
+        if self._included is None:
+            if exc is None:  # - +
+                return _ComplementSet(included=inc & self._excluded)
+            else:  # - -
+                return _ComplementSet(included=self._excluded - exc)
+        else:
+            if inc is None:  # + -
+                return _ComplementSet(excluded=exc | self._included)
+            else:  # + +
+                return _ComplementSet(included=inc.difference(self._included))
+
     def difference_update(self, other):
         try:
             self -= other
