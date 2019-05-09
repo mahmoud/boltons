@@ -742,7 +742,7 @@ def flatten_iter(iterable):
             yield item
 
 def flatten(iterable):
-    """``flatten_iter()`` returns a collapsed list of all the elements from
+    """``flatten()`` returns a collapsed list of all the elements from
     *iterable* while collapsing any nested iterables.
 
     >>> nested = [[1, 2], [[3], [4, 5]]]
