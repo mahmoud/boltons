@@ -741,7 +741,7 @@ class OneToOne(dict):
     For a very similar project, with even more one-to-one
     functionality, check out `bidict <https://github.com/jab/bidict>`_.
     """
-    __slots__ = ('inv')
+    __slots__ = ('inv',)
 
     def __init__(self, *a, **kw):
         if a and a[0] is _SELF_INIT_MARKER:
@@ -750,6 +750,20 @@ class OneToOne(dict):
         else:
             dict.__init__(self, *a, **kw)
             self.inv = self.__class__(_SELF_INIT_MARKER, self)
+
+            if not len(self) == len(self.inv):
+                # generate an error message if the values aren't 1:1
+
+                val_multidict = {}
+                for k, v in self.items():
+                    val_multidict.setdefault(v, []).append(k)
+
+                dupes = dict([(v, k_list) for v, k_list in
+                              val_multidict.items() if len(k_list) > 1])
+
+                raise ValueError('expected unique values, got multiple keys for'
+                                 ' the following values: %r' % dupes)
+        return
 
     def __setitem__(self, key, val):
         hash(val)  # ensure val is a valid key
