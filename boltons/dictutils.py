@@ -780,6 +780,22 @@ class OneToOne(dict):
 
     @classmethod
     def unique(cls, *a, **kw):
+        """This alternate constructor for OneToOne will raise an exception
+        when input values overlap. For instance:
+
+        >>> OneToOne.unique({'a': 1, 'b': 1})
+        Traceback (most recent call last):
+        ...
+        ValueError: expected unique values, got multiple keys for the following values: ...
+
+        This even works across inputs:
+
+        >>> a_dict = {'a': 2}
+        >>> OneToOne.unique(a_dict, b=2)
+        Traceback (most recent call last):
+        ...
+        ValueError: expected unique values, got multiple keys for the following values: ...
+        """
         return cls(_OTO_UNIQUE_MARKER, *a, **kw)
 
     def __setitem__(self, key, val):
