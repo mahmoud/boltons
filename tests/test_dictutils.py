@@ -319,6 +319,23 @@ def test_one_to_one():
     e.update({1:2}, cat="dog")
     ck({1:2, "cat":"dog"}, {2:1, "dog":"cat"})
 
+    # try various overlapping values
+    oto = OneToOne({'a': 0, 'b': 0})
+    assert len(oto) == len(oto.inv) == 1
+
+    oto['c'] = 0
+    assert len(oto) == len(oto.inv) == 1
+    assert oto.inv[0] == 'c'
+
+    oto.update({'z': 0, 'y': 0})
+    assert len(oto) == len(oto.inv) == 1
+
+    # test out unique classmethod
+    with pytest.raises(ValueError):
+        OneToOne.unique({'a': 0, 'b': 0})
+
+    return
+
 
 def test_many_to_many():
     m2m = ManyToMany()

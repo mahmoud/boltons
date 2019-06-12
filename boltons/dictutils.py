@@ -710,7 +710,8 @@ class FastIterOrderedMultiDict(OrderedMultiDict):
             curr = curr[PREV]
 
 
-_SELF_INIT_MARKER = object()
+_OTO_INV_MARKER = object()
+_OTO_UNIQUE_MARKER = object()
 
 
 class OneToOne(dict):
@@ -744,26 +745,42 @@ class OneToOne(dict):
     __slots__ = ('inv',)
 
     def __init__(self, *a, **kw):
-        if a and a[0] is _SELF_INIT_MARKER:
-            self.inv = a[1]
-            dict.__init__(self, [(v, k) for k, v in self.inv.items()])
-        else:
-            dict.__init__(self, *a, **kw)
-            self.inv = self.__class__(_SELF_INIT_MARKER, self)
+        raise_on_dupe = False
+        if a:
+            if a[0] is _OTO_INV_MARKER:
+                self.inv = a[1]
+                dict.__init__(self, [(v, k) for k, v in self.inv.items()])
+                return
+            elif a[0] is _OTO_UNIQUE_MARKER:
+                a, raise_on_dupe = a[1:], True
 
-            if not len(self) == len(self.inv):
-                # generate an error message if the values aren't 1:1
+        dict.__init__(self, *a, **kw)
+        self.inv = self.__class__(_OTO_INV_MARKER, self)
 
-                val_multidict = {}
-                for k, v in self.items():
-                    val_multidict.setdefault(v, []).append(k)
+        if len(self) == len(self.inv):
+            # if lengths match, that means everything's unique
+            return
 
-                dupes = dict([(v, k_list) for v, k_list in
-                              val_multidict.items() if len(k_list) > 1])
+        if not raise_on_dupe:
+            dict.clear(self)
+            dict.update(self, [(v, k) for k, v in self.inv.items()])
+            return
 
-                raise ValueError('expected unique values, got multiple keys for'
-                                 ' the following values: %r' % dupes)
-        return
+        # generate an error message if the values aren't 1:1
+
+        val_multidict = {}
+        for k, v in self.items():
+            val_multidict.setdefault(v, []).append(k)
+
+        dupes = dict([(v, k_list) for v, k_list in
+                      val_multidict.items() if len(k_list) > 1])
+
+        raise ValueError('expected unique values, got multiple keys for'
+                         ' the following values: %r' % dupes)
+
+    @classmethod
+    def unique(cls, *a, **kw):
+        return cls(_OTO_UNIQUE_MARKER, *a, **kw)
 
     def __setitem__(self, key, val):
         hash(val)  # ensure val is a valid key
