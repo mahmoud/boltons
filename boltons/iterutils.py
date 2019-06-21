@@ -55,11 +55,7 @@ def is_iterable(obj):
 
     .. _iterable: https://docs.python.org/2/glossary.html#term-iterable
     """
-    try:
-        iter(obj)
-    except TypeError:
-        return False
-    return True
+    return isinstance(obj, Iterable)
 
 
 def is_scalar(obj):
