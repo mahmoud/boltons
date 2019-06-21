@@ -71,7 +71,7 @@ def is_scalar(obj):
     >>> is_scalar('hello')
     True
     """
-    return not is_iterable(obj) or isinstance(obj, basestring)
+    return not isinstance(obj, Iterable) or isinstance(obj, basestring)
 
 
 def is_collection(obj):
@@ -85,7 +85,7 @@ def is_collection(obj):
     >>> is_collection('hello')
     False
     """
-    return is_iterable(obj) and not isinstance(obj, basestring)
+    return isinstance(obj, Iterable) and not isinstance(obj, basestring)
 
 
 def split(src, sep=None, maxsplit=None):
