@@ -271,3 +271,27 @@ def test_get_arg_names():
     assert 'test' in fb_example.args
     assert fb_example.get_arg_names() == ('req', 'test')
     assert fb_example.get_arg_names(only_required=True) == ('req',)
+
+
+@pytest.mark.parametrize(
+    "args, varargs, varkw, defaults, invocation_str, sig_str",
+    [
+        (["a", "b"], None, None, None, "a, b", "(a, b)"),
+        (None, "args", "kwargs", None, "*args, **kwargs", "(*args, **kwargs)"),
+        ("a", None, None, dict(a="a"), "a", "(a)"),
+    ],
+)
+def test_get_invocation_sig_str(
+    args, varargs, varkw, defaults, invocation_str, sig_str
+):
+    fb = FunctionBuilder(
+        name='return_five',
+        body='return 5',
+        args=args,
+        varargs=varargs,
+        varkw=varkw,
+        defaults=defaults
+    )
+
+    assert fb.get_invocation_str() == invocation_str
+    assert fb.get_sig_str() == sig_str
