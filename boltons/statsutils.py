@@ -583,12 +583,12 @@ class Stats(object):
         allowing for simple visualization, even in console environments.
 
         >>> data = list(range(20)) + list(range(5, 15)) + [10]
-        >>> print(Stats(data).format_histogram())
-         0.0:  5 ################################
-         4.4:  8 ###################################################
-         8.9: 11 ######################################################################
-        13.3:  5 ################################
-        17.8:  2 #############
+        >>> print(Stats(data).format_histogram(width=30))
+         0.0:  5 #########
+         4.4:  8 ###############
+         8.9: 11 ####################
+        13.3:  5 #########
+        17.8:  2 ####
 
         In this histogram, five values are between 0.0 and 4.4, eight
         are between 4.4 and 8.9, and two values lie between 17.8 and
