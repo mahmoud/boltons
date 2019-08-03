@@ -1021,7 +1021,7 @@ class OrderedMultiDict(dict):
     >>> from pprint import pprint as pp  # ensuring proper key ordering
     >>> omd = OrderedMultiDict([('a', 1), ('b', 2), ('a', 3)])
     >>> pp(dict(omd))
-    {'a': 3, '': 2}
+    {'a': 3, 'b': 2}
 
     Note that modifying those lists will modify the OMD. If you want a
     safe-to-modify or flat dictionary, use :meth:`OrderedMultiDict.todict()`.
