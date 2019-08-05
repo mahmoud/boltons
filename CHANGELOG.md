@@ -25,7 +25,7 @@ Couple of enhancements, couple of cleanups.
 
 Quick release to enhance [FunctionBuilder][funcutils.FunctionBuilder]
 and [funcutils.wraps][funcutils.wraps] to maintain function
-annotations on Python 3+. ([#133][i333], [#134][i134], [#203][i203])
+annotations on Python 3+. ([#133][i133], [#134][i134], [#203][i203])
 
 [i133]: https://github.com/mahmoud/boltons/issues/133
 [i134]: https://github.com/mahmoud/boltons/issues/134
