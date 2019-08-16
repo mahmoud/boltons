@@ -5,3 +5,4 @@ pytest-cov==2.5.1
 tox==2.9.1
 virtualenv==15.0.2
 tox-virtualenv-no-download==1.0.2
+xdoctest==0.10.0
