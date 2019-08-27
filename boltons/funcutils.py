@@ -39,6 +39,65 @@ except ImportError:
     NO_DEFAULT = object()
 
 
+_IS_PY35 = sys.version_info >= (3, 5)
+if not _IS_PY35:
+    # py35+ wants you to use signature instead, but
+    # inspect_formatargspec is way simpler for what it is. Copied the
+    # vendoring approach from alembic:
+    # https://github.com/sqlalchemy/alembic/blob/4cdad6aec32b4b5573a2009cc356cb4b144bd359/alembic/util/compat.py#L92
+    from inspect import formatargspec as inspect_formatargspec
+else:
+    from inspect import formatannotation
+
+    def inspect_formatargspec(
+            args, varargs=None, varkw=None, defaults=None,
+            kwonlyargs=(), kwonlydefaults={}, annotations={},
+            formatarg=str,
+            formatvarargs=lambda name: '*' + name,
+            formatvarkw=lambda name: '**' + name,
+            formatvalue=lambda value: '=' + repr(value),
+            formatreturns=lambda text: ' -> ' + text,
+            formatannotation=formatannotation):
+        """Copy formatargspec from python 3.7 standard library.
+        Python 3 has deprecated formatargspec and requested that Signature
+        be used instead, however this requires a full reimplementation
+        of formatargspec() in terms of creating Parameter objects and such.
+        Instead of introducing all the object-creation overhead and having
+        to reinvent from scratch, just copy their compatibility routine.
+        """
+
+        def formatargandannotation(arg):
+            result = formatarg(arg)
+            if arg in annotations:
+                result += ': ' + formatannotation(annotations[arg])
+            return result
+        specs = []
+        if defaults:
+            firstdefault = len(args) - len(defaults)
+        for i, arg in enumerate(args):
+            spec = formatargandannotation(arg)
+            if defaults and i >= firstdefault:
+                spec = spec + formatvalue(defaults[i - firstdefault])
+            specs.append(spec)
+        if varargs is not None:
+            specs.append(formatvarargs(formatargandannotation(varargs)))
+        else:
+            if kwonlyargs:
+                specs.append('*')
+        if kwonlyargs:
+            for kwonlyarg in kwonlyargs:
+                spec = formatargandannotation(kwonlyarg)
+                if kwonlydefaults and kwonlyarg in kwonlydefaults:
+                    spec += formatvalue(kwonlydefaults[kwonlyarg])
+                specs.append(spec)
+        if varkw is not None:
+            specs.append(formatvarkw(formatargandannotation(varkw)))
+        result = '(' + ', '.join(specs) + ')'
+        if 'return' in annotations:
+            result += formatreturns(formatannotation(annotations['return']))
+        return result
+
+
 def get_module_callables(mod, ignore=None):
     """Returns two maps of (*types*, *funcs*) from *mod*, optionally
     ignoring based on the :class:`bool` return value of the *ignore*
@@ -502,11 +561,11 @@ class FunctionBuilder(object):
             with_annotations is ignored on Python 2.  On Python 3 signature
             will omit annotations if it is set to False.
             """
-            return inspect.formatargspec(self.args, self.varargs,
+            return inspect_formatargspec(self.args, self.varargs,
                                          self.varkw, [])
 
         def get_invocation_str(self):
-            return inspect.formatargspec(self.args, self.varargs,
+            return inspect_formatargspec(self.args, self.varargs,
                                          self.varkw, [])[1:-1]
     else:
         def get_sig_str(self, with_annotations=True):
@@ -519,7 +578,7 @@ class FunctionBuilder(object):
                 annotations = self.annotations
             else:
                 annotations = {}
-            return inspect.formatargspec(self.args,
+            return inspect_formatargspec(self.args,
                                          self.varargs,
                                          self.varkw,
                                          [],
@@ -542,7 +601,7 @@ class FunctionBuilder(object):
                                     for arg in self.kwonlyargs)
                 formatters['formatvalue'] = lambda value: '=' + value
 
-            sig = inspect.formatargspec(self.args,
+            sig = inspect_formatargspec(self.args,
                                         self.varargs,
                                         self.varkw,
                                         [],
