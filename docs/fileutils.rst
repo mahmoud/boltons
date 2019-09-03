@@ -7,7 +7,7 @@ Creating, Finding, and Copying
 ------------------------------
 
 Python's :mod:`os`, :mod:`os.path`, and :mod:`shutil` modules provide
-good coverage of file wrangling fundaments, and these functions help
+good coverage of file wrangling fundamentals, and these functions help
 close a few remaining gaps.
 
 .. autofunction:: boltons.fileutils.mkdir_p
