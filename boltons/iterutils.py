@@ -471,15 +471,19 @@ def backoff_iter(start, stop, count=None, factor=2.0, jitter=False):
     return
 
 
-def bucketize(src, key=None, value_transform=None, key_filter=None):
-    """Group values in the *src* iterable by the value returned by *key*,
-    which defaults to :class:`bool`, grouping values by truthiness.
+def bucketize(src, key=bool, value_transform=None, key_filter=None):
+    """Group values in the *src* iterable by the value returned by *key*.
 
     >>> bucketize(range(5))
     {False: [0], True: [1, 2, 3, 4]}
     >>> is_odd = lambda x: x % 2 == 1
     >>> bucketize(range(5), is_odd)
     {False: [0, 2, 4], True: [1, 3]}
+
+    *key* is :class bool: by default, but can either be a callable or a string
+    name of the attribute on which to bucketize objects.
+    >>> bucketize([1+1j, 2+2j, 1, 2], key='real')
+    {1.0: [(1+1j), 1], 2.0: [(2+2j), 2]}
 
     Value lists are not deduplicated:
 
@@ -510,10 +514,14 @@ def bucketize(src, key=None, value_transform=None, key_filter=None):
     """
     if not is_iterable(src):
         raise TypeError('expected an iterable')
-    if key is None:
-        key = bool
-    if not callable(key):
-        raise TypeError('expected callable key function')
+
+    if isinstance(key, basestring):
+        key_func = lambda x: getattr(x, key, x)
+    elif callable(key):
+        key_func = key
+    else:
+        raise TypeError('expected key to be callable or a string')
+
     if value_transform is None:
         value_transform = lambda x: x
     if not callable(value_transform):
@@ -521,13 +529,13 @@ def bucketize(src, key=None, value_transform=None, key_filter=None):
 
     ret = {}
     for val in src:
-        key_of_val = key(val)
+        key_of_val = key_func(val)
         if key_filter is None or key_filter(key_of_val):
             ret.setdefault(key_of_val, []).append(value_transform(val))
     return ret
 
 
-def partition(src, key=None):
+def partition(src, key=bool):
     """No relation to :meth:`str.partition`, ``partition`` is like
     :func:`bucketize`, but for added convenience returns a tuple of
     ``(truthy_values, falsy_values)``.
@@ -537,7 +545,8 @@ def partition(src, key=None):
     ['hi', 'bye']
 
     *key* defaults to :class:`bool`, but can be carefully overridden to
-    use any function that returns either ``True`` or ``False``.
+    use either a function that returns either ``True`` or ``False`` or
+    a string name of the attribute on which to partition objects.
 
     >>> import string
     >>> is_digit = lambda x: x in string.digits
