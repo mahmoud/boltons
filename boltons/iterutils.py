@@ -480,8 +480,9 @@ def bucketize(src, key=bool, value_transform=None, key_filter=None):
     >>> bucketize(range(5), is_odd)
     {False: [0, 2, 4], True: [1, 3]}
 
-    *key* is :class bool: by default, but can either be a callable or a string
+    *key* is :class:`bool` by default, but can either be a callable or a string
     name of the attribute on which to bucketize objects.
+
     >>> bucketize([1+1j, 2+2j, 1, 2], key='real')
     {1.0: [(1+1j), 1], 2.0: [(2+2j), 2]}
 
