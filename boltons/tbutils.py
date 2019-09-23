@@ -245,7 +245,7 @@ class TracebackInfo(object):
         """
         ret = []
         if frame is None:
-            frame = sys._getframe(1)
+            frame = sys._getframe(level)
         if limit is None:
             limit = getattr(sys, 'tracebacklimit', 1000)
         n = 0
