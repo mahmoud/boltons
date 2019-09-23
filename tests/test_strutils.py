@@ -110,3 +110,10 @@ class TestMultiReplace(TestCase):
         """Test replacing values that have special regex characters."""
         m = strutils.MultiReplace({'cat.+': 'kedi', r'purple': 'mor', })
         self.assertEqual(m.sub('The cat.+ is purple'), 'The kedi is mor')
+
+
+def test_roundzip():
+    aaa = b'a' * 10000
+    assert strutils.gunzip_bytes(strutils.gzip_bytes(aaa)) == aaa
+
+    assert strutils.gunzip_bytes(strutils.gzip_bytes(b'')) == b''

@@ -3,6 +3,10 @@
 
 .. automodule:: boltons.funcutils
 
+.. contents:: Sections
+   :depth: 3
+   :local:
+
 Decoration
 ----------
 

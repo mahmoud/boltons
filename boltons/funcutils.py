@@ -25,6 +25,79 @@ else:
     _IS_PY2 = True
 
 
+try:
+    _inspect_iscoroutinefunction = inspect.iscoroutinefunction
+except AttributeError:
+    # Python 3.4
+    _inspect_iscoroutinefunction = lambda func: False
+
+
+try:
+    from boltons.typeutils import make_sentinel
+    NO_DEFAULT = make_sentinel(var_name='NO_DEFAULT')
+except ImportError:
+    NO_DEFAULT = object()
+
+
+_IS_PY35 = sys.version_info >= (3, 5)
+if not _IS_PY35:
+    # py35+ wants you to use signature instead, but
+    # inspect_formatargspec is way simpler for what it is. Copied the
+    # vendoring approach from alembic:
+    # https://github.com/sqlalchemy/alembic/blob/4cdad6aec32b4b5573a2009cc356cb4b144bd359/alembic/util/compat.py#L92
+    from inspect import formatargspec as inspect_formatargspec
+else:
+    from inspect import formatannotation
+
+    def inspect_formatargspec(
+            args, varargs=None, varkw=None, defaults=None,
+            kwonlyargs=(), kwonlydefaults={}, annotations={},
+            formatarg=str,
+            formatvarargs=lambda name: '*' + name,
+            formatvarkw=lambda name: '**' + name,
+            formatvalue=lambda value: '=' + repr(value),
+            formatreturns=lambda text: ' -> ' + text,
+            formatannotation=formatannotation):
+        """Copy formatargspec from python 3.7 standard library.
+        Python 3 has deprecated formatargspec and requested that Signature
+        be used instead, however this requires a full reimplementation
+        of formatargspec() in terms of creating Parameter objects and such.
+        Instead of introducing all the object-creation overhead and having
+        to reinvent from scratch, just copy their compatibility routine.
+        """
+
+        def formatargandannotation(arg):
+            result = formatarg(arg)
+            if arg in annotations:
+                result += ': ' + formatannotation(annotations[arg])
+            return result
+        specs = []
+        if defaults:
+            firstdefault = len(args) - len(defaults)
+        for i, arg in enumerate(args):
+            spec = formatargandannotation(arg)
+            if defaults and i >= firstdefault:
+                spec = spec + formatvalue(defaults[i - firstdefault])
+            specs.append(spec)
+        if varargs is not None:
+            specs.append(formatvarargs(formatargandannotation(varargs)))
+        else:
+            if kwonlyargs:
+                specs.append('*')
+        if kwonlyargs:
+            for kwonlyarg in kwonlyargs:
+                spec = formatargandannotation(kwonlyarg)
+                if kwonlydefaults and kwonlyarg in kwonlydefaults:
+                    spec += formatvalue(kwonlydefaults[kwonlyarg])
+                specs.append(spec)
+        if varkw is not None:
+            specs.append(formatvarkw(formatargandannotation(varkw)))
+        result = '(' + ', '.join(specs) + ')'
+        if 'return' in annotations:
+            result += formatreturns(formatannotation(annotations['return']))
+        return result
+
+
 def get_module_callables(mod, ignore=None):
     """Returns two maps of (*types*, *funcs*) from *mod*, optionally
     ignoring based on the :class:`bool` return value of the *ignore*
@@ -213,7 +286,7 @@ partial = CachedInstancePartial
 # # #
 
 
-def wraps(func, injected=None, **kw):
+def wraps(func, injected=None, expected=None, **kw):
     """Modeled after the built-in :func:`functools.wraps`, this function is
     used to make your decorator's wrapper functions reflect the
     wrapped function's:
@@ -262,6 +335,10 @@ def wraps(func, injected=None, **kw):
         func (function): The callable whose attributes are to be copied.
         injected (list): An optional list of argument names which
             should not appear in the new wrapper's signature.
+        expected (list): An optional list of argument names (or (name,
+            default) pairs) representing new arguments introduced by
+            the wrapper (the opposite of *injected*). See
+            :meth:`FunctionBuilder.add_arg()` for more details.
         update_dict (bool): Whether to copy other, non-standard
             attributes of *func* over to the wrapper. Defaults to True.
         inject_to_varkw (bool): Ignore missing arguments when a
@@ -271,14 +348,14 @@ def wraps(func, injected=None, **kw):
     :class:`FunctionBuilder` type, on which wraps was built.
 
     """
-    # TODO: maybe automatically use normal wraps in the very rare case
-    # that the signatures actually match and no adapter is needed.
     if injected is None:
         injected = []
     elif isinstance(injected, basestring):
         injected = [injected]
     else:
         injected = list(injected)
+
+    expected_items = _parse_wraps_expected(expected)
 
     if isinstance(func, (classmethod, staticmethod)):
         raise TypeError('wraps does not support wrapping classmethods and'
@@ -300,7 +377,13 @@ def wraps(func, injected=None, **kw):
                 continue  # keyword arg will be caught by the varkw
             raise
 
-    fb.body = 'return _call(%s)' % fb.get_invocation_str()
+    for arg, default in expected_items:
+        fb.add_arg(arg, default)  # may raise ExistingArgument
+
+    if fb.is_async:
+        fb.body = 'return await _call(%s)' % fb.get_invocation_str()
+    else:
+        fb.body = 'return _call(%s)' % fb.get_invocation_str()
 
     def wrapper_wrapper(wrapper_func):
         execdict = dict(_call=wrapper_func, _func=func)
@@ -310,6 +393,46 @@ def wraps(func, injected=None, **kw):
         return fully_wrapped
 
     return wrapper_wrapper
+
+
+def _parse_wraps_expected(expected):
+    # expected takes a pretty powerful argument, it's processed
+    # here. admittedly this would be less trouble if I relied on
+    # OrderedDict (there's an impl of that in the commit history if
+    # you look
+    if expected is None:
+        expected = []
+    elif isinstance(expected, basestring):
+        expected = [(expected, NO_DEFAULT)]
+
+    expected_items = []
+    try:
+        expected_iter = iter(expected)
+    except TypeError as e:
+        raise ValueError('"expected" takes string name, sequence of string names,'
+                         ' iterable of (name, default) pairs, or a mapping of '
+                         ' {name: default}, not %r (got: %r)' % (expected, e))
+    for argname in expected_iter:
+        if isinstance(argname, basestring):
+            # dict keys and bare strings
+            try:
+                default = expected[argname]
+            except TypeError:
+                default = NO_DEFAULT
+        else:
+            # pairs
+            try:
+                argname, default = argname
+            except (TypeError, ValueError):
+                raise ValueError('"expected" takes string name, sequence of string names,'
+                                 ' iterable of (name, default) pairs, or a mapping of '
+                                 ' {name: default}, not %r')
+        if not isinstance(argname, basestring):
+            raise ValueError('all "expected" argnames must be strings, not %r' % (argname,))
+
+        expected_items.append((argname, default))
+
+    return expected_items
 
 
 class FunctionBuilder(object):
@@ -406,9 +529,11 @@ class FunctionBuilder(object):
 
     _defaults = {'doc': str,
                  'dict': dict,
+                 'is_async': lambda: False,
                  'module': lambda: None,
                  'body': lambda: 'pass',
                  'indent': lambda: 4,
+                 "annotations": dict,
                  'filename': lambda: 'boltons.funcutils.FunctionBuilder'}
 
     _defaults.update(_argspec_defaults)
@@ -430,22 +555,36 @@ class FunctionBuilder(object):
     # def get_argspec(self):  # TODO
 
     if _IS_PY2:
-        def get_sig_str(self):
-            return inspect.formatargspec(self.args, self.varargs,
+        def get_sig_str(self, with_annotations=True):
+            """Return function signature as a string.
+
+            with_annotations is ignored on Python 2.  On Python 3 signature
+            will omit annotations if it is set to False.
+            """
+            return inspect_formatargspec(self.args, self.varargs,
                                          self.varkw, [])
 
         def get_invocation_str(self):
-            return inspect.formatargspec(self.args, self.varargs,
+            return inspect_formatargspec(self.args, self.varargs,
                                          self.varkw, [])[1:-1]
     else:
-        def get_sig_str(self):
-            return inspect.formatargspec(self.args,
+        def get_sig_str(self, with_annotations=True):
+            """Return function signature as a string.
+
+            with_annotations is ignored on Python 2.  On Python 3 signature
+            will omit annotations if it is set to False.
+            """
+            if with_annotations:
+                annotations = self.annotations
+            else:
+                annotations = {}
+            return inspect_formatargspec(self.args,
                                          self.varargs,
                                          self.varkw,
                                          [],
                                          self.kwonlyargs,
                                          {},
-                                         self.annotations)
+                                         annotations)
 
         _KWONLY_MARKER = re.compile(r"""
         \*     # a star
@@ -462,7 +601,7 @@ class FunctionBuilder(object):
                                     for arg in self.kwonlyargs)
                 formatters['formatvalue'] = lambda value: '=' + value
 
-            sig = inspect.formatargspec(self.args,
+            sig = inspect_formatargspec(self.args,
                                         self.varargs,
                                         self.varkw,
                                         [],
@@ -487,9 +626,13 @@ class FunctionBuilder(object):
         kwargs = {'name': func.__name__,
                   'doc': func.__doc__,
                   'module': func.__module__,
+                  'annotations': getattr(func, "__annotations__", {}),
                   'dict': getattr(func, '__dict__', {})}
 
         kwargs.update(cls._argspec_to_dict(func))
+
+        if _inspect_iscoroutinefunction(func):
+            kwargs['is_async'] = True
 
         return cls(**kwargs)
 
@@ -514,14 +657,15 @@ class FunctionBuilder(object):
         body = self.body or self._default_body
 
         tmpl = 'def {name}{sig_str}:'
-        if self.doc:
-            tmpl += '\n    """{doc}"""'
         tmpl += '\n{body}'
+
+        if self.is_async:
+            tmpl = 'async ' + tmpl
 
         body = _indent(self.body, ' ' * self.indent)
 
         name = self.name.replace('<', '_').replace('>', '_')  # lambdas
-        src = tmpl.format(name=name, sig_str=self.get_sig_str(),
+        src = tmpl.format(name=name, sig_str=self.get_sig_str(with_annotations=False),
                           doc=self.doc, body=body)
         self._compile(src, execdict)
         func = execdict[name]
@@ -531,6 +675,7 @@ class FunctionBuilder(object):
         func.__defaults__ = self.defaults
         if not _IS_PY2:
             func.__kwdefaults__ = self.kwonlydefaults
+            func.__annotations__ = self.annotations
 
         if with_dict:
             func.__dict__.update(self.dict)
@@ -548,7 +693,46 @@ class FunctionBuilder(object):
         """
         ret = dict(reversed(list(zip(reversed(self.args),
                                      reversed(self.defaults or [])))))
+        kwonlydefaults = getattr(self, 'kwonlydefaults', None)
+        if kwonlydefaults:
+            ret.update(kwonlydefaults)
         return ret
+
+    def get_arg_names(self, only_required=False):
+        arg_names = tuple(self.args) + tuple(getattr(self, 'kwonlyargs', ()))
+        if only_required:
+            defaults_dict = self.get_defaults_dict()
+            arg_names = tuple([an for an in arg_names if an not in defaults_dict])
+        return arg_names
+
+    if _IS_PY2:
+        def add_arg(self, arg_name, default=NO_DEFAULT):
+            "Add an argument with optional *default* (defaults to ``funcutils.NO_DEFAULT``)."
+            if arg_name in self.args:
+                raise ExistingArgument('arg %r already in func %s arg list' % (arg_name, self.name))
+            self.args.append(arg_name)
+            if default is not NO_DEFAULT:
+                self.defaults = (self.defaults or ()) + (default,)
+            return
+    else:
+        def add_arg(self, arg_name, default=NO_DEFAULT, kwonly=False):
+            """Add an argument with optional *default* (defaults to
+            ``funcutils.NO_DEFAULT``). Pass *kwonly=True* to add a
+            keyword-only argument
+            """
+            if arg_name in self.args:
+                raise ExistingArgument('arg %r already in func %s arg list' % (arg_name, self.name))
+            if arg_name in self.kwonlyargs:
+                raise ExistingArgument('arg %r already in func %s kwonly arg list' % (arg_name, self.name))
+            if not kwonly:
+                self.args.append(arg_name)
+                if default is not NO_DEFAULT:
+                    self.defaults = (self.defaults or ()) + (default,)
+            else:
+                self.kwonlyargs.append(arg_name)
+                if default is not NO_DEFAULT:
+                    self.kwonlydefaults[arg_name] = default
+            return
 
     def remove_arg(self, arg_name):
         """Remove an argument from this FunctionBuilder's argument list. The
@@ -594,6 +778,10 @@ class FunctionBuilder(object):
 
 
 class MissingArgument(ValueError):
+    pass
+
+
+class ExistingArgument(ValueError):
     pass
 
 

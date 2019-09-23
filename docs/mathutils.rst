@@ -3,6 +3,9 @@
 
 .. automodule:: boltons.mathutils
 
+.. autoclass:: boltons.mathutils.Bits
+   :members:
+   :undoc-members:
 
 Alternative Rounding Functions
 ------------------------------

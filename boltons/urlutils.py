@@ -770,6 +770,12 @@ class URL(object):
         cn = self.__class__.__name__
         return u'%s(%r)' % (cn, self.to_text())
 
+    def __str__(self):
+        return self.to_text()
+
+    def __unicode__(self):
+        return self.to_text()
+
     def __eq__(self, other):
         for attr in self._cmp_attrs:
             if not getattr(self, attr) == getattr(other, attr, None):
@@ -892,16 +898,19 @@ def parse_url(url_text):
     if hostinfo:
         host, sep, port_str = hostinfo.partition(u':')
         if sep:
-            if u']' in port_str:
-                host = hostinfo  # wrong split, was an ipv6
-            else:
-                try:
-                    port = int(port_str)
-                except ValueError:
-                    if port_str:  # empty ports ok according to RFC 3986 6.2.3
-                        raise URLParseError('expected integer for port, not %r'
-                                            % port_str)
-                    port = None
+            if host and host[0] == u'[' and u']' in port_str:
+                host_right, _, port_str = port_str.partition(u']')
+                host = host + u':' + host_right + u']'
+                if port_str and port_str[0] == u':':
+                    port_str = port_str[1:]
+
+            try:
+                port = int(port_str)
+            except ValueError:
+                if port_str:  # empty ports ok according to RFC 3986 6.2.3
+                    raise URLParseError('expected integer for port, not %r'
+                                        % port_str)
+                port = None
 
     family, host = parse_host(host)
 
@@ -943,7 +952,10 @@ def parse_qsl(qs, keep_blank_values=True, encoding=DEFAULT_ENCODING):
 # 20161021, used for the QueryParamDict, toward the bottom.
 """
 
-from collections import KeysView, ValuesView, ItemsView
+try:
+    from collections.abc import KeysView, ValuesView, ItemsView
+except ImportError:
+    from collections import KeysView, ValuesView, ItemsView
 
 try:
     from itertools import izip_longest

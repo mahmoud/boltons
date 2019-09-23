@@ -299,6 +299,7 @@ class Stats(object):
         >>> variance(range(97))
         784.0
         """
+        global mean  # defined elsewhere in this file
         return mean(self._get_pow_diffs(2))
     variance = _StatsProperty('variance', _calc_variance)
 
@@ -320,8 +321,9 @@ class Stats(object):
         >>> median_abs_dev(range(97))
         24.0
         """
+        global median  # defined elsewhere in this file
         sorted_vals = sorted(self.data)
-        x = float(median(sorted_vals))  # programmatically defined below
+        x = float(median(sorted_vals))
         return median([abs(x - v) for v in sorted_vals])
     median_abs_dev = _StatsProperty('median_abs_dev', _calc_median_abs_dev)
     mad = median_abs_dev  # convenience

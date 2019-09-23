@@ -1,6 +1,9 @@
 # -*- coding: utf-8 -*-
-
 import string
+import sys
+from abc import abstractmethod, ABCMeta
+
+import pytest
 
 from boltons.cacheutils import LRU, LRI, cached, cachedmethod, cachedproperty, MinIDMap
 
@@ -23,11 +26,78 @@ def test_lru_add():
 
 
 def test_lri():
-    bc = LRI(10, on_miss=lambda k: k.upper())
-    for char in string.ascii_letters:
+    cache_size = 10
+    bc = LRI(cache_size, on_miss=lambda k: k.upper())
+    for idx, char in enumerate(string.ascii_letters):
         x = bc[char]
         assert x == char.upper()
-    assert len(bc) == 10
+        least_recent_insert_index = idx - cache_size
+        if least_recent_insert_index >= 0:
+            # least recently inserted object evicted
+            assert len(bc) == cache_size
+            for char in string.ascii_letters[least_recent_insert_index+1:idx]:
+                assert char in bc
+
+    # test that reinserting an exising key changes eviction behavior
+    bc[string.ascii_letters[-cache_size+1]] = "new value"
+    least_recently_inserted_key = string.ascii_letters[-cache_size+2]
+    bc["unreferenced_key"] = "value"
+    keys_in_cache = [
+        string.ascii_letters[i]
+        for i in range(-cache_size + 1, 0)
+        if string.ascii_letters[i] != least_recently_inserted_key
+    ]
+    keys_in_cache.append("unreferenced_key")
+    assert len(bc) == cache_size
+    for k in keys_in_cache:
+        assert k in bc
+
+
+def test_lri_cache_eviction():
+    """
+    Regression test
+    Original LRI implementation had a bug where the specified cache
+    size only supported `max_size` number of inserts to the cache,
+    rather than support `max_size` number of keys in the cache. This
+    would result in some unintuitive behavior, where a key is evicted
+    recently inserted value would be evicted from the cache if the key
+    inserted was inserted `max_size` keys earlier.
+    """
+    test_cache = LRI(2)
+    # dequeue: (key1); dict keys: (key1)
+    test_cache["key1"] = "value1"
+    # dequeue: (key1, key1); dict keys: (key1)
+    test_cache["key1"] = "value1"
+    # dequeue: (key1, key1, key2); dict keys: (key1, key2)
+    test_cache["key2"] = "value2"
+    # dequeue: (key1, key2, key3); dict keys: (key2, key3)
+    test_cache["key3"] = "value3"
+    # will error here since we evict key1 from the cache and it doesn't
+    # exist in the dict anymore
+    test_cache["key3"] = "value3"
+
+
+def test_cache_sizes_on_repeat_insertions():
+    """
+    Regression test
+    Original LRI implementation had an unbounded size of memory
+    regardless of the value for its `max_size` parameter due to a naive
+    insertion algorithm onto an underlying deque data structure. To
+    prevent memory leaks, this test will assert that a cache does not
+    grow past its max size given values of a uniform memory footprint
+    """
+    caches_to_test = (LRU, LRI)
+    for cache_type in caches_to_test:
+        test_cache = cache_type(2)
+        # note strings are used to force allocation of memory
+        test_cache["key1"] = "1"
+        test_cache["key2"] = "1"
+        initial_list_size = len(test_cache._get_flattened_ll())
+        for k in test_cache:
+            for __ in range(100):
+                test_cache[k] = "1"
+        list_size_after_inserts = len(test_cache._get_flattened_ll())
+        assert initial_list_size == list_size_after_inserts
 
 
 def test_lru_basic():
@@ -263,6 +333,24 @@ def test_cachedmethod():
     return
 
 
+def test_cachedmethod_maintains_func_abstraction():
+    ABC = ABCMeta('ABC', (object,), {})
+
+    class Car(ABC):
+
+        def __init__(self, cache=None):
+            self.h_cache = LRI() if cache is None else cache
+            self.hand_count = 0
+
+        @cachedmethod('h_cache')
+        @abstractmethod
+        def hand(self, *a, **kw):
+            self.hand_count += 1
+
+    with pytest.raises(TypeError):
+        Car()
+
+
 def test_cachedproperty():
     class Proper(object):
         def __init__(self):
@@ -293,6 +381,20 @@ def test_cachedproperty():
     assert prop.expensive_func.call_count == 2
 
     repr(Proper.useful_attr)
+
+
+def test_cachedproperty_maintains_func_abstraction():
+    ABC = ABCMeta('ABC', (object,), {})
+
+    class AbstractExpensiveCalculator(ABC):
+
+        @cachedproperty
+        @abstractmethod
+        def calculate(self):
+            pass
+
+    with pytest.raises(TypeError):
+        AbstractExpensiveCalculator()
 
 
 def test_min_id_map():

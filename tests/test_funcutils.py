@@ -42,7 +42,7 @@ def test_copy_function():
     assert callee() == callee_copy()
 
 
-class test_total_ordering():
+def test_total_ordering():
     @total_ordering
     class Number(object):
         def __init__(self, val):

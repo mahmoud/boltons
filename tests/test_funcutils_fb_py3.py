@@ -1,5 +1,6 @@
 
 import inspect
+from collections import defaultdict
 
 import pytest
 
@@ -20,12 +21,13 @@ def pita_wrap(flag=False):
 def test_wraps_py3():
 
     @pita_wrap(flag=True)
-    def annotations(a: int, b: float=1) -> "tuple":
-        return a, b
+    def annotations(a: int, b: float=1, c: defaultdict=()) -> defaultdict:
+        return a, b, c
 
-    annotations(0) == (True, "annotations", (0, 1))
-    annotations.__annotations__ == {'a': int, 'b': float,
-                                    'return': 'tuple'}
+    assert annotations(0) == (True, "annotations", (0, 1, ()))
+    assert annotations.__annotations__ == {'a': int, 'b': float,
+                                           'c': defaultdict,
+                                           'return': defaultdict}
 
     @pita_wrap(flag=False)
     def kwonly_arg(a, *, b, c=2):
@@ -34,8 +36,8 @@ def test_wraps_py3():
     with pytest.raises(TypeError):
         kwonly_arg(0)
 
-    kwonly_arg(0, b=1) == (False, "kwonly_arg", (0, 1, 2))
-    kwonly_arg(0, b=1, c=3) == (False, "kwonly_arg", (0, 1, 3))
+    assert kwonly_arg(0, b=1) == (False, "kwonly_arg", (0, 1, 2))
+    assert kwonly_arg(0, b=1, c=3) == (False, "kwonly_arg", (0, 1, 3))
 
     @pita_wrap(flag=True)
     def kwonly_non_roundtrippable_repr(*, x=lambda y: y + 1):
@@ -78,6 +80,28 @@ def test_remove_kwonly_arg():
     assert 'loop' not in fb_example.kwonlydefaults
 
 
+def test_defaults_dict():
+    def example(req, test='default', *, loop='lol'):
+        return loop
+
+    fb_example = FunctionBuilder.from_func(example)
+    assert 'test' in fb_example.args
+    dd = fb_example.get_defaults_dict()
+    assert dd['test'] == 'default'
+    assert dd['loop'] == 'lol'
+    assert 'req' not in dd
+
+
+def test_get_arg_names():
+    def example(req, test='default', *, loop='lol'):
+        return loop
+
+    fb_example = FunctionBuilder.from_func(example)
+    assert 'test' in fb_example.args
+    assert fb_example.get_arg_names() == ('req', 'test', 'loop')
+    assert fb_example.get_arg_names(only_required=True) == ('req',)
+
+
 @pytest.mark.parametrize('signature,should_match',
                          [('a, *, b', True),
                           ('a,*,b', True),
@@ -100,3 +124,26 @@ def test_FunctionBuilder_KWONLY_MARKER(signature, should_match):
     message = "{!r}: should_match was {}, but result was {}".format(
         signature, should_match, matched)
     assert bool(matched) == should_match, message
+
+
+def test_FunctionBuilder_add_arg_kwonly():
+    fb = FunctionBuilder('return_val', doc='returns the value',
+                         body='return val')
+
+    broken_func = fb.get_func()
+    with pytest.raises(NameError):
+        broken_func()
+
+    fb.add_arg('val', default='default_val', kwonly=True)
+
+    better_func = fb.get_func()
+    assert better_func() == 'default_val'
+
+    with pytest.raises(ValueError):
+        fb.add_arg('val')
+
+    assert better_func(val='keyword') == 'keyword'
+
+    with pytest.raises(TypeError):
+        assert better_func('positional')
+    return

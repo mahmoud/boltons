@@ -21,16 +21,24 @@ For more advanced :class:`Table`-style manipulation check out the
 
 from __future__ import print_function
 
-import cgi
+try:
+    from html import escape as html_escape
+except ImportError:
+    from cgi import escape as html_escape
 import types
 from itertools import islice
-from collections import Sequence, Mapping, MutableSequence
+try:
+    from collections.abc import Sequence, Mapping, MutableSequence
+except ImportError:
+    from collections import Sequence, Mapping, MutableSequence
 try:
     string_types, integer_types = (str, unicode), (int, long)
-except Exception:
+    from cgi import escape as html_escape
+except NameError:
     # Python 3 compat
     unicode = str
     string_types, integer_types = (str, bytes), (int,)
+    from html import escape as html_escape
 
 try:
     from typeutils import make_sentinel
@@ -75,7 +83,7 @@ def to_text(obj, maxlen=None):
 
 def escape_html(obj, maxlen=None):
     text = to_text(obj, maxlen=maxlen)
-    return cgi.escape(text, quote=True)
+    return html_escape(text, quote=True)
 
 
 _DNR = set((type(None), bool, complex, float,

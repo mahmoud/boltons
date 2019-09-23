@@ -3,6 +3,10 @@
 
 .. automodule:: boltons.iterutils
 
+.. contents:: Sections
+   :depth: 3
+   :local:
+
 .. _iteration:
 
 Iteration
@@ -37,6 +41,8 @@ containers as succinct and powerful as Python itself.
 .. autofunction:: remap
 .. autofunction:: get_path
 .. autofunction:: research
+.. autofunction:: flatten
+.. autofunction:: flatten_iter
 
 Numeric
 -------
@@ -61,6 +67,14 @@ given condition.
 
 .. autofunction:: bucketize
 .. autofunction:: partition
+
+Sorting
+-------
+
+The built-in :func:`sorted()` is great, but what do you do when you want to
+partially override the sort order?
+
+.. autofunction:: soft_sorted
 
 Reduction
 ---------

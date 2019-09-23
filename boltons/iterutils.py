@@ -19,7 +19,11 @@ import socket
 import hashlib
 import itertools
 
-from collections import Mapping, Sequence, Set, ItemsView
+try:
+    from collections.abc import Mapping, Sequence, Set, ItemsView, Iterable
+except ImportError:
+    from collections import Mapping, Sequence, Set, ItemsView, Iterable
+
 
 try:
     from typeutils import make_sentinel
@@ -467,15 +471,19 @@ def backoff_iter(start, stop, count=None, factor=2.0, jitter=False):
     return
 
 
-def bucketize(src, key=None, value_transform=None, key_filter=None):
-    """Group values in the *src* iterable by the value returned by *key*,
-    which defaults to :class:`bool`, grouping values by truthiness.
+def bucketize(src, key=bool, value_transform=None, key_filter=None):
+    """Group values in the *src* iterable by the value returned by *key*.
 
     >>> bucketize(range(5))
     {False: [0], True: [1, 2, 3, 4]}
     >>> is_odd = lambda x: x % 2 == 1
     >>> bucketize(range(5), is_odd)
     {False: [0, 2, 4], True: [1, 3]}
+
+    *key* is :class bool: by default, but can either be a callable or a string
+    name of the attribute on which to bucketize objects.
+    >>> bucketize([1+1j, 2+2j, 1, 2], key='real')
+    {1.0: [(1+1j), 1], 2.0: [(2+2j), 2]}
 
     Value lists are not deduplicated:
 
@@ -506,10 +514,14 @@ def bucketize(src, key=None, value_transform=None, key_filter=None):
     """
     if not is_iterable(src):
         raise TypeError('expected an iterable')
-    if key is None:
-        key = bool
-    if not callable(key):
-        raise TypeError('expected callable key function')
+
+    if isinstance(key, basestring):
+        key_func = lambda x: getattr(x, key, x)
+    elif callable(key):
+        key_func = key
+    else:
+        raise TypeError('expected key to be callable or a string')
+
     if value_transform is None:
         value_transform = lambda x: x
     if not callable(value_transform):
@@ -517,13 +529,13 @@ def bucketize(src, key=None, value_transform=None, key_filter=None):
 
     ret = {}
     for val in src:
-        key_of_val = key(val)
+        key_of_val = key_func(val)
         if key_filter is None or key_filter(key_of_val):
             ret.setdefault(key_of_val, []).append(value_transform(val))
     return ret
 
 
-def partition(src, key=None):
+def partition(src, key=bool):
     """No relation to :meth:`str.partition`, ``partition`` is like
     :func:`bucketize`, but for added convenience returns a tuple of
     ``(truthy_values, falsy_values)``.
@@ -533,7 +545,8 @@ def partition(src, key=None):
     ['hi', 'bye']
 
     *key* defaults to :class:`bool`, but can be carefully overridden to
-    use any function that returns either ``True`` or ``False``.
+    use either a function that returns either ``True`` or ``False`` or
+    a string name of the attribute on which to partition objects.
 
     >>> import string
     >>> is_digit = lambda x: x in string.digits
@@ -593,6 +606,69 @@ def unique_iter(src, key=None):
             seen.add(k)
             yield i
     return
+
+
+def redundant(src, key=None, groups=False):
+    """The complement of :func:`unique()`.
+
+    By default returns non-unique values as a list of the *first*
+    redundant value in *src*. Pass ``groups=True`` to get groups of
+    all values with redundancies, ordered by position of the first
+    redundant value. This is useful in conjunction with some
+    normalizing *key* function.
+
+    >>> redundant([1, 2, 3, 4])
+    []
+    >>> redundant([1, 2, 3, 2, 3, 3, 4])
+    [2, 3]
+    >>> redundant([1, 2, 3, 2, 3, 3, 4], groups=True)
+    [[2, 2], [3, 3, 3]]
+
+    An example using a *key* function to do case-insensitive
+    redundancy detection.
+
+    >>> redundant(['hi', 'Hi', 'HI', 'hello'], key=str.lower)
+    ['Hi']
+    >>> redundant(['hi', 'Hi', 'HI', 'hello'], groups=True, key=str.lower)
+    [['hi', 'Hi', 'HI']]
+
+    *key* should also be used when the values in *src* are not hashable.
+
+    .. note::
+
+       This output of this function is designed for reporting
+       duplicates in contexts when a unique input is desired. Due to
+       the grouped return type, there is no streaming equivalent of
+       this function for the time being.
+
+    """
+    if key is None:
+        pass
+    elif callable(key):
+        key_func = key
+    elif isinstance(key, basestring):
+        key_func = lambda x: getattr(x, key, x)
+    else:
+        raise TypeError('"key" expected a string or callable, not %r' % key)
+    seen = {}  # key to first seen item
+    redundant_order = []
+    redundant_groups = {}
+    for i in src:
+        k = key_func(i) if key else i
+        if k not in seen:
+            seen[k] = i
+        else:
+            if k in redundant_groups:
+                if groups:
+                    redundant_groups[k].append(i)
+            else:
+                redundant_order.append(k)
+                redundant_groups[k] = [seen[k], i]
+    if not groups:
+        ret = [redundant_groups[k][1] for k in redundant_order]
+    else:
+        ret = [redundant_groups[k] for k in redundant_order]
+    return ret
 
 
 def one(src, default=None, key=None):
@@ -657,6 +733,32 @@ def first(iterable, default=None, key=None):
     .. _the original standalone module: https://github.com/hynek/first
     """
     return next(filter(key, iterable), default)
+
+
+def flatten_iter(iterable):
+    """``flatten_iter()`` yields all the elements from *iterable* while
+    collapsing any nested iterables.
+
+    >>> nested = [[1, 2], [[3], [4, 5]]]
+    >>> list(flatten_iter(nested))
+    [1, 2, 3, 4, 5]
+    """
+    for item in iterable:
+        if isinstance(item, Iterable) and not isinstance(item, basestring):
+            for subitem in flatten_iter(item):
+                yield subitem
+        else:
+            yield item
+
+def flatten(iterable):
+    """``flatten()`` returns a collapsed list of all the elements from
+    *iterable* while collapsing any nested iterables.
+
+    >>> nested = [[1, 2], [[3], [4, 5]]]
+    >>> flatten(nested)
+    [1, 2, 3, 4, 5]
+    """
+    return list(flatten_iter(iterable))
 
 
 def same(iterable, ref=_UNSET):
@@ -1113,7 +1215,7 @@ class SequentialGUIDerator(GUIDerator):
     value and increments every iteration. This yields GUIDs which are
     of course unique, but also ordered and lexicographically sortable.
 
-    The SequentialGUIDerator is aronud 50% faster than the normal
+    The SequentialGUIDerator is around 50% faster than the normal
     GUIDerator, making it almost 20x as fast as the built-in uuid
     module. By default it is also more compact, partly due to its
     96-bit (24-hexdigit) default length. 96 bits of randomness means that
@@ -1155,6 +1257,51 @@ class SequentialGUIDerator(GUIDerator):
 guid_iter = GUIDerator()
 seq_guid_iter = SequentialGUIDerator()
 
+
+def soft_sorted(iterable, first=None, last=None, key=None, reverse=False):
+    """For when you care about the order of some elements, but not about
+    others.
+
+    Use this to float to the top and/or sink to the bottom a specific
+    ordering, while sorting the rest of the elements according to
+    normal :func:`sorted` rules.
+
+    >>> soft_sorted(['two', 'b', 'one', 'a'], first=['one', 'two'])
+    ['one', 'two', 'a', 'b']
+    >>> soft_sorted(range(7), first=[6, 15], last=[2, 4], reverse=True)
+    [6, 5, 3, 1, 0, 2, 4]
+    >>> import string
+    >>> ''.join(soft_sorted(string.hexdigits, first='za1', last='b', key=str.lower))
+    'aA1023456789cCdDeEfFbB'
+
+    Args:
+       iterable (list): A list or other iterable to sort.
+       first (list): A sequence to enforce for elements which should
+          appear at the beginning of the returned list.
+       last (list): A sequence to enforce for elements which should
+          appear at the end of the returned list.
+       key (callable): Callable used to generate a comparable key for
+          each item to be sorted, same as the key in
+          :func:`sorted`. Note that entries in *first* and *last*
+          should be the keys for the items. Defaults to
+          passthrough/the identity function.
+       reverse (bool): Whether or not elements not explicitly ordered
+          by *first* and *last* should be in reverse order or not.
+
+    Returns a new list in sorted order.
+    """
+    first = first or []
+    last = last or []
+    key = key or (lambda x: x)
+    seq = list(iterable)
+    other = [x for x in seq if not ((first and key(x) in first) or (last and key(x) in last))]
+    other.sort(key=key, reverse=reverse)
+
+    if first:
+        first = sorted([x for x in seq if key(x) in first], key=lambda x: first.index(key(x)))
+    if last:
+        last = sorted([x for x in seq if key(x) in last], key=lambda x: last.index(key(x)))
+    return first + other + last
 
 """
 May actually be faster to do an isinstance check for a str path

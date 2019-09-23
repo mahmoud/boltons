@@ -4,7 +4,7 @@ boltons
 
 *boltons should be builtins.*
 
-|release| |calver|
+|release| |calver| |changelog|
 
 **Boltons** is a set of pure-Python utilities in the same spirit as —
 and yet conspicuously missing from — `the standard library`_,
@@ -28,7 +28,8 @@ including:
 
 And that's just a small selection. As of |today|, ``boltons`` is
 |b_type_count| types and |b_func_count| functions, spread across
-|b_mod_count| modules. See what's new by `checking the CHANGELOG`_.
+|b_mod_count| modules. See them all in the :ref:`genindex`, and see
+what's new by `checking the CHANGELOG`_.
 
 .. counts are appx 50, 75, and 23, respectively, as of initial docs writing
 .. in mid 2016, the counts are now 62, 112, and 25, respectively
@@ -42,6 +43,8 @@ And that's just a small selection. As of |today|, ``boltons`` is
 .. |calver| image:: https://img.shields.io/badge/calver-YY.MINOR.MICRO-22bfda.svg
             :target: http://calver.org
 
+.. |changelog| image:: https://img.shields.io/badge/CHANGELOG-UPDATED-b84ad6.svg
+               :target: https://github.com/mahmoud/boltons/blob/master/CHANGELOG.md
 
 Installation and Integration
 ----------------------------
@@ -61,7 +64,7 @@ consider other integration options. See the :ref:`Integration
 <arch_integration>` section of the architecture document for more
 details.
 
-Boltons is tested against Python 2.6, 2.7, 3.4, 3.5, and PyPy.
+Boltons is tested against Python 2.6-2.7, 3.4-3.7, and PyPy.
 
 Third-party packages
 --------------------
@@ -124,3 +127,5 @@ Section listing
    timeutils
    typeutils
    urlutils
+
+(For a quick reference you can ctrl-F, see the :ref:`genindex`.)

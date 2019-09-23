@@ -1,13 +1,12 @@
 import io
 import os
-import sys
 import codecs
 import random
 import string
 
 try:
     from StringIO import StringIO
-except:
+except ImportError:
     # py3
     StringIO = io.StringIO
 
@@ -21,13 +20,12 @@ from boltons import ioutils
 CUR_FILE_PATH = os.path.abspath(__file__)
 
 
-# Python2/3 compat
-if sys.version_info[0] == 3:
-    text_type = str
-    binary_type = bytes
-else:
-    text_type = unicode
+try:
+    text_type = unicode  # Python 2
     binary_type = str
+except NameError:
+    text_type = str      # Python 3
+    binary_type = bytes
 
 
 class AssertionsMixin(object):
@@ -317,7 +315,7 @@ class TestSpooledStringIO(TestCase, BaseTestMixin, AssertionsMixin):
         self.assertEqual(self.spooled_flo.len, len(self.test_str))
 
     def test_len_rollover(self):
-        """Make sure len propery works with on-disk flo"""
+        """Make sure len property works with on-disk flo"""
         self.spooled_flo.write(self.test_str)
         self.spooled_flo.rollover()
         self.assertEqual(self.spooled_flo.len, len(self.test_str))

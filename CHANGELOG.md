@@ -1,8 +1,73 @@
 boltons Changelog
 =================
 
-Since February 20, 2013 there have been 33 releases and 1191 commits for
-an average of one 34-commit release every 6.2 weeks.
+Since February 20, 2013 there have been 36 releases and 1347 commits for
+an average of one 37-commit release every 9 weeks.
+
+19.1.0
+------
+*(February 28, 2019)*
+
+Couple of enhancements, couple of cleanups.
+
+* [queueutils][queueutils] now supports float-based priorities ([#204][i204])
+* [FunctionBuilder][funcutils.FunctionBuilder] has a new
+  `get_arg_names()` method, and its `get_defaults_dict()` method
+  finally includes kwonly argument defaults.
+* [strutils.gzip_bytes][strutils.gzip_bytes] arrives to match
+  [strutils.gunzip_bytes][strutils.gunzip_bytes]
+
+[i204]: https://github.com/mahmoud/boltons/issues/204
+
+19.0.1
+------
+*(February 12, 2019)*
+
+Quick release to enhance [FunctionBuilder][funcutils.FunctionBuilder]
+and [funcutils.wraps][funcutils.wraps] to maintain function
+annotations on Python 3+. ([#133][i133], [#134][i134], [#203][i203])
+
+[i133]: https://github.com/mahmoud/boltons/issues/133
+[i134]: https://github.com/mahmoud/boltons/issues/134
+[i203]: https://github.com/mahmoud/boltons/issues/203
+
+19.0.0
+------
+*(February 10, 2019)*
+
+A very big release indeed, perhaps the biggest yet. A big, big thank you to all the contributors!
+
+* New types and utilities
+    * [dictutils.ManyToMany][dictutils.ManyToMany] arrives, to complement [dictutils.OneToOne][dictutils.OneToOne]
+    * [dictutils.FrozenDict][dictutils.FrozenDict] brings immutable mapping to a module near you ([#105][i105])
+    * [setutils.complement()][setutils.complement] introduces "negative" sets, useful for exclusion and many other set operations
+    * [iterutils.soft_sorted()][iterutils.soft_sorted] allows for looser, more flexible sorting of sequences
+    * [iterutils.flatten_iter()][iterutils.flatten_iter] and [iterutils.flatten()][iterutils.flatten], to collapse nested iterables. ([#118][i118])
+    * [mathutils.Bits][mathutils.Bits] type for representing a bitstring and translating
+      between integer, bytestring, hex, and boolean sequence representations.
+* funcutils improvements
+    * [FunctionBuilder][funcutils.FunctionBuilder] and [funcutils.wraps][funcutils.wraps] now support coroutines/async ([#194][i194])
+    * [FunctionBuilder.add_arg()][funcutils.FunctionBuilder.add_arg] allows the addition of arguments to the signature, to match [FunctionBuilder.remove_arg()][funcutils.FunctionBuilder.remove_arg] ([#201][i201])
+    * Similarly [funcutils.wraps()][funcutils.wraps] now takes an "expected" argument, to complement "injected" ([#161][i161])
+* Other bugfixes and improvements
+    * [cacheutils.LRI][cacheutils.LRI] is now threadsafe and correctly evicts when duplicate keys are added ([#155][i155], [#157][i157])
+    * [dictutils.subdict()][dictutils.subdict] now does its best to return the same type of dictionary it was passed.
+    * [urlutils][urlutils] now has better IPv6 support and URL can be used more natively like a string
+    * Improve singularization in [strutils][strutils]
+    * Fix some deprecation warnings in Python 3.7 ([#165][i165], [#196][i196])
+    * Document the change in dict constructor behavior affecting [dictutils.OMD][dictutils.OMD] under Python 3.7+ ([#179][i179])
+
+[i105]: https://github.com/mahmoud/boltons/issues/105
+[i118]: https://github.com/mahmoud/boltons/issues/118
+[i155]: https://github.com/mahmoud/boltons/issues/155
+[i157]: https://github.com/mahmoud/boltons/issues/157
+[i161]: https://github.com/mahmoud/boltons/issues/161
+[i165]: https://github.com/mahmoud/boltons/issues/165
+[i179]: https://github.com/mahmoud/boltons/issues/179
+[i194]: https://github.com/mahmoud/boltons/issues/194
+[i195]: https://github.com/mahmoud/boltons/issues/195
+[i196]: https://github.com/mahmoud/boltons/issues/196
+[i201]: https://github.com/mahmoud/boltons/issues/201
 
 18.0.1
 ------
@@ -24,7 +89,7 @@ A few bugfixes and a handy text utility.
 * Add `<thead>` and `<tbody>` structure to tableutils.Table HTML
   output, which helps with styling and other functionality (e.g.,
   jQuery datatables).
-* Add dictutils.subdict() to get a filtered version of a dictionary
+* Add [dictutils.subdict()][dictutils.subdict] to get a filtered version of a dictionary
   based on a subset of keys. ([#150][i150])
 * Add beta version of cacheutils.MinIDMap.
 
@@ -540,7 +605,7 @@ to community contributions and encouragement.
   * Corrected cases where OMD was not exactly a dropin for OrderedDict
   * conditional availability of [gcutils.get_all][gcutils.get_all] based on pypy or cpython, also
     [gcutils.is_tracked][gcutils.is_tracked] was added in 2.7, so making [gcutils.get_all][gcutils.get_all] work with 2.6
-  * Made namedutils backwards compatibilty for python 2.6 best effort
+  * Made namedutils backwards compatibility for python 2.6 best effort
   * Fix invalid part_path usage in [fileutils.AtomicSaver][fileutils.AtomicSaver]
 
 0.5.0
@@ -680,7 +745,7 @@ added in this release.
   * fix a bug in [dictutils.OrderedMultiDict][dictutils.OrderedMultiDict]'s .add()
   * adding initial reimplementation of OMD
   * adding some tests to dictutils
-  * update boltons formatutils to match what's goin on in lithoxyl
+  * update boltons formatutils to match what's going on in lithoxyl
   * remove infer_pos_args() from strutils (already in formatutils)
   * add formatutils to boltons
   * fix a potential infinite recursion in LocalTZ
@@ -800,6 +865,7 @@ added in this release.
 [zscore]: https://en.wikipedia.org/wiki/Standard_score
 
 [cacheutils]: http://boltons.readthedocs.org/en/latest/cacheutils.html
+[cacheutils.LRI]: http://boltons.readthedocs.org/en/latest/cacheutils.html#boltons.cacheutils.LRI
 [cacheutils.LRU]: http://boltons.readthedocs.org/en/latest/cacheutils.html#boltons.cacheutils.LRU
 [cacheutils.ThresholdCounter]: http://boltons.readthedocs.org/en/latest/cacheutils.html#boltons.cacheutils.ThresholdCounter
 [cacheutils.cached]: http://boltons.readthedocs.org/en/latest/cacheutils.html#boltons.cacheutils.cached
@@ -814,6 +880,9 @@ added in this release.
 [dictutils.OrderedMultiDict]: http://boltons.readthedocs.org/en/latest/dictutils.html#boltons.dictutils.OrderedMultiDict
 [dictutils.OrderedMultiDict.get_inverted]: http://boltons.readthedocs.org/en/latest/dictutils.html#boltons.dictutils.OrderedMultiDict.get_inverted
 [dictutils.OneToOne]: http://boltons.readthedocs.org/en/latest/dictutils.html#boltons.dictutils.OneToOne
+[dictutils.ManyToMany]: http://boltons.readthedocs.org/en/latest/dictutils.html#boltons.dictutils.ManyToMany
+[dictutils.FrozenDict]: http://boltons.readthedocs.org/en/latest/dictutils.html#boltons.dictutils.FrozenDict
+[dictutils.subdict]: http://boltons.readthedocs.org/en/latest/dictutils.html#boltons.dictutils.subdict
 [ecoutils]: http://boltons.readthedocs.org/en/latest/ecoutils.html
 [excutils.ParsedException]: http://boltons.readthedocs.org/en/latest/excutils.html#boltons.excutils.ParsedException
 [fileutils]: http://boltons.readthedocs.org/en/latest/fileutils.html
@@ -828,6 +897,8 @@ added in this release.
 [formatutils]: http://boltons.readthedocs.org/en/latest/formatutils.html
 [formatutils.DeferredValue]: http://boltons.readthedocs.org/en/latest/formatutils.html#boltons.fileutils.DeferredValue
 [funcutils.FunctionBuilder]: http://boltons.readthedocs.org/en/latest/funcutils.html#boltons.funcutils.FunctionBuilder
+[funcutils.FunctionBuilder.remove_arg]: https://boltons.readthedocs.io/en/latest/funcutils.html#boltons.funcutils.FunctionBuilder.remove_arg
+[funcutils.FunctionBuilder.add_arg]: https://boltons.readthedocs.io/en/latest/funcutils.html#boltons.funcutils.FunctionBuilder.add_arg
 [funcutils.partial_ordering]: http://boltons.readthedocs.org/en/latest/funcutils.html#boltons.funcutils.partial_ordering
 [funcutils.total_ordering]: http://boltons.readthedocs.org/en/latest/funcutils.html#boltons.funcutils.total_ordering
 [funcutils.wraps]: http://boltons.readthedocs.org/en/latest/funcutils.html#boltons.funcutils.wraps
@@ -848,6 +919,7 @@ added in this release.
 [i128]: https://github.com/mahmoud/boltons/issues/128
 [i135]: https://github.com/mahmoud/boltons/issues/135
 [i150]: https://github.com/mahmoud/boltons/issues/150
+[i161]: https://github.com/mahmoud/boltons/issues/161
 [i162]: https://github.com/mahmoud/boltons/issues/162
 [i164]: https://github.com/mahmoud/boltons/issues/164
 [ioutils]: http://boltons.readthedocs.org/en/latest/ioutils.html
@@ -860,6 +932,8 @@ added in this release.
 [iterutils.chunked]: http://boltons.readthedocs.org/en/latest/iterutils.html#boltons.iterutils.chunked
 [iterutils.chunked_iter]: http://boltons.readthedocs.org/en/latest/iterutils.html#boltons.iterutils.chunked_iter
 [iterutils.first]: http://boltons.readthedocs.org/en/latest/iterutils.html#boltons.iterutils.first
+[iterutils.flatten]: http://boltons.readthedocs.org/en/latest/iterutils.html#boltons.iterutils.flatten
+[iterutils.flatten_iter]: http://boltons.readthedocs.org/en/latest/iterutils.html#boltons.iterutils.flatten_iter
 [iterutils.backoff]: http://boltons.readthedocs.org/en/latest/iterutils.html#boltons.iterutils.backoff
 [iterutils.frange]: http://boltons.readthedocs.org/en/latest/iterutils.html#boltons.iterutils.frange
 [iterutils.GUIDerator]: http://boltons.readthedocs.org/en/latest/iterutils.html#boltons.iterutils.GUIDerator
@@ -871,15 +945,19 @@ added in this release.
 [iterutils.same]: http://boltons.readthedocs.org/en/latest/iterutils.html#boltons.iterutils.same
 [iterutils.remap]: http://boltons.readthedocs.org/en/latest/iterutils.html#boltons.iterutils.remap
 [iterutils.research]: http://boltons.readthedocs.org/en/latest/iterutils.html#boltons.iterutils.research
+[iterutils.soft_sorted]: http://boltons.readthedocs.org/en/latest/iterutils.html#boltons.iterutils.soft_sorted
 [iterutils.split]: http://boltons.readthedocs.org/en/latest/iterutils.html#boltons.iterutils.split
 [iterutils.split_iter]: http://boltons.readthedocs.org/en/latest/iterutils.html#boltons.iterutils.split_iter
 [iterutils.unique]: http://boltons.readthedocs.org/en/latest/iterutils.html#boltons.iterutils.unique
 [iterutils.windowed_iter]: http://boltons.readthedocs.org/en/latest/iterutils.html#boltons.iterutils.windowed_iter
 [iterutils.xfrange]: http://boltons.readthedocs.org/en/latest/iterutils.html#boltons.iterutils.xfrange
 [jsonutils.JSONLIterator]: http://boltons.readthedocs.org/en/latest/jsonutils.html#boltons.jsonutils.JSONLIterator
+[mathutils.Bits]: http://boltons.readthedocs.org/en/latest/mathutils.html#boltons.mathutils.Bits
 [mathutils.ceil]: http://boltons.readthedocs.org/en/latest/mathutils.html#boltons.mathutils.ceil
 [mathutils.floor]: http://boltons.readthedocs.org/en/latest/mathutils.html#boltons.mathutils.floor
 [mathutils.clamp]: http://boltons.readthedocs.org/en/latest/mathutils.html#boltons.mathutils.clamp
+[queueutils]: http://boltons.readthedocs.org/en/latest/queueutils.html
+[setutils.complement]: http://boltons.readthedocs.org/en/latest/setutils.html#boltons.setutils.complement
 [socketutils]: http://boltons.readthedocs.org/en/latest/socketutils.html
 [socketutils.BufferedSocket]: http://boltons.readthedocs.org/en/latest/socketutils.html#boltons.socketutils.BufferedSocket
 [socketutils.BufferedSocket.recv]: http://boltons.readthedocs.org/en/latest/socketutils.html#boltons.socketutils.BufferedSocket.recv
@@ -894,12 +972,14 @@ added in this release.
 [statsutils.Stats.get_zscore]: http://boltons.readthedocs.org/en/latest/statsutils.html#boltons.statsutils.Stats.get_zscore
 [statsutils.median]: http://boltons.readthedocs.org/en/latest/statsutils.html#boltons.statsutils.median
 [statsutils.trimean]: http://boltons.readthedocs.org/en/latest/statsutils.html#boltons.statsutils.trimean
+[strutils]: http://boltons.readthedocs.org/en/latest/strutils.html
 [strutils.HTMLTextExtractor]: http://boltons.readthedocs.org/en/latest/strutils.html#boltons.strutils.HTMLTextExtractor
 [strutils.a10n]: http://boltons.readthedocs.org/en/latest/strutils.html#boltons.strutils.a10n
 [strutils.args2cmd]: http://boltons.readthedocs.org/en/latest/strutils.html#boltons.strutils.args2cmd
 [strutils.args2sh]: http://boltons.readthedocs.org/en/latest/strutils.html#boltons.strutils.args2sh
 [strutils.escape_shell_args]: http://boltons.readthedocs.org/en/latest/strutils.html#boltons.strutils.escape_shell_args
 [strutils.find_hashtags]: http://boltons.readthedocs.org/en/latest/strutils.html#boltons.strutils.find_hashtags
+[strutils.gzip_bytes]: http://boltons.readthedocs.org/en/latest/strutils.html#boltons.strutils.gzip_bytes
 [strutils.gunzip_bytes]: http://boltons.readthedocs.org/en/latest/strutils.html#boltons.strutils.gunzip_bytes
 [strutils.html2text]: http://boltons.readthedocs.org/en/latest/strutils.html#boltons.strutils.html2text
 [strutils.indent]: http://boltons.readthedocs.org/en/latest/strutils.html#boltons.strutils.indent

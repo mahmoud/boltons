@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """So much practical programming involves string manipulation, which
-Python readily accomodates. Still, there are dozens of basic and
+Python readily accommodates. Still, there are dozens of basic and
 common capabilities missing from the standard library, several of them
 provided by ``strutils``.
 """
@@ -14,6 +14,17 @@ import zlib
 import string
 import unicodedata
 import collections
+from gzip import GzipFile
+
+try:
+    from cStringIO import cStringIO as StringIO
+except ImportError:
+    from io import BytesIO as StringIO
+
+try:
+    from collections.abc import Mapping
+except ImportError:
+    from collections import Mapping
 
 try:
     unicode, str, bytes, basestring = unicode, str, str, basestring
@@ -29,7 +40,7 @@ except NameError:  # basestring not defined in Python 3
 __all__ = ['camel2under', 'under2camel', 'slugify', 'split_punct_ws',
            'unit_len', 'ordinalize', 'cardinalize', 'pluralize', 'singularize',
            'asciify', 'is_ascii', 'is_uuid', 'html2text', 'strip_ansi',
-           'bytes2human', 'find_hashtags', 'a10n', 'gunzip_bytes',
+           'bytes2human', 'find_hashtags', 'a10n', 'gzip_bytes', 'gunzip_bytes',
            'iter_splitlines', 'indent', 'escape_shell_args',
            'args2cmd', 'args2sh', 'parse_int_list', 'format_int_list']
 
@@ -175,8 +186,12 @@ def singularize(word):
     """Semi-intelligently converts an English plural *word* to its
     singular form, preserving case pattern.
 
-    >>> singularize('records')
-    'record'
+    >>> singularize('chances')
+    'chance'
+    >>> singularize('Activities')
+    'Activity'
+    >>> singularize('Glasses')
+    'Glass'
     >>> singularize('FEET')
     'FOOT'
 
@@ -192,9 +207,9 @@ def singularize(word):
         return orig_word
     elif len(word) == 2:
         singular = word[:-1]  # or just return word?
-    elif word.endswith('ies') and word[-5:-4] not in 'aeiou':
+    elif word.endswith('ies') and word[-4:-3] not in 'aeiou':
         singular = word[:-3] + 'y'
-    elif word.endswith('es'):
+    elif word.endswith('es') and word[-3] == 's':
         singular = word[:-2]
     else:
         singular = word[:-1]
@@ -234,8 +249,8 @@ def _match_case(master, disciple):
         return disciple.lower()
     elif master.upper() == master:
         return disciple.upper()
-    elif master.capitalize() == master:
-        return disciple.capitalize()
+    elif master.title() == master:
+        return disciple.title()
     return disciple
 
 
@@ -318,38 +333,6 @@ def a10n(string):
         return string
     return '%s%s%s' % (string[0], len(string[1:-1]), string[-1])
 
-
-class StringBuffer(object):
-    """
-    This is meant to be a better file-like string buffer.
-    Faster than StringIO, better encoding handling than cStringIO.
-
-    This one is for unicode text strings. Look for ByteBuffer if you
-    want to handle byte strings.
-
-    (NOTE: not quite done yet)
-    """
-    def __init__(self, default_encoding=None, errors='strict'):
-        self.data = collections.deque()
-        self.default_encoding = default_encoding or 'utf-8'
-        self.errors = errors
-
-    def write(self, s):
-        if not isinstance(s, unicode):
-            enc = self.default_encoding
-            errs = self.errors
-            try:
-                s = s.decode(enc, errs)
-            except AttributeError:
-                raise ValueError('write() expected a unicode or byte string')
-        self.data.append(s)
-
-    def truncate(self):
-        self.data = collections.deque()
-        self.write = self.data.append
-
-    def getvalue(self):
-        return unicode().join(self.data)
 
 ANSI_ESCAPE_BEGIN = '\x1b['
 ANSI_TERMINATORS = ('H', 'f', 'A', 'B', 'C', 'D', 'R', 's', 'u', 'J',
@@ -627,6 +610,29 @@ def gunzip_bytes(bytestring):
     True
     """
     return zlib.decompress(bytestring, 16 + zlib.MAX_WBITS)
+
+
+def gzip_bytes(bytestring, level=6):
+    """Turn some bytes into some compressed bytes.
+
+    >>> len(gzip_bytes(b'a' * 10000))
+    46
+
+    Args:
+        bytestring (bytes): Bytes to be compressed
+        level (int): An integer, 1-9, controlling the
+          speed/compression. 1 is fastest, least compressed, 9 is
+          slowest, but most compressed.
+
+    Note that all levels of gzip are pretty fast these days, though
+    it's not really a competitor in compression, at any level.
+    """
+    out = StringIO()
+    f = GzipFile(fileobj=out, mode='wb', compresslevel=level)
+    f.write(bytestring)
+    f.close()
+    return out.getvalue()
+
 
 
 _line_ending_re = re.compile(r'(\r\n|\n|\x0b|\f|\r|\x85|\x2028|\x2029)',
@@ -1041,7 +1047,7 @@ class MultiReplace(object):
         self.group_map = {}
         regex_values = []
 
-        if isinstance(sub_map, collections.Mapping):
+        if isinstance(sub_map, Mapping):
             sub_map = sub_map.items()
 
         for idx, vals in enumerate(sub_map):

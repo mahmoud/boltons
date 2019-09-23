@@ -74,7 +74,7 @@ def dt_to_timestamp(dt):
     return total_seconds(td)
 
 
-_NONDIGIT_RE = re.compile('\D')
+_NONDIGIT_RE = re.compile(r'\D')
 
 
 def isoparse(iso_str):
@@ -115,7 +115,7 @@ _BOUNDS = [(b[0] * b[1], b[1], b[2]) for b in _BOUNDS]
 _BOUND_DELTAS = [b[0] for b in _BOUNDS]
 
 _FLOAT_PATTERN = r'[+-]?\ *(\d+(\.\d*)?|\.\d+)([eE][+-]?\d+)?'
-_PARSE_TD_RE = re.compile("((?P<value>%s)\s*(?P<unit>\w)\w*)" % _FLOAT_PATTERN)
+_PARSE_TD_RE = re.compile(r"((?P<value>%s)\s*(?P<unit>\w)\w*)" % _FLOAT_PATTERN)
 _PARSE_TD_KW_MAP = dict([(unit[0], unit + 's')
                          for _, _, unit in reversed(_BOUNDS[:-2])])
 
@@ -348,7 +348,7 @@ def daterange(start, stop, step=1, inclusive=False):
                          ' (year, month, day), not: %r' % step)
 
     if stop is None:
-        finished = lambda t: False
+        finished = lambda now, stop: False
     elif start < stop:
         finished = operator.gt if inclusive else operator.ge
     else:

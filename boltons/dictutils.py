@@ -38,7 +38,12 @@ thanks to `Mark Williams`_ for all his help.
 
 """
 
-from collections import KeysView, ValuesView, ItemsView
+try:
+    from collections.abc import KeysView, ValuesView, ItemsView
+except ImportError:
+    from collections import KeysView, ValuesView, ItemsView
+
+import itertools
 
 try:
     from itertools import izip_longest
@@ -55,7 +60,7 @@ except ImportError:
 PREV, NEXT, KEY, VALUE, SPREV, SNEXT = range(6)
 
 
-__all__ = ['MultiDict', 'OMD', 'OrderedMultiDict', 'OneToOne', 'subdict']
+__all__ = ['MultiDict', 'OMD', 'OrderedMultiDict', 'OneToOne', 'ManyToMany', 'subdict', 'FrozenDict']
 
 try:
     profile
@@ -106,17 +111,11 @@ class OrderedMultiDict(dict):
     >>> omd
     OrderedMultiDict([('b', 2)])
 
-    Note that calling :func:`dict` on an OMD results in a dict of keys
-    to *lists* of values:
+    If you want a safe-to-modify or flat dictionary, use
+    :meth:`OrderedMultiDict.todict()`.
 
-    >>> from pprint import pprint as pp  # ensuring proper key ordering
+    >>> from pprint import pprint as pp  # preserve printed ordering
     >>> omd = OrderedMultiDict([('a', 1), ('b', 2), ('a', 3)])
-    >>> pp(dict(omd))
-    {'a': [1, 3], 'b': [2]}
-
-    Note that modifying those lists will modify the OMD. If you want a
-    safe-to-modify or flat dictionary, use :meth:`OrderedMultiDict.todict()`.
-
     >>> pp(omd.todict())
     {'a': 3, 'b': 2}
     >>> pp(omd.todict(multi=True))
@@ -128,6 +127,19 @@ class OrderedMultiDict(dict):
 
     >>> OrderedMultiDict([('a', 1), ('b', 2), ('a', 3)]).items(multi=False)
     [('a', 3), ('b', 2)]
+
+    .. warning::
+
+       ``dict(omd)`` changed behavior `in Python 3.7
+       <https://bugs.python.org/issue34320>`_ due to changes made to
+       support the transition from :class:`collections.OrderedDict` to
+       the built-in dictionary being ordered. Before 3.7, the result
+       would be a new dictionary, with values that were lists, similar
+       to ``omd.todict(multi=True)`` (but only shallow-copy; the lists
+       were direct references to OMD internal structures). From 3.7
+       onward, the values became singular, like
+       ``omd.todict(multi=False)``. For reliable cross-version
+       behavior, just use :meth:`~OrderedMultiDict.todict()`.
 
     """
     def __init__(self, *args, **kwargs):
@@ -248,7 +260,7 @@ class OrderedMultiDict(dict):
                     del self[k]
             for k, v in E.iteritems(multi=True):
                 self_add(k, v)
-        elif hasattr(E, 'keys'):
+        elif callable(getattr(E, 'keys', None)):
             for k in E.keys():
                 self[k] = E[k]
         else:
@@ -468,10 +480,10 @@ class OrderedMultiDict(dict):
 
         >>> omd = OrderedMultiDict(zip('hello', 'world'))
         >>> omd.sorted(key=lambda i: i[1])  # i[0] is the key, i[1] is the val
-        OrderedMultiDict([('o', 'd'), ('l', 'l'), ('e', 'o'), ('h', 'w')])
+        OrderedMultiDict([('o', 'd'), ('l', 'l'), ('e', 'o'), ('l', 'r'), ('h', 'w')])
         """
         cls = self.__class__
-        return cls(sorted(self.iteritems(), key=key, reverse=reverse))
+        return cls(sorted(self.iteritems(multi=True), key=key, reverse=reverse))
 
     def sortedvalues(self, key=None, reverse=False):
         """Returns a copy of the :class:`OrderedMultiDict` with the same keys
@@ -698,7 +710,8 @@ class FastIterOrderedMultiDict(OrderedMultiDict):
             curr = curr[PREV]
 
 
-_SELF_INIT_MARKER = object()
+_OTO_INV_MARKER = object()
+_OTO_UNIQUE_MARKER = object()
 
 
 class OneToOne(dict):
@@ -729,15 +742,61 @@ class OneToOne(dict):
     For a very similar project, with even more one-to-one
     functionality, check out `bidict <https://github.com/jab/bidict>`_.
     """
-    __slots__ = ('inv')
+    __slots__ = ('inv',)
 
     def __init__(self, *a, **kw):
-        if a and a[0] is _SELF_INIT_MARKER:
-            self.inv = a[1]
-            dict.__init__(self, [(v, k) for k, v in self.inv.items()])
-        else:
-            dict.__init__(self, *a, **kw)
-            self.inv = self.__class__(_SELF_INIT_MARKER, self)
+        raise_on_dupe = False
+        if a:
+            if a[0] is _OTO_INV_MARKER:
+                self.inv = a[1]
+                dict.__init__(self, [(v, k) for k, v in self.inv.items()])
+                return
+            elif a[0] is _OTO_UNIQUE_MARKER:
+                a, raise_on_dupe = a[1:], True
+
+        dict.__init__(self, *a, **kw)
+        self.inv = self.__class__(_OTO_INV_MARKER, self)
+
+        if len(self) == len(self.inv):
+            # if lengths match, that means everything's unique
+            return
+
+        if not raise_on_dupe:
+            dict.clear(self)
+            dict.update(self, [(v, k) for k, v in self.inv.items()])
+            return
+
+        # generate an error message if the values aren't 1:1
+
+        val_multidict = {}
+        for k, v in self.items():
+            val_multidict.setdefault(v, []).append(k)
+
+        dupes = dict([(v, k_list) for v, k_list in
+                      val_multidict.items() if len(k_list) > 1])
+
+        raise ValueError('expected unique values, got multiple keys for'
+                         ' the following values: %r' % dupes)
+
+    @classmethod
+    def unique(cls, *a, **kw):
+        """This alternate constructor for OneToOne will raise an exception
+        when input values overlap. For instance:
+
+        >>> OneToOne.unique({'a': 1, 'b': 1})
+        Traceback (most recent call last):
+        ...
+        ValueError: expected unique values, got multiple keys for the following values: ...
+
+        This even works across inputs:
+
+        >>> a_dict = {'a': 2}
+        >>> OneToOne.unique(a_dict, b=2)
+        Traceback (most recent call last):
+        ...
+        ValueError: expected unique values, got multiple keys for the following values: ...
+        """
+        return cls(_OTO_UNIQUE_MARKER, *a, **kw)
 
     def __setitem__(self, key, val):
         hash(val)  # ensure val is a valid key
@@ -799,6 +858,130 @@ class OneToOne(dict):
         return "%s(%s)" % (cn, dict_repr)
 
 
+# marker for the secret handshake used internally to set up the invert ManyToMany
+_PAIRING = object()
+
+
+class ManyToMany(object):
+    """
+    a dict-like entity that represents a many-to-many relationship
+    between two groups of objects
+
+    behaves like a dict-of-tuples; also has .inv which is kept
+    up to date which is a dict-of-tuples in the other direction
+
+    also, can be used as a directed graph among hashable python objects
+    """
+    def __init__(self, items=None):
+        self.data = {}
+        if type(items) is tuple and items and items[0] is _PAIRING:
+            self.inv = items[1]
+        else:
+            self.inv = self.__class__((_PAIRING, self))
+            if items:
+                self.update(items)
+        return
+
+    def get(self, key, default=frozenset()):
+        try:
+            return self[key]
+        except KeyError:
+            return default
+
+    def __getitem__(self, key):
+        return frozenset(self.data[key])
+
+    def __setitem__(self, key, vals):
+        vals = set(vals)
+        if key in self:
+            to_remove = self.data[key] - vals
+            vals -= self.data[key]
+            for val in to_remove:
+                self.remove(key, val)
+        for val in vals:
+            self.add(key, val)
+
+    def __delitem__(self, key):
+        for val in self.data.pop(key):
+            self.inv.data[val].remove(key)
+            if not self.inv.data[val]:
+                del self.inv.data[val]
+
+    def update(self, iterable):
+        """given an iterable of (key, val), add them all"""
+        if type(iterable) is type(self):
+            other = iterable
+            for k in other.data:
+                if k not in self.data:
+                    self.data[k] = other.data[k]
+                else:
+                    self.data[k].update(other.data[k])
+            for k in other.inv.data:
+                if k not in self.inv.data:
+                    self.inv.data[k] = other.inv.data[k]
+                else:
+                    self.inv.data[k].update(other.inv.data[k])
+        elif callable(getattr(iterable, 'keys', None)):
+            for k in iterable.keys():
+                self.add(k, iterable[k])
+        else:
+            for key, val in iterable:
+                self.add(key, val)
+        return
+
+    def add(self, key, val):
+        if key not in self.data:
+            self.data[key] = set()
+        self.data[key].add(val)
+        if val not in self.inv.data:
+            self.inv.data[val] = set()
+        self.inv.data[val].add(key)
+
+    def remove(self, key, val):
+        self.data[key].remove(val)
+        if not self.data[key]:
+            del self.data[key]
+        self.inv.data[val].remove(key)
+        if not self.inv.data[val]:
+            del self.inv.data[val]
+
+    def replace(self, key, newkey):
+        """
+        replace instances of key by newkey
+        """
+        if key not in self.data:
+            return
+        self.data[newkey] = fwdset = self.data.pop(key)
+        for val in fwdset:
+            revset = self.inv.data[val]
+            revset.remove(key)
+            revset.add(newkey)
+
+    def iteritems(self):
+        for key in self.data:
+            for val in self.data[key]:
+                yield key, val
+
+    def keys(self):
+        return self.data.keys()
+
+    def __contains__(self, key):
+        return key in self.data
+
+    def __iter__(self):
+        return self.data.__iter__()
+
+    def __len__(self):
+        return self.data.__len__()
+
+    def __eq__(self, other):
+        return type(self) == type(other) and self.data == other.data
+
+    def __repr__(self):
+        cn = self.__class__.__name__
+        return '%s(%r)' % (cn, list(self.iteritems()))
+
+
 def subdict(d, keep=None, drop=None):
     """Compute the "subdictionary" of a dict, *d*.
 
@@ -828,6 +1011,75 @@ def subdict(d, keep=None, drop=None):
 
     keys = set(keep) - set(drop)
 
-    return dict([(k, v) for k, v in d.items() if k in keys])
+    return type(d)([(k, v) for k, v in d.items() if k in keys])
+
+
+class FrozenHashError(TypeError):
+    pass
+
+
+class FrozenDict(dict):
+    """An immutable dict subtype that is hashable and can itself be used
+    as a :class:`dict` key or :class:`set` entry. What
+    :class:`frozenset` is to :class:`set`, FrozenDict is to
+    :class:`dict`.
+
+    There was once an attempt to introduce such a type to the standard
+    library, but it was rejected: `PEP 416 <https://www.python.org/dev/peps/pep-0416/>`_.
+
+    Because FrozenDict is a :class:`dict` subtype, it automatically
+    works everywhere a dict would, including JSON serialization.
+
+    """
+    __slots__ = ('_hash',)
+
+    def updated(self, *a, **kw):
+        """Make a copy and add items from a dictionary or iterable (and/or
+        keyword arguments), overwriting values under an existing
+        key. See :meth:`dict.update` for more details.
+        """
+        data = dict(self)
+        data.update(*a, **kw)
+        return type(self)(data)
+
+    @classmethod
+    def fromkeys(cls, keys, value=None):
+        # one of the lesser known and used/useful dict methods
+        return cls(dict.fromkeys(keys, value))
+
+    def __repr__(self):
+        cn = self.__class__.__name__
+        return '%s(%s)' % (cn, dict.__repr__(self))
+
+    def __reduce_ex__(self, protocol):
+        return type(self), (dict(self),)
+
+    def __hash__(self):
+        try:
+            ret = self._hash
+        except AttributeError:
+            try:
+                ret = self._hash = hash(frozenset(self.items()))
+            except Exception as e:
+                ret = self._hash = FrozenHashError(e)
+
+        if ret.__class__ is FrozenHashError:
+            raise ret
+
+        return ret
+
+    def __copy__(self):
+        return self  # immutable types don't copy, see tuple's behavior
+
+    # block everything else
+    def _raise_frozen_typeerror(self, *a, **kw):
+        "raises a TypeError, because FrozenDicts are immutable"
+        raise TypeError('%s object is immutable' % self.__class__.__name__)
+
+    __setitem__ = __delitem__ = update = _raise_frozen_typeerror
+    setdefault = pop = popitem = clear = _raise_frozen_typeerror
+
+    del _raise_frozen_typeerror
+
 
 # end dictutils.py

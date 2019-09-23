@@ -13,7 +13,7 @@ cooperative/single-threaded use cases.
 The ``queueutils`` module currently provides two Queue
 implementations: :class:`HeapPriorityQueue`, based on a heap, and
 :class:`SortedPriorityQueue`, based on a sorted list. Both use a
-unified API based on :class:`BasePriortyQueue` to facilitate testing
+unified API based on :class:`BasePriorityQueue` to facilitate testing
 the slightly different performance characteristics on various
 application use cases.
 
@@ -68,12 +68,12 @@ class BasePriorityQueue(object):
 
     Args:
         priority_key (callable): A function that takes *priority* as
-            passed in by :meth:`add` and returns an integer
+            passed in by :meth:`add` and returns a real number
             representing the effective priority.
 
     """
     # negating priority means larger numbers = higher priority
-    _default_priority_key = staticmethod(lambda p: -int(p or 0))
+    _default_priority_key = staticmethod(lambda p: -float(p or 0))
     _backend_type = list
 
     def __init__(self, **kw):

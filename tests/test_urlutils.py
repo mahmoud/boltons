@@ -372,7 +372,7 @@ def test_netloc_slashes():
     url.path = '/x/y/z'
     assert url.to_text() == 'ztp:/x/y/z'
 
-    # also works when the input doesn't includ '//'
+    # also works when the input doesn't include '//'
     url = URL()
     url.scheme = 'git+ftp'
     url.path = '/x/y/z/'
@@ -463,3 +463,6 @@ def test_unicodey():
     assert url.to_text(full_quote=False) == unicodey
     fully_quoted = 'http://xn--9ca.com/%C3%A9?%C3%A1=%C3%AD#%C3%BA'
     assert url.to_text(full_quote=True) == fully_quoted
+
+def test_str_repr():
+    assert str(URL("http://googlewebsite.com/e-shops.aspx")) == "http://googlewebsite.com/e-shops.aspx"
