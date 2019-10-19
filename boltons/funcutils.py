@@ -578,6 +578,7 @@ class FunctionBuilder(object):
                 annotations = self.annotations
             else:
                 annotations = {}
+
             return inspect_formatargspec(self.args,
                                          self.varargs,
                                          self.varkw,

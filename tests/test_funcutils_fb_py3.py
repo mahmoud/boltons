@@ -147,3 +147,43 @@ def test_FunctionBuilder_add_arg_kwonly():
     with pytest.raises(TypeError):
         assert better_func('positional')
     return
+
+
+@pytest.mark.parametrize(
+    "args, varargs, varkw, defaults, kwonlyargs, kwonlydefaults, invocation_str, sig_str",
+    [
+        (
+            None,
+            "args",
+            "kwargs",
+            None,
+            "a",
+            dict(a="a"),
+            "*args, a=a, **kwargs",
+            "(*args, a, **kwargs)",
+        )
+    ],
+)
+def test_get_invocation_sig_str(
+    args,
+    varargs,
+    varkw,
+    defaults,
+    kwonlyargs,
+    kwonlydefaults,
+    invocation_str,
+    sig_str,
+):
+    fb = FunctionBuilder(
+        name="return_five",
+        body="return 5",
+        args=args,
+        varargs=varargs,
+        varkw=varkw,
+        defaults=defaults,
+        kwonlyargs=kwonlyargs,
+        kwonlydefaults=kwonlydefaults,
+    )
+
+    assert fb.get_invocation_str() == invocation_str
+    assert fb.get_sig_str() == sig_str
