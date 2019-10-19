@@ -105,7 +105,9 @@ def test_buffers():
 
     return
 
-
+IS_PYPY_2 = ('__pypy__' in sys.builtin_module_names
+             and sys.version_info[0] == 2)
+@pytest.mark.xfail(IS_PYPY_2, reason="pypy2 bug, fixed in 7.2. unmark when this test stops failing on travis (when they upgrade from 7.1)")
 def test_client_disconnecting():
     def get_bs_pair():
         x, y = socket.socketpair()
