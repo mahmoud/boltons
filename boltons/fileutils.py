@@ -163,7 +163,7 @@ class FilePerms(object):
         Here's an example that holds true on most systems:
 
         >>> import tempfile
-        >>> 'r' in FilePerms.from_path(tempfile.tempdir).user
+        >>> 'r' in FilePerms.from_path(tempfile.gettempdir()).user
         True
         """
         stat_res = os.stat(path)
