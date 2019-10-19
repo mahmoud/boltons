@@ -1,8 +1,24 @@
 boltons Changelog
 =================
 
-Since February 20, 2013 there have been 36 releases and 1347 commits for
-an average of one 37-commit release every 9 weeks.
+Since February 20, 2013 there have been 39 releases and 1381 commits for
+an average of one 35-commit release about every 10 weeks.
+
+19.2.0
+------
+*(October 19, 2019)*
+
+A bunch of small fixes and enhancements.
+
+* [tbutils.TracebackInfo][tbutils.TracebackInfo]'s from_frame now respects `level` arg
+* [OrderedMultiDict.sorted()][OrderedMultiDict.sorted] now maintains all items, not just the most recent
+* [setutils.complement()][setutils.complement] now supports `__rsub__` for better interop with the builtin `set`
+* [FunctionBuilder][FunctionBuilder] fixed a few py3 warnings related to inspect module usage (`formatargspec`)
+* [iterutils.bucketize][iterutils.bucketize] now takes a string key which works like an attribute getter, similar to other iterutils functions
+* Docstring fixes across the board
+* CI fixes for Travis default dist change
+
+[OrderedMultiDict.sorted]: http://boltons.readthedocs.org/en/latest/dictutils.html#boltons.dictutils.OrderedMultiDict.sorted
 
 19.1.0
 ------
