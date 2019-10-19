@@ -473,15 +473,14 @@ def complement(wrapped):
     way to invert an expression, you can just throw a complement on
     the set. Consider this example of a name filter::
 
-    >>> class NamesFilter(object):
-    ...    def __init__(self, allowed):
-    ...        self._allowed = allowed
-    ...
-    ...    def filter(self, names):
-    ...        return [name for name in names if name in self._allowed]
-
-    >>> NamesFilter(set(['alice', 'bob'])).filter(['alice', 'bob', 'carol'])
-    ['alice', 'bob']
+        >>> class NamesFilter(object):
+        ...    def __init__(self, allowed):
+        ...        self._allowed = allowed
+        ...
+        ...    def filter(self, names):
+        ...        return [name for name in names if name in self._allowed]
+        >>> NamesFilter(set(['alice', 'bob'])).filter(['alice', 'bob', 'carol'])
+        ['alice', 'bob']
 
     What if we want to just express "let all the names through"?
 
