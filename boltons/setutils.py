@@ -861,6 +861,22 @@ class _ComplementSet(object):
             else:  # + +
                 return _ComplementSet(included=self._included.difference(inc))
 
+    def __rsub__(self, other):
+        inc, exc = _norm_args_notimplemented(other)
+        if inc is NotImplemented:
+            return NotImplemented
+        # rsub, so the expression being evaluated is "other - self"
+        if self._included is None:
+            if exc is None:  # - +
+                return _ComplementSet(included=inc & self._excluded)
+            else:  # - -
+                return _ComplementSet(included=self._excluded - exc)
+        else:
+            if inc is None:  # + -
+                return _ComplementSet(excluded=exc | self._included)
+            else:  # + +
+                return _ComplementSet(included=inc.difference(self._included))
+
     def difference_update(self, other):
         try:
             self -= other
@@ -894,11 +910,18 @@ class _ComplementSet(object):
         return hash(self._included) ^ hash(self._excluded)
 
     def __len__(self):
-        if self._included:
+        if self._included is not None:
             return len(self._included)
         raise NotImplementedError('complemented sets have undefined length')
 
     def __iter__(self):
-        if self._included:
+        if self._included is not None:
             return iter(self._included)
         raise NotImplementedError('complemented sets have undefined contents')
+
+    def __bool__(self):
+        if self._included is not None:
+            return bool(self._included)
+        return True
+
+    __nonzero__ = __bool__  # py2 compat
