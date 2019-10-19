@@ -477,7 +477,8 @@ class FunctionBuilder(object):
         varkw (str): Name of the catch-all variable for keyword
             arguments. E.g., "kwargs" if the resultant function is to have
             ``**kwargs`` in the signature. Defaults to None.
-        defaults (dict): A mapping of argument names to default values.
+        defaults (tuple): A tuple containing default argument values for
+            those arguments that have defaults.
         kwonlyargs (list): Argument names which are only valid as
             keyword arguments. **Python 3 only.**
         kwonlydefaults (dict): A mapping, same as normal *defaults*,
