@@ -201,7 +201,7 @@ def chunked(src, size, count=None, **kw):
 
 def chunked_iter(src, size, **kw):
     """Generates *size*-sized chunks from *src* iterable. Unless the
-    optional *fill* keyword argument is provided, iterables not even
+    optional *fill* keyword argument is provided, iterables not evenly
     divisible by *size* will have a final chunk that is smaller than
     *size*.
 
