@@ -281,6 +281,147 @@ class CachedInstancePartial(functools.partial):
 partial = CachedInstancePartial
 
 
+def format_invocation(name='', args=(), kwargs=None):
+    """Given a name, positional arguments, and keyword arguments, format
+    a basic Python-style function call.
+
+    >>> print(format_invocation('func', args=(1, 2), kwargs={'c': 3}))
+    func(1, 2, c=3)
+    >>> print(format_invocation('a_func', args=(1,)))
+    a_func(1)
+    >>> print(format_invocation('kw_func', kwargs=[('a', 1), ('b', 2)]))
+    kw_func(a=1, b=2)
+
+    """
+    kwargs = kwargs or {}
+    a_text = ', '.join([repr(a) for a in args])
+    if isinstance(kwargs, dict):
+        kwarg_items = kwargs.items()
+    else:
+        kwarg_items = kwargs
+    kw_text = ', '.join(['%s=%r' % (k, v) for k, v in kwarg_items])
+
+    all_args_text = a_text
+    if all_args_text and kw_text:
+        all_args_text += ', '
+    all_args_text += kw_text
+
+    return '%s(%s)' % (name, all_args_text)
+
+
+def format_exp_repr(obj, pos_names, req_names=None, opt_names=None, opt_key=None):
+    """Render an expression-style repr of an object, based on attribute
+    names, which are assumed to line up with arguments to an initializer.
+
+    >>> class Flag(object):
+    ...    def __init__(self, length, width, depth=None):
+    ...        self.length = length
+    ...        self.width = width
+    ...        self.depth = depth
+    ...
+
+    That's our Flag object, here are some example reprs for it:
+
+    >>> flag = Flag(5, 10)
+    >>> print(format_exp_repr(flag, ['length', 'width'], [], ['depth']))
+    Flag(5, 10)
+    >>> flag2 = Flag(5, 15, 2)
+    >>> print(format_exp_repr(flag2, ['length'], ['width', 'depth']))
+    Flag(5, width=15, depth=2)
+
+    By picking the pos_names, req_names, opt_names, and opt_key, you
+    can fine-tune how you want the repr to look.
+
+    Args:
+       obj (object): The object whose type name will be used and
+          attributes will be checked
+       pos_names (list): Required list of attribute names which will be
+          rendered as positional arguments in the output repr.
+       req_names (list): List of attribute names which will always
+          appear in the keyword arguments in the output repr. Defaults to None.
+       opt_names (list): List of attribute names which may appear in
+          the keyword arguments in the output repr, provided they pass
+          the *opt_key* check. Defaults to None.
+       opt_key (callable): A function or callable which checks whether
+          an opt_name should be in the repr. Defaults to a
+          ``None``-check.
+
+    """
+    cn = obj.__class__.__name__
+    req_names = req_names or []
+    opt_names = opt_names or []
+    uniq_names, all_names = set(), []
+    for name in req_names + opt_names:
+        if name in uniq_names:
+            continue
+        uniq_names.add(name)
+        all_names.append(name)
+
+    if opt_key is None:
+        opt_key = lambda v: v is None
+    assert callable(opt_key)
+
+    args = [getattr(obj, name, None) for name in pos_names]
+
+    kw_items = [(name, getattr(obj, name, None)) for name in all_names]
+    kw_items = [(name, val) for name, val in kw_items
+                if not (name in opt_names and opt_key(val))]
+
+    return format_invocation(cn, args, kw_items)
+
+
+def format_nonexp_repr(obj, req_names=None, opt_names=None, opt_key=None):
+    """Format a non-expression-style repr
+
+    Some object reprs look like object instantiation, e.g., App(r=[], mw=[]).
+
+    This makes sense for smaller, lower-level objects whose state
+    roundtrips. But a lot of objects contain values that don't
+    roundtrip, like types and functions.
+
+    For those objects, there is the non-expression style repr, which
+    mimic's Python's default style to make a repr like so:
+
+    >>> class Flag(object):
+    ...    def __init__(self, length, width, depth=None):
+    ...        self.length = length
+    ...        self.width = width
+    ...        self.depth = depth
+    ...
+    >>> flag = Flag(5, 10)
+    >>> print(format_nonexp_repr(flag, ['length', 'width'], ['depth']))
+    <Flag length=5 width=10>
+
+    If no attributes are specified or set, utilizes the id, not unlike Python's
+    built-in behavior.
+
+    >>> print(format_nonexp_repr(flag))
+    <Flag id=...>
+    """
+    cn = obj.__class__.__name__
+    req_names = req_names or []
+    opt_names = opt_names or []
+    uniq_names, all_names = set(), []
+    for name in req_names + opt_names:
+        if name in uniq_names:
+            continue
+        uniq_names.add(name)
+        all_names.append(name)
+
+    if opt_key is None:
+        opt_key = lambda v: v is None
+    assert callable(opt_key)
+
+    items = [(name, getattr(obj, name, None)) for name in all_names]
+    labels = ['%s=%r' % (name, val) for name, val in items
+              if not (name in opt_names and opt_key(val))]
+    if not labels:
+        labels = ['id=%s' % id(obj)]
+    ret = '<%s %s>' % (cn, ' '.join(labels))
+    return ret
+
+
+
 # # #
 # # # Function builder
 # # #

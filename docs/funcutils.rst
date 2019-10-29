@@ -42,3 +42,6 @@ Miscellaneous metaprogramming
 .. autofunction:: copy_function
 .. autofunction:: dir_dict
 .. autofunction:: mro_items
+.. autofunction:: format_invocation
+.. autofunction:: format_exp_repr
+.. autofunction:: format_nonexp_repr
