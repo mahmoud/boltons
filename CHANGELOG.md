@@ -1,8 +1,22 @@
 boltons Changelog
 =================
 
-Since February 20, 2013 there have been 39 releases and 1381 commits for
+Since February 20, 2013 there have been 40 releases and 1386 commits for
 an average of one 35-commit release about every 10 weeks.
+
+19.3.0
+------
+*(October 28, 2019)*
+
+Three funcutils:
+
+* [funcutils.format_invocation][funcutils.format_invocation] for formatting simple function calls (`func(pos1, pos2, kw_k=kw_v`)
+* [funcutils.format_exp_repr][funcutils.format_exp_repr] for formatting a repr like `Type(pos, kw_k=kw_v)`
+* [funcutils.format_nonexp_repr][funcutils.format_nonexp_repr] for formatting a repr like `<Type k=v>`
+
+[funcutils.format_invocation]: https://boltons.readthedocs.io/en/latest/funcutils.html#boltons.funcutils.format_invocation
+[funcutils.format_exp_repr]: https://boltons.readthedocs.io/en/latest/funcutils.html#boltons.funcutils.format_exp_repr
+[funcutils.format_nonexp_repr]: https://boltons.readthedocs.io/en/latest/funcutils.html#boltons.funcutils.format_nonexp_repr
 
 19.2.0
 ------
