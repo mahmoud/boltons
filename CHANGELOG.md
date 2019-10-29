@@ -10,7 +10,7 @@ an average of one 35-commit release about every 10 weeks.
 
 Three funcutils:
 
-* [funcutils.format_invocation][funcutils.format_invocation] for formatting simple function calls (`func(pos1, pos2, kw_k=kw_v`)
+* [funcutils.format_invocation][funcutils.format_invocation] for formatting simple function calls `func(pos1, pos2, kw_k=kw_v)`
 * [funcutils.format_exp_repr][funcutils.format_exp_repr] for formatting a repr like `Type(pos, kw_k=kw_v)`
 * [funcutils.format_nonexp_repr][funcutils.format_nonexp_repr] for formatting a repr like `<Type k=v>`
 
