@@ -454,10 +454,10 @@ class AtomicSaver(object):
 _CUR_DIR = os.path.dirname(os.path.abspath(__file__))
 
 
-def iter_find_files(directory, patterns, ignored=None):
-    """Returns a generator that yields file paths under a *directory*
-    (recursively), matching *patterns* using `glob`_ syntax (e.g., ``*.txt``).
-    Also supports *ignored* patterns.
+def iter_find_files(directory, patterns, ignored=None, include_dirs=False):
+    """Returns a generator that yields file paths under a *directory*,
+    matching *patterns* using `glob`_ syntax (e.g., ``*.txt``). Also
+    supports *ignored* patterns.
 
     Args:
         directory (str): Path that serves as the root of the
@@ -466,6 +466,8 @@ def iter_find_files(directory, patterns, ignored=None):
             glob-formatted patterns to find under *directory*.
         ignored (str or list): A single pattern or list of
             glob-formatted patterns to ignore.
+        include_dirs (bool): Whether to include directories that match
+           patterns, as well. Defaults to ``False``.
 
     For example, finding Python files in the current directory:
 
@@ -490,6 +492,14 @@ def iter_find_files(directory, patterns, ignored=None):
         ignored = [ignored]
     ign_re = re.compile('|'.join([fnmatch.translate(p) for p in ignored]))
     for root, dirs, files in os.walk(directory):
+        if include_dirs:
+            for basename in dirs:
+                if pats_re.match(basename):
+                    if ignored and ign_re.match(basename):
+                        continue
+                    filename = os.path.join(root, basename)
+                    yield filename
+
         for basename in files:
             if pats_re.match(basename):
                 if ignored and ign_re.match(basename):
