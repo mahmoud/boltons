@@ -296,7 +296,7 @@ def format_invocation(name='', args=(), kwargs=None):
     kwargs = kwargs or {}
     a_text = ', '.join([repr(a) for a in args])
     if isinstance(kwargs, dict):
-        kwarg_items = kwargs.items()
+        kwarg_items = [(k, kwargs[k]) for k in sorted(kwargs)]
     else:
         kwarg_items = kwargs
     kw_text = ', '.join(['%s=%r' % (k, v) for k, v in kwarg_items])

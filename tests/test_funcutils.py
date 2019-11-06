@@ -2,6 +2,7 @@
 
 from boltons.funcutils import (copy_function,
                                total_ordering,
+                               format_invocation,
                                InstancePartial,
                                CachedInstancePartial)
 
@@ -61,3 +62,10 @@ def test_total_ordering():
     assert num < 5
     assert num >= 2
     assert num != 1
+
+
+def test_format_invocation():
+    assert format_invocation('d') == "d()"
+    assert format_invocation('f', ('a', 'b')) == "f('a', 'b')"
+    assert format_invocation('g', (), {'x': 'y'})  == "g(x='y')"
+    assert format_invocation('h', ('a', 'b'), {'x': 'y', 'z': 'zz'}) == "h('a', 'b', x='y', z='zz')"
