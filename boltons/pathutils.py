@@ -1,27 +1,22 @@
 """
 Functions for working with filesystem paths.
 
-The ``expandpath`` function expands the tilde to $HOME and environment variables
-to their values.
+The :func:`expandpath` function expands the tilde to $HOME and environment
+variables to their values.
 
-The ``augpath`` function creates variants of an existing path without having to
-spend multiple lines of code spliting it up and stitching it back together.
+The :func:`augpath` function creates variants of an existing path without
+having to spend multiple lines of code splitting it up and stitching it back
+together.
 
-The ``shrinkuser`` function replaces your home directory with a tilde.
+The :func:`shrinkuser` function replaces your home directory with a tilde.
 
-The ``userhome`` function reports the home directory of the current user of the
-operating system.
+The :func:`userhome` function reports the home directory of the current user of
+the operating system.
 """
 from __future__ import print_function
 
-from os.path import dirname
-from os.path import exists
-from os.path import expanduser
-from os.path import expandvars
-from os.path import join
-from os.path import normpath
-from os.path import split
-from os.path import splitext
+from os.path import (dirname, exists, expanduser, expandvars, join, normpath,
+                     split, splitext)
 import os
 import sys
 
@@ -44,18 +39,21 @@ def augpath(path, suffix='', prefix='', ext=None, base=None, dpath=None,
     ext) after replacing any specified component.
 
     Args:
-        path (PathLike): a path to augment
+        path (str | PathLike): a path to augment
         suffix (str, default=''): placed between the basename and extension
         prefix (str, default=''): placed in front of the basename
-        ext (str, optional): if specified, replaces the extension
-        base (str, optional): if specified, replaces the basename without extension
-        dpath (PathLike, optional): if specified, replaces the directory
-        multidot (bool, default=False): if False, everything after the last dot
-            in the basename is the extension. If True, everything after the first
-            dot in the basename is the extension.
+        ext (str, default=None): if specified, replaces the extension
+        base (str, default=None): if specified, replaces the basename without
+            extension
+        dpath (str | PathLike, default=None): if specified, replaces the
+            directory
+        multidot (bool, default=False): Allows extensions to contain multiple
+            dots. Specifically, if False, everything after the last dot in the
+            basename is the extension. If True, everything after the first dot
+            in the basename is the extension.
 
     Returns:
-        PathLike: augmented path
+        str: augmented path
 
     Example:
         >>> path = 'foo.bar'
@@ -109,15 +107,16 @@ def augpath(path, suffix='', prefix='', ext=None, base=None, dpath=None,
 
 def shrinkuser(path, home='~'):
     """
-    Inverse of ````os.path.expanduser````
+    Inverse of :func:`os.path.expanduser`.
 
     Args:
-        path (PathLike): path in system file structure
-        home (str): symbol used to replace the home path. Defaults to '~', but
-            you might want to use '$HOME' or '%USERPROFILE%' instead.
+        path (str | PathLike): path in system file structure
+        home (str, default='~'): symbol used to replace the home path.
+            Defaults to '~', but you might want to use '$HOME' or
+            '%USERPROFILE%' instead.
 
     Returns:
-        PathLike: path: shortened path replacing the home directory with a tilde
+        str: path: shortened path replacing the home directory with a tilde
 
     Example:
         >>> path = expanduser('~')
@@ -139,16 +138,13 @@ def shrinkuser(path, home='~'):
 
 def expandpath(path):
     """
-    Wrapper around expanduser and expandvars.
-
-    Less aggressive than truepath. Only expands environs and tilde. Does not
-    change relative paths to absolute paths.
+    Shell-like environment variable and tilde path expansion.
 
     Args:
-        path (PathLike): string representation of a path
+        path (str | PathLike): string representation of a path
 
     Returns:
-        PathLike : expanded path
+        str : expanded path
 
     Example:
         >>> assert normpath(expandpath('~/foo')) == join(userhome(), 'foo')
@@ -161,14 +157,20 @@ def expandpath(path):
 
 def userhome(username=None):
     """
-    Returns the user's home directory.
+    Returns the path to some user's home directory.
 
     Args:
         username (str, default=None): name of a user on the system. If not
             specified, the current user is inferred.
 
     Returns:
-        PathLike: userhome_dpath: path to the home directory
+        str: userhome_dpath: path to the specified home directory
+
+    Raises:
+        KeyError: if the specified user does not exist on the system
+
+        OSError: if username is unspecified and the current user cannot be
+            inferred
 
     Example:
         >>> import getpass
@@ -194,19 +196,20 @@ def userhome(username=None):
                 # posix fallback when HOME is not defined
                 import pwd
                 userhome_dpath = pwd.getpwuid(os.getuid()).pw_dir
+        return userhome_dpath
+
+    # A specific user directory was requested
+    if sys.platform.startswith('win32'):  # nocover
+        # get the directory name for the current user
+        c_users = dirname(userhome())
+        userhome_dpath = join(c_users, username)
+        if not exists(userhome_dpath):
+            raise KeyError('Unknown user: {}'.format(username))
     else:
-        # A specific user directory was requested
-        if sys.platform.startswith('win32'):  # nocover
-            # get the directory name for the current user
-            c_users = dirname(userhome())
-            userhome_dpath = join(c_users, username)
-            if not exists(userhome_dpath):
-                raise KeyError('Unknown user: {}'.format(username))
-        else:
-            import pwd
-            try:
-                pwent = pwd.getpwnam(username)
-            except KeyError:  # nocover
-                raise KeyError('Unknown user: {}'.format(username))
-            userhome_dpath = pwent.pw_dir
+        import pwd
+        try:
+            pwent = pwd.getpwnam(username)
+        except KeyError:  # nocover
+            raise KeyError('Unknown user: {}'.format(username))
+        userhome_dpath = pwent.pw_dir
     return userhome_dpath
