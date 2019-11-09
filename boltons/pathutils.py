@@ -9,20 +9,15 @@ having to spend multiple lines of code splitting it up and stitching it back
 together.
 
 The :func:`shrinkuser` function replaces your home directory with a tilde.
-
-The :func:`userhome` function reports the home directory of the current user of
-the operating system.
 """
 from __future__ import print_function
 
-from os.path import (dirname, exists, expanduser, expandvars, join, normpath,
-                     split, splitext)
+from os.path import (expanduser, expandvars, join, normpath, split, splitext)
 import os
-import sys
 
 
 __all__ = [
-    'augpath', 'shrinkuser', 'userhome', 'expandpath',
+    'augpath', 'shrinkuser', 'expandpath',
 ]
 
 
@@ -127,7 +122,7 @@ def shrinkuser(path, home='~'):
         >>> assert shrinkuser(path + '/1', '$HOME') == join('$HOME', '1')
     """
     path = normpath(path)
-    userhome_dpath = userhome()
+    userhome_dpath = expanduser('~')
     if path.startswith(userhome_dpath):
         if len(path) == len(userhome_dpath):
             path = home
@@ -138,78 +133,20 @@ def shrinkuser(path, home='~'):
 
 def expandpath(path):
     """
-    Shell-like environment variable and tilde path expansion.
+    Shell-like expansion of environment variables and tilde home directory.
 
     Args:
-        path (str | PathLike): string representation of a path
+        path (str | PathLike): the path to expand
 
     Returns:
         str : expanded path
 
     Example:
-        >>> assert normpath(expandpath('~/foo')) == join(userhome(), 'foo')
+        >>> import os
+        >>> os.environ['SPAM'] = 'eggs'
+        >>> assert expandpath('~/$SPAM') == expanduser('~/eggs')
         >>> assert expandpath('foo') == 'foo'
     """
     path = expanduser(path)
     path = expandvars(path)
     return path
-
-
-def userhome(username=None):
-    """
-    Returns the path to some user's home directory.
-
-    Args:
-        username (str, default=None): name of a user on the system. If not
-            specified, the current user is inferred.
-
-    Returns:
-        str: userhome_dpath: path to the specified home directory
-
-    Raises:
-        KeyError: if the specified user does not exist on the system
-
-        OSError: if username is unspecified and the current user cannot be
-            inferred
-
-    Example:
-        >>> import getpass
-        >>> username = getpass.getuser()
-        >>> assert userhome() == expanduser('~')
-        >>> assert userhome(username) == expanduser('~')
-    """
-    if username is None:
-        # get home directory for the current user
-        if 'HOME' in os.environ:
-            userhome_dpath = os.environ['HOME']
-        else:  # nocover
-            if sys.platform.startswith('win32'):
-                # win32 fallback when HOME is not defined
-                if 'USERPROFILE' in os.environ:
-                    userhome_dpath = os.environ['USERPROFILE']
-                elif 'HOMEPATH' in os.environ:
-                    drive = os.environ.get('HOMEDRIVE', '')
-                    userhome_dpath = join(drive, os.environ['HOMEPATH'])
-                else:
-                    raise OSError("Cannot determine the user's home directory")
-            else:
-                # posix fallback when HOME is not defined
-                import pwd
-                userhome_dpath = pwd.getpwuid(os.getuid()).pw_dir
-        return userhome_dpath
-
-    # A specific user directory was requested
-    if sys.platform.startswith('win32'):  # nocover
-        # get the directory name for the current user
-        c_users = dirname(userhome())
-        userhome_dpath = join(c_users, username)
-        if not exists(userhome_dpath):
-            raise KeyError('Unknown user: {}'.format(username))
-    else:
-        import pwd
-        try:
-            pwent = pwd.getpwnam(username)
-        except KeyError:  # nocover
-            raise KeyError('Unknown user: {}'.format(username))
-        userhome_dpath = pwent.pw_dir
-    return userhome_dpath
