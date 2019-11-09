@@ -71,11 +71,11 @@ def augpath(path, suffix='', prefix='', ext=None, base=None, dpath=None,
         >>> augpath('foo.bar', base='baz')
         'baz.bar'
         >>> augpath('foo.tar.gz', ext='.zip', multidot=True)
-        foo.zip
+        'foo.zip'
         >>> augpath('foo.tar.gz', ext='.zip', multidot=False)
-        foo.tar.zip
+        'foo.tar.zip'
         >>> augpath('foo.tar.gz', suffix='_new', multidot=True)
-        foo_new.tar.gz
+        'foo_new.tar.gz'
     """
     # Breakup path
     orig_dpath, fname = split(path)
