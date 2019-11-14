@@ -451,9 +451,6 @@ class AtomicSaver(object):
         return
 
 
-_CUR_DIR = os.path.dirname(os.path.abspath(__file__))
-
-
 def iter_find_files(directory, patterns, ignored=None, include_dirs=False):
     """Returns a generator that yields file paths under a *directory*,
     matching *patterns* using `glob`_ syntax (e.g., ``*.txt``). Also
@@ -471,6 +468,7 @@ def iter_find_files(directory, patterns, ignored=None, include_dirs=False):
 
     For example, finding Python files in the current directory:
 
+    >>> _CUR_DIR = os.path.dirname(os.path.abspath(__file__))
     >>> filenames = sorted(iter_find_files(_CUR_DIR, '*.py'))
     >>> os.path.basename(filenames[-1])
     'urlutils.py'
