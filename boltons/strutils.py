@@ -1092,3 +1092,34 @@ def multi_replace(text, sub_map, **kwargs):
     """Shortcut function to invoke multi-replace in a single command."""
     m = MultiReplace(sub_map, **kwargs)
     return m.sub(text)
+
+
+def unwrap_text(text, ending='\n\n'):
+    r"""
+    Unwrap text, the natural complement to :func:`textwrap.wrap`.
+
+    >>> text = "Short \n lines  \nwrapped\nsmall.\n\nAnother\nparagraph."
+    >>> unwrap_text(text)
+    'Short lines wrapped small.\n\nAnother paragraph.'
+
+    Args:
+       text: A string to unwrap.
+       ending (str): The string to join all unwrapped paragraphs
+          by. Pass ``None`` to get the list. Defaults to '\n\n' for
+          compatiblity with Markdown and RST.
+
+    """
+    all_grafs = []
+    cur_graf = []
+    for line in text.splitlines():
+        line = line.strip()
+        if line:
+            cur_graf.append(line)
+        else:
+            all_grafs.append(' '.join(cur_graf))
+            cur_graf = []
+    if cur_graf:
+        all_grafs.append(' '.join(cur_graf))
+    if ending is None:
+        return all_grafs
+    return ending.join(all_grafs)
