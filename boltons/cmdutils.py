@@ -302,7 +302,6 @@ def cmd(command, shell=False, detach=False, cwd=None,
     if verbose > 1:
         import os
         import platform
-        import getpass
         if verbose > 2:
             try:
                 print('┌─── START CMD ───')
@@ -311,6 +310,7 @@ def cmd(command, shell=False, detach=False, cwd=None,
         cwd_ = os.getcwd() if cwd is None else cwd
         compname = platform.node()
         try:
+            import getpass
             username = getpass.getuser()
         except Exception:
             username = ''
