@@ -4,6 +4,7 @@
 xdoctest -m netharn.export.closer _closefile --fpath=$HOME/code/boltons/tests/test_cmdutils.py --modnames=ubelt,
 
 """
+from __future__ import print_function, division, absolute_import, unicode_literals
 import pytest
 import sys
 import io
@@ -18,6 +19,29 @@ from boltons.cmdutils import cmd
 WIN32 = (sys.platform == 'win32')
 LINUX = sys.platform.startswith('linux')
 DARWIN = (sys.platform == 'darwin')
+
+
+def ensure_unicode(text):
+    r"""
+    Casts bytes into utf8 (mostly for python2 compatibility)
+
+    References:
+        http://stackoverflow.com/questions/12561063/extract-data-from-file
+
+    Example:
+        >>> import codecs  # NOQA
+        >>> assert ensure_unicode('my ünicôdé strįng') == 'my ünicôdé strįng'
+        >>> assert ensure_unicode('text1') == 'text1'
+        >>> assert ensure_unicode('text1'.encode('utf8')) == 'text1'
+        >>> assert ensure_unicode('ï»¿text1'.encode('utf8')) == 'ï»¿text1'
+        >>> assert (codecs.BOM_UTF8 + 'text»¿'.encode('utf8')).decode('utf8')
+    """
+    if isinstance(text, six.text_type):
+        return text
+    elif isinstance(text, six.binary_type):
+        return text.decode('utf8')
+    else:  # nocover
+        raise ValueError('unknown input type {!r}'.format(text))
 
 
 def platform_cache_dir():
@@ -144,7 +168,7 @@ class TeeStringIO(io.StringIO):
             >>> redirect = io.StringIO()
             >>> assert TeeStringIO(redirect).encoding is None
             >>> assert TeeStringIO(None).encoding is None
-            >>> assert TeeStringIO(sys.stdout).encoding is sys.stdout.encoding
+            >>> #assert TeeStringIO(sys.stdout).encoding is sys.stdout.encoding  # doesnt work on 27 without xdoctest
             >>> redirect = io.TextIOWrapper(io.StringIO())
             >>> assert TeeStringIO(redirect).encoding is redirect.encoding
         """
@@ -163,7 +187,6 @@ class TeeStringIO(io.StringIO):
         if self.redirect is not None:
             self.redirect.write(msg)
         if six.PY2:
-            from xdoctest.utils.util_str import ensure_unicode
             msg = ensure_unicode(msg)
         super(TeeStringIO, self).write(msg)
 
