@@ -149,9 +149,12 @@ class TeeStringIO(io.StringIO):
             >>> assert TeeStringIO(redirect).encoding is redirect.encoding
         """
         if self.redirect is not None:
-            return self.redirect.encoding
+            # py27 issue
+            # return self.redirect.encoding
+            return getattr(self.redirect, 'encoding', None)
         else:
-            return super(TeeStringIO, self).encoding
+            # return super(TeeStringIO, self).encoding
+            return getattr(super(TeeStringIO, self), 'encoding', None)
 
     def write(self, msg):
         """
