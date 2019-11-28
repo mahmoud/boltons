@@ -107,7 +107,6 @@ def enable_flatapi():
 
 
 import os
-FLATMODE = (os.environ.get('BOLTONS_FLATMODE', '') == 'TRUE')
-
-if FLATMODE:
+ENABLE_FLATAPI = (os.environ.get('BOLTONS_ENABLE_FLATAPI', '') == 'TRUE')
+if ENABLE_FLATAPI:
     enable_flatapi()

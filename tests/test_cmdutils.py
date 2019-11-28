@@ -337,21 +337,12 @@ def test_cmd_stderr():
 
 
 def test_cmd_tee_auto():
-    """
-    pytest ubelt/tests/test_cmd.py -k tee_backend
-    pytest ubelt/tests/test_cmd.py
-    """
     command = 'python -c "for i in range(100): print(str(i))"'
     result = cmd(command, verbose=0, tee_backend='auto')
     assert result['out'] == '\n'.join(list(map(str, range(100)))) + '\n'
 
 
 def test_cmd_tee_thread():
-    """
-    CommandLine:
-        pytest ubelt/tests/test_cmd.py::test_cmd_tee_thread -s
-        python ubelt/tests/test_cmd.py test_cmd_tee_thread
-    """
     if 'tqdm' in sys.modules:
         if tuple(map(int, sys.modules['tqdm'].__version__.split('.'))) < (4, 19):
             pytest.skip(reason='threads cause issues with early tqdms')
@@ -384,19 +375,12 @@ def test_cmd_tee_select():
 
 @pytest.mark.skipif(sys.platform == 'win32', reason='not available on win32')
 def test_cmd_tee_badmethod():
-    """
-    pytest ubelt/tests/test_cmd.py::test_cmd_tee_badmethod
-    """
     command = 'python -c "for i in range(100): print(str(i))"'
     with pytest.raises(ValueError):
         cmd(command, verbose=2, tee_backend='bad tee backend')
 
 
 def test_cmd_multiline_stdout():
-    """
-    python ubelt/tests/test_cmd.py test_cmd_multiline_stdout
-    pytest ubelt/tests/test_cmd.py::test_cmd_multiline_stdout
-    """
     command = 'python -c "for i in range(10): print(str(i))"'
     result = cmd(command, verbose=0)
     assert result['out'] == '\n'.join(list(map(str, range(10)))) + '\n'
@@ -407,7 +391,7 @@ def test_cmd_interleaved_streams_sh():
     """
     A test that ``Crosses the Streams'' of stdout and stderr
 
-    pytest ubelt/tests/test_cmd.py::test_cmd_interleaved_streams_sh
+    pytest tests/test_cmd.py::test_cmd_interleaved_streams_sh
     """
     if False:
         sh_script = codeblock(
@@ -489,14 +473,10 @@ def test_cmd_interleaved_streams_py():
 
 
 def test_cwd():
-    """
-    CommandLine:
-        python ~/code/ubelt/ubelt/tests/test_cmd.py test_cwd
-    """
     import sys
     import os
     if not sys.platform.startswith('win32'):
-        dpath = ensure_app_resource_dir('ubelt')
+        dpath = ensure_app_resource_dir('boltons')
         dpath = os.path.realpath(dpath)
         info = cmd('pwd', cwd=dpath, shell=True)
         # print('info = {}'.format(repr2(info, nl=1)))
@@ -517,11 +497,5 @@ def test_env():
 
 
 if __name__ == '__main__':
-    """
-        pytest ubelt/tests/test_cmd.py -s
-
-        python ~/code/ubelt/ubelt/tests/test_cmd.py test_cmd_veryverbose
-    """
-
     import xdoctest
     xdoctest.doctest_module(__file__)

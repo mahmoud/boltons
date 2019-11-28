@@ -374,3 +374,12 @@ def _shrinkuser(path, home='~'):
         elif path[len(userhome_dpath)] == os.path.sep:
             path = home + path[len(userhome_dpath):]
     return path
+
+
+if __name__ == '__main__':
+    """
+    CommandLine:
+        python ~/code/boltons/boltons/cmdutils.py
+    """
+    import xdoctest
+    xdoctest.doctest_module(__file__)
