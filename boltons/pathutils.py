@@ -24,7 +24,9 @@ __all__ = [
 def augpath(path, suffix='', prefix='', ext=None, base=None, dpath=None,
             multidot=False):
     """
-    Create a new path with a different extension, basename, directory, prefix,
+    Augment a path by modifying its components.
+
+    Creates a new path with a different extension, basename, directory, prefix,
     and/or suffix.
 
     A prefix is inserted before the basename. A suffix is inserted
