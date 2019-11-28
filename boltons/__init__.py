@@ -8,7 +8,7 @@ import os
 __version__ = '19.3.1dev'
 
 
-def enable_flat_api():
+def enable_flatapi():
     from boltons.cacheutils import (CachedFunction, CachedMethod, DEFAULT_MAX_SIZE,
                                     LRI, LRU, MinIDMap, ThresholdCounter, cached,
                                     cachedmethod, cachedproperty, make_cache_key,)
@@ -102,8 +102,12 @@ def enable_flat_api():
                                   quote_query_part, quote_userinfo_part,
                                   register_scheme, resolve_path_parts, to_unicode,
                                   unicode, unquote, unquote_to_bytes,)
+    # EVERYTHING IS TOP LEVEL NOW
+    globals().update(**locals())
 
 
+import os
 FLATMODE = (os.environ.get('BOLTONS_FLATMODE', '') == 'TRUE')
+
 if FLATMODE:
-    enable_flat_api()
+    enable_flatapi()
