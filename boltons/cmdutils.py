@@ -316,7 +316,7 @@ def cmd(command, shell=False, detach=False, cwd=None,
             username = ''
 
         cwd_ = _shrinkuser(cwd_)
-        ps1 = '[cmd] {}@{}:{}$ '.format(username, compname, cwd_)
+        ps1 = '[cmd] {0}@{1}:{2}$ '.format(username, compname, cwd_)
         print(ps1 + command_text)
 
     # Create a new process to execute the command
