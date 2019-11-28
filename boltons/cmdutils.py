@@ -310,7 +310,10 @@ def cmd(command, shell=False, detach=False, cwd=None,
                 print('+=== START CMD ===')
         cwd_ = os.getcwd() if cwd is None else cwd
         compname = platform.node()
-        username = getpass.getuser()
+        try:
+            username = getpass.getuser()
+        except Exception:
+            username = ''
 
         cwd_ = _shrinkuser(cwd_)
         ps1 = '[cmd] {}@{}:{}$ '.format(username, compname, cwd_)
