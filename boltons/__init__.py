@@ -40,7 +40,7 @@ def enable_flatapi():
                                    format_nonexp_repr, get_module_callables,
                                    make_method, mro_items, partial,
                                    partial_ordering, wraps,)
-    from boltons.gcutils import (GCToggler, get_all, toggle_gc,
+    from boltons.gcutils import (GCToggler, toggle_gc,
                                  toggle_gc_postcollect,)
     from boltons.ioutils import (MultiFileReader, READ_CHUNK_SIZE, SpooledBytesIO,
                                  SpooledIOBase, SpooledStringIO, binary_type,
