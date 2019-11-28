@@ -290,10 +290,13 @@ def cmd(command, shell=False, detach=False, cwd=None,
 
         if sys.version_info[0] == 2 and sys.version_info[1] < 7:
             # for python 2.6
-            try:
-                args = args.decode()
-            except Exception:
-                pass
+            if set(args[1::4]) in [b'\x00', '\x00']:
+                args = ''.join([c for i, c in enumerate(args) if i % 4 == 0]
+            # try:
+            #     # args = args.decode()
+            #     args = args.encode('utf8')
+            # except Exception:
+            #     pass
     else:
         # When shell=False, args is a list of executable and arguments
         if command_tup is None:
@@ -306,11 +309,10 @@ def cmd(command, shell=False, detach=False, cwd=None,
         args = command_tup
 
         if sys.version_info[0] == 2 and sys.version_info[1] < 7:
-            # for python 2.6
-            try:
-                args = tuple([a.decode() for a in args])
-            except Exception:
-                pass
+           # hueristic for python 2.6
+           if len(args):
+                if set(args[0][1::4]) in [b'\x00', '\x00']:
+                    args = tuple([''.join([c for i, c in enumerate(a) if i % 4 == 0]) for a in args])
 
     if tee is None:
         tee = verbose > 0
