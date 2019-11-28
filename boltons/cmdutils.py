@@ -287,6 +287,13 @@ def cmd(command, shell=False, detach=False, cwd=None,
     if shell or sys.platform.startswith('win32'):
         # When shell=True, args is sent to the shell (e.g. bin/sh) as text
         args = command_text
+
+        if sys.version_info[0] == 2 and sys.version_info[1] < 7:
+            # for python 2.6
+            try:
+                args = args.decode()
+            except Exception:
+                pass
     else:
         # When shell=False, args is a list of executable and arguments
         if command_tup is None:
@@ -294,8 +301,16 @@ def cmd(command, shell=False, detach=False, cwd=None,
             # NOTE: perhaps use the solution from [3] here?
             import shlex
             command_tup = shlex.split(command_text)
+            args = command_text
             # command_tup = shlex.split(command_text, posix=not WIN32)
         args = command_tup
+
+        if sys.version_info[0] == 2 and sys.version_info[1] < 7:
+            # for python 2.6
+            try:
+                args = tuple([a.decode() for a in args])
+            except Exception:
+                pass
 
     if tee is None:
         tee = verbose > 0
