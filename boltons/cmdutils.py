@@ -323,9 +323,11 @@ def cmd(command, shell=False, detach=False, cwd=None,
     def make_proc():
         # delay the creation of the process until we validate all args
         import subprocess
-        proc = subprocess.Popen(args, stdout=subprocess.PIPE,
-                                stderr=subprocess.PIPE, shell=shell,
-                                universal_newlines=True, cwd=cwd, env=env)
+        popen_kw = dict(
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE, shell=shell,
+            universal_newlines=True, cwd=cwd, env=env)
+        proc = subprocess.Popen(args, **popen_kw)
         return proc
 
     if detach:

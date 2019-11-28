@@ -41,7 +41,7 @@ def ensure_unicode(text):
     elif isinstance(text, six.binary_type):
         return text.decode('utf8')
     else:  # nocover
-        raise ValueError('unknown input type {!r}'.format(text))
+        raise ValueError('unknown input type {0}'.format(repr(text)))
 
 
 def platform_cache_dir():
@@ -329,14 +329,14 @@ def test_cmd_tee_thread():
     import threading
     # check which threads currently exist (ideally 1)
     existing_threads = list(threading.enumerate())
-    print('existing_threads = {!r}'.format(existing_threads))
+    print('existing_threads = {0}'.format(repr(existing_threads)))
 
     command = 'python -c "for i in range(10): print(str(i))"'
     result = cmd(command, verbose=0, tee_backend='thread')
     assert result['out'] == '\n'.join(list(map(str, range(10)))) + '\n'
 
     after_threads = list(threading.enumerate())
-    print('after_threads = {!r}'.format(after_threads))
+    print('after_threads = {0}'.format(repr(after_threads)))
     assert len(existing_threads) <= len(after_threads), (
         'we should be cleaning up our threads')
 
@@ -418,10 +418,10 @@ def test_cmd_interleaved_streams_py():
             import time
             for i in range(30):
                 time.sleep(.001)
-                sys.stdout.write('O{}\n'.format(i))
+                sys.stdout.write('O{0}\n'.format(i))
                 sys.stdout.flush()
                 if i % 5 == 0:
-                    sys.stderr.write('!E{}\n'.format(i))
+                    sys.stderr.write('!E{0}\n'.format(i))
                     sys.stderr.flush()
             "
             ''').lstrip()
@@ -438,10 +438,10 @@ def test_cmd_interleaved_streams_py():
             import time
             for i in range(15):
                 time.sleep(.000001)
-                sys.stdout.write('O{}\n'.format(i))
+                sys.stdout.write('O{0}\n'.format(i))
                 sys.stdout.flush()
                 if i % 5 == 0:
-                    sys.stderr.write('!E{}\n'.format(i))
+                    sys.stderr.write('!E{0}\n'.format(i))
                     sys.stderr.flush()
             "
             ''').lstrip()
@@ -458,9 +458,9 @@ def test_cwd():
         dpath = ensure_app_resource_dir('boltons')
         dpath = os.path.realpath(dpath)
         info = cmd('pwd', cwd=dpath, shell=True)
-        # print('info = {}'.format(repr2(info, nl=1)))
-        print('info = {}'.format(repr(info)))
-        print('dpath = {!r}'.format(dpath))
+        # print('info = {0}'.format(repr2(info, nl=1)))
+        print('info = {0}'.format(repr(info)))
+        print('dpath = {0}'.format(repr(dpath)))
         assert info['out'].strip() == dpath
 
 
