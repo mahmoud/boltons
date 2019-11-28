@@ -379,7 +379,7 @@ def _shrinkuser(path, home='~'):
 if __name__ == '__main__':
     """
     CommandLine:
-        python ~/code/boltons/boltons/cmdutils.py
+        python ~/code/boltons/boltons/cmdutils.py all
     """
     import xdoctest
     xdoctest.doctest_module(__file__)
