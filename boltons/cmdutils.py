@@ -12,7 +12,8 @@ Example:
     >>> info = cmd('echo "write your command naturally"', verbose=1)
     write your command naturally
     >>> # Unless `detatch=True`, `cmd` always returns an info dict.
-    >>> print('info = ' + repr(info))  # xdoctest: +IGNORE_WANT
+
+    print('info = ' + repr(info))  # xdoctest: +IGNORE_WANT
     info = {
         'command': 'echo "write your command naturally"',
         'cwd': None,
@@ -186,7 +187,7 @@ def _tee_output(proc, stdout=None, stderr=None, backend='auto'):
 
 def cmd(command, shell=False, detach=False, cwd=None,
         env=None, tee=None, tee_backend='auto', verbose=0):
-    r"""
+    """
     Executes a command in a subprocess.
 
     The advantage of this wrapper around subprocess is that
@@ -234,7 +235,7 @@ def cmd(command, shell=False, detach=False, cwd=None,
     Notes:
 
         * While this function strives to be cross-platform, there are certain
-          insurmountable issues that arise when handling multiple shell
+          insurmountable issues that ar/se when handling multiple shell
           languages.
 
         * Inputs can either be text or tuple based. On UNIX we ensure
@@ -248,9 +249,10 @@ def cmd(command, shell=False, detach=False, cwd=None,
         .. [3] https://stackoverflow.com/questions/33560364/python-windows-parsing-command-lines-with-shlex
 
     Example:
-        info = cmd(('echo', 'simple cmdline interface'), verbose=1)
-        print(info)  # xdoctest: +IGNORE_WANT
+        >>> info = cmd(('echo', 'simple cmdline interface'), verbose=1)
         simple cmdline interface
+
+        print(info)  # xdoctest: +IGNORE_WANT
         {'out': 'simple cmdline interface\n',
          'err': '',
          'ret': 0,
@@ -258,20 +260,20 @@ def cmd(command, shell=False, detach=False, cwd=None,
          'cwd': None,
          'command': "echo 'simple cmdline interface'"}
 
-        # The following commands demonstrate multiple ways co call cmd
-        info = cmd('echo str noshell', verbose=0)
-        assert info['out'].strip() == 'str noshell'
+        >>> # The following commands demonstrate multiple ways co call cmd
+        >>> info = cmd('echo str noshell', verbose=0)
+        >>> assert info['out'].strip() == 'str noshell'
 
-        # windows echo will output extra single quotes
-        info = cmd(('echo', 'tuple noshell'), verbose=0)
-        assert info['out'].strip().strip("'") == 'tuple noshell'
+        >>> # windows echo will output extra single quotes
+        >>> info = cmd(('echo', 'tuple noshell'), verbose=0)
+        >>> assert info['out'].strip().strip("'") == 'tuple noshell'
 
-        # Note this command is formatted to work on win32 and unix
-        info = cmd('echo str&&echo shell', verbose=0, shell=True)
-        assert info['out'].strip() == 'str' + chr(10) + 'shell'
+        >>> # Note this command is formatted to work on win32 and unix
+        >>> info = cmd('echo str&&echo shell', verbose=0, shell=True)
+        >>> assert info['out'].strip() == 'str' + chr(10) + 'shell'
 
-        info = cmd(('echo', 'tuple shell'), verbose=0, shell=True)
-        assert info['out'].strip().strip("'") == 'tuple shell'
+        >>> info = cmd(('echo', 'tuple shell'), verbose=0, shell=True)
+        >>> assert info['out'].strip().strip("'") == 'tuple shell'
     """
     # Determine if command is specified as text or a tuple
     if isinstance(command, six.string_types):
