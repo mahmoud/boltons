@@ -184,9 +184,9 @@ def _tee_output(proc, stdout=None, stderr=None, backend='auto'):
     return proc, logged_out, logged_err
 
 
-def cmd(command, shell=False, detach=False, verbose=0, tee=None, cwd=None,
-        env=None, tee_backend='auto'):
-    """
+def cmd(command, shell=False, detach=False, cwd=None,
+        env=None, tee=None, tee_backend='auto', verbose=0):
+    r"""
     Executes a command in a subprocess.
 
     The advantage of this wrapper around subprocess is that
@@ -197,6 +197,10 @@ def cmd(command, shell=False, detach=False, verbose=0, tee=None, cwd=None,
     (4) ability to detach, return the process object and allow the process to
     run in the background (eventually we may return a Future object instead).
 
+    Implementation is based on the collection of code samples on stackoverflow
+    [1]_ [2]_ [3]_.
+
+
     Args:
         command (str or Sequence): bash-like command string or tuple of
             executable and args
@@ -206,21 +210,20 @@ def cmd(command, shell=False, detach=False, verbose=0, tee=None, cwd=None,
         detach (bool, default=False):
             if True, process is detached and run in background.
 
-        verbose (int, default=0): verbosity mode. Can be 0, 1, 2, or 3.
+        cwd (PathLike, optional): path to run command
+
+        env (str, optional): environment passed to Popen
 
         tee (bool, optional): if True, simultaneously writes to stdout while
             capturing output from the command. If not specified, defaults to
             True if verbose > 0.  If detach is True, then this argument is
             ignored.
 
-        cwd (PathLike, optional): path to run command
-
-        env (str, optional): environment passed to Popen
-
         tee_backend (str, optional): backend for tee output.
             Valid choices are: "auto", "select" (POSIX only), and "thread".
 
-        **kwargs: only used to support deprecated arguments
+        verbose (int, default=0): verbosity mode. Can be 0, 1, 2, or 3.
+            0 is quiet, 3 is loud.
 
     Returns:
         dict: info - information about command status.
@@ -229,40 +232,46 @@ def cmd(command, shell=False, detach=False, verbose=0, tee=None, cwd=None,
             if detach is False ``info`` contains a reference to the process.
 
     Notes:
-        Inputs can either be text or tuple based. On UNIX we ensure conversion
-        to text if shell=True, and to tuple if shell=False. On windows, the
-        input is always text based.  See [3]_ for a potential cross-platform
-        shlex solution for windows.
+
+        * While this function strives to be cross-platform, there are certain
+          insurmountable issues that arise when handling multiple shell
+          languages.
+
+        * Inputs can either be text or tuple based. On UNIX we ensure
+            conversion to text if shell=True, and to tuple if shell=False. On
+            windows, the input is always text based.  See [3]_ for a potential
+            cross-platform shlex solution for windows.
 
     References:
         .. [1] https://stackoverflow.com/questions/11495783/redirect-subprocess-stderr-to-stdout
-        .. [2] https://stackoverflow.com/questions/7729336/how-can-i-print-and-display-subprocess-stdout-and-stderr-output-without-distorti
+        .. [2] https://stackoverflow.com/questions/7729336/display-subprocess-stdout-without-distorti
         .. [3] https://stackoverflow.com/questions/33560364/python-windows-parsing-command-lines-with-shlex
 
     Example:
-        >>> info = cmd(('echo', 'simple cmdline interface'), verbose=1)
+        info = cmd(('echo', 'simple cmdline interface'), verbose=1)
+        print(info)  # xdoctest: +IGNORE_WANT
         simple cmdline interface
-        >>> assert info['ret'] == 0
-        >>> assert info['out'].strip() == 'simple cmdline interface'
-        >>> assert info['err'].strip() == ''
+        {'out': 'simple cmdline interface\n',
+         'err': '',
+         'ret': 0,
+         'proc': <subprocess.Popen at 0x7f0a4723a2e8>,
+         'cwd': None,
+         'command': "echo 'simple cmdline interface'"}
 
-    Example:
-        >>> info = cmd('echo str noshell', verbose=0)
-        >>> assert info['out'].strip() == 'str noshell'
+        # The following commands demonstrate multiple ways co call cmd
+        info = cmd('echo str noshell', verbose=0)
+        assert info['out'].strip() == 'str noshell'
 
-    Example:
-        >>> # windows echo will output extra single quotes
-        >>> info = cmd(('echo', 'tuple noshell'), verbose=0)
-        >>> assert info['out'].strip().strip("'") == 'tuple noshell'
+        # windows echo will output extra single quotes
+        info = cmd(('echo', 'tuple noshell'), verbose=0)
+        assert info['out'].strip().strip("'") == 'tuple noshell'
 
-    Example:
-        >>> # Note this command is formatted to work on win32 and unix
-        >>> info = cmd('echo str&&echo shell', verbose=0, shell=True)
-        >>> assert info['out'].strip() == 'str' + chr(10) + 'shell'
+        # Note this command is formatted to work on win32 and unix
+        info = cmd('echo str&&echo shell', verbose=0, shell=True)
+        assert info['out'].strip() == 'str' + chr(10) + 'shell'
 
-    Example:
-        >>> info = cmd(('echo', 'tuple shell'), verbose=0, shell=True)
-        >>> assert info['out'].strip().strip("'") == 'tuple shell'
+        info = cmd(('echo', 'tuple shell'), verbose=0, shell=True)
+        assert info['out'].strip().strip("'") == 'tuple shell'
     """
     # Determine if command is specified as text or a tuple
     if isinstance(command, six.string_types):

@@ -69,10 +69,6 @@ def ensure_app_cache_dir(appname, *args):
 
     SeeAlso:
         get_app_cache_dir
-
-    Example:
-        >>> dpath = ensure_app_cache_dir('boltons')
-        >>> assert exists(dpath)
     """
     dpath = get_app_cache_dir(appname, *args)
     from boltons import fileutils
@@ -108,27 +104,6 @@ def codeblock(block_str):
 
     Returns:
         str: the unindented string
-
-    Example:
-        >>> # Simulate an indented part of code
-        >>> if True:
-        >>>     # notice the indentation on this will be normal
-        >>>     codeblock_version = codeblock(
-        ...             '''
-        ...             def foo():
-        ...                 return 'bar'
-        ...             '''
-        ...         )
-        >>>     # notice the indentation and newlines on this will be odd
-        >>>     normal_version = ('''
-        ...         def foo():
-        ...             return 'bar'
-        ...     ''')
-        >>> assert normal_version != codeblock_version
-        >>> print('Without codeblock')
-        >>> print(normal_version)
-        >>> print('With codeblock')
-        >>> print(codeblock_version)
     """
     import textwrap  # this is a slow import, do it lazy
     return textwrap.dedent(block_str).strip('\n')
@@ -213,28 +188,6 @@ class CaptureStdout(CaptureStream):
             if True, stdout is not printed while captured
         enabled (bool, default=True):
             does nothing if this is False
-
-    Example:
-        >>> self = CaptureStdout(supress=True)
-        >>> print('dont capture the table flip (╯°□°）╯︵ ┻━┻')
-        >>> with self:
-        ...     text = 'capture the heart ♥'
-        ...     print(text)
-        >>> print('dont capture look of disapproval ಠ_ಠ')
-        >>> assert isinstance(self.text, six.text_type)
-        >>> assert self.text == text + '\n', 'failed capture text'
-
-    Example:
-        >>> self = CaptureStdout(supress=False)
-        >>> with self:
-        ...     print('I am captured and printed in stdout')
-        >>> assert self.text.strip() == 'I am captured and printed in stdout'
-
-    Example:
-        >>> self = CaptureStdout(supress=True, enabled=False)
-        >>> with self:
-        ...     print('dont capture')
-        >>> assert self.text is None
     """
     def __init__(self, supress=True, enabled=True):
         self.enabled = enabled
