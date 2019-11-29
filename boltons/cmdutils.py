@@ -292,11 +292,6 @@ def cmd(command, shell=False, detach=False, cwd=None,
             # for python 2.6
             if set(args[1::4]) in [b'\x00', '\x00']:
                 args = ''.join([c for i, c in enumerate(args) if i % 4 == 0]
-            # try:
-            #     # args = args.decode()
-            #     args = args.encode('utf8')
-            # except Exception:
-            #     pass
     else:
         # When shell=False, args is a list of executable and arguments
         if command_tup is None:
