@@ -4,6 +4,22 @@ boltons Changelog
 Since February 20, 2013 there have been 40 releases and 1386 commits for
 an average of one 35-commit release about every 10 weeks.
 
+
+19.4.0
+------
+*(Unreleased)*
+
+New module [pathutils][pathutils]:
+
+* [pathutils.augpath][pathutils.augpath] augments a path by modifying its components
+* [pathutils.shrinkuser][pathutils.shrinkuser] inverts :func:`os.path.expanduser`.
+* [pathutils.expandpath][pathutils.expandpath] shell-like environ and tilde expansion
+
+[pathutils.augpath]: https://boltons.readthedocs.io/en/latest/funcutils.html#boltons.pathutils.augpath
+[pathutils.shrinkuser]: https://boltons.readthedocs.io/en/latest/funcutils.html#boltons.pathutils.shrinkuser
+[pathutils.expandpath]: https://boltons.readthedocs.io/en/latest/funcutils.html#boltons.pathutils.expandpath
+
+
 19.3.0
 ------
 *(October 28, 2019)*
