@@ -1106,7 +1106,7 @@ def unwrap_text(text, ending='\n\n'):
        text: A string to unwrap.
        ending (str): The string to join all unwrapped paragraphs
           by. Pass ``None`` to get the list. Defaults to '\n\n' for
-          compatiblity with Markdown and RST.
+          compatibility with Markdown and RST.
 
     """
     all_grafs = []
