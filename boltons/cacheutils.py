@@ -705,7 +705,7 @@ class ThresholdCounter(object):
         """
         if n <= 0:
             return []
-        ret = sorted(self.iteritems(), key=lambda x: x[1][0], reverse=True)
+        ret = sorted(self.iteritems(), key=lambda x: x[1], reverse=True)
         if n is None or n >= len(ret):
             return ret
         return ret[:n]
@@ -714,7 +714,7 @@ class ThresholdCounter(object):
         """Get the sum of counts for keys exceeding the configured data
         threshold.
         """
-        return sum([count for count, _ in self._count_map.itervalues()])
+        return sum([count for count, _ in self._count_map.values()])
 
     def get_uncommon_count(self):
         """Get the sum of counts for keys that were culled because the
@@ -796,6 +796,8 @@ class MinIDMap(object):
     integer IDs, such that no two objects have the same ID at the same
     time.
 
+    Maps arbitrary hashable objects to IDs.
+
     Based on https://gist.github.com/kurtbrose/25b48114de216a5e55df
     """
     def __init__(self):
@@ -833,13 +835,13 @@ class MinIDMap(object):
         return a in self.mapping
 
     def __iter__(self):
-        return self.mapping.itervalues()
+        return iter(self.mapping)
 
     def __len__(self):
         return self.mapping.__len__()
 
     def iteritems(self):
-        return self.mapping.iteritems()
+        return iter((k, self.mapping[k][0]) for k in iter(self.mapping))
 
 
 # end cacheutils.py

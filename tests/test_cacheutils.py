@@ -5,7 +5,7 @@ from abc import abstractmethod, ABCMeta
 
 import pytest
 
-from boltons.cacheutils import LRU, LRI, cached, cachedmethod, cachedproperty, MinIDMap
+from boltons.cacheutils import LRU, LRI, cached, cachedmethod, cachedproperty, MinIDMap, ThresholdCounter
 
 
 class CountingCallable(object):
@@ -405,14 +405,51 @@ def test_min_id_map():
     midm = MinIDMap()
 
     class Foo(object):
-        pass
+        def __init__(self, val):
+            self.val = val
 
     # use this circular array to have them periodically collected
     ref_wheel = [None, None, None]
 
     for i in range(1000):
-        nxt = Foo()
+        nxt = Foo(i)
         ref_wheel[i % len(ref_wheel)] = nxt
         assert midm.get(nxt) <= len(ref_wheel)
         if i % 10 == 0:
             midm.drop(nxt)
+
+    # test __iter__
+    assert sorted([f.val for f in list(midm)[:10]]) == list(range(1000 - len(ref_wheel), 1000))
+
+    items = list(midm.iteritems())
+    assert isinstance(items[0][0], Foo)
+    assert sorted(item[1] for item in items) == list(range(0, len(ref_wheel)))
+
+
+def test_threshold_counter():
+    tc = ThresholdCounter(threshold=0.1)
+    tc.add(1)
+
+    assert tc.items() == [(1, 1)]
+
+    tc.update([2] * 10)
+
+    assert tc.get(1) == 0
+
+    tc.add(5)
+    assert 5 in tc
+
+    assert len(list(tc.elements())) == 11
+
+    assert tc.threshold == 0.1
+    assert tc.get_common_count() == 11
+    assert tc.get_uncommon_count() == 1  # bc the initial 1 was dropped
+    assert round(tc.get_commonality(), 2) == 0.92
+    assert tc.most_common(2) == [(2, 10), (5, 1)]
+    assert list(tc.elements()) == ([2] * 10) + [5]
+
+    assert tc[2] == 10
+    assert len(tc) == 2
+    assert sorted(tc.keys()) == [2, 5]
+    assert sorted(tc.values()) == [1, 10]
+    assert sorted(tc.items()) == [(2, 10), (5, 1)]
