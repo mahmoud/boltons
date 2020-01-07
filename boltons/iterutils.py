@@ -41,6 +41,7 @@ except ImportError:
     # Python 3 compat
     _IS_PY3 = True
     basestring = (str, bytes)
+    unicode = str
     izip, xrange = zip, range
 
 
@@ -231,6 +232,8 @@ def chunked_iter(src, size, **kw):
     postprocess = lambda chk: chk
     if isinstance(src, basestring):
         postprocess = lambda chk, _sep=type(src)(): _sep.join(chk)
+        if _IS_PY3 and isinstance(src, bytes):
+            postprocess = lambda chk: bytes(chk)
     src_iter = iter(src)
     while True:
         cur_chunk = list(itertools.islice(src_iter, size))

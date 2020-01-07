@@ -502,3 +502,10 @@ def test_seqguiderator():
     for x in range(10000):
         guid_iter = GUIDerator(size=26)
         assert len(next(guid_iter)) == 26
+
+
+def test_chunked_bytes():
+    # see #231
+    from boltons.iterutils import chunked
+
+    assert chunked(b'123', 2) in (['12', '3'], [b'12', b'3'])
