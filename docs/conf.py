@@ -97,11 +97,11 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'boltons'
-copyright = u'2019, Mahmoud Hashemi'
+copyright = u'2020, Mahmoud Hashemi'
 author = u'Mahmoud Hashemi'
 
-version = '19.3'
-release = '19.3.0'
+version = '20.0'
+release = '20.0.0'
 
 if os.name != 'nt':
     today_fmt = '%B %d, %Y'

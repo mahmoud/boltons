@@ -117,6 +117,7 @@ Section listing
    mathutils
    mboxutils
    namedutils
+   pathutils
    queueutils
    setutils
    socketutils

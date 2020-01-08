@@ -1,24 +1,32 @@
 boltons Changelog
 =================
 
-Since February 20, 2013 there have been 40 releases and 1386 commits for
-an average of one 35-commit release about every 10 weeks.
+Since February 20, 2013 there have been 41 releases and 1405 commits for
+an average of one 34-commit release about every 8 weeks.
 
 
-19.4.0
+20.0.0
 ------
-*(Unreleased)*
+*January 8, 2020*
 
-New module [pathutils][pathutils]:
+* New module [pathutils][pathutils]:
+    * [pathutils.augpath][pathutils.augpath] augments a path by modifying its components
+    * [pathutils.shrinkuser][pathutils.shrinkuser] inverts :func:`os.path.expanduser`.
+    * [pathutils.expandpath][pathutils.expandpath] shell-like environ and tilde expansion
+* add `include_dirs` param to [fileutils.iter_find_files][fileutils.iter_find_files]
+* Make [funcutils.format_invocation][funcutils.format_invocation] more deterministic
+* add [strutils.unwrap_text][strutils.unwrap_text] which does what you think to wrapped text
+* Py3 fixes
+    * [strutils.chunked][strutils.chunked] to work with the `bytes` type ([#231][i231])
+    * [cacheutils.ThresholdCounter][cacheutils.ThresholdCounter]'s `get_common_count()`
 
-* [pathutils.augpath][pathutils.augpath] augments a path by modifying its components
-* [pathutils.shrinkuser][pathutils.shrinkuser] inverts :func:`os.path.expanduser`.
-* [pathutils.expandpath][pathutils.expandpath] shell-like environ and tilde expansion
-
-[pathutils.augpath]: https://boltons.readthedocs.io/en/latest/funcutils.html#boltons.pathutils.augpath
-[pathutils.shrinkuser]: https://boltons.readthedocs.io/en/latest/funcutils.html#boltons.pathutils.shrinkuser
-[pathutils.expandpath]: https://boltons.readthedocs.io/en/latest/funcutils.html#boltons.pathutils.expandpath
-
+[i231]: https://github.com/mahmoud/boltons/issues/231
+[pathutils]: https://boltons.readthedocs.io/en/latest/pathutils.html
+[pathutils.augpath]: https://boltons.readthedocs.io/en/latest/pathutils.html#boltons.pathutils.augpath
+[pathutils.augpath]: https://boltons.readthedocs.io/en/latest/pathutils.html#boltons.pathutils.augpath
+[pathutils.shrinkuser]: https://boltons.readthedocs.io/en/latest/pathutils.html#boltons.pathutils.shrinkuser
+[pathutils.expandpath]: https://boltons.readthedocs.io/en/latest/pathutils.html#boltons.pathutils.expandpath
+[strutils.unwrap_text]: https://boltons.readthedocs.io/en/latest/strutils.html#boltons.strutils.unwrap_text
 
 19.3.0
 ------

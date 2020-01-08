@@ -42,7 +42,7 @@ __all__ = ['camel2under', 'under2camel', 'slugify', 'split_punct_ws',
            'asciify', 'is_ascii', 'is_uuid', 'html2text', 'strip_ansi',
            'bytes2human', 'find_hashtags', 'a10n', 'gzip_bytes', 'gunzip_bytes',
            'iter_splitlines', 'indent', 'escape_shell_args',
-           'args2cmd', 'args2sh', 'parse_int_list', 'format_int_list']
+           'args2cmd', 'args2sh', 'parse_int_list', 'format_int_list', 'unwrap_text']
 
 
 _punct_ws_str = string.punctuation + string.whitespace
