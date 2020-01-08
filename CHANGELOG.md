@@ -17,7 +17,7 @@ an average of one 34-commit release about every 8 weeks.
 * Make [funcutils.format_invocation][funcutils.format_invocation] more deterministic
 * add [strutils.unwrap_text][strutils.unwrap_text] which does what you think to wrapped text
 * Py3 fixes
-    * [strutils.chunked][strutils.chunked] to work with the `bytes` type ([#231][i231])
+    * [iterutils.chunked][iterutils.chunked] to work with the `bytes` type ([#231][i231])
     * [cacheutils.ThresholdCounter][cacheutils.ThresholdCounter]'s `get_common_count()`
 
 [i231]: https://github.com/mahmoud/boltons/issues/231
