@@ -768,7 +768,7 @@ class FunctionBuilder(object):
 
         kwargs = {'name': func.__name__,
                   'doc': func.__doc__,
-                  'module': func.__module__,
+                  'module': getattr(func, '__module__', None),  # e.g., method_descriptor
                   'annotations': getattr(func, "__annotations__", {}),
                   'dict': getattr(func, '__dict__', {})}
 
