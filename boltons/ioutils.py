@@ -167,6 +167,15 @@ class SpooledIOBase(object):
         self.seek(pos)
         return val
 
+    def seekable(self):
+        return True
+
+    def readable(self):
+        return True
+
+    def writable(self):
+        return True
+
     __next__ = next
 
     def __len__(self):
