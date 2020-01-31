@@ -88,10 +88,14 @@ def test_clear():
 
 
 def test_types():
-    import collections
+    try:
+        from collections.abc import MutableMapping
+    except ImportError:
+        from collections import MutableMapping
+
     omd = OMD()
     assert isinstance(omd, dict)
-    assert isinstance(omd, collections.MutableMapping)
+    assert isinstance(omd, MutableMapping)
 
 
 def test_multi_correctness():

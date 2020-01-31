@@ -88,7 +88,10 @@ class BasicRender(object):
         self.autotable_render = AutoTableRenderer()
 
     def render_response(self, request, context, _route):
-        from collections import Sized
+        try:
+            from collections.abc import Sized
+        except ImportError:
+            from collections import Sized
         if isinstance(context, basestring):  # already serialized
             if self._guess_json(context):
                 return Response(context, mimetype="application/json")
