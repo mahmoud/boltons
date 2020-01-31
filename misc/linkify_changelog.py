@@ -6,8 +6,8 @@ import sys
 BASE_RTD_URL = 'http://boltons.readthedocs.org/en/latest/'
 BASE_ISSUES_URL = 'https://github.com/mahmoud/boltons/issues/'
 
-_issues_re = re.compile('#(\d+)')
-_member_re = re.compile('((\w+utils)\.[a-zA-Z0-9_.]+)')
+_issues_re = re.compile(r'#(\d+)')
+_member_re = re.compile(r'((\w+utils)\.[a-zA-Z0-9_.]+)')
 
 URL_MAP = {}
 

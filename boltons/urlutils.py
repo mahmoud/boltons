@@ -393,7 +393,7 @@ class cachedproperty(object):
 
 
 class URL(object):
-    """The URL is one of the most ubiquitous data structures in the
+    r"""The URL is one of the most ubiquitous data structures in the
     virtual and physical landscape. From blogs to billboards, URLs are
     so common, that it's easy to overlook their complexity and
     power.

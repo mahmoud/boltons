@@ -374,7 +374,7 @@ def get_profile_json(indent=False):
         def dumps(val, indent):
             ret = _fake_json_dumps(val, indent=indent)
             if not indent:
-                ret = re.sub('\n\s*', ' ', ret)
+                ret = re.sub(r'\n\s*', ' ', ret)
             return ret
 
     data_dict = get_profile()
