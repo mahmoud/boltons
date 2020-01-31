@@ -2,7 +2,7 @@ import sys
 import re
 
 
-_VERSION_MARKER = re.compile('_py(?P<major_version>\d)(?P<minor_version>\d)?')
+_VERSION_MARKER = re.compile(r'_py(?P<major_version>\d)(?P<minor_version>\d)?')
 
 
 def pytest_ignore_collect(path, config):

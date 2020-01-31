@@ -53,7 +53,7 @@ __all__ = ['DeferredValue', 'get_format_args', 'tokenize_format_str',
 
 _pos_farg_re = re.compile('({{)|'         # escaped open-brace
                           '(}})|'         # escaped close-brace
-                          '({[:!.\[}])')  # anon positional format arg
+                          r'({[:!.\[}])')  # anon positional format arg
 
 
 def construct_format_field_str(fname, fspec, conv):
