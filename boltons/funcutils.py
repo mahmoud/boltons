@@ -526,7 +526,11 @@ def update_wrapper(wrapper, func, injected=None, expected=None, build_from=None,
             attributes of *func* over to the wrapper. Defaults to True.
         inject_to_varkw (bool): Ignore missing arguments when a
             ``**kwargs``-type catch-all is present. Defaults to True.
+        hide_wrapped (bool): Remove reference to the wrapped function(s)
+            in the updated function.
 
+    In opposition to the built-in :func:`functools.update_wrapper` bolton's
+    version returns a copy of the function and does not modifiy anything in place.
     For more in-depth wrapping of functions, see the
     :class:`FunctionBuilder` type, on which update_wrapper was built.
     """
@@ -547,6 +551,7 @@ def update_wrapper(wrapper, func, injected=None, expected=None, build_from=None,
 
     update_dict = kw.pop('update_dict', True)
     inject_to_varkw = kw.pop('inject_to_varkw', True)
+    hide_wrapped = kw.pop('hide_wrapped', False)
     if kw:
         raise TypeError('unexpected kwargs: %r' % kw.keys())
 
@@ -570,7 +575,11 @@ def update_wrapper(wrapper, func, injected=None, expected=None, build_from=None,
 
     execdict = dict(_call=wrapper, _func=func)
     fully_wrapped = fb.get_func(execdict, with_dict=update_dict)
-    fully_wrapped.__wrapped__ = func  # ref to the original function (#115)
+
+    if hide_wrapped and hasattr(fully_wrapped, '__wrapped__'):
+        del fully_wrapped.__dict__['__wrapped__']
+    elif not hide_wrapped:
+        fully_wrapped.__wrapped__ = func  # ref to the original function (#115)
 
     return fully_wrapped
 
