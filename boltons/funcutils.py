@@ -428,20 +428,15 @@ def format_nonexp_repr(obj, req_names=None, opt_names=None, opt_key=None):
 
 
 def wraps(func, injected=None, expected=None, **kw):
-    """Modeled after the built-in :func:`functools.wraps`, this function is
-    used to make your decorator's wrapper functions reflect the
-    wrapped function's:
+    """Decorator factory to apply update_wrapper() to a wrapper function.
 
-      * Name
-      * Documentation
-      * Module
-      * Signature
+    Modeled after built-in :func:`functools.wraps`. Returns a decorator
+    that invokes update_wrapper() with the decorated function as the wrapper
+    argument and the arguments to wraps() as the remaining arguments.
+    Default arguments are as for update_wrapper(). This is a convenience
+    function to simplify applying partial() to update_wrapper().
 
-    The built-in :func:`functools.wraps` copies the first three, but
-    does not copy the signature. This version of ``wraps`` can copy
-    the inner function's signature exactly, allowing seamless usage
-    and :mod:`introspection <inspect>`. Usage is identical to the
-    built-in version::
+    Same example as in update_wrapper's doc but with wraps:
 
         >>> from boltons.funcutils import wraps
         >>>
@@ -464,15 +459,58 @@ def wraps(func, injected=None, expected=None, **kw):
         'example'
         >>> example.__doc__
         'docstring'
+    """
+    return partial(update_wrapper, func=func, build_from=None,
+                   injected=injected, expected=expected, **kw)
 
-    In addition, the boltons version of wraps supports modifying the
-    outer signature based on the inner signature. By passing a list of
+
+def update_wrapper(wrapper, func, injected=None, expected=None, build_from=None, **kw):
+    """Modeled after the built-in :func:`functools.update_wrapper`,
+    this function is used to make your wrapper function reflect the
+    wrapped function's:
+
+      * Name
+      * Documentation
+      * Module
+      * Signature
+
+    The built-in :func:`functools.update_wrapper` copies the first three, but
+    does not copy the signature. This version of ``update_wrapper`` can copy
+    the inner function's signature exactly, allowing seamless usage
+    and :mod:`introspection <inspect>`. Usage is identical to the
+    built-in version::
+
+        >>> from boltons.funcutils import update_wrapper
+        >>>
+        >>> def print_return(func):
+        ...     def wrapper(*args, **kwargs):
+        ...         ret = func(*args, **kwargs)
+        ...         print(ret)
+        ...         return ret
+        ...     return update_wrapper(wrapper, func)
+        ...
+        >>> @print_return
+        ... def example():
+        ...     '''docstring'''
+        ...     return 'example return value'
+        >>>
+        >>> val = example()
+        example return value
+        >>> example.__name__
+        'example'
+        >>> example.__doc__
+        'docstring'
+
+    In addition, the boltons version of update_wrapper supports
+    modifying the outer signature. By passing a list of
     *injected* argument names, those arguments will be removed from
     the outer wrapper's signature, allowing your decorator to provide
     arguments that aren't passed in.
 
     Args:
 
+        wrapper (function) : The callable to which the attributes of
+            *func* are to be copied.
         func (function): The callable whose attributes are to be copied.
         injected (list): An optional list of argument names which
             should not appear in the new wrapper's signature.
@@ -480,14 +518,17 @@ def wraps(func, injected=None, expected=None, **kw):
             default) pairs) representing new arguments introduced by
             the wrapper (the opposite of *injected*). See
             :meth:`FunctionBuilder.add_arg()` for more details.
+        build_from (function): The callable from which the new wrapper
+            is built. Defaults to *func*. Useful in some specific cases
+            where wrapper and func have the same arguments but differ on
+            which are keyword-only and positional-only.
         update_dict (bool): Whether to copy other, non-standard
             attributes of *func* over to the wrapper. Defaults to True.
         inject_to_varkw (bool): Ignore missing arguments when a
             ``**kwargs``-type catch-all is present. Defaults to True.
 
     For more in-depth wrapping of functions, see the
-    :class:`FunctionBuilder` type, on which wraps was built.
-
+    :class:`FunctionBuilder` type, on which update_wrapper was built.
     """
     if injected is None:
         injected = []
@@ -509,7 +550,8 @@ def wraps(func, injected=None, expected=None, **kw):
     if kw:
         raise TypeError('unexpected kwargs: %r' % kw.keys())
 
-    fb = FunctionBuilder.from_func(func)
+    fb = FunctionBuilder.from_func(build_from or func)
+
     for arg in injected:
         try:
             fb.remove_arg(arg)
@@ -526,14 +568,11 @@ def wraps(func, injected=None, expected=None, **kw):
     else:
         fb.body = 'return _call(%s)' % fb.get_invocation_str()
 
-    def wrapper_wrapper(wrapper_func):
-        execdict = dict(_call=wrapper_func, _func=func)
-        fully_wrapped = fb.get_func(execdict, with_dict=update_dict)
-        fully_wrapped.__wrapped__ = func  # ref to the original function (#115)
+    execdict = dict(_call=wrapper, _func=func)
+    fully_wrapped = fb.get_func(execdict, with_dict=update_dict)
+    fully_wrapped.__wrapped__ = func  # ref to the original function (#115)
 
-        return fully_wrapped
-
-    return wrapper_wrapper
+    return fully_wrapped
 
 
 def _parse_wraps_expected(expected):
