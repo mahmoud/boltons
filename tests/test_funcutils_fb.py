@@ -1,6 +1,6 @@
 import pytest
-
-from boltons.funcutils import wraps, FunctionBuilder
+import functools
+from boltons.funcutils import wraps, update_wrapper, FunctionBuilder
 
 
 def pita_wrap(flag=False):
@@ -131,6 +131,14 @@ def test_wraps_unknown_args():
 
     with pytest.raises(TypeError):
         fails(wrappable_func)
+
+
+def test_update_wrapper_partial():
+    wrapper = functools.partial(wrappable_varkw_func, b=1)
+    functools.update_wrapper(wrapper, wrapper.func)
+
+    fully_wrapped = update_wrapper(wrapper, wrappable_varkw_func, build_from=wrapper)
+    assert fully_wrapped(1) == (1, 1)
 
 
 def test_FunctionBuilder_invalid_args():
