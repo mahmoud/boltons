@@ -1,5 +1,6 @@
 import pytest
 import functools
+import inspect
 from boltons.funcutils import wraps, update_wrapper, FunctionBuilder
 
 
@@ -103,6 +104,24 @@ def test_wraps_injected():
 
     with pytest.raises(ValueError):
         inject_misc_argument_no_varkw(wrappable_varkw_func)
+
+
+def test_wraps_hide_wrapped():
+    new_func = wraps(wrappable_func, injected='b')(lambda a: wrappable_func(a, b=1))
+    new_sig = inspect.signature(new_func, follow_wrapped=True)
+
+    assert list(new_sig.parameters.keys()) == ['a', 'b']
+
+    new_func = wraps(wrappable_func, injected='b', hide_wrapped=True)(lambda a: wrappable_func(a, b=1))
+    new_sig = inspect.signature(new_func, follow_wrapped=True)
+
+    assert list(new_sig.parameters.keys()) == ['a']
+
+    new_func = wraps(wrappable_func, injected='b')(lambda a: wrappable_func(a, b=1))
+    new_new_func = wraps(new_func, injected='a', hide_wrapped=True)(lambda: new_func(a=1))
+    new_new_sig = inspect.signature(new_new_func, follow_wrapped=True)
+
+    assert len(new_new_sig.parameters) == 0
 
 
 def test_wraps_update_dict():
