@@ -278,6 +278,7 @@ class CachedInstancePartial(functools.partial):
             obj.__dict__[name] = ret = make_method(self, obj, obj_type)
             return ret
 
+
 partial = CachedInstancePartial
 
 
@@ -814,11 +815,20 @@ class FunctionBuilder(object):
         if not callable(func):
             raise TypeError('expected callable object, not %r' % (func,))
 
-        kwargs = {'name': func.__name__,
-                  'doc': func.__doc__,
-                  'module': getattr(func, '__module__', None),  # e.g., method_descriptor
-                  'annotations': getattr(func, "__annotations__", {}),
-                  'dict': getattr(func, '__dict__', {})}
+        if isinstance(func, functools.partial):
+            if _IS_PY2:
+                raise ValueError('Cannot build FunctionBuilder instances from partials in python 2.')
+            kwargs = {'name': func.func.__name__,
+                      'doc': func.func.__doc__,
+                      'module': getattr(func.func, '__module__', None),  # e.g., method_descriptor
+                      'annotations': getattr(func.func, "__annotations__", {}),
+                      'dict': getattr(func.func, '__dict__', {})}
+        else:
+            kwargs = {'name': func.__name__,
+                      'doc': func.__doc__,
+                      'module': getattr(func, '__module__', None),  # e.g., method_descriptor
+                      'annotations': getattr(func, "__annotations__", {}),
+                      'dict': getattr(func, '__dict__', {})}
 
         kwargs.update(cls._argspec_to_dict(func))
 

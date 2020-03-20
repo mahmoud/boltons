@@ -1,7 +1,5 @@
 import pytest
-import functools
-import inspect
-from boltons.funcutils import wraps, update_wrapper, FunctionBuilder
+from boltons.funcutils import wraps, FunctionBuilder
 
 
 def pita_wrap(flag=False):
@@ -106,24 +104,6 @@ def test_wraps_injected():
         inject_misc_argument_no_varkw(wrappable_varkw_func)
 
 
-def test_wraps_hide_wrapped():
-    new_func = wraps(wrappable_func, injected='b')(lambda a: wrappable_func(a, b=1))
-    new_sig = inspect.signature(new_func, follow_wrapped=True)
-
-    assert list(new_sig.parameters.keys()) == ['a', 'b']
-
-    new_func = wraps(wrappable_func, injected='b', hide_wrapped=True)(lambda a: wrappable_func(a, b=1))
-    new_sig = inspect.signature(new_func, follow_wrapped=True)
-
-    assert list(new_sig.parameters.keys()) == ['a']
-
-    new_func = wraps(wrappable_func, injected='b')(lambda a: wrappable_func(a, b=1))
-    new_new_func = wraps(new_func, injected='a', hide_wrapped=True)(lambda: new_func(a=1))
-    new_new_sig = inspect.signature(new_new_func, follow_wrapped=True)
-
-    assert len(new_new_sig.parameters) == 0
-
-
 def test_wraps_update_dict():
 
     def updated_dict(func):
@@ -150,14 +130,6 @@ def test_wraps_unknown_args():
 
     with pytest.raises(TypeError):
         fails(wrappable_func)
-
-
-def test_update_wrapper_partial():
-    wrapper = functools.partial(wrappable_varkw_func, b=1)
-    functools.update_wrapper(wrapper, wrapper.func)
-
-    fully_wrapped = update_wrapper(wrapper, wrappable_varkw_func, build_from=wrapper)
-    assert fully_wrapped(1) == (1, 1)
 
 
 def test_FunctionBuilder_invalid_args():
