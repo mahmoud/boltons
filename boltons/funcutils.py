@@ -245,6 +245,9 @@ class InstancePartial(functools.partial):
     def __get__(self, obj, obj_type):
         return make_method(self, obj, obj_type)
 
+    def __set__(self, instance, value):
+        pass
+
 
 class CachedInstancePartial(functools.partial):
     """The ``CachedInstancePartial`` is virtually the same as
@@ -277,6 +280,9 @@ class CachedInstancePartial(functools.partial):
         except KeyError:
             obj.__dict__[name] = ret = make_method(self, obj, obj_type)
             return ret
+
+    def __set__(self, instance, value):
+        pass
 
 
 partial = CachedInstancePartial
