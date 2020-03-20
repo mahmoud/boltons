@@ -6,6 +6,7 @@ from collections import defaultdict
 import pytest
 
 from boltons.funcutils import wraps, FunctionBuilder, update_wrapper
+import boltons.funcutils as funcutils
 
 
 def wrappable_varkw_func(a, b, **kw):
@@ -52,8 +53,9 @@ def test_wraps_py3():
         True, 'kwonly_non_roundtrippable_repr', 2)
 
 
-def test_update_wrapper_partial():
-    wrapper = functools.partial(wrappable_varkw_func, b=1)
+@pytest.mark.parametrize('partial_kind', (functools, funcutils))
+def test_update_wrapper_partial(partial_kind):
+    wrapper = partial_kind.partial(wrappable_varkw_func, b=1)
     functools.update_wrapper(wrapper, wrapper.func)
 
     fully_wrapped = update_wrapper(wrapper, wrappable_varkw_func, build_from=wrapper)
