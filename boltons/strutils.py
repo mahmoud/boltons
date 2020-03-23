@@ -281,14 +281,14 @@ _IRR_S2P = {'addendum': 'addenda', 'alga': 'algae', 'alumna': 'alumnae',
             'ox': 'oxen', 'paralysis': 'paralyses', 'parenthesis': 'parentheses',
             'person': 'people', 'phenomenon': 'phenomena', 'potato': 'potatoes',
             'radius': 'radii', 'scarf': 'scarves', 'scissors': 'scissors',
-            'self': 'selves', 'series': 'series', 'sheep': 'sheep',
-            'shelf': 'shelves', 'species': 'species', 'stimulus': 'stimuli',
-            'stratum': 'strata', 'syllabus': 'syllabi', 'symposium': 'symposia',
-            'synopsis': 'synopses', 'synthesis': 'syntheses', 'tableau': 'tableaux',
-            'that': 'those', 'thesis': 'theses', 'thief': 'thieves',
-            'this': 'these', 'tomato': 'tomatoes', 'tooth': 'teeth',
-            'torpedo': 'torpedoes', 'vertebra': 'vertebrae', 'veto': 'vetoes',
-            'vita': 'vitae', 'watch': 'watches', 'wife': 'wives',
+            'self': 'selves', 'sense': 'senses', 'series': 'series', 'sheep':
+            'sheep', 'shelf': 'shelves', 'species': 'species', 'stimulus':
+            'stimuli', 'stratum': 'strata', 'syllabus': 'syllabi', 'symposium':
+            'symposia', 'synopsis': 'synopses', 'synthesis': 'syntheses',
+            'tableau': 'tableaux', 'that': 'those', 'thesis': 'theses',
+            'thief': 'thieves', 'this': 'these', 'tomato': 'tomatoes', 'tooth':
+            'teeth', 'torpedo': 'torpedoes', 'vertebra': 'vertebrae', 'veto':
+            'vetoes', 'vita': 'vitae', 'watch': 'watches', 'wife': 'wives',
             'wolf': 'wolves', 'woman': 'women'}
 
 
