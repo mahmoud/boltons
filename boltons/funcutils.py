@@ -38,6 +38,11 @@ try:
 except ImportError:
     NO_DEFAULT = object()
 
+try:
+    from functools import partialmethod
+except ImportError:
+    partialmethod = None
+
 
 _IS_PY35 = sys.version_info >= (3, 5)
 if not _IS_PY35:
@@ -242,11 +247,14 @@ class InstancePartial(functools.partial):
     has the same ability, but is slightly more efficient.
 
     """
+    if partialmethod is not None:  # NB: See https://github.com/mahmoud/boltons/pull/244
+        @property
+        def _partialmethod(self):
+            return partialmethod(self.func, *self.args, **self.keywords)
+
     def __get__(self, obj, obj_type):
         return make_method(self, obj, obj_type)
 
-    def __set__(self, instance, value):
-        pass
 
 
 class CachedInstancePartial(functools.partial):
@@ -259,6 +267,11 @@ class CachedInstancePartial(functools.partial):
 
     See the :class:`InstancePartial` docstring for more details.
     """
+    if partialmethod is not None:  # NB: See https://github.com/mahmoud/boltons/pull/244
+        @property
+        def _partialmethod(self):
+            return partialmethod(self.func, *self.args, **self.keywords)
+
     def __get__(self, obj, obj_type):
         # These assignments could've been in __init__, but there was
         # no simple way to do it without breaking one of PyPy or Py3.
@@ -280,9 +293,6 @@ class CachedInstancePartial(functools.partial):
         except KeyError:
             obj.__dict__[name] = ret = make_method(self, obj, obj_type)
             return ret
-
-    def __set__(self, instance, value):
-        pass
 
 
 partial = CachedInstancePartial
