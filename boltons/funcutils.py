@@ -536,9 +536,10 @@ def update_wrapper(wrapper, func, injected=None, expected=None, build_from=None,
             the wrapper (the opposite of *injected*). See
             :meth:`FunctionBuilder.add_arg()` for more details.
         build_from (function): The callable from which the new wrapper
-            is built. Defaults to *func*. Useful in some specific cases
-            where wrapper and func have the same arguments but differ on
-            which are keyword-only and positional-only.
+            is built. Defaults to *func*, unless *wrapper* is partial object
+            built from *func*, in which case it defaults to *wrapper*.
+            Useful in some specific cases where *wrapper* and *func* have the
+            same arguments but differ on which are keyword-only and positional-only.
         update_dict (bool): Whether to copy other, non-standard
             attributes of *func* over to the wrapper. Defaults to True.
         inject_to_varkw (bool): Ignore missing arguments when a
@@ -571,6 +572,9 @@ def update_wrapper(wrapper, func, injected=None, expected=None, build_from=None,
     hide_wrapped = kw.pop('hide_wrapped', False)
     if kw:
         raise TypeError('unexpected kwargs: %r' % kw.keys())
+
+    if isinstance(wrapper, functools.partial) and func is wrapper.func:
+        build_from = build_from or wrapper
 
     fb = FunctionBuilder.from_func(build_from or func)
 

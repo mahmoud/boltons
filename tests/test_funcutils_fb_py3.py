@@ -57,7 +57,7 @@ def test_wraps_py3():
 def test_update_wrapper_partial(partial_kind):
     wrapper = partial_kind.partial(wrappable_varkw_func, b=1)
 
-    fully_wrapped = update_wrapper(wrapper, wrappable_varkw_func, build_from=wrapper)
+    fully_wrapped = update_wrapper(wrapper, wrappable_varkw_func)
     assert fully_wrapped(1) == (1, 1)
 
 
