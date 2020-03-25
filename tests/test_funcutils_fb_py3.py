@@ -56,7 +56,6 @@ def test_wraps_py3():
 @pytest.mark.parametrize('partial_kind', (functools, funcutils))
 def test_update_wrapper_partial(partial_kind):
     wrapper = partial_kind.partial(wrappable_varkw_func, b=1)
-    functools.update_wrapper(wrapper, wrapper.func)
 
     fully_wrapped = update_wrapper(wrapper, wrappable_varkw_func, build_from=wrapper)
     assert fully_wrapped(1) == (1, 1)
