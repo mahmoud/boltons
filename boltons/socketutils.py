@@ -635,23 +635,32 @@ class NetstringSocket(object):
 
     def setmaxsize(self, maxsize):
         self.maxsize = maxsize
-        self._msgsize_maxsize = len(str(maxsize)) + 1  # len(str()) == log10
+        self._msgsize_maxsize = self._calc_msgsize_maxsize(maxsize)
+
+    def _calc_msgsize_maxsize(self, maxsize):
+        return len(str(maxsize)) + 1  # len(str()) == log10
 
     def read_ns(self, timeout=_UNSET, maxsize=_UNSET):
         if timeout is _UNSET:
             timeout = self.timeout
 
+        if maxsize is _UNSET:
+            maxsize = self.maxsize
+            msgsize_maxsize = self._msgsize_maxsize
+        else:
+            msgsize_maxsize = self._calc_msgsize_maxsize(maxsize)
+
         size_prefix = self.bsock.recv_until(b':',
-                                            timeout=self.timeout,
-                                            maxsize=self._msgsize_maxsize)
+                                            timeout=timeout,
+                                            maxsize=msgsize_maxsize)
         try:
             size = int(size_prefix)
         except ValueError:
             raise NetstringInvalidSize('netstring message size must be valid'
                                        ' integer, not %r' % size_prefix)
 
-        if size > self.maxsize:
-            raise NetstringMessageTooLong(size, self.maxsize)
+        if size > maxsize:
+            raise NetstringMessageTooLong(size, maxsize)
         payload = self.bsock.recv_size(size)
         if self.bsock.recv(1) != b',':
             raise NetstringProtocolError("expected trailing ',' after message")

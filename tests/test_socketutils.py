@@ -248,9 +248,8 @@ def test_timeout_setters_getters():
 
 def netstring_server(server_socket):
     "A basic netstring server loop, supporting a few operations"
-    running = True
     try:
-        while running:
+        while True:
             clientsock, addr = server_socket.accept()
             client = NetstringSocket(clientsock)
             while 1:
@@ -259,8 +258,7 @@ def netstring_server(server_socket):
                     clientsock.close()
                     break
                 elif request == b'shutdown':
-                    running = False
-                    break
+                    return
                 elif request == b'reply4k':
                     client.write_ns(b'a' * 4096)
                 elif request == b'ping':
@@ -272,7 +270,6 @@ def netstring_server(server_socket):
     except Exception as e:
         print(u'netstring_server exiting with error: %r' % e)
         raise
-    return
 
 
 def test_socketutils_netstring():
@@ -376,3 +373,57 @@ def test_socketutils_netstring():
 
     client.write_ns(b'shutdown')
     print("all passed")
+
+
+def netstring_server_timeout_override(server_socket):
+    """Netstring socket has an unreasonably low timeout,
+    however it should be overriden by the `read_ns` argument."""
+
+    try:
+        while True:
+            clientsock, addr = server_socket.accept()
+            client = NetstringSocket(clientsock, timeout=0.01)
+            while 1:
+                request = client.read_ns(1)
+                if request == b'close':
+                    clientsock.close()
+                    break
+                elif request == b'shutdown':
+                    return
+                elif request == b'ping':
+                    client.write_ns(b'pong')
+    except Exception as e:
+        print(u'netstring_server exiting with error: %r' % e)
+        raise
+
+
+def test_socketutils_netstring_timeout():
+    """Tests that server socket timeout is overriden by the argument to read call.
+
+    Server has timeout of 10 ms, and we will sleep for 20 ms. If timeout is not overriden correctly,
+    a timeout exception will be raised."""
+
+    print("running timeout test")
+
+    # Set up server
+    server_socket = socket.socket()
+    server_socket.bind(('127.0.0.1', 0))  # localhost with ephemeral port
+    server_socket.listen(100)
+    ip, port = server_socket.getsockname()
+    start_server = lambda: netstring_server_timeout_override(server_socket)
+    threading.Thread(target=start_server).start()
+
+    # set up client
+    def client_connect():
+        clientsock = socket.create_connection((ip, port))
+        client = NetstringSocket(clientsock)
+        return client
+
+    # connect, ping-pong
+    client = client_connect()
+    time.sleep(0.02)
+    client.write_ns(b'ping')
+    assert client.read_ns() == b'pong'
+
+    client.write_ns(b'shutdown')
+    print("no timeout occured - all good.")
