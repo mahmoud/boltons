@@ -150,7 +150,7 @@ class IndexedSet(MutableSet):
             return index
         apparent_index = index
         for d_start, d_stop in self.dead_indices:
-            if apparent_index < d_start:
+            if index < d_start:
                 break
             apparent_index -= d_stop - d_start
         return apparent_index

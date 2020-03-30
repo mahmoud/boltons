@@ -181,11 +181,25 @@ def test_iset_index_method():
         index = indexed_list.index(i)
         assert i == indexed_list.pop(index)
 
+
+    indexed_list = IndexedSet(range(32))
+
+    for i in list(indexed_list):
+        if i % 3:
+            index = indexed_list.index(i)
+            assert i == indexed_list.pop(index)
+
     indexed_list = IndexedSet(range(10))
 
     for i in range(10):
-        print(i)
         if i < 3:
             continue
         index = indexed_list.index(i)
         assert i == indexed_list.pop(index)
+
+    indexed_list = IndexedSet(range(32))
+
+    for i in list(indexed_list):
+        if i % 3:
+            index = indexed_list.index(i)
+            assert i == indexed_list.pop(index)
