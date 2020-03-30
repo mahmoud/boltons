@@ -172,3 +172,20 @@ def test_iset_index_method():
         # if we're removing them in order, the target value should always be at index 0
         assert index == 0
         indexed_list.pop(index)
+
+    indexed_list = IndexedSet(range(10))
+
+    for i in reversed(range(10)):
+        if i % 2:
+            continue
+        index = indexed_list.index(i)
+        assert i == indexed_list.pop(index)
+
+    indexed_list = IndexedSet(range(10))
+
+    for i in range(10):
+        print(i)
+        if i < 3:
+            continue
+        index = indexed_list.index(i)
+        assert i == indexed_list.pop(index)
