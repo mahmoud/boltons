@@ -1,9 +1,23 @@
 boltons Changelog
 =================
 
-Since February 20, 2013 there have been 41 releases and 1405 commits for
+Since February 20, 2013 there have been 42 releases and 1433 commits for
 an average of one 34-commit release about every 8 weeks.
 
+20.1.0
+------
+*March 29, 2020*
+
+* Add [funcutils.update_wrapper][funcutils.update_wrapper], used to
+  make a wrapper function reflect various aspects of the wrapped
+  function's API.
+* Fix [FunctionBuilder][FunctionBuilder] handling of functions without `__module__`
+* Add `partial` support to [FunctionBuilder][FunctionBuilder]
+* Fix [NetstringSocket][socketutils.NetstringSocket]'s handling of arguments in `read_ns`
+* Fix [IndexedSet][IndexedSet]'s `index()` method to account for removals
+* Add `seekable`, `readable`, and `writable` to SpooledIOBase
+* Add a special case to `singularize`
+* Fix various warnings for Py3.9
 
 20.0.0
 ------
@@ -955,6 +969,7 @@ added in this release.
 [funcutils.FunctionBuilder.add_arg]: https://boltons.readthedocs.io/en/latest/funcutils.html#boltons.funcutils.FunctionBuilder.add_arg
 [funcutils.partial_ordering]: http://boltons.readthedocs.org/en/latest/funcutils.html#boltons.funcutils.partial_ordering
 [funcutils.total_ordering]: http://boltons.readthedocs.org/en/latest/funcutils.html#boltons.funcutils.total_ordering
+[funcutils.update_wrapper]: http://boltons.readthedocs.org/en/latest/funcutils.html#boltons.funcutils.update_wrapper
 [funcutils.wraps]: http://boltons.readthedocs.org/en/latest/funcutils.html#boltons.funcutils.wraps
 [gcutils.GCToggler]: http://boltons.readthedocs.org/en/latest/gcutils.html#boltons.gcutils.GCToggler
 [gcutils.get_all]: http://boltons.readthedocs.org/en/latest/gcutils.html#boltons.gcutils.get_all
@@ -1012,6 +1027,7 @@ added in this release.
 [mathutils.clamp]: http://boltons.readthedocs.org/en/latest/mathutils.html#boltons.mathutils.clamp
 [queueutils]: http://boltons.readthedocs.org/en/latest/queueutils.html
 [setutils.complement]: http://boltons.readthedocs.org/en/latest/setutils.html#boltons.setutils.complement
+[IndexedSet]: http://boltons.readthedocs.org/en/latest/setutils.html#boltons.setutils.IndexedSet
 [socketutils]: http://boltons.readthedocs.org/en/latest/socketutils.html
 [socketutils.BufferedSocket]: http://boltons.readthedocs.org/en/latest/socketutils.html#boltons.socketutils.BufferedSocket
 [socketutils.BufferedSocket.recv]: http://boltons.readthedocs.org/en/latest/socketutils.html#boltons.socketutils.BufferedSocket.recv
