@@ -5,6 +5,10 @@ import inspect
 from boltons.funcutils import wraps, FunctionBuilder
 
 
+def wrappable_func(a, b):
+    return a, b
+
+
 def test_wraps_async():
     # from https://github.com/mahmoud/boltons/issues/194
     import asyncio
@@ -49,3 +53,21 @@ def test_wraps_async():
     # lol windows py37 somehow completes this in under 0.3
     # "assert 0.29700000000002547 > 0.3" https://ci.appveyor.com/project/mahmoud/boltons/builds/22261051/job/3jfq1tq2233csqp6
     assert duration > 0.25
+
+
+def test_wraps_hide_wrapped():
+    new_func = wraps(wrappable_func, injected='b')(lambda a: wrappable_func(a, b=1))
+    new_sig = inspect.signature(new_func, follow_wrapped=True)
+
+    assert list(new_sig.parameters.keys()) == ['a', 'b']
+
+    new_func = wraps(wrappable_func, injected='b', hide_wrapped=True)(lambda a: wrappable_func(a, b=1))
+    new_sig = inspect.signature(new_func, follow_wrapped=True)
+
+    assert list(new_sig.parameters.keys()) == ['a']
+
+    new_func = wraps(wrappable_func, injected='b')(lambda a: wrappable_func(a, b=1))
+    new_new_func = wraps(new_func, injected='a', hide_wrapped=True)(lambda: new_func(a=1))
+    new_new_sig = inspect.signature(new_new_func, follow_wrapped=True)
+
+    assert len(new_new_sig.parameters) == 0

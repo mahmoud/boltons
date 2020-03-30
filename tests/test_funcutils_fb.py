@@ -1,5 +1,4 @@
 import pytest
-
 from boltons.funcutils import wraps, FunctionBuilder
 
 

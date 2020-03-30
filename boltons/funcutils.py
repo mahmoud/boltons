@@ -38,6 +38,11 @@ try:
 except ImportError:
     NO_DEFAULT = object()
 
+try:
+    from functools import partialmethod
+except ImportError:
+    partialmethod = None
+
 
 _IS_PY35 = sys.version_info >= (3, 5)
 if not _IS_PY35:
@@ -242,8 +247,14 @@ class InstancePartial(functools.partial):
     has the same ability, but is slightly more efficient.
 
     """
+    if partialmethod is not None:  # NB: See https://github.com/mahmoud/boltons/pull/244
+        @property
+        def _partialmethod(self):
+            return partialmethod(self.func, *self.args, **self.keywords)
+
     def __get__(self, obj, obj_type):
         return make_method(self, obj, obj_type)
+
 
 
 class CachedInstancePartial(functools.partial):
@@ -256,6 +267,11 @@ class CachedInstancePartial(functools.partial):
 
     See the :class:`InstancePartial` docstring for more details.
     """
+    if partialmethod is not None:  # NB: See https://github.com/mahmoud/boltons/pull/244
+        @property
+        def _partialmethod(self):
+            return partialmethod(self.func, *self.args, **self.keywords)
+
     def __get__(self, obj, obj_type):
         # These assignments could've been in __init__, but there was
         # no simple way to do it without breaking one of PyPy or Py3.
@@ -277,6 +293,7 @@ class CachedInstancePartial(functools.partial):
         except KeyError:
             obj.__dict__[name] = ret = make_method(self, obj, obj_type)
             return ret
+
 
 partial = CachedInstancePartial
 
@@ -428,20 +445,15 @@ def format_nonexp_repr(obj, req_names=None, opt_names=None, opt_key=None):
 
 
 def wraps(func, injected=None, expected=None, **kw):
-    """Modeled after the built-in :func:`functools.wraps`, this function is
-    used to make your decorator's wrapper functions reflect the
-    wrapped function's:
+    """Decorator factory to apply update_wrapper() to a wrapper function.
 
-      * Name
-      * Documentation
-      * Module
-      * Signature
+    Modeled after built-in :func:`functools.wraps`. Returns a decorator
+    that invokes update_wrapper() with the decorated function as the wrapper
+    argument and the arguments to wraps() as the remaining arguments.
+    Default arguments are as for update_wrapper(). This is a convenience
+    function to simplify applying partial() to update_wrapper().
 
-    The built-in :func:`functools.wraps` copies the first three, but
-    does not copy the signature. This version of ``wraps`` can copy
-    the inner function's signature exactly, allowing seamless usage
-    and :mod:`introspection <inspect>`. Usage is identical to the
-    built-in version::
+    Same example as in update_wrapper's doc but with wraps:
 
         >>> from boltons.funcutils import wraps
         >>>
@@ -464,15 +476,58 @@ def wraps(func, injected=None, expected=None, **kw):
         'example'
         >>> example.__doc__
         'docstring'
+    """
+    return partial(update_wrapper, func=func, build_from=None,
+                   injected=injected, expected=expected, **kw)
 
-    In addition, the boltons version of wraps supports modifying the
-    outer signature based on the inner signature. By passing a list of
+
+def update_wrapper(wrapper, func, injected=None, expected=None, build_from=None, **kw):
+    """Modeled after the built-in :func:`functools.update_wrapper`,
+    this function is used to make your wrapper function reflect the
+    wrapped function's:
+
+      * Name
+      * Documentation
+      * Module
+      * Signature
+
+    The built-in :func:`functools.update_wrapper` copies the first three, but
+    does not copy the signature. This version of ``update_wrapper`` can copy
+    the inner function's signature exactly, allowing seamless usage
+    and :mod:`introspection <inspect>`. Usage is identical to the
+    built-in version::
+
+        >>> from boltons.funcutils import update_wrapper
+        >>>
+        >>> def print_return(func):
+        ...     def wrapper(*args, **kwargs):
+        ...         ret = func(*args, **kwargs)
+        ...         print(ret)
+        ...         return ret
+        ...     return update_wrapper(wrapper, func)
+        ...
+        >>> @print_return
+        ... def example():
+        ...     '''docstring'''
+        ...     return 'example return value'
+        >>>
+        >>> val = example()
+        example return value
+        >>> example.__name__
+        'example'
+        >>> example.__doc__
+        'docstring'
+
+    In addition, the boltons version of update_wrapper supports
+    modifying the outer signature. By passing a list of
     *injected* argument names, those arguments will be removed from
     the outer wrapper's signature, allowing your decorator to provide
     arguments that aren't passed in.
 
     Args:
 
+        wrapper (function) : The callable to which the attributes of
+            *func* are to be copied.
         func (function): The callable whose attributes are to be copied.
         injected (list): An optional list of argument names which
             should not appear in the new wrapper's signature.
@@ -480,14 +535,22 @@ def wraps(func, injected=None, expected=None, **kw):
             default) pairs) representing new arguments introduced by
             the wrapper (the opposite of *injected*). See
             :meth:`FunctionBuilder.add_arg()` for more details.
+        build_from (function): The callable from which the new wrapper
+            is built. Defaults to *func*, unless *wrapper* is partial object
+            built from *func*, in which case it defaults to *wrapper*.
+            Useful in some specific cases where *wrapper* and *func* have the
+            same arguments but differ on which are keyword-only and positional-only.
         update_dict (bool): Whether to copy other, non-standard
             attributes of *func* over to the wrapper. Defaults to True.
         inject_to_varkw (bool): Ignore missing arguments when a
             ``**kwargs``-type catch-all is present. Defaults to True.
+        hide_wrapped (bool): Remove reference to the wrapped function(s)
+            in the updated function.
 
+    In opposition to the built-in :func:`functools.update_wrapper` bolton's
+    version returns a copy of the function and does not modifiy anything in place.
     For more in-depth wrapping of functions, see the
-    :class:`FunctionBuilder` type, on which wraps was built.
-
+    :class:`FunctionBuilder` type, on which update_wrapper was built.
     """
     if injected is None:
         injected = []
@@ -506,10 +569,15 @@ def wraps(func, injected=None, expected=None, **kw):
 
     update_dict = kw.pop('update_dict', True)
     inject_to_varkw = kw.pop('inject_to_varkw', True)
+    hide_wrapped = kw.pop('hide_wrapped', False)
     if kw:
         raise TypeError('unexpected kwargs: %r' % kw.keys())
 
-    fb = FunctionBuilder.from_func(func)
+    if isinstance(wrapper, functools.partial) and func is wrapper.func:
+        build_from = build_from or wrapper
+
+    fb = FunctionBuilder.from_func(build_from or func)
+
     for arg in injected:
         try:
             fb.remove_arg(arg)
@@ -526,14 +594,15 @@ def wraps(func, injected=None, expected=None, **kw):
     else:
         fb.body = 'return _call(%s)' % fb.get_invocation_str()
 
-    def wrapper_wrapper(wrapper_func):
-        execdict = dict(_call=wrapper_func, _func=func)
-        fully_wrapped = fb.get_func(execdict, with_dict=update_dict)
+    execdict = dict(_call=wrapper, _func=func)
+    fully_wrapped = fb.get_func(execdict, with_dict=update_dict)
+
+    if hide_wrapped and hasattr(fully_wrapped, '__wrapped__'):
+        del fully_wrapped.__dict__['__wrapped__']
+    elif not hide_wrapped:
         fully_wrapped.__wrapped__ = func  # ref to the original function (#115)
 
-        return fully_wrapped
-
-    return wrapper_wrapper
+    return fully_wrapped
 
 
 def _parse_wraps_expected(expected):
@@ -766,11 +835,20 @@ class FunctionBuilder(object):
         if not callable(func):
             raise TypeError('expected callable object, not %r' % (func,))
 
-        kwargs = {'name': func.__name__,
-                  'doc': func.__doc__,
-                  'module': getattr(func, '__module__', None),  # e.g., method_descriptor
-                  'annotations': getattr(func, "__annotations__", {}),
-                  'dict': getattr(func, '__dict__', {})}
+        if isinstance(func, functools.partial):
+            if _IS_PY2:
+                raise ValueError('Cannot build FunctionBuilder instances from partials in python 2.')
+            kwargs = {'name': func.func.__name__,
+                      'doc': func.func.__doc__,
+                      'module': getattr(func.func, '__module__', None),  # e.g., method_descriptor
+                      'annotations': getattr(func.func, "__annotations__", {}),
+                      'dict': getattr(func.func, '__dict__', {})}
+        else:
+            kwargs = {'name': func.__name__,
+                      'doc': func.__doc__,
+                      'module': getattr(func, '__module__', None),  # e.g., method_descriptor
+                      'annotations': getattr(func, "__annotations__", {}),
+                      'dict': getattr(func, '__dict__', {})}
 
         kwargs.update(cls._argspec_to_dict(func))
 

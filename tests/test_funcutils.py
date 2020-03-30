@@ -34,6 +34,15 @@ def test_partials():
     assert g.cached_partial_greet() == 'Hello...'
     assert CachedInstancePartial(g.greet, excitement='s')() == 'Hellos'
 
+    g.native_greet = 'native reassigned'
+    assert g.native_greet == 'native reassigned'
+
+    g.partial_greet = 'partial reassigned'
+    assert g.partial_greet == 'partial reassigned'
+
+    g.cached_partial_greet = 'cached_partial reassigned'
+    assert g.cached_partial_greet == 'cached_partial reassigned'
+
 
 def test_copy_function():
     def callee():

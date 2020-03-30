@@ -1,10 +1,16 @@
 
 import inspect
+import functools
 from collections import defaultdict
 
 import pytest
 
-from boltons.funcutils import wraps, FunctionBuilder
+from boltons.funcutils import wraps, FunctionBuilder, update_wrapper
+import boltons.funcutils as funcutils
+
+
+def wrappable_varkw_func(a, b, **kw):
+    return a, b
 
 
 def pita_wrap(flag=False):
@@ -45,6 +51,14 @@ def test_wraps_py3():
 
     assert kwonly_non_roundtrippable_repr() == (
         True, 'kwonly_non_roundtrippable_repr', 2)
+
+
+@pytest.mark.parametrize('partial_kind', (functools, funcutils))
+def test_update_wrapper_partial(partial_kind):
+    wrapper = partial_kind.partial(wrappable_varkw_func, b=1)
+
+    fully_wrapped = update_wrapper(wrapper, wrappable_varkw_func)
+    assert fully_wrapped(1) == (1, 1)
 
 
 def test_remove_kwonly_arg():
