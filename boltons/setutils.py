@@ -143,6 +143,18 @@ class IndexedSet(MutableSet):
             real_index += d_stop - d_start
         return real_index
 
+    def _get_apparent_index(self, index):
+        if index < 0:
+            index += len(self)
+        if not self.dead_indices:
+            return index
+        apparent_index = index
+        for d_start, d_stop in self.dead_indices:
+            if apparent_index < d_start:
+                break
+            apparent_index -= d_stop + d_start
+        return apparent_index
+
     def _add_dead(self, start, stop=None):
         # TODO: does not handle when the new interval subsumes
         # multiple existing intervals
@@ -419,7 +431,7 @@ class IndexedSet(MutableSet):
     def index(self, val):
         "index(val) -> get the index of a value, raises if not present"
         try:
-            return self.item_index_map[val]
+            return self._get_apparent_index(self.item_index_map[val])
         except KeyError:
             cn = self.__class__.__name__
             raise ValueError('%r is not in %s' % (val, cn))

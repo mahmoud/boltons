@@ -157,3 +157,18 @@ def test_complement_set():
     with raises(TypeError): opsmash(cab, object())
     assert opsmash(ops, cab) == ops
     assert opsmash(cab, ops) == ops
+
+
+def test_iset_index_method():
+    original_list = list(range(8, 20)) + list(range(8))
+
+    indexed_list = IndexedSet()
+
+    for i in original_list:
+        indexed_list.add(i)
+
+    for i in original_list:
+        index = indexed_list.index(i)
+        # if we're removing them in order, the target value should always be at index 0
+        assert index == 0
+        indexed_list.pop(index)
