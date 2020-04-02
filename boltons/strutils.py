@@ -998,7 +998,7 @@ def int_list_complement(
            range. Value is inclusive. Defaults to ``0``.
         range_end (int): A positive integer from which the produced range is
            stopped. Value is exclusive. Defaults to the maximum value found in
-           the provided ``int_list``.
+           the provided ``range_string``.
         delim (char): Defaults to ','. Separates integers and contiguous ranges
            of integers.
         range_delim (char): Defaults to '-'. Indicates a contiguous range of
