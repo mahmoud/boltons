@@ -1020,13 +1020,13 @@ def int_list_complement(
     '4,9,12-14'
 
     >>> int_list_complement('1,3,5-8,10-11,15', range_end=15)
-    '2,4,9,12-14'
+    '0,2,4,9,12-14'
 
     >>> int_list_complement('1,3,5-8,10-11,15', range_end=14)
-    '2,4,9,12-12'
+    '0,2,4,9,12-13'
 
     >>> int_list_complement('1,3,5-8,10-11,15', range_end=13)
-    '2,4,9,12'
+    '0,2,4,9,12'
 
     >>> int_list_complement('1,3,5-8,10-11,15', range_end=20)
     '0,2,4,9,12-14,16-19'
