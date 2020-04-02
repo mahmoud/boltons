@@ -1008,7 +1008,7 @@ def int_list_complement(
     '0,2,4,9,12-14'
 
     >>> int_list_complement('1,3,5-8,10-11,15', range_start=0)
-    '2,4,9,12-14'
+    '0,2,4,9,12-14'
 
     >>> int_list_complement('1,3,5-8,10-11,15', range_start=1)
     '2,4,9,12-14'
@@ -1085,7 +1085,7 @@ def int_list_to_int_tuples(range_string, delim=',', range_delim='-'):
     ((1, 1), (3, 3), (5, 8), (10, 11), (15, 15))
 
     >>> int_list_to_int_tuples('1')
-    ((1, 1), )
+    ((1, 1),)
 
     >>> int_list_to_int_tuples('')
     ()
