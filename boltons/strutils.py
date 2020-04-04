@@ -42,7 +42,8 @@ __all__ = ['camel2under', 'under2camel', 'slugify', 'split_punct_ws',
            'asciify', 'is_ascii', 'is_uuid', 'html2text', 'strip_ansi',
            'bytes2human', 'find_hashtags', 'a10n', 'gzip_bytes', 'gunzip_bytes',
            'iter_splitlines', 'indent', 'escape_shell_args',
-           'args2cmd', 'args2sh', 'parse_int_list', 'format_int_list', 'unwrap_text']
+           'args2cmd', 'args2sh', 'parse_int_list', 'format_int_list',
+           'int_list_complement', 'int_list_to_int_tuples', 'unwrap_text']
 
 
 _punct_ws_str = string.punctuation + string.whitespace
@@ -978,6 +979,129 @@ def format_int_list(int_list, delim=',', range_delim='-', delim_space=False):
         output_str = delim.join(output)
 
     return output_str
+
+
+def int_list_complement(
+        range_string, range_start=0, range_end=None,
+        delim=',', range_delim='-'):
+    """ Returns range string that is the complement of the one provided as
+    *range_string* parameter.
+
+    These range strings are of the kind produce by :func:`format_int_list`, and
+    parseable by :func:`parse_int_list`.
+
+    Args:
+        range_string (str): String of comma separated positive integers or
+           ranges (e.g. '1,2,4-6,8'). Typical of a custom page range string
+           used in printer dialogs.
+        range_start (int): A positive integer from which to start the resulting
+           range. Value is inclusive. Defaults to ``0``.
+        range_end (int): A positive integer from which the produced range is
+           stopped. Value is exclusive. Defaults to the maximum value found in
+           the provided ``range_string``.
+        delim (char): Defaults to ','. Separates integers and contiguous ranges
+           of integers.
+        range_delim (char): Defaults to '-'. Indicates a contiguous range of
+           integers.
+
+    >>> int_list_complement('1,3,5-8,10-11,15')
+    '0,2,4,9,12-14'
+
+    >>> int_list_complement('1,3,5-8,10-11,15', range_start=0)
+    '0,2,4,9,12-14'
+
+    >>> int_list_complement('1,3,5-8,10-11,15', range_start=1)
+    '2,4,9,12-14'
+
+    >>> int_list_complement('1,3,5-8,10-11,15', range_start=2)
+    '2,4,9,12-14'
+
+    >>> int_list_complement('1,3,5-8,10-11,15', range_start=3)
+    '4,9,12-14'
+
+    >>> int_list_complement('1,3,5-8,10-11,15', range_end=15)
+    '0,2,4,9,12-14'
+
+    >>> int_list_complement('1,3,5-8,10-11,15', range_end=14)
+    '0,2,4,9,12-13'
+
+    >>> int_list_complement('1,3,5-8,10-11,15', range_end=13)
+    '0,2,4,9,12'
+
+    >>> int_list_complement('1,3,5-8,10-11,15', range_end=20)
+    '0,2,4,9,12-14,16-19'
+
+    >>> int_list_complement('1,3,5-8,10-11,15', range_end=0)
+    ''
+
+    >>> int_list_complement('1,3,5-8,10-11,15', range_start=-1)
+    '0,2,4,9,12-14'
+
+    >>> int_list_complement('1,3,5-8,10-11,15', range_end=-1)
+    ''
+
+    >>> int_list_complement('1,3,5-8', range_start=1, range_end=1)
+    ''
+
+    >>> int_list_complement('1,3,5-8', range_start=2, range_end=2)
+    ''
+
+    >>> int_list_complement('1,3,5-8', range_start=2, range_end=3)
+    '2'
+
+    >>> int_list_complement('1,3,5-8', range_start=-10, range_end=-5)
+    ''
+
+    >>> int_list_complement('1,3,5-8', range_start=20, range_end=10)
+    ''
+
+    >>> int_list_complement('')
+    ''
+    """
+    int_list = set(parse_int_list(range_string, delim, range_delim))
+    if range_end is None:
+        if int_list:
+            range_end = max(int_list) + 1
+        else:
+            range_end = range_start
+    complement_values = set(
+        range(range_end)) - int_list - set(range(range_start))
+    return format_int_list(complement_values, delim, range_delim)
+
+
+def int_list_to_int_tuples(range_string, delim=',', range_delim='-'):
+    """ Transform a string of ranges (*range_string*) into a tuple of tuples.
+
+    Args:
+        range_string (str): String of comma separated positive integers or
+           ranges (e.g. '1,2,4-6,8'). Typical of a custom page range string
+           used in printer dialogs.
+        delim (char): Defaults to ','. Separates integers and contiguous ranges
+           of integers.
+        range_delim (char): Defaults to '-'. Indicates a contiguous range of
+           integers.
+
+    >>> int_list_to_int_tuples('1,3,5-8,10-11,15')
+    ((1, 1), (3, 3), (5, 8), (10, 11), (15, 15))
+
+    >>> int_list_to_int_tuples('1')
+    ((1, 1),)
+
+    >>> int_list_to_int_tuples('')
+    ()
+    """
+    int_tuples = []
+    # Normalize the range string to our internal format for processing.
+    range_string = format_int_list(
+        parse_int_list(range_string, delim, range_delim))
+    if range_string:
+        for bounds in range_string.split(','):
+            if '-' in bounds:
+                start, end = bounds.split('-')
+            else:
+                start, end = bounds, bounds
+            int_tuples.append((int(start), int(end)))
+    return tuple(int_tuples)
 
 
 class MultiReplace(object):
