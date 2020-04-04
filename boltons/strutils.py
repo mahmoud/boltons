@@ -981,7 +981,7 @@ def format_int_list(int_list, delim=',', range_delim='-', delim_space=False):
     return output_str
 
 
-def int_list_complement(
+def complement_int_list(
         range_string, range_start=0, range_end=None,
         delim=',', range_delim='-'):
     """ Returns range string that is the complement of the one provided as
@@ -1004,58 +1004,58 @@ def int_list_complement(
         range_delim (char): Defaults to '-'. Indicates a contiguous range of
            integers.
 
-    >>> int_list_complement('1,3,5-8,10-11,15')
+    >>> complement_int_list('1,3,5-8,10-11,15')
     '0,2,4,9,12-14'
 
-    >>> int_list_complement('1,3,5-8,10-11,15', range_start=0)
+    >>> complement_int_list('1,3,5-8,10-11,15', range_start=0)
     '0,2,4,9,12-14'
 
-    >>> int_list_complement('1,3,5-8,10-11,15', range_start=1)
+    >>> complement_int_list('1,3,5-8,10-11,15', range_start=1)
     '2,4,9,12-14'
 
-    >>> int_list_complement('1,3,5-8,10-11,15', range_start=2)
+    >>> complement_int_list('1,3,5-8,10-11,15', range_start=2)
     '2,4,9,12-14'
 
-    >>> int_list_complement('1,3,5-8,10-11,15', range_start=3)
+    >>> complement_int_list('1,3,5-8,10-11,15', range_start=3)
     '4,9,12-14'
 
-    >>> int_list_complement('1,3,5-8,10-11,15', range_end=15)
+    >>> complement_int_list('1,3,5-8,10-11,15', range_end=15)
     '0,2,4,9,12-14'
 
-    >>> int_list_complement('1,3,5-8,10-11,15', range_end=14)
+    >>> complement_int_list('1,3,5-8,10-11,15', range_end=14)
     '0,2,4,9,12-13'
 
-    >>> int_list_complement('1,3,5-8,10-11,15', range_end=13)
+    >>> complement_int_list('1,3,5-8,10-11,15', range_end=13)
     '0,2,4,9,12'
 
-    >>> int_list_complement('1,3,5-8,10-11,15', range_end=20)
+    >>> complement_int_list('1,3,5-8,10-11,15', range_end=20)
     '0,2,4,9,12-14,16-19'
 
-    >>> int_list_complement('1,3,5-8,10-11,15', range_end=0)
+    >>> complement_int_list('1,3,5-8,10-11,15', range_end=0)
     ''
 
-    >>> int_list_complement('1,3,5-8,10-11,15', range_start=-1)
+    >>> complement_int_list('1,3,5-8,10-11,15', range_start=-1)
     '0,2,4,9,12-14'
 
-    >>> int_list_complement('1,3,5-8,10-11,15', range_end=-1)
+    >>> complement_int_list('1,3,5-8,10-11,15', range_end=-1)
     ''
 
-    >>> int_list_complement('1,3,5-8', range_start=1, range_end=1)
+    >>> complement_int_list('1,3,5-8', range_start=1, range_end=1)
     ''
 
-    >>> int_list_complement('1,3,5-8', range_start=2, range_end=2)
+    >>> complement_int_list('1,3,5-8', range_start=2, range_end=2)
     ''
 
-    >>> int_list_complement('1,3,5-8', range_start=2, range_end=3)
+    >>> complement_int_list('1,3,5-8', range_start=2, range_end=3)
     '2'
 
-    >>> int_list_complement('1,3,5-8', range_start=-10, range_end=-5)
+    >>> complement_int_list('1,3,5-8', range_start=-10, range_end=-5)
     ''
 
-    >>> int_list_complement('1,3,5-8', range_start=20, range_end=10)
+    >>> complement_int_list('1,3,5-8', range_start=20, range_end=10)
     ''
 
-    >>> int_list_complement('')
+    >>> complement_int_list('')
     ''
     """
     int_list = set(parse_int_list(range_string, delim, range_delim))
@@ -1069,7 +1069,7 @@ def int_list_complement(
     return format_int_list(complement_values, delim, range_delim)
 
 
-def int_list_to_int_tuples(range_string, delim=',', range_delim='-'):
+def int_ranges_from_int_list(range_string, delim=',', range_delim='-'):
     """ Transform a string of ranges (*range_string*) into a tuple of tuples.
 
     Args:
@@ -1081,13 +1081,13 @@ def int_list_to_int_tuples(range_string, delim=',', range_delim='-'):
         range_delim (char): Defaults to '-'. Indicates a contiguous range of
            integers.
 
-    >>> int_list_to_int_tuples('1,3,5-8,10-11,15')
+    >>> int_ranges_from_int_list('1,3,5-8,10-11,15')
     ((1, 1), (3, 3), (5, 8), (10, 11), (15, 15))
 
-    >>> int_list_to_int_tuples('1')
+    >>> int_ranges_from_int_list('1')
     ((1, 1),)
 
-    >>> int_list_to_int_tuples('')
+    >>> int_ranges_from_int_list('')
     ()
     """
     int_tuples = []
