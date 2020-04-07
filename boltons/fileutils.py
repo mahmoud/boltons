@@ -319,6 +319,8 @@ class AtomicSaver(object):
             from the previous file, or if the file did not exist, to
             respect the user's configured `umask`_, usually resulting
             in octal 0644 or 0664.
+        text_mode (bool): Whether to open the destination file in text
+            mode.
         part_file (str): Name of the temporary *part_file*. Defaults
             to *dest_path* + ``.part``. Note that this argument is
             just the filename, and not the full path of the part
@@ -358,7 +360,7 @@ class AtomicSaver(object):
         self.overwrite_part = kwargs.pop('overwrite_part', False)
         self.part_filename = kwargs.pop('part_file', None)
         self.rm_part_on_exc = kwargs.pop('rm_part_on_exc', True)
-        self.text_mode = kwargs.pop('text_mode', False)  # for windows
+        self.text_mode = kwargs.pop('text_mode', False)
         self.buffering = kwargs.pop('buffering', -1)
         if kwargs:
             raise TypeError('unexpected kwargs: %r' % (kwargs.keys(),))
