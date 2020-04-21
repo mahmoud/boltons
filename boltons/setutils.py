@@ -305,8 +305,12 @@ class IndexedSet(MutableSet):
 
     __or__  = __ror__  = union
     __and__ = __rand__ = intersection
-    __sub__ = __rsub__ = difference
+    __sub__ = difference
     __xor__ = __rxor__ = symmetric_difference
+
+    def __rsub__(self, other):
+        vals = [x for x in other if x not in self]
+        return type(other)(vals)
 
     # in-place set operations
     def update(self, *others):

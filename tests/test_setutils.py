@@ -28,6 +28,13 @@ def test_indexed_set_basic():
     assert x[2:4:-1] == IndexedSet([8, 7])
 
 
+def test_indexed_set_rsub():
+    "From #252"
+    assert (set('abc') - IndexedSet('bcd')) == set(['a'])
+    assert (IndexedSet('abc') - IndexedSet('bcd')) == IndexedSet(['a'])
+    assert (frozenset('abc') - IndexedSet('bcd')) == frozenset(['a'])
+
+
 def test_indexed_set_mutate():
     thou = IndexedSet(range(1000))
     assert (thou.pop(), thou.pop()) == (999, 998)
