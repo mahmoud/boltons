@@ -265,7 +265,7 @@ def strip_iter(iterable,strip_value=None):
     will match the value of the argument strip_value. Functionality is 
     analigous to that of the method str.strip. Returns a generator.
 
-    >>> list(rstrip_iter(['Fu', 'Foo', 'Bar', 'Bam', 'Fu'], 'Fu'))
+    >>> list(strip_iter(['Fu', 'Foo', 'Bar', 'Bam', 'Fu'], 'Fu'))
     ['Foo', 'Bar', 'Bam']
 
     """
