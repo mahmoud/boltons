@@ -18,6 +18,7 @@ import random
 import socket
 import hashlib
 import itertools
+import sys
 
 try:
     from collections.abc import Mapping, Sequence, Set, ItemsView, Iterable
@@ -200,10 +201,11 @@ def lstrip_iter(iterable, strip_value=None):
     """    
     iterator = iter(iterable)
     for i in iterator:
-        if i != strip_value: #Check for end of strip_value series
+        if i != strip_value:
             yield i
             break
-    yield from iterator
+    for i in iterator:
+        yield i
 
 
 def rstrip(iterable, strip_value=None):
@@ -230,18 +232,19 @@ def rstrip_iter(iterable, strip_value=None):
     iterator = iter(iterable)
     for i in iterator:
         if i == strip_value:
-            l = list() #List is used here as a cache
-            l.append(i)
+            cache = list()
+            cache.append(i)
             broken = False
             for i in iterator:
                 if i == strip_value:
-                    l.append(i)
+                    cache.append(i)
                 else:
                     broken = True
                     break
-            if not broken:
-                return #Return to caller here because the end of the iterator has been reached
-            yield from l
+            if not broken: # Return to caller here because the end of the
+                return     # iterator has been reached
+            for t in cache:
+                yield t
         yield i
 
 
