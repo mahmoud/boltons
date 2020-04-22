@@ -253,7 +253,7 @@ def strip(iterable, strip_value=None):
     will match the value of the argument strip_value. Functionality is 
     analigous to that of the method str.strip. Returns a list.
 
-    >>> rstrip(['Fu', 'Foo', 'Bar', 'Bam', 'Fu'], 'Fu')
+    >>> strip(['Fu', 'Foo', 'Bar', 'Bam', 'Fu'], 'Fu')
     ['Foo', 'Bar', 'Bam']
 
     """
