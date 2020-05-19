@@ -36,6 +36,10 @@ except NameError:  # basestring not defined in Python 3
     from html.parser import HTMLParser
     from html import entities as htmlentitydefs
 
+try:
+    import __builtin__ as builtins
+except ImportError:
+    import builtins
 
 __all__ = ['camel2under', 'under2camel', 'slugify', 'split_punct_ws',
            'unit_len', 'ordinalize', 'cardinalize', 'pluralize', 'singularize',
@@ -377,7 +381,9 @@ def strip_ansi(text):
     # Transform any ASCII-like content to unicode to allow regex to match, and
     # save input type for later.
     target_type = None
-    if isinstance(text, (bytes, bytearray)):
+    # Unicode type aliased to str is code-smell for Boltons in Python 3 env.
+    is_py3 = (unicode == builtins.str)
+    if is_py3 and isinstance(text, (bytes, bytearray)):
         target_type = type(text)
         text = text.decode('utf-8')
 
