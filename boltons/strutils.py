@@ -335,9 +335,22 @@ def a10n(string):
     return '%s%s%s' % (string[0], len(string[1:-1]), string[-1])
 
 
-ANSI_ESCAPE_BEGIN = '\x1b['
-ANSI_TERMINATORS = ('H', 'f', 'A', 'B', 'C', 'D', 'R', 's', 'u', 'J',
-                    'K', 'h', 'l', 'p', 'm')
+# Based on https://en.wikipedia.org/wiki/ANSI_escape_code#Escape_sequences
+ANSI_SEQUENCES = re.compile(r'''
+    \x1B            # Sequence starts with ESC, i.e. hex 0x1B
+    (?:
+        [@-Z\\-_]   # Second byte:
+                    #   range 0x40–0x5F but CSI, ASCII @A–Z\]^_
+    |
+        \[          # CSI sequences, starting with [
+        [0-?]*      # Parameter bytes:
+                    #   range 0x30–0x3F, ASCII 0–9:;<=>?
+        [ -/]*      # Intermediate bytes:
+                    #   range 0x20–0x2F, ASCII space and !"#$%&'()*+,-./
+        [@-~]       # Final byte
+                    #   range 0x40–0x7E, ASCII @A–Z[\]^_`a–z{|}~
+    )
+''', re.VERBOSE)
 
 
 def strip_ansi(text):
@@ -346,32 +359,26 @@ def strip_ansi(text):
     color codes and the like.
 
     >>> strip_ansi('\x1b[0m\x1b[1;36mart\x1b[46;34m\xdc')
-    'art'
+    'artÜ'
+    >>> strip_ansi('╒══════╕\n│ \x1b[1mCell\x1b[0m │\n╘══════╛')
+    ('╒══════╕\n'
+     '│ Cell │\n'
+     '╘══════╛')
+    >>> strip_ansi('ls\r\n\x1B[00m\x1b[01;31mfile.zip\x1b[00m\r\n\x1b[01;31m')
+    'ls\r\nfile.zip\r\n'
+    >>> strip_ansi('\t\u001b[0;35mIP\u001b[0m\t\u001b[0;36m192.1.0.2\u001b[0m')
+    '\tIP\t192.1.0.2'
 
-    The test above is an excerpt from ANSI art on
-    `sixteencolors.net`_. This function does not interpret or render
-    ANSI art, but you can do so with `ansi2img`_ or `escapes.js`_.
+    There's a lot of ANSI art available for testing on `sixteencolors.net`_.
+    This function does not interpret or render ANSI art, but you can do so with
+    `ansi2img`_ or `escapes.js`_.
 
     .. _sixteencolors.net: http://sixteencolors.net
     .. _ansi2img: http://www.bedroomlan.org/projects/ansi2img
     .. _escapes.js: https://github.com/atdt/escapes.js
     """
     # TODO: move to cliutils.py
-    nansi, keep, i, text_len = [], True, 0, len(text)
-    while i < text_len:
-        if not keep and text[i] in ANSI_TERMINATORS:
-            keep = True
-        elif keep:
-            keep_end_i = text.find(ANSI_ESCAPE_BEGIN, i)
-            if keep_end_i < 0:
-                break
-            else:
-                nansi.append(text[i:keep_end_i])
-                i, keep = keep_end_i, False
-        i += 1
-    if not nansi:
-        return text
-    return type(text)().join(nansi)  # attempted unicode + str support
+    return ANSI_SEQUENCES.sub('', text)
 
 
 def asciify(text, ignore=False):
