@@ -360,12 +360,6 @@ def strip_ansi(text):
 
     >>> strip_ansi('\x1b[0m\x1b[1;36mart\x1b[46;34m\xdc')
     'artÜ'
-    >>> strip_ansi('╒══════╕\n│ \x1b[1mCell\x1b[0m │\n╘══════╛')
-    '╒══════╕\n│ Cell │\n╘══════╛'
-    >>> strip_ansi('ls\r\n\x1B[00m\x1b[01;31mfile.zip\x1b[00m\r\n\x1b[01;31m')
-    'ls\r\nfile.zip\r\n'
-    >>> strip_ansi('\t\u001b[0;35mIP\u001b[0m\t\u001b[0;36m192.1.0.2\u001b[0m')
-    '\tIP\t192.1.0.2'
 
     There's a lot of ANSI art available for testing on `sixteencolors.net`_.
     This function does not interpret or render ANSI art, but you can do so with
