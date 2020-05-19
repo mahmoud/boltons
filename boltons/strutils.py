@@ -361,6 +361,9 @@ def strip_ansi(text):
     >>> strip_ansi('\x1b[0m\x1b[1;36mart\x1b[46;34m')
     'art'
 
+    Supports unicode, str, bytes and bytearray content as input. Returns the
+    same type as the input.
+
     There's a lot of ANSI art available for testing on `sixteencolors.net`_.
     This function does not interpret or render ANSI art, but you can do so with
     `ansi2img`_ or `escapes.js`_.
@@ -370,7 +373,18 @@ def strip_ansi(text):
     .. _escapes.js: https://github.com/atdt/escapes.js
     """
     # TODO: move to cliutils.py
-    return ANSI_SEQUENCES.sub('', text)
+
+    target_type = None
+    if isinstance(text, (bytes, bytearray)):
+        target_type = type(text)
+
+    cleaned = ANSI_SEQUENCES.sub('', text)
+
+    # Transform back the result to the same bytearray type provided by the user.
+    if target_type != type(cleaned):
+        cleaned = target_type(cleaned)
+
+    return cleaned
 
 
 def asciify(text, ignore=False):
