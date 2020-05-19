@@ -340,8 +340,8 @@ ANSI_SEQUENCES = re.compile(r'''
     \x1B            # Sequence starts with ESC, i.e. hex 0x1B
     (?:
         [@-Z\\-_]   # Second byte:
-                    #   range 0x40–0x5F but CSI, ASCII @A–Z\]^_
-    |
+                    #   all 0x40–0x5F range but CSI char, i.e ASCII @A–Z\]^_
+    |               # Or
         \[          # CSI sequences, starting with [
         [0-?]*      # Parameter bytes:
                     #   range 0x30–0x3F, ASCII 0–9:;<=>?
