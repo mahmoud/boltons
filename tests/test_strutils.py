@@ -9,16 +9,16 @@ from boltons import strutils
 
 def test_strip_ansi():
     assert strutils.strip_ansi(
-        '╒══════╕\n│ \x1b[1mCell\x1b[0m │\n╘══════╛') == (
-            '╒══════╕\n'
-            '│ Cell │\n'
-            '╘══════╛')
+        u'╒══════╕\n│ \x1b[1mCell\x1b[0m │\n╘══════╛') == (
+            u'╒══════╕\n'
+            u'│ Cell │\n'
+            u'╘══════╛')
     assert strutils.strip_ansi(
-        'ls\r\n\x1B[00m\x1b[01;31mfile.zip\x1b[00m\r\n\x1b[01;31m') == \
-        'ls\r\nfile.zip\r\n'
+        u'ls\r\n\x1B[00m\x1b[01;31mfile.zip\x1b[00m\r\n\x1b[01;31m') == \
+        u'ls\r\nfile.zip\r\n'
     assert strutils.strip_ansi(
-        '\t\u001b[0;35mIP\u001b[0m\t\u001b[0;36m192.1.0.2\u001b[0m') == \
-        '\tIP\t192.1.0.2'
+        u'\t\u001b[0;35mIP\u001b[0m\t\u001b[0;36m192.1.0.2\u001b[0m') == \
+        u'\tIP\t192.1.0.2'
 
 
 def test_asciify():
