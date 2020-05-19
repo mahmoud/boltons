@@ -378,14 +378,14 @@ def strip_ansi(text):
     # save input type for later.
     target_type = None
     if isinstance(text, (bytes, bytearray)):
-        text = text.decode('utf-8')
         target_type = type(text)
+        text = text.decode('utf-8')
 
     cleaned = ANSI_SEQUENCES.sub('', text)
 
     # Transform back the result to the same bytearray type provided by the user.
     if target_type and target_type != type(cleaned):
-        cleaned = target_type(cleaned)
+        cleaned = target_type(cleaned, 'utf-8')
 
     return cleaned
 
