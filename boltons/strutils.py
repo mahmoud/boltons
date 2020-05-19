@@ -381,7 +381,7 @@ def strip_ansi(text):
     cleaned = ANSI_SEQUENCES.sub('', text)
 
     # Transform back the result to the same bytearray type provided by the user.
-    if target_type != type(cleaned):
+    if target_type and target_type != type(cleaned):
         cleaned = target_type(cleaned)
 
     return cleaned
