@@ -358,8 +358,8 @@ def strip_ansi(text):
     time when a log or redirected output accidentally captures console
     color codes and the like.
 
-    >>> strip_ansi('\x1b[0m\x1b[1;36mart\x1b[46;34m\xdc')
-    'artÜ'
+    >>> strip_ansi('\x1b[0m\x1b[1;36mart\x1b[46;34m')
+    'art'
 
     There's a lot of ANSI art available for testing on `sixteencolors.net`_.
     This function does not interpret or render ANSI art, but you can do so with

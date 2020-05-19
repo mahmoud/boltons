@@ -8,6 +8,7 @@ from boltons import strutils
 
 
 def test_strip_ansi():
+    assert strutils.strip_ansi('\x1b[0m\x1b[1;36mart\x1b[46;34m\xdc') == 'artÜ'
     assert strutils.strip_ansi(
         u'╒══════╕\n│ \x1b[1mCell\x1b[0m │\n╘══════╛') == (
             u'╒══════╕\n'
@@ -19,6 +20,10 @@ def test_strip_ansi():
     assert strutils.strip_ansi(
         u'\t\u001b[0;35mIP\u001b[0m\t\u001b[0;36m192.1.0.2\u001b[0m') == \
         u'\tIP\t192.1.0.2'
+    assert strutils.strip_ansi(u'(╯°□°)╯︵ \x1b[1m┻━┻\x1b[0m') == (
+        u'(╯°□°)╯︵ ┻━┻')
+    assert strutils.strip_ansi('(╯°□°)╯︵ \x1b[1m┻━┻\x1b[0m') == (
+        '(╯°□°)╯︵ ┻━┻')
 
 
 def test_asciify():
