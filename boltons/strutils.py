@@ -374,8 +374,11 @@ def strip_ansi(text):
     """
     # TODO: move to cliutils.py
 
+    # Transform any ASCII-like content to unicode to allow regex to match, and
+    # save input type for later.
     target_type = None
     if isinstance(text, (bytes, bytearray)):
+        text = text.decode('utf-8')
         target_type = type(text)
 
     cleaned = ANSI_SEQUENCES.sub('', text)
