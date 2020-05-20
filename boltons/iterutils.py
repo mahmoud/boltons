@@ -18,7 +18,6 @@ import random
 import socket
 import hashlib
 import itertools
-import sys
 
 try:
     from collections.abc import Mapping, Sequence, Set, ItemsView, Iterable
