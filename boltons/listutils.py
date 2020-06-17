@@ -199,7 +199,7 @@ class BarrelList(list):
         return cls(it)
 
     def __iter__(self):
-        return chain(*self.lists)
+        return chain.from_iterable(self.lists)
 
     def __reversed__(self):
         return chain.from_iterable(reversed(l) for l in reversed(self.lists))
