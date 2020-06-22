@@ -16,14 +16,6 @@ These are generators and convenient :class:`list`-producing
 counterparts comprising several common patterns of iteration not
 present in the standard library.
 
-.. autofunction:: split
-.. autofunction:: split_iter
-.. autofunction:: strip
-.. autofunction:: strip_iter
-.. autofunction:: lstrip
-.. autofunction:: lstrip_iter
-.. autofunction:: rstrip
-.. autofunction:: rstrip_iter
 .. autofunction:: chunked
 .. autofunction:: chunked_iter
 .. autofunction:: pairwise
@@ -32,6 +24,21 @@ present in the standard library.
 .. autofunction:: windowed_iter
 .. autofunction:: unique
 .. autofunction:: unique_iter
+
+Stripping and splitting
+-----------------------
+
+A couple of :class:`str`-inspired mechanics that have come in handy on
+iterables, too:
+
+.. autofunction:: split
+.. autofunction:: split_iter
+.. autofunction:: strip
+.. autofunction:: strip_iter
+.. autofunction:: lstrip
+.. autofunction:: lstrip_iter
+.. autofunction:: rstrip
+.. autofunction:: rstrip_iter
 
 Nested
 ------
@@ -81,6 +88,7 @@ The built-in :func:`sorted()` is great, but what do you do when you want to
 partially override the sort order?
 
 .. autofunction:: soft_sorted
+.. autofunction:: untyped_sorted
 
 Reduction
 ---------
