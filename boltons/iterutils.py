@@ -177,6 +177,100 @@ def split_iter(src, sep=None, maxsplit=None):
     return
 
 
+def lstrip(iterable, strip_value=None):
+    """Strips values from the beginning of an iterable. Stripped items will
+    match the value of the argument strip_value. Functionality is analigous
+    to that of the method str.lstrip. Returns a list.
+
+    >>> lstrip(['Foo', 'Bar', 'Bam'], 'Foo')
+    ['Bar', 'Bam']
+
+    """
+    return list(lstrip_iter(iterable, strip_value))
+
+
+def lstrip_iter(iterable, strip_value=None):
+    """Strips values from the beginning of an iterable. Stripped items will
+    match the value of the argument strip_value. Functionality is analigous
+    to that of the method str.lstrip. Returns a generator.
+
+    >>> list(lstrip_iter(['Foo', 'Bar', 'Bam'], 'Foo'))
+    ['Bar', 'Bam']
+
+    """    
+    iterator = iter(iterable)
+    for i in iterator:
+        if i != strip_value:
+            yield i
+            break
+    for i in iterator:
+        yield i
+
+
+def rstrip(iterable, strip_value=None):
+    """Strips values from the end of an iterable. Stripped items will
+    match the value of the argument strip_value. Functionality is analigous
+    to that of the method str.rstrip. Returns a list.
+
+    >>> rstrip(['Foo', 'Bar', 'Bam'], 'Bam')
+    ['Foo', 'Bar']
+
+    """
+    return list(rstrip_iter(iterable,strip_value))
+
+
+def rstrip_iter(iterable, strip_value=None):
+    """Strips values from the end of an iterable. Stripped items will
+    match the value of the argument strip_value. Functionality is analigous
+    to that of the method str.rstrip. Returns a generator.
+
+    >>> list(rstrip_iter(['Foo', 'Bar', 'Bam'], 'Bam'))
+    ['Foo', 'Bar']
+
+    """
+    iterator = iter(iterable)
+    for i in iterator:
+        if i == strip_value:
+            cache = list()
+            cache.append(i)
+            broken = False
+            for i in iterator:
+                if i == strip_value:
+                    cache.append(i)
+                else:
+                    broken = True
+                    break
+            if not broken: # Return to caller here because the end of the
+                return     # iterator has been reached
+            for t in cache:
+                yield t
+        yield i
+
+
+def strip(iterable, strip_value=None):
+    """Strips values from the beginning and end of an iterable. Stripped items
+    will match the value of the argument strip_value. Functionality is 
+    analigous to that of the method str.strip. Returns a list.
+
+    >>> strip(['Fu', 'Foo', 'Bar', 'Bam', 'Fu'], 'Fu')
+    ['Foo', 'Bar', 'Bam']
+
+    """
+    return list(strip_iter(iterable,strip_value))
+
+
+def strip_iter(iterable,strip_value=None):
+    """Strips values from the beginning and end of an iterable. Stripped items
+    will match the value of the argument strip_value. Functionality is 
+    analigous to that of the method str.strip. Returns a generator.
+
+    >>> list(strip_iter(['Fu', 'Foo', 'Bar', 'Bam', 'Fu'], 'Fu'))
+    ['Foo', 'Bar', 'Bam']
+
+    """
+    return rstrip_iter(lstrip_iter(iterable,strip_value),strip_value)
+
+
 def chunked(src, size, count=None, **kw):
     """Returns a list of *count* chunks, each with *size* elements,
     generated from iterable *src*. If *src* is not evenly divisible by

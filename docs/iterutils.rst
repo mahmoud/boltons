@@ -18,6 +18,12 @@ present in the standard library.
 
 .. autofunction:: split
 .. autofunction:: split_iter
+.. autofunction:: strip
+.. autofunction:: strip_iter
+.. autofunction:: lstrip
+.. autofunction:: lstrip_iter
+.. autofunction:: rstrip
+.. autofunction:: rstrip_iter
 .. autofunction:: chunked
 .. autofunction:: chunked_iter
 .. autofunction:: pairwise

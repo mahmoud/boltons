@@ -509,3 +509,29 @@ def test_chunked_bytes():
     from boltons.iterutils import chunked
 
     assert chunked(b'123', 2) in (['12', '3'], [b'12', b'3'])
+
+
+def test_lstrip():
+    from boltons.iterutils import lstrip
+
+    assert lstrip([0,1,0,2,0,3,0],0) == [1,0,2,0,3,0]
+    assert lstrip([0,0,0,1,0,2,0,3,0],0) == [1,0,2,0,3,0]
+    assert lstrip([]) == []
+
+
+
+def test_rstrip():
+    from boltons.iterutils import rstrip
+
+    assert rstrip([0,1,0,2,0,3,0],0) == [0,1,0,2,0,3]
+    assert rstrip([0,1,0,2,0,3,0,0,0],0) == [0,1,0,2,0,3]
+    assert rstrip([]) == []
+
+
+def test_strip():
+    from boltons.iterutils import strip
+
+    assert strip([0,1,0,2,0,3,0],0) == [1,0,2,0,3]
+    assert strip([0,0,0,1,0,2,0,3,0,0,0],0) == [1,0,2,0,3]
+    assert strip([]) == []
+
