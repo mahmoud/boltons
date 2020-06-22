@@ -1307,6 +1307,47 @@ def soft_sorted(iterable, first=None, last=None, key=None, reverse=False):
         last = sorted([x for x in seq if key(x) in last], key=lambda x: last.index(key(x)))
     return first + other + last
 
+
+def untyped_sorted(iterable, key=None, reverse=False):
+    """A version of :func:`sorted` which will happily sort an iterable of
+    heterogenous types and return a new list, similar to legacy Python's
+    behavior.
+
+    >>> untyped_sorted(['abc', 2.0, 1, 2, 'def'])
+    [1, 2.0, 2, 'abc', 'def']
+
+    Note how mutually orderable types are sorted as expected, as in
+    the case of the integers and floats above.
+
+    .. note::
+
+       Results may vary across Python versions and builds, but the
+       function will produce a sorted list, except in the case of
+       explicitly unorderable objects.
+
+    """
+    class _Wrapper(object):
+        slots = ('obj',)
+
+        def __init__(self, obj):
+            self.obj = obj
+
+        def __lt__(self, other):
+            obj = key(self.obj) if key is not None else self.obj
+            other = key(other.obj) if key is not None else other.obj
+            try:
+                ret = obj < other
+            except TypeError:
+                ret = ((type(obj).__name__, id(type(obj)), obj)
+                        < (type(other).__name__, id(type(other)), other))
+            return ret
+
+    if key is not None and not callable(key):
+        raise TypeError('expected function or callable object for key, not: %r'
+                        % key)
+
+    return sorted(iterable, key=_Wrapper, reverse=reverse)
+
 """
 May actually be faster to do an isinstance check for a str path
 
