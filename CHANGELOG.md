@@ -1,8 +1,20 @@
 boltons Changelog
 =================
 
-Since February 20, 2013 there have been 42 releases and 1433 commits for
+Since February 20, 2013 there have been 43 releases and 1458 commits for
 an average of one 34-commit release about every 8 weeks.
+
+20.2.0
+------
+*June 21, 2020*
+
+* Added [iterutils.lstrip][iterutils.lstrip], [iterutils.rstrip][iterutils.rstrip], [iterutils.strip][iterutils.strip]
+* More robust and complete [strutils.strip_ansi][strutils.strip_ansi]
+* Add [iterutils.untyped_sorted][iterutils.untyped_sorted]
+* Fixes to [IndexedSet][IndexedSet] rsub and index methods
+* Expose text mode flag in [fileutils.AtomicSaver][fileutils.AtomicSaver]
+* Add [strutils.int_list_complement][strutils.int_list_complement] and [strutils.int_list_to_int_tuples][strutils.int_list_to_int_tuples] to the *int_list* suite.
+* Docs: intersphinx links finally point to Python 3 docs
 
 20.1.0
 ------
@@ -844,7 +856,7 @@ added in this release.
   * add a cheesy little splay list construct that can be used for splay-
     like manual reordering for eventual optimization
   * traceback utils, first draft
-  * add strip_ansi() (need to make a cliutils or something)
+  * add [strutils.strip_ansi][strutils.strip_ansi] (need to make a cliutils or something)
   * add ansi strip task
   * mess with list tuning
   * add ordinalize()
@@ -1015,8 +1027,12 @@ added in this release.
 [iterutils.remap]: http://boltons.readthedocs.org/en/latest/iterutils.html#boltons.iterutils.remap
 [iterutils.research]: http://boltons.readthedocs.org/en/latest/iterutils.html#boltons.iterutils.research
 [iterutils.soft_sorted]: http://boltons.readthedocs.org/en/latest/iterutils.html#boltons.iterutils.soft_sorted
+[iterutils.untyped_sorted]: http://boltons.readthedocs.org/en/latest/iterutils.html#boltons.iterutils.untyped_sorted
 [iterutils.split]: http://boltons.readthedocs.org/en/latest/iterutils.html#boltons.iterutils.split
 [iterutils.split_iter]: http://boltons.readthedocs.org/en/latest/iterutils.html#boltons.iterutils.split_iter
+[iterutils.strip]: http://boltons.readthedocs.org/en/latest/iterutils.html#boltons.iterutils.strip
+[iterutils.rstrip]: http://boltons.readthedocs.org/en/latest/iterutils.html#boltons.iterutils.rstrip
+[iterutils.lstrip]: http://boltons.readthedocs.org/en/latest/iterutils.html#boltons.iterutils.lstrip
 [iterutils.unique]: http://boltons.readthedocs.org/en/latest/iterutils.html#boltons.iterutils.unique
 [iterutils.windowed_iter]: http://boltons.readthedocs.org/en/latest/iterutils.html#boltons.iterutils.windowed_iter
 [iterutils.xfrange]: http://boltons.readthedocs.org/en/latest/iterutils.html#boltons.iterutils.xfrange
@@ -1060,7 +1076,10 @@ added in this release.
 [strutils.is_uuid]: http://boltons.readthedocs.org/en/latest/strutils.html#boltons.strutils.is_uuid
 [strutils.parse_int_list]: http://boltons.readthedocs.org/en/latest/strutils.html#boltons.strutils.parse_int_list
 [strutils.format_int_list]: http://boltons.readthedocs.org/en/latest/strutils.html#boltons.strutils.format_int_list
+[strutils.int_list_complement]: http://boltons.readthedocs.org/en/latest/strutils.html#boltons.strutils.int_list_complement
+[strutils.int_list_to_int_tuples]: http://boltons.readthedocs.org/en/latest/strutils.html#boltons.strutils.int_list_to_int_tuples
 [strutils.slugify]: http://boltons.readthedocs.org/en/latest/strutils.html#boltons.strutils.slugify
+[strutils.strip_ansi]: http://boltons.readthedocs.org/en/latest/strutils.html#boltons.strutils.strip_ansi
 [tableutils]: http://boltons.readthedocs.org/en/latest/tableutils.html
 [tableutils.Table]: http://boltons.readthedocs.org/en/latest/tableutils.html#boltons.tableutils.Table
 [tbutils]: http://boltons.readthedocs.org/en/latest/tbutils.html
