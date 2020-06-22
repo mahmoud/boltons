@@ -36,6 +36,10 @@ except NameError:  # basestring not defined in Python 3
     from html.parser import HTMLParser
     from html import entities as htmlentitydefs
 
+try:
+    import __builtin__ as builtins
+except ImportError:
+    import builtins
 
 __all__ = ['camel2under', 'under2camel', 'slugify', 'split_punct_ws',
            'unit_len', 'ordinalize', 'cardinalize', 'pluralize', 'singularize',
@@ -335,9 +339,22 @@ def a10n(string):
     return '%s%s%s' % (string[0], len(string[1:-1]), string[-1])
 
 
-ANSI_ESCAPE_BEGIN = '\x1b['
-ANSI_TERMINATORS = ('H', 'f', 'A', 'B', 'C', 'D', 'R', 's', 'u', 'J',
-                    'K', 'h', 'l', 'p', 'm')
+# Based on https://en.wikipedia.org/wiki/ANSI_escape_code#Escape_sequences
+ANSI_SEQUENCES = re.compile(r'''
+    \x1B            # Sequence starts with ESC, i.e. hex 0x1B
+    (?:
+        [@-Z\\-_]   # Second byte:
+                    #   all 0x40–0x5F range but CSI char, i.e ASCII @A–Z\]^_
+    |               # Or
+        \[          # CSI sequences, starting with [
+        [0-?]*      # Parameter bytes:
+                    #   range 0x30–0x3F, ASCII 0–9:;<=>?
+        [ -/]*      # Intermediate bytes:
+                    #   range 0x20–0x2F, ASCII space and !"#$%&'()*+,-./
+        [@-~]       # Final byte
+                    #   range 0x40–0x7E, ASCII @A–Z[\]^_`a–z{|}~
+    )
+''', re.VERBOSE)
 
 
 def strip_ansi(text):
@@ -345,33 +362,38 @@ def strip_ansi(text):
     time when a log or redirected output accidentally captures console
     color codes and the like.
 
-    >>> strip_ansi('\x1b[0m\x1b[1;36mart\x1b[46;34m\xdc')
+    >>> strip_ansi('\x1b[0m\x1b[1;36mart\x1b[46;34m')
     'art'
 
-    The test above is an excerpt from ANSI art on
-    `sixteencolors.net`_. This function does not interpret or render
-    ANSI art, but you can do so with `ansi2img`_ or `escapes.js`_.
+    Supports unicode, str, bytes and bytearray content as input. Returns the
+    same type as the input.
+
+    There's a lot of ANSI art available for testing on `sixteencolors.net`_.
+    This function does not interpret or render ANSI art, but you can do so with
+    `ansi2img`_ or `escapes.js`_.
 
     .. _sixteencolors.net: http://sixteencolors.net
     .. _ansi2img: http://www.bedroomlan.org/projects/ansi2img
     .. _escapes.js: https://github.com/atdt/escapes.js
     """
     # TODO: move to cliutils.py
-    nansi, keep, i, text_len = [], True, 0, len(text)
-    while i < text_len:
-        if not keep and text[i] in ANSI_TERMINATORS:
-            keep = True
-        elif keep:
-            keep_end_i = text.find(ANSI_ESCAPE_BEGIN, i)
-            if keep_end_i < 0:
-                break
-            else:
-                nansi.append(text[i:keep_end_i])
-                i, keep = keep_end_i, False
-        i += 1
-    if not nansi:
-        return text
-    return type(text)().join(nansi)  # attempted unicode + str support
+
+    # Transform any ASCII-like content to unicode to allow regex to match, and
+    # save input type for later.
+    target_type = None
+    # Unicode type aliased to str is code-smell for Boltons in Python 3 env.
+    is_py3 = (unicode == builtins.str)
+    if is_py3 and isinstance(text, (bytes, bytearray)):
+        target_type = type(text)
+        text = text.decode('utf-8')
+
+    cleaned = ANSI_SEQUENCES.sub('', text)
+
+    # Transform back the result to the same bytearray type provided by the user.
+    if target_type and target_type != type(cleaned):
+        cleaned = target_type(cleaned, 'utf-8')
+
+    return cleaned
 
 
 def asciify(text, ignore=False):
