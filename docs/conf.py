@@ -112,7 +112,7 @@ exclude_patterns = ['_build']
 pygments_style = 'sphinx'
 
 # Example configuration for intersphinx: refer to the Python standard library.
-intersphinx_mapping = {'python': ('https://docs.python.org/2.7', None)}
+intersphinx_mapping = {'python': ('https://docs.python.org/', None)}
 
 
 # -- Options for HTML output ----------------------------------------------
