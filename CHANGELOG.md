@@ -6,7 +6,7 @@ an average of one 34-commit release about every 8 weeks.
 
 20.2.0
 ------
-*June 21, 2020*
+*(June 21, 2020)*
 
 * Added [iterutils.lstrip][iterutils.lstrip], [iterutils.rstrip][iterutils.rstrip], [iterutils.strip][iterutils.strip]
 * More robust and complete [strutils.strip_ansi][strutils.strip_ansi]
@@ -18,7 +18,7 @@ an average of one 34-commit release about every 8 weeks.
 
 20.1.0
 ------
-*March 29, 2020*
+*(March 29, 2020)*
 
 * Add [funcutils.update_wrapper][funcutils.update_wrapper], used to
   make a wrapper function reflect various aspects of the wrapped
@@ -33,7 +33,7 @@ an average of one 34-commit release about every 8 weeks.
 
 20.0.0
 ------
-*January 8, 2020*
+*(January 8, 2020)*
 
 * New module [pathutils][pathutils]:
     * [pathutils.augpath][pathutils.augpath] augments a path by modifying its components
