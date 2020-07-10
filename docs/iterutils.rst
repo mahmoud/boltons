@@ -24,6 +24,7 @@ present in the standard library.
 .. autofunction:: windowed_iter
 .. autofunction:: unique
 .. autofunction:: unique_iter
+.. autofunction:: redundant
 
 Stripping and splitting
 -----------------------

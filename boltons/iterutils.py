@@ -197,7 +197,7 @@ def lstrip_iter(iterable, strip_value=None):
     >>> list(lstrip_iter(['Foo', 'Bar', 'Bam'], 'Foo'))
     ['Bar', 'Bam']
 
-    """    
+    """
     iterator = iter(iterable)
     for i in iterator:
         if i != strip_value:
@@ -249,7 +249,7 @@ def rstrip_iter(iterable, strip_value=None):
 
 def strip(iterable, strip_value=None):
     """Strips values from the beginning and end of an iterable. Stripped items
-    will match the value of the argument strip_value. Functionality is 
+    will match the value of the argument strip_value. Functionality is
     analigous to that of the method str.strip. Returns a list.
 
     >>> strip(['Fu', 'Foo', 'Bar', 'Bam', 'Fu'], 'Fu')
@@ -261,7 +261,7 @@ def strip(iterable, strip_value=None):
 
 def strip_iter(iterable,strip_value=None):
     """Strips values from the beginning and end of an iterable. Stripped items
-    will match the value of the argument strip_value. Functionality is 
+    will match the value of the argument strip_value. Functionality is
     analigous to that of the method str.strip. Returns a generator.
 
     >>> list(strip_iter(['Fu', 'Foo', 'Bar', 'Bam', 'Fu'], 'Fu'))
@@ -709,10 +709,10 @@ def unique_iter(src, key=None):
 def redundant(src, key=None, groups=False):
     """The complement of :func:`unique()`.
 
-    By default returns non-unique values as a list of the *first*
-    redundant value in *src*. Pass ``groups=True`` to get groups of
-    all values with redundancies, ordered by position of the first
-    redundant value. This is useful in conjunction with some
+    By default returns non-unique/duplicate values as a list of the
+    *first* redundant value in *src*. Pass ``groups=True`` to get
+    groups of all values with redundancies, ordered by position of the
+    first redundant value. This is useful in conjunction with some
     normalizing *key* function.
 
     >>> redundant([1, 2, 3, 4])
