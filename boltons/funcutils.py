@@ -298,7 +298,7 @@ class CachedInstancePartial(functools.partial):
 partial = CachedInstancePartial
 
 
-def format_invocation(name='', args=(), kwargs=None):
+def format_invocation(name='', args=(), kwargs=None, **kw):
     """Given a name, positional arguments, and keyword arguments, format
     a basic Python-style function call.
 
@@ -310,13 +310,16 @@ def format_invocation(name='', args=(), kwargs=None):
     kw_func(a=1, b=2)
 
     """
+    _repr = kw.pop('repr', repr)
+    if kw:
+        raise TypeError('unexpected keyword args: %r' % ', '.join(kw.keys()))
     kwargs = kwargs or {}
-    a_text = ', '.join([repr(a) for a in args])
+    a_text = ', '.join([_repr(a) for a in args])
     if isinstance(kwargs, dict):
         kwarg_items = [(k, kwargs[k]) for k in sorted(kwargs)]
     else:
         kwarg_items = kwargs
-    kw_text = ', '.join(['%s=%r' % (k, v) for k, v in kwarg_items])
+    kw_text = ', '.join(['%s=%s' % (k, _repr(v)) for k, v in kwarg_items])
 
     all_args_text = a_text
     if all_args_text and kw_text:
