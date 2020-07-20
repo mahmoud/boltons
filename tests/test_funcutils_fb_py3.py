@@ -201,3 +201,43 @@ def test_get_invocation_sig_str(
 
     assert fb.get_invocation_str() == invocation_str
     assert fb.get_sig_str() == sig_str
+
+
+def test_wraps_inner_kwarg_only():
+    """from https://github.com/mahmoud/boltons/issues/261
+
+    mh responds to the issue:
+
+    You'll notice that when kw-only args are involved the first time
+    (wraps(f)(g)) it works fine. The other way around, however,
+    wraps(g)(f) fails, because by the very nature of funcutils.wraps,
+    you're trying to give f the same signature as g. And f's signature
+    is not like g's. g supports positional b and f() does not.
+
+    If you want to make a wrapper which converts a keyword-only
+    argument to one that can be positional or keyword only, that'll
+    require a different approach for now.
+
+    A potential fix would be to pass all function arguments as
+    keywords. But doubt that's the right direction, because, while I
+    have yet to add positional argument only support, that'll
+    definitely throw a wrench into things.
+    """
+    from boltons.funcutils import wraps
+
+    def g(a: float, b=10):
+        return a * b
+
+    def f(a: int,  *, b=1):
+        return a * b
+
+    # all is well here...
+    assert f(3) == 3
+    assert g(3) == 30
+    assert wraps(f)(g)(3) == 3  # yay, g got the f default (not so with functools.wraps!)
+
+    # but this doesn't work
+    with pytest.raises(TypeError):
+        wraps(g)(f)(3)
+
+    return
