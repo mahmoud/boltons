@@ -15,8 +15,6 @@ import math
 import time
 import codecs
 import random
-import socket
-import hashlib
 import itertools
 
 try:
@@ -1270,10 +1268,13 @@ class GUIDerator(object):
         self.size = size
         if size < 20 or size > 36:
             raise ValueError('expected 20 < size <= 36')
+        import hashlib
+        self._sha1 = hashlib.sha1
         self.count = itertools.count()
         self.reseed()
 
     def reseed(self):
+        import socket
         self.pid = os.getpid()
         self.salt = '-'.join([str(self.pid),
                               socket.gethostname() or b'<nohostname>',
@@ -1292,14 +1293,14 @@ class GUIDerator(object):
             if os.getpid() != self.pid:
                 self.reseed()
             target_bytes = (self.salt + str(next(self.count))).encode('utf8')
-            hash_text = hashlib.sha1(target_bytes).hexdigest()[:self.size]
+            hash_text = self._sha1(target_bytes).hexdigest()[:self.size]
             return hash_text
     else:
         def __next__(self):
             if os.getpid() != self.pid:
                 self.reseed()
-            return hashlib.sha1(self.salt +
-                                str(next(self.count))).hexdigest()[:self.size]
+            return self._sha1(self.salt +
+                              str(next(self.count))).hexdigest()[:self.size]
 
     next = __next__
 
@@ -1334,13 +1335,13 @@ class SequentialGUIDerator(GUIDerator):
     if _IS_PY3:
         def reseed(self):
             super(SequentialGUIDerator, self).reseed()
-            start_str = hashlib.sha1(self.salt.encode('utf8')).hexdigest()
+            start_str = self._sha1(self.salt.encode('utf8')).hexdigest()
             self.start = int(start_str[:self.size], 16)
             self.start |= (1 << ((self.size * 4) - 2))
     else:
         def reseed(self):
             super(SequentialGUIDerator, self).reseed()
-            start_str = hashlib.sha1(self.salt).hexdigest()
+            start_str = self._sha1(self.salt).hexdigest()
             self.start = int(start_str[:self.size], 16)
             self.start |= (1 << ((self.size * 4) - 2))
 
