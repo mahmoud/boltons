@@ -515,6 +515,9 @@ def copy_tree(src, dst, symlinks=False, ignore=None):
     raise an exception if part of the tree already exists. It achieves
     this by using :func:`mkdir_p`.
 
+    As of Python 3.8, you may pass :func:`shutil.copytree` the
+    `dirs_exist_ok=True` flag to achieve the same effect.
+
     Args:
         src (str): Path of the source directory to copy.
         dst (str): Destination path. Existing directories accepted.
