@@ -1,8 +1,15 @@
 boltons Changelog
 =================
 
-Since February 20, 2013 there have been 43 releases and 1458 commits for
+Since February 20, 2013 there have been 44 releases and 1468 commits for
 an average of one 34-commit release about every 8 weeks.
+
+20.2.1
+------
+*(August 11, 2020)*
+
+* Improve import time of [iterutils][iterutils] by deferring hashlib/socket imports
+* Add custom `repr` parameter to [funcutils.format_invocation][funcutils.format_invocation]
 
 20.2.0
 ------
