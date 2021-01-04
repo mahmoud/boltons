@@ -272,10 +272,14 @@ class CachedInstancePartial(functools.partial):
         def _partialmethod(self):
             return partialmethod(self.func, *self.args, **self.keywords)
 
+    if sys.version_info >= (3, 6):
+        def __set_name__(self, owner, name):
+            self.__name__ = name
+
     def __get__(self, obj, obj_type):
         # These assignments could've been in __init__, but there was
         # no simple way to do it without breaking one of PyPy or Py3.
-        self.__name__ = None
+        self.__name__ = getattr(self, "__name__", None)
         self.__doc__ = self.func.__doc__
         self.__module__ = self.func.__module__
 
