@@ -273,7 +273,7 @@ class CachedInstancePartial(functools.partial):
             return partialmethod(self.func, *self.args, **self.keywords)
 
     if sys.version_info >= (3, 6):
-        def __set_name__(self, owner, name):
+        def __set_name__(self, obj_type, name):
             self.__name__ = name
 
     def __get__(self, obj, obj_type):
@@ -284,6 +284,8 @@ class CachedInstancePartial(functools.partial):
         self.__module__ = self.func.__module__
 
         name = self.__name__
+
+        # if you're on python 3.6+, name will never be `None` bc `__set_name__` sets it when descriptor getting assigned
         if name is None:
             for k, v in mro_items(obj_type):
                 if v is self:
@@ -371,7 +373,7 @@ def format_exp_repr(obj, pos_names, req_names=None, opt_names=None, opt_key=None
           ``None``-check.
 
     """
-    cn = obj.__class__.__name__
+    cn = type(obj).__name__
     req_names = req_names or []
     opt_names = opt_names or []
     uniq_names, all_names = set(), []
