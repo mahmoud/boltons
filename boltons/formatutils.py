@@ -286,7 +286,7 @@ class DeferredValue(object):
     """
     def __init__(self, func, cache_value=True):
         self.func = func
-        self.cache_value = True
+        self.cache_value = cache_value
         self._value = _UNSET
 
     def get_value(self):
