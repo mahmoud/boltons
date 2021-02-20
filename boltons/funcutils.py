@@ -1075,4 +1075,26 @@ except ImportError:
                 setattr(cls, opname, opfunc)
         return cls
 
+def noop(*args, **kwargs):
+    """
+    Simple function that should be used when no effect is desired.
+    An alternative to checking for  an optional function type parameter.
+
+    e.g.
+    def decorate(func, pre_func=None, post_func=None):
+        if pre_func:
+            pre_func()
+        func()
+        if post_func:
+            post_func()
+
+    vs
+
+    def decorate(func, pre_func=noop, post_func=noop):
+        pre_func()
+        func()
+        post_func()
+    """
+    return None
+
 # end funcutils.py
