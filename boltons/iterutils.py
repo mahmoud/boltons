@@ -575,11 +575,17 @@ def bucketize(src, key=bool, value_transform=None, key_filter=None):
     >>> bucketize(range(5), is_odd)
     {False: [0, 2, 4], True: [1, 3]}
 
-    *key* is :class:`bool` by default, but can either be a callable or a string
-    name of the attribute on which to bucketize objects.
+    *key* is :class:`bool` by default, but can either be a callable or a string or a list
+    if it is a string, it is the name of the attribute on which to bucketize objects.
 
     >>> bucketize([1+1j, 2+2j, 1, 2], key='real')
     {1.0: [(1+1j), 1], 2.0: [(2+2j), 2]}
+
+    if *key* is a list, it contains the buckets where to put each object
+
+    >>> bucketize([1,2,365,4,98],key=[0,1,2,0,2])
+    {0: [1, 4], 1: [2], 2: [365, 98]}
+
 
     Value lists are not deduplicated:
 
@@ -610,18 +616,25 @@ def bucketize(src, key=bool, value_transform=None, key_filter=None):
     """
     if not is_iterable(src):
         raise TypeError('expected an iterable')
+    elif isinstance(key, list):
+        src = zip(key, src)
 
     if isinstance(key, basestring):
         key_func = lambda x: getattr(x, key, x)
     elif callable(key):
         key_func = key
+    elif isinstance(key, list):
+        key_func = lambda x: x[0]
     else:
-        raise TypeError('expected key to be callable or a string')
+        raise TypeError('expected key to be callable or a string or a list')
 
     if value_transform is None:
         value_transform = lambda x: x
     if not callable(value_transform):
         raise TypeError('expected callable value transform function')
+    if isinstance(key, list):
+        f = value_transform
+        value_transform=lambda x: f(x[1])
 
     ret = {}
     for val in src:
