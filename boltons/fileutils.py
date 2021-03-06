@@ -223,8 +223,12 @@ else:
 
 
 def atomic_save(dest_path, **kwargs):
-    """A convenient interface to the :class:`AtomicSaver` type. See the
-    :class:`AtomicSaver` documentation for details.
+    """A convenient interface to the :class:`AtomicSaver` type. Example:
+    
+    >>> with atomic_save("/tmp/file.txt", text_mode=True) as fo:
+    ...     data = fo.read()
+    
+    See the :class:`AtomicSaver` documentation for details.
     """
     return AtomicSaver(dest_path, **kwargs)
 
