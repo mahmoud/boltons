@@ -324,7 +324,7 @@ class AtomicSaver(object):
             respect the user's configured `umask`_, usually resulting
             in octal 0644 or 0664.
         text_mode (bool): Whether to open the destination file in text
-            mode (i.e., ``'w'`` not ``'wb'``). Defaults to ``True``.
+            mode (i.e., ``'w'`` not ``'wb'``). Defaults to ``False`` (``wb``).
         part_file (str): Name of the temporary *part_file*. Defaults
             to *dest_path* + ``.part``. Note that this argument is
             just the filename, and not the full path of the part
