@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+import sys
 import pytest
 
 from boltons.dictutils import OMD, OneToOne, ManyToMany, FrozenDict, subdict, FrozenHashError
@@ -432,6 +433,15 @@ def test_frozendict():
     return
 
 
+@pytest.mark.skipif(sys.version_info < (3, 9), reason="requires python3.9 or higher")
+def test_frozendict_ior():
+    data = {'a': 'A', 'b': 'B'}
+    fd = FrozenDict(data)
+
+    with pytest.raises(TypeError, match=".*FrozenDicts are immutable.*"):
+        fd |= fd
+
+
 def test_frozendict_api():
     # all the read-only methods that are fine
     through_methods = ['__class__',
@@ -452,8 +462,10 @@ def test_frozendict_api():
                        '__lt__',
                        '__ne__',
                        '__new__',
+                       '__or__',
                        '__reduce__',
                        '__reversed__',
+                       '__ror__',
                        '__setattr__',
                        '__sizeof__',
                        '__str__',

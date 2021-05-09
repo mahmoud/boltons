@@ -5,6 +5,7 @@
 <a href="https://boltons.readthedocs.io/en/latest/"><img src="https://img.shields.io/badge/docs-latest-brightgreen.svg?style=flat"></a>
 <a href="https://pypi.python.org/pypi/boltons"><img src="https://img.shields.io/pypi/v/boltons.svg"></a>
 <a href="https://anaconda.org/conda-forge/boltons"><img src="https://img.shields.io/conda/vn/conda-forge/boltons.svg"></a>
+<a href="https://ports.macports.org/port/py-boltons/summary"><img src="https://img.shields.io/badge/macports-v20.2.1-blue?logo=Apple&logoColor=white"></a>
 <a href="https://pypi.python.org/pypi/boltons"><img src="https://img.shields.io/pypi/pyversions/boltons.svg"></a>
 <a href="http://calver.org"><img src="https://img.shields.io/badge/calver-YY.MINOR.MICRO-22bfda.svg"></a>
 
@@ -24,7 +25,7 @@ in the same spirit as — and yet conspicuously missing from —
 **[Full and extensive docs are available on Read The Docs.][rtd]** See
 what's new [by checking the CHANGELOG][changelog].
 
-Boltons is tested against Python 2.6, 2.7, 3.4, 3.5, 3.6, and 3.7, as well as CPython
+Boltons is tested against Python 2.6, 2.7, 3.4, 3.5, 3.6, 3.7, 3.8 and 3.9, as well as CPython
 _nightly_ and PyPy/PyPy3.
 
 [stdlib]: https://docs.python.org/2.7/library/index.html
@@ -56,6 +57,12 @@ Boltons can be added to a project in a few ways. There's the obvious one:
 ```bash
 pip install boltons
 ```
+On macOS, it can also be installed via [MacPorts](https://ports.macports.org/port/py-boltons/summary):
+
+```bash
+sudo port install py-boltons
+```
+
 
 Then, [thanks to PyPI][boltons_pypi], dozens of boltons are just an import away:
 

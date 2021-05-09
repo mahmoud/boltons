@@ -272,14 +272,20 @@ class CachedInstancePartial(functools.partial):
         def _partialmethod(self):
             return partialmethod(self.func, *self.args, **self.keywords)
 
+    if sys.version_info >= (3, 6):
+        def __set_name__(self, obj_type, name):
+            self.__name__ = name
+
     def __get__(self, obj, obj_type):
         # These assignments could've been in __init__, but there was
         # no simple way to do it without breaking one of PyPy or Py3.
-        self.__name__ = None
+        self.__name__ = getattr(self, "__name__", None)
         self.__doc__ = self.func.__doc__
         self.__module__ = self.func.__module__
 
         name = self.__name__
+
+        # if you're on python 3.6+, name will never be `None` bc `__set_name__` sets it when descriptor getting assigned
         if name is None:
             for k, v in mro_items(obj_type):
                 if v is self:
@@ -367,7 +373,7 @@ def format_exp_repr(obj, pos_names, req_names=None, opt_names=None, opt_key=None
           ``None``-check.
 
     """
-    cn = obj.__class__.__name__
+    cn = type(obj).__name__
     req_names = req_names or []
     opt_names = opt_names or []
     uniq_names, all_names = set(), []
@@ -1068,5 +1074,27 @@ except ImportError:
                 opfunc.__doc__ = getattr(int, opname).__doc__
                 setattr(cls, opname, opfunc)
         return cls
+
+def noop(*args, **kwargs):
+    """
+    Simple function that should be used when no effect is desired.
+    An alternative to checking for  an optional function type parameter.
+
+    e.g.
+    def decorate(func, pre_func=None, post_func=None):
+        if pre_func:
+            pre_func()
+        func()
+        if post_func:
+            post_func()
+
+    vs
+
+    def decorate(func, pre_func=noop, post_func=noop):
+        pre_func()
+        func()
+        post_func()
+    """
+    return None
 
 # end funcutils.py

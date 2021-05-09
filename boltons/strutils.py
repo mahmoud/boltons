@@ -47,7 +47,8 @@ __all__ = ['camel2under', 'under2camel', 'slugify', 'split_punct_ws',
            'bytes2human', 'find_hashtags', 'a10n', 'gzip_bytes', 'gunzip_bytes',
            'iter_splitlines', 'indent', 'escape_shell_args',
            'args2cmd', 'args2sh', 'parse_int_list', 'format_int_list',
-           'int_list_complement', 'int_list_to_int_tuples', 'unwrap_text']
+           'int_list_complement', 'int_list_to_int_tuples', 'MultiReplace',
+           'multi_replace', 'unwrap_text']
 
 
 _punct_ws_str = string.punctuation + string.whitespace
@@ -1235,7 +1236,7 @@ class MultiReplace(object):
 
 
 def multi_replace(text, sub_map, **kwargs):
-    """Shortcut function to invoke multi-replace in a single command."""
+    """Shortcut function to invoke MultiReplace in a single call."""
     m = MultiReplace(sub_map, **kwargs)
     return m.sub(text)
 

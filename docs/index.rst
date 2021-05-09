@@ -53,6 +53,10 @@ Boltons can be added to a project in a few ways. There's the obvious one::
 
   pip install boltons
 
+On macOS, it can also be installed via `MacPorts`_::
+
+  sudo port install py-boltons
+
 Then dozens of boltons are just an import away::
 
   from boltons.cacheutils import LRU
@@ -65,6 +69,8 @@ consider other integration options. See the :ref:`Integration
 details.
 
 Boltons is tested against Python 2.6-2.7, 3.4-3.7, and PyPy.
+
+.. _MacPorts: https://ports.macports.org/port/py-boltons/summary
 
 Third-party packages
 --------------------
