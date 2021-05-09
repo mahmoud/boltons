@@ -4,7 +4,8 @@ from boltons.funcutils import (copy_function,
                                total_ordering,
                                format_invocation,
                                InstancePartial,
-                               CachedInstancePartial)
+                               CachedInstancePartial,
+                               noop)
 
 
 class Greeter(object):
@@ -78,3 +79,8 @@ def test_format_invocation():
     assert format_invocation('f', ('a', 'b')) == "f('a', 'b')"
     assert format_invocation('g', (), {'x': 'y'})  == "g(x='y')"
     assert format_invocation('h', ('a', 'b'), {'x': 'y', 'z': 'zz'}) == "h('a', 'b', x='y', z='zz')"
+
+def test_noop():
+    assert noop() is None
+    assert noop(1, 2) is None
+    assert noop(a=1, b=2) is None
