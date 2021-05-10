@@ -60,7 +60,7 @@ def reverse_iter_lines(file_obj, blocksize=DEFAULT_BLOCKSIZE, preseek=True):
         cur_pos -= read_size
         file_obj.seek(cur_pos, os.SEEK_SET)
         cur = file_obj.read(read_size)
-        print('read', read_size, '=', repr(cur))
+        print('read', read_size, 'from', cur_pos, '=', repr(cur))
         buff = cur + buff
         print('buff:', repr(buff))
         lines = buff.splitlines()
