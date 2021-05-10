@@ -60,12 +60,12 @@ def reverse_iter_lines(file_obj, blocksize=DEFAULT_BLOCKSIZE, preseek=True):
         cur_pos -= read_size
         file_obj.seek(cur_pos, os.SEEK_SET)
         cur = file_obj.read(read_size)
-        # print(cur_pos, read_size, '=', repr(cur))
+        print('read', read_size, '=', repr(cur))
         buff = cur + buff
         print('buff:', repr(buff))
         lines = buff.splitlines()
         if len(lines) < 2 or lines[0] == '':
-            print('lines:', lines)
+            print('  lines:', lines)
             continue
         if buff[-1] == '\n':
             yield ''
