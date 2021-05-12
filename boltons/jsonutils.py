@@ -9,6 +9,7 @@ of working with `JSON Lines`_-formatted files.
 
 from __future__ import print_function
 
+import io
 import os
 import json
 
@@ -30,7 +31,7 @@ DEFAULT_BLOCKSIZE = 4096
 __all__ = ['JSONLIterator', 'reverse_iter_lines']
 
 
-def reverse_iter_lines(file_obj, blocksize=DEFAULT_BLOCKSIZE, preseek=True):
+def reverse_iter_lines(file_obj, blocksize=DEFAULT_BLOCKSIZE, preseek=True, encoding=None):
     """Returns an iterator over the lines from a file object, in
     reverse order, i.e., last line first, first line last. Uses the
     :meth:`file.seek` method of file objects, and is tested compatible with
@@ -39,7 +40,7 @@ def reverse_iter_lines(file_obj, blocksize=DEFAULT_BLOCKSIZE, preseek=True):
     Args:
         file_obj (file): An open file object. Note that ``reverse_iter_lines``
             mutably reads from the file and other functions should not mutably
-            interact with the file object.
+            interact with the file object after being passed.
         blocksize (int): The block size to pass to
           :meth:`file.read()`. Warning: keep this a fairly large
           multiple of 2, defaults to 4096.
@@ -51,10 +52,27 @@ def reverse_iter_lines(file_obj, blocksize=DEFAULT_BLOCKSIZE, preseek=True):
             generation.
 
     """
+    try:
+        encoding = encoding or file_obj.encoding
+    except AttributeError:
+        # BytesIO
+        encoding = None
+    else:
+        encoding = 'utf-8'
+
+    # need orig_obj to keep alive otherwise __del__ on the TextWrapper will close the file
+    orig_obj = file_obj
+    try:
+        file_obj = orig_obj.detach()
+    except (AttributeError, io.UnsupportedOperation):
+        pass
+
+    empty_bytes, newline_bytes, empty_text = b'', b'\n', u''
+
     if preseek:
         file_obj.seek(0, os.SEEK_END)
+    buff = empty_bytes
     cur_pos = file_obj.tell()
-    buff = ''
     while 0 < cur_pos:
         read_size = min(blocksize, cur_pos)
         cur_pos -= read_size
@@ -64,16 +82,17 @@ def reverse_iter_lines(file_obj, blocksize=DEFAULT_BLOCKSIZE, preseek=True):
         buff = cur + buff
         print('buff:', repr(buff))
         lines = buff.splitlines()
-        if len(lines) < 2 or lines[0] == '':
+
+        if len(lines) < 2 or lines[0] == empty_bytes:
             print('  lines:', lines)
             continue
-        if buff[-1] == '\n':
-            yield ''
+        if buff[-1:] == newline_bytes:
+            yield empty_text if encoding else empty_bytes
         for line in lines[:0:-1]:
-            yield line
+            yield line.decode(encoding) if encoding else line
         buff = lines[0]
     if buff:
-        yield buff
+        yield buff.decode(encoding) if encoding else buff
 
 
 def _reverse_iter_lines(file_obj, blocksize=DEFAULT_BLOCKSIZE, preseek=True):
