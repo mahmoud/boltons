@@ -78,13 +78,10 @@ def reverse_iter_lines(file_obj, blocksize=DEFAULT_BLOCKSIZE, preseek=True, enco
         cur_pos -= read_size
         file_obj.seek(cur_pos, os.SEEK_SET)
         cur = file_obj.read(read_size)
-        print('read', read_size, 'from', cur_pos, '=', repr(cur))
         buff = cur + buff
-        print('buff:', repr(buff))
         lines = buff.splitlines()
 
         if len(lines) < 2 or lines[0] == empty_bytes:
-            print('  lines:', lines)
             continue
         if buff[-1:] == newline_bytes:
             yield empty_text if encoding else empty_bytes
