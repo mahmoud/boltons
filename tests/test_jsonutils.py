@@ -22,7 +22,7 @@ def _test_reverse_iter_lines(filename, blocksize=DEFAULT_BLOCKSIZE):
     reference = fo.read()
     fo.seek(0, os.SEEK_SET)
     rev_lines = list(reverse_iter_lines(fo, blocksize))
-    assert b'\n'.join(rev_lines[::-1]) == reference
+    assert os.linesep.encode('ascii').join(rev_lines[::-1]) == reference
 
 
 
