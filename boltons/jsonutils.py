@@ -95,49 +95,6 @@ def reverse_iter_lines(file_obj, blocksize=DEFAULT_BLOCKSIZE, preseek=True, enco
         yield buff.decode(encoding) if encoding else buff
 
 
-def _reverse_iter_lines(file_obj, blocksize=DEFAULT_BLOCKSIZE, preseek=True):
-    """Returns an iterator over the lines from a file object, in
-    reverse order, i.e., last line first, first line last. Uses the
-    :meth:`file.seek` method of file objects, and is tested compatible with
-    :class:`file` objects, as well as :class:`StringIO.StringIO`.
-
-    Args:
-        file_obj (file): An open file object. Note that ``reverse_iter_lines``
-            mutably reads from the file and other functions should not mutably
-            interact with the file object.
-        blocksize (int): The block size to pass to :meth:`file.read()`
-        preseek (bool): Tells the function whether or not to automatically
-            seek to the end of the file. Defaults to ``True``.
-            ``preseek=False`` is useful in cases when the
-            file cursor is already in position, either at the end of
-            the file or in the middle for relative reverse line
-            generation.
-    """
-    if preseek:
-        file_obj.seek(0, os.SEEK_END)
-    cur_pos = file_obj.tell()
-    buff = ''
-    while 0 < cur_pos:
-        read_size = min(blocksize, cur_pos)
-        cur_pos -= read_size
-        file_obj.seek(cur_pos, os.SEEK_SET)
-        cur = file_obj.read(read_size)
-        print(cur_pos, read_size, '=', repr(cur))
-        lines = cur.splitlines()
-        if cur[-1] == '\n':
-            lines.append('')
-        if len(lines) == 1:
-            buff = lines[0] + buff
-            continue
-        last = lines.pop()
-        yield last + buff
-        for line in lines[:0:-1]:
-            yield line
-        buff = lines[0]
-    if buff:
-        # TODO: test this, does an empty buffer always mean don't yield?
-        yield buff
-
 
 """
 TODO: allow passthroughs for:
