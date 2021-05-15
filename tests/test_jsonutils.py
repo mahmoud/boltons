@@ -14,14 +14,24 @@ JSONL_DATA_PATH = CUR_PATH + '/jsonl_test_data.txt'
 def _test_reverse_iter_lines(filename, blocksize=DEFAULT_BLOCKSIZE):
     fo = open(filename)
     reference = fo.read()
-    fo.seek(0, os.SEEK_END)
+    fo.seek(0, os.SEEK_SET)
     rev_lines = list(reverse_iter_lines(fo, blocksize))
     assert '\n'.join(rev_lines[::-1]) == reference
 
 
+def _test_reverse_iter_lines_bytes(filename, blocksize=DEFAULT_BLOCKSIZE):
+    fo = open(filename, 'rb')
+    reference = fo.read()
+    fo.seek(0, os.SEEK_SET)
+    rev_lines = list(reverse_iter_lines(fo, blocksize))
+    assert os.linesep.encode('ascii').join(rev_lines[::-1]) == reference
+
+
+
 def test_reverse_iter_lines():
-    for blocksize in (1, 4, 11, 4096):
+    for blocksize in (2, 4, 16, 4096):
         _test_reverse_iter_lines(NEWLINES_DATA_PATH, blocksize)
+        _test_reverse_iter_lines_bytes(NEWLINES_DATA_PATH, blocksize)
 
 
 def test_jsonl_iterator():

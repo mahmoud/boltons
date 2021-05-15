@@ -9,68 +9,80 @@ of working with `JSON Lines`_-formatted files.
 
 from __future__ import print_function
 
+import io
 import os
 import json
 
 
 DEFAULT_BLOCKSIZE = 4096
 
-# reverse iter lines algorithm:
-#
-#  - if it ends in a newline, add an empty string to the line list
-#  - if there's one item, then prepend it to the buffer, continue
-#  - if there's more than one item, pop the last item and prepend it
-#    to the buffer, yielding it
-#  - yield all remaining items in reverse, except for the first
-#  - first item becomes the new buffer
-#
-#  - when the outer loop completes, yield the buffer
-
 
 __all__ = ['JSONLIterator', 'reverse_iter_lines']
 
 
-def reverse_iter_lines(file_obj, blocksize=DEFAULT_BLOCKSIZE, preseek=True):
+def reverse_iter_lines(file_obj, blocksize=DEFAULT_BLOCKSIZE, preseek=True, encoding=None):
     """Returns an iterator over the lines from a file object, in
     reverse order, i.e., last line first, first line last. Uses the
     :meth:`file.seek` method of file objects, and is tested compatible with
     :class:`file` objects, as well as :class:`StringIO.StringIO`.
 
     Args:
-        file_obj (file): An open file object. Note that ``reverse_iter_lines``
-            mutably reads from the file and other functions should not mutably
-            interact with the file object.
-        blocksize (int): The block size to pass to :meth:`file.read()`
+        file_obj (file): An open file object. Note that
+            ``reverse_iter_lines`` mutably reads from the file and
+            other functions should not mutably interact with the file
+            object after being passed. Files can be opened in bytes or
+            text mode.
+        blocksize (int): The block size to pass to
+          :meth:`file.read()`. Warning: keep this a fairly large
+          multiple of 2, defaults to 4096.
         preseek (bool): Tells the function whether or not to automatically
             seek to the end of the file. Defaults to ``True``.
             ``preseek=False`` is useful in cases when the
             file cursor is already in position, either at the end of
             the file or in the middle for relative reverse line
             generation.
+
     """
+    # This function is a bit of a pain because it attempts to be byte/text agnostic
+    try:
+        encoding = encoding or file_obj.encoding
+    except AttributeError:
+        # BytesIO
+        encoding = None
+    else:
+        encoding = 'utf-8'
+
+    # need orig_obj to keep alive otherwise __del__ on the TextWrapper will close the file
+    orig_obj = file_obj
+    try:
+        file_obj = orig_obj.detach()
+    except (AttributeError, io.UnsupportedOperation):
+        pass
+
+    empty_bytes, newline_bytes, empty_text = b'', b'\n', u''
+
     if preseek:
         file_obj.seek(0, os.SEEK_END)
+    buff = empty_bytes
     cur_pos = file_obj.tell()
-    buff = ''
     while 0 < cur_pos:
         read_size = min(blocksize, cur_pos)
         cur_pos -= read_size
         file_obj.seek(cur_pos, os.SEEK_SET)
         cur = file_obj.read(read_size)
-        lines = cur.splitlines()
-        if cur[-1] == '\n':
-            lines.append('')
-        if len(lines) == 1:
-            buff = lines[0] + buff
+        buff = cur + buff
+        lines = buff.splitlines()
+
+        if len(lines) < 2 or lines[0] == empty_bytes:
             continue
-        last = lines.pop()
-        yield last + buff
+        if buff[-1:] == newline_bytes:
+            yield empty_text if encoding else empty_bytes
         for line in lines[:0:-1]:
-            yield line
+            yield line.decode(encoding) if encoding else line
         buff = lines[0]
     if buff:
-        # TODO: test this, does an empty buffer always mean don't yield?
-        yield buff
+        yield buff.decode(encoding) if encoding else buff
+
 
 
 """
