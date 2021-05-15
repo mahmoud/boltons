@@ -16,17 +16,6 @@ import json
 
 DEFAULT_BLOCKSIZE = 4096
 
-# reverse iter lines algorithm:
-#
-#  - if it ends in a newline, add an empty string to the line list
-#  - if there's one item, then prepend it to the buffer, continue
-#  - if there's more than one item, pop the last item and prepend it
-#    to the buffer, yielding it
-#  - yield all remaining items in reverse, except for the first
-#  - first item becomes the new buffer
-#
-#  - when the outer loop completes, yield the buffer
-
 
 __all__ = ['JSONLIterator', 'reverse_iter_lines']
 
@@ -38,9 +27,11 @@ def reverse_iter_lines(file_obj, blocksize=DEFAULT_BLOCKSIZE, preseek=True, enco
     :class:`file` objects, as well as :class:`StringIO.StringIO`.
 
     Args:
-        file_obj (file): An open file object. Note that ``reverse_iter_lines``
-            mutably reads from the file and other functions should not mutably
-            interact with the file object after being passed.
+        file_obj (file): An open file object. Note that
+            ``reverse_iter_lines`` mutably reads from the file and
+            other functions should not mutably interact with the file
+            object after being passed. Files can be opened in bytes or
+            text mode.
         blocksize (int): The block size to pass to
           :meth:`file.read()`. Warning: keep this a fairly large
           multiple of 2, defaults to 4096.
@@ -52,6 +43,7 @@ def reverse_iter_lines(file_obj, blocksize=DEFAULT_BLOCKSIZE, preseek=True, enco
             generation.
 
     """
+    # This function is a bit of a pain because it attempts to be byte/text agnostic
     try:
         encoding = encoding or file_obj.encoding
     except AttributeError:
