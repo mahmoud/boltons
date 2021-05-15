@@ -19,7 +19,7 @@ jobs:
       matrix:
         include:
           - {name: Linux, python: '3.8', os: ubuntu-latest, tox: py38}
-          - {name: Windows, python: '3.7', os: windows-2016, tox: py37}
+          - {name: Windows, python: '3.7', os: windows-latest, tox: py38}
           - {name: Mac, python: '3.8', os: macos-latest, tox: py38}
           - {name: '3.7', python: '3.7', os: ubuntu-latest, tox: py37}
           - {name: '3.6', python: '3.6', os: ubuntu-latest, tox: py36}
