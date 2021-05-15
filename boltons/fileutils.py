@@ -224,10 +224,15 @@ else:
 
 def atomic_save(dest_path, **kwargs):
     """A convenient interface to the :class:`AtomicSaver` type. Example:
-    
-    >>> with atomic_save("/tmp/file.txt", text_mode=True) as fo:
-    ...     data = fo.read()
-    
+
+    >>> try:
+    ...     with atomic_save("file.txt", text_mode=True) as fo:
+    ...         _ = fo.write('bye')
+    ...         1/0  # will error
+    ...         fo.write('bye')
+    ... except ZeroDivisionError:
+    ...     pass  # at least our file.txt didn't get overwritten
+
     See the :class:`AtomicSaver` documentation for details.
     """
     return AtomicSaver(dest_path, **kwargs)
