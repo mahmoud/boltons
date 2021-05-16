@@ -62,8 +62,9 @@ def make_sentinel(name='_MISSING', var_name=None):
         __bool__ = __nonzero__
 
     if var_name:
-        module = getattr(sys._getframe(1), '__module__', None)
-        if not module:
+        frame = sys._getframe(1)
+        module = frame.f_globals.get('__name__')
+        if not module or module not in sys.modules:
             raise ValueError('Pickleable sentinel objects (with var_name) can only'
                              ' be created from top-level module scopes')
         Sentinel.__module__ = module
