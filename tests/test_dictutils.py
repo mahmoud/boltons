@@ -438,7 +438,7 @@ def test_frozendict_ior():
     data = {'a': 'A', 'b': 'B'}
     fd = FrozenDict(data)
 
-    with pytest.raises(TypeError, match=".*FrozenDicts are immutable.*"):
+    with pytest.raises(TypeError, match=".*FrozenDict.*immutable.*"):
         fd |= fd
 
 
