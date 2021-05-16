@@ -4,7 +4,7 @@ utilities on top of Python's first-class function support.
 ``typeutils`` attempts to do the same for metaprogramming with types
 and instances.
 """
-
+import sys
 from collections import deque
 
 _issubclass = issubclass
@@ -18,7 +18,9 @@ def make_sentinel(name='_MISSING', var_name=None):
     Args:
         name (str): Name of the Sentinel
         var_name (str): Set this name to the name of the variable in
-            its respective module enable pickleability.
+            its respective module enable pickleability. Note:
+            pickleable sentinels should be global constants at the top
+            level of their module.
 
     >>> make_sentinel(var_name='_MISSING')
     _MISSING
@@ -49,6 +51,7 @@ def make_sentinel(name='_MISSING', var_name=None):
             if self.var_name:
                 return self.var_name
             return '%s(%r)' % (self.__class__.__name__, self.name)
+
         if var_name:
             def __reduce__(self):
                 return self.var_name
@@ -57,6 +60,13 @@ def make_sentinel(name='_MISSING', var_name=None):
             return False
 
         __bool__ = __nonzero__
+
+    if var_name:
+        module = getattr(sys._getframe(1), '__module__', None)
+        if not module:
+            raise ValueError('Pickleable sentinel objects (with var_name) can only'
+                             ' be created from top-level module scopes')
+        Sentinel.__module__ = module
 
     return Sentinel()
 
