@@ -200,13 +200,26 @@ def test_pop():
     assert omd.pop('odd', 99) == 99
     try:
         omd.pop('odd')
-        import pdb;pdb.set_trace()
         assert False
     except KeyError:
         pass
 
     assert len(omd) == 1
     assert len(omd.items(multi=True)) == 2
+
+
+def test_addlist():
+    omd = OMD()
+    omd.addlist('a', [1, 2, 3])
+    omd.addlist('b', [4, 5])
+
+    assert omd.keys() == ['a', 'b']
+    assert len(list(omd.iteritems(multi=True))) == 5
+
+    e_omd = OMD()
+    e_omd.addlist('a', [])
+    assert e_omd.keys() == []
+    assert len(list(e_omd.iteritems(multi=True))) == 0
 
 
 def test_pop_all():
@@ -227,6 +240,8 @@ def test_pop_all():
     assert omd.popall('even') == [0, 2]
     assert len(omd) == 0
     assert omd.popall('nope', None) is None
+
+    assert OMD().popall('', None) is None
 
 
 def test_reversed():
@@ -264,6 +279,11 @@ def test_setdefault():
     y = omd.setdefault('2')
     assert y is None
     assert omd.setdefault('1', None) is empty_list
+
+    e_omd = OMD()
+    e_omd.addlist(1, [])
+    assert e_omd.popall(1, None) is None
+    assert len(e_omd) == 0
 
 ## END OMD TESTS
 

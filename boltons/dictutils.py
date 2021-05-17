@@ -191,6 +191,8 @@ class OrderedMultiDict(dict):
         Called ``addlist`` for consistency with :meth:`getlist`, but
         tuples and other sequences and iterables work.
         """
+        if not v:
+            return
         self_insert = self._insert
         values = super(OrderedMultiDict, self).setdefault(k, [])
         for subv in v:
@@ -374,7 +376,9 @@ class OrderedMultiDict(dict):
             if self:
                 k = self.root[PREV][KEY]
             else:
-                raise KeyError('empty %r' % type(self))
+                if default is _MISSING:
+                    raise KeyError('empty %r' % type(self))
+                return default
         try:
             self._remove(k)
         except KeyError:
