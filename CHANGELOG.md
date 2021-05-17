@@ -1,8 +1,25 @@
 boltons Changelog
 =================
 
-Since February 20, 2013 there have been 44 releases and 1468 commits for
-an average of one 34-commit release about every 8 weeks.
+Since February 20, 2013 there have been 45 releases and 1492 commits
+for an average of one 33-commit release about every 9 weeks. Versions
+are named according to the [CalVer](https://calver.org) versioning
+scheme (`YY.MINOR.MICRO`).
+
+21.0.0
+------
+*(May 16, 2021)*
+
+* Fix [OMD][dictutils.OrderedMultiDict].addlist when the added list is empty
+* Add [funcutils.noop][funcutils.noop], satisfying [PEP 559](https://www.python.org/dev/peps/pep-0559/)
+* Support lists for [iterutils.bucketize][iterutils.bucketize]
+* Python 3.9 test fixes for OMD (PEP 584, see [#271][i271])
+* Make [typeutils.make_sentinel][typeutils.make_sentinel] more pickleable
+* [jsonutils.reverse_iter_lines][jsonutils.reverse_iter_lines] now works on Py3 and Windows
+
+[jsonutils.reverse_iter_lines]: http://boltons.readthedocs.org/en/latest/jsonutils.html#boltons.jsonutils.reverse_iter_lines
+[funcutils.noop]: https://boltons.readthedocs.io/en/latest/funcutils.html#boltons.funcutils.noop
+[i271]: https://github.com/mahmoud/boltons/issues/271
 
 20.2.1
 ------
