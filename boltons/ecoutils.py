@@ -354,38 +354,53 @@ def get_profile(**kwargs):
     return ret
 
 
-_real_safe_repr = pprint._safe_repr
+try:
+    import json
 
+    def dumps(val, indent):
+        if indent:
+            return json.dumps(val, sort_keys=True, indent=indent)
+        return json.dumps(val, sort_keys=True)
 
-def _fake_json_dumps(val, indent=2):
-    # never do this. this is a hack for Python 2.4. Python 2.5 added
-    # the json module for a reason.
-    def _fake_safe_repr(*a, **kw):
-        res, is_read, is_rec = _real_safe_repr(*a, **kw)
-        if res == 'None':
-            res = 'null'
-        if res == 'True':
-            res = 'true'
-        if res == 'False':
-            res = 'false'
-        if not (res.startswith("'") or res.startswith("u'")):
-            res = res
-        else:
-            if res.startswith('u'):
-                res = res[1:]
+except ImportError:
+    _real_safe_repr = pprint._safe_repr
 
-            contents = res[1:-1]
-            contents = contents.replace('"', '').replace(r'\"', '')
-            res = '"' + contents + '"'
-        return res, is_read, is_rec
+    def _fake_json_dumps(val, indent=2):
+        # never do this. this is a hack for Python 2.4. Python 2.5 added
+        # the json module for a reason.
+        def _fake_safe_repr(*a, **kw):
+            res, is_read, is_rec = _real_safe_repr(*a, **kw)
+            if res == 'None':
+                res = 'null'
+            if res == 'True':
+                res = 'true'
+            if res == 'False':
+                res = 'false'
+            if not (res.startswith("'") or res.startswith("u'")):
+                res = res
+            else:
+                if res.startswith('u'):
+                    res = res[1:]
 
-    pprint._safe_repr = _fake_safe_repr
-    try:
-        ret = pprint.pformat(val, indent=indent)
-    finally:
-        pprint._safe_repr = _real_safe_repr
+                contents = res[1:-1]
+                contents = contents.replace('"', '').replace(r'\"', '')
+                res = '"' + contents + '"'
+            return res, is_read, is_rec
 
-    return ret
+        pprint._safe_repr = _fake_safe_repr
+        try:
+            ret = pprint.pformat(val, indent=indent)
+        finally:
+            pprint._safe_repr = _real_safe_repr
+
+        return ret
+
+    def dumps(val, indent):
+        ret = _fake_json_dumps(val, indent=indent)
+        if not indent:
+            ret = re.sub(r'\n\s*', ' ', ret)
+        return ret
+
 
 
 def get_profile_json(indent=False):
@@ -393,20 +408,6 @@ def get_profile_json(indent=False):
         indent = 2
     else:
         indent = 0
-    try:
-        import json
-
-        def dumps(val, indent):
-            if indent:
-                return json.dumps(val, sort_keys=True, indent=indent)
-            return json.dumps(val, sort_keys=True)
-
-    except ImportError:
-        def dumps(val, indent):
-            ret = _fake_json_dumps(val, indent=indent)
-            if not indent:
-                ret = re.sub(r'\n\s*', ' ', ret)
-            return ret
 
     data_dict = get_profile()
     return dumps(data_dict, indent)
