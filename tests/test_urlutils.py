@@ -269,20 +269,22 @@ def test_rel_navigate():
 
 
 @pytest.mark.parametrize(
-    ('expected',            'base',             'a',    'b'), [
-    ('https://host/b',      'https://host',     'a',    '/b'),
-    ('https://host/b',    'https://host',     'a',    'b'),
-    ('https://host/a/b',    'https://host',     'a/',   'b'),
-    ('https://host/b',    'https://host',     '/a',   'b'),
-    ('https://host/a/b',    'https://host/a/',  None,   'b'),
-    ('https://host/b',    'https://host/a',   None,   'b'),
+    ('expected', 'base', 'paths'), [
+    ('https://host/b', 'https://host', ['a', '/b']),
+    ('https://host/b', 'https://host', ['a', 'b']),
+    ('https://host/a/b', 'https://host', ['a/', 'b']),
+    ('https://host/b', 'https://host', ['/a', 'b']),
+    ('https://host/a/b', 'https://host/a/', [None, 'b']),
+    ('https://host/b', 'https://host/a', [None, 'b']),
 ])
-def test_chained_navigate(expected, base, a, b):
+def test_chained_navigate(expected, base, paths):
     """Chained :meth:`navigate` calls produces correct results."""
-    if a is not None:
-        assert expected == URL(base).navigate(a).navigate(b).to_text()
-    else:
-        assert expected == URL(base).navigate(b).to_text()
+    url = URL(base)
+
+    for path in paths:
+        url = url.navigate(path)
+
+    assert expected == url.to_text()
 
 
 def test_navigate():
