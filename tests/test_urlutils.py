@@ -268,25 +268,6 @@ def test_rel_navigate():
     return
 
 
-@pytest.mark.parametrize(
-    ('expected', 'base', 'paths'), [
-    ('https://host/b', 'https://host', ['a', '/b']),
-    ('https://host/b', 'https://host', ['a', 'b']),
-    ('https://host/a/b', 'https://host', ['a/', 'b']),
-    ('https://host/b', 'https://host', ['/a', 'b']),
-    ('https://host/a/b', 'https://host/a/', [None, 'b']),
-    ('https://host/b', 'https://host/a', [None, 'b']),
-])
-def test_chained_navigate(expected, base, paths):
-    """Chained :meth:`navigate` calls produces correct results."""
-    url = URL(base)
-
-    for path in paths:
-        url = url.navigate(path)
-
-    assert expected == url.to_text()
-
-
 def test_navigate():
     orig_text = u'http://a.b/c/d?e#f'
     orig = URL(orig_text)
@@ -330,6 +311,25 @@ def test_navigate():
     assert navd.to_text() == _dest_text
     navd = orig.navigate(_dest_text)
     assert navd.to_text() == _dest_text
+
+
+@pytest.mark.parametrize(
+    ('expected', 'base', 'paths'), [
+    ('https://host/b', 'https://host', ('a', '/b', )),
+    ('https://host/b', 'https://host', ('a', 'b', )),
+    ('https://host/a/b', 'https://host', ('a/', 'b', )),
+    ('https://host/b', 'https://host', ('/a', 'b', )),
+    ('https://host/a/b', 'https://host/a/', (None, 'b', )),
+    ('https://host/b', 'https://host/a', (None, 'b', )),
+])
+def test_chained_navigate(expected, base, paths):
+    """Chained :meth:`navigate` calls produces correct results."""
+    url = URL(base)
+
+    for path in paths:
+        url = url.navigate(path)
+
+    assert expected == url.to_text()
 
 
 # TODO: RFC3986 6.2.3 (not just for query add, either)
