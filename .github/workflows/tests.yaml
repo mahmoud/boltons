@@ -23,10 +23,9 @@ jobs:
           - {name: Mac, python: '3.9', os: macos-latest, tox: py39}
           - {name: '3.8', python: '3.8', os: ubuntu-latest, tox: py38}
           - {name: '3.7', python: '3.7', os: ubuntu-latest, tox: py37}
-          - {name: '3.6', python: '3.6', os: ubuntu-latest, tox: py36}
           - {name: '2.7', python: '2.7', os: ubuntu-latest, tox: py27}
-          - {name: 'PyPy2', python: 'pypy2', os: ubuntu-latest, tox: pypy}
-          - {name: 'PyPy3', python: 'pypy3', os: ubuntu-latest, tox: pypy3}
+          - {name: 'PyPy2', python: 'pypy-2.7', os: ubuntu-latest, tox: pypy}
+          - {name: 'PyPy3', python: 'pypy-3.8', os: ubuntu-latest, tox: pypy3}
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-python@v2
@@ -44,6 +43,6 @@ jobs:
         uses: actions/cache@v2
         with:
           path: ${{ steps.pip-cache.outputs.dir }}
-          key: pip|${{ runner.os }}|${{ matrix.python }}|${{ hashFiles('setup.py') }}|${{ hashFiles('requirements/*.txt') }}
+          key: pip|${{ runner.os }}|${{ matrix.python }}|${{ hashFiles('pyproject.toml') }}|${{ hashFiles('requirements/*.txt') }}
       - run: pip install tox
       - run: tox -e ${{ matrix.tox }}

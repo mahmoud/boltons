@@ -1,0 +1,53 @@
+[build-system]
+requires = [
+    "hatchling>=0.17.0",
+]
+build-backend = "hatchling.build"
+
+[project]
+name = "boltons"
+description = "When they're not builtins, they're boltons."
+readme = "README.md"
+license = "BSD-3-Clause"
+authors = [
+    { name = "Mahmoud Hashemi", email = "mahmoud@hatnote.com" },
+]
+# https://pypi.org/classifiers/
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: BSD License",
+    "Operating System :: OS Independent",
+    "Topic :: Software Development :: Libraries",
+    "Topic :: Utilities",
+    # List of python versions and their support status:
+    # https://en.wikipedia.org/wiki/History_of_Python#Table_of_versions
+    "Programming Language :: Python :: 2",
+    "Programming Language :: Python :: 2.7",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "Programming Language :: Python :: Implementation :: PyPy",
+]
+dynamic = [
+    "version",
+]
+
+[project.urls]
+Homepage = "https://github.com/mahmoud/boltons"
+
+[tool.hatch.version]
+path = "boltons/__init__.py"
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "/boltons",
+    "/docs",
+    "/tests",
+    "/CHANGELOG.md",
+    "/TODO.rst",
+    "/pytest.ini",
+    "/tox.ini",
+]
