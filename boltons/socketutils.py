@@ -82,7 +82,7 @@ except Exception:
 
 
 try:
-    from typeutils import make_sentinel
+    from .typeutils import make_sentinel
     _UNSET = make_sentinel(var_name='_UNSET')
 except ImportError:
     _UNSET = object()
