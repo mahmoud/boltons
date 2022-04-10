@@ -1,0 +1,4 @@
+coverage==4.5.1
+pytest==3.0.7
+pytest-cov==2.5.1
+tox<3.0
