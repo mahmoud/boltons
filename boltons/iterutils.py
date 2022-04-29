@@ -981,7 +981,7 @@ def remap(root, visit=default_visit, enter=default_enter, exit=default_exit,
           **kwargs):
     """The remap ("recursive map") function is used to traverse and
     transform nested structures. Lists, tuples, sets, and dictionaries
-    are just a few of the data structures nested into heterogenous
+    are just a few of the data structures nested into heterogeneous
     tree-like structures that are so common in programming.
     Unfortunately, Python's built-in ways to manipulate collections
     are almost all flat. List comprehensions may be fast and succinct,
@@ -1451,7 +1451,7 @@ def soft_sorted(iterable, first=None, last=None, key=None, reverse=False):
 
 def untyped_sorted(iterable, key=None, reverse=False):
     """A version of :func:`sorted` which will happily sort an iterable of
-    heterogenous types and return a new list, similar to legacy Python's
+    heterogeneous types and return a new list, similar to legacy Python's
     behavior.
 
     >>> untyped_sorted(['abc', 2.0, 1, 2, 'def'])

@@ -54,7 +54,7 @@ format strings:
     arguments out of a format string.
   * :func:`tokenize_format_str`: Tokenize a format string into
     literals and :class:`BaseFormatField` objects.
-  * :func:`construct_format_field_str`: Assists in progammatic
+  * :func:`construct_format_field_str`: Assists in programmatic
     construction of format strings.
   * :func:`infer_positional_format_args`: Converts anonymous
     references in 2.7+ format strings to explicit positional arguments

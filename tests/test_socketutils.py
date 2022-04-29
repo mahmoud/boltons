@@ -377,7 +377,7 @@ def test_socketutils_netstring():
 
 def netstring_server_timeout_override(server_socket):
     """Netstring socket has an unreasonably low timeout,
-    however it should be overriden by the `read_ns` argument."""
+    however it should be overridden by the `read_ns` argument."""
 
     try:
         while True:
@@ -398,9 +398,9 @@ def netstring_server_timeout_override(server_socket):
 
 
 def test_socketutils_netstring_timeout():
-    """Tests that server socket timeout is overriden by the argument to read call.
+    """Tests that server socket timeout is overridden by the argument to read call.
 
-    Server has timeout of 10 ms, and we will sleep for 20 ms. If timeout is not overriden correctly,
+    Server has timeout of 10 ms, and we will sleep for 20 ms. If timeout is not overridden correctly,
     a timeout exception will be raised."""
 
     print("running timeout test")
@@ -426,4 +426,4 @@ def test_socketutils_netstring_timeout():
     assert client.read_ns() == b'pong'
 
     client.write_ns(b'shutdown')
-    print("no timeout occured - all good.")
+    print("no timeout occurred - all good.")
