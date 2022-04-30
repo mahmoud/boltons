@@ -25,7 +25,7 @@ in the same spirit as — and yet conspicuously missing from —
 **[Full and extensive docs are available on Read The Docs.][rtd]** See
 what's new [by checking the CHANGELOG][changelog].
 
-Boltons is tested against Python 2.6, 2.7, 3.4, 3.5, 3.6, 3.7, 3.8 and 3.9, as well as CPython
+Boltons is tested against Python 2.7, 3.7, 3.8 and 3.9, as well as CPython
 _nightly_ and PyPy/PyPy3.
 
 [stdlib]: https://docs.python.org/2.7/library/index.html
