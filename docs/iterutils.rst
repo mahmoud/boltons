@@ -18,6 +18,7 @@ present in the standard library.
 
 .. autofunction:: chunked
 .. autofunction:: chunked_iter
+.. autofunction:: chunk_ranges
 .. autofunction:: pairwise
 .. autofunction:: pairwise_iter
 .. autofunction:: windowed

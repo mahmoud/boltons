@@ -323,6 +323,13 @@ def chunked(src, size, count=None, **kw):
         return list(itertools.islice(chunk_iter, count))
 
 
+def _validate_positive_int(value, name, strictly_positive=True):
+    value = int(value)
+    if value < 0 or (strictly_positive and value == 0):
+        raise ValueError('expected a positive integer ' + name)
+    return value
+
+
 def chunked_iter(src, size, **kw):
     """Generates *size*-sized chunks from *src* iterable. Unless the
     optional *fill* keyword argument is provided, iterables not evenly
@@ -339,9 +346,7 @@ def chunked_iter(src, size, **kw):
     # TODO: add count kwarg?
     if not is_iterable(src):
         raise TypeError('expected an iterable')
-    size = int(size)
-    if size <= 0:
-        raise ValueError('expected a positive integer chunk size')
+    size = _validate_positive_int(size, 'chunk size')
     do_fill = True
     try:
         fill_val = kw.pop('fill')
@@ -367,6 +372,56 @@ def chunked_iter(src, size, **kw):
             cur_chunk[lc:] = [fill_val] * (size - lc)
         yield postprocess(cur_chunk)
     return
+
+
+def chunk_ranges(input_size, chunk_size, input_offset=0, overlap_size=0, align=False):
+    """Generates *chunk_size*-sized chunk ranges for an input with length *input_size*.
+    Optionally, a start of the input can be set via *input_offset*, and
+    and overlap between the chunks may be specified via *overlap_size*.
+    Also, if *align* is set to *True*, any items with *i % (chunk_size-overlap_size) == 0*
+    are always at the beginning of the chunk.
+
+    Returns an iterator of (start, end) tuples, one tuple per chunk.
+
+    >>> list(chunk_ranges(input_offset=10, input_size=10, chunk_size=5))
+    [(10, 15), (15, 20)]
+    >>> list(chunk_ranges(input_offset=10, input_size=10, chunk_size=5, overlap_size=1))
+    [(10, 15), (14, 19), (18, 20)]
+    >>> list(chunk_ranges(input_offset=10, input_size=10, chunk_size=5, overlap_size=2))
+    [(10, 15), (13, 18), (16, 20)]
+
+    >>> list(chunk_ranges(input_offset=4, input_size=15, chunk_size=5, align=False))
+    [(4, 9), (9, 14), (14, 19)]
+    >>> list(chunk_ranges(input_offset=4, input_size=15, chunk_size=5, align=True))
+    [(4, 5), (5, 10), (10, 15), (15, 19)]
+
+    >>> list(chunk_ranges(input_offset=2, input_size=15, chunk_size=5, overlap_size=1, align=False))
+    [(2, 7), (6, 11), (10, 15), (14, 17)]
+    >>> list(chunk_ranges(input_offset=2, input_size=15, chunk_size=5, overlap_size=1, align=True))
+    [(2, 5), (4, 9), (8, 13), (12, 17)]
+    >>> list(chunk_ranges(input_offset=3, input_size=15, chunk_size=5, overlap_size=1, align=True))
+    [(3, 5), (4, 9), (8, 13), (12, 17), (16, 18)]
+    """
+    input_size = _validate_positive_int(input_size, 'input_size', strictly_positive=False)
+    chunk_size = _validate_positive_int(chunk_size, 'chunk_size')
+    input_offset = _validate_positive_int(input_offset, 'input_offset', strictly_positive=False)
+    overlap_size = _validate_positive_int(overlap_size, 'overlap_size', strictly_positive=False)
+
+    input_stop = input_offset + input_size
+
+    if align:
+        initial_chunk_len = chunk_size - input_offset % (chunk_size - overlap_size)
+        if initial_chunk_len != overlap_size:
+            yield (input_offset, min(input_offset + initial_chunk_len, input_stop))
+            if input_offset + initial_chunk_len >= input_stop:
+                return
+            input_offset = input_offset + initial_chunk_len - overlap_size
+
+    for i in range(input_offset, input_stop, chunk_size - overlap_size):
+        yield (i, min(i + chunk_size, input_stop))
+
+        if i + chunk_size >= input_stop:
+            return
 
 
 def pairwise(src):
