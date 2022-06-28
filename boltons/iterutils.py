@@ -208,7 +208,7 @@ def split_iter(src, sep=None, maxsplit=None):
 
 def lstrip(iterable, strip_value=None):
     """Strips values from the beginning of an iterable. Stripped items will
-    match the value of the argument strip_value. Functionality is analigous
+    match the value of the argument strip_value. Functionality is analogous
     to that of the method str.lstrip. Returns a list.
 
     >>> lstrip(['Foo', 'Bar', 'Bam'], 'Foo')
@@ -220,7 +220,7 @@ def lstrip(iterable, strip_value=None):
 
 def lstrip_iter(iterable, strip_value=None):
     """Strips values from the beginning of an iterable. Stripped items will
-    match the value of the argument strip_value. Functionality is analigous
+    match the value of the argument strip_value. Functionality is analogous
     to that of the method str.lstrip. Returns a generator.
 
     >>> list(lstrip_iter(['Foo', 'Bar', 'Bam'], 'Foo'))
@@ -238,7 +238,7 @@ def lstrip_iter(iterable, strip_value=None):
 
 def rstrip(iterable, strip_value=None):
     """Strips values from the end of an iterable. Stripped items will
-    match the value of the argument strip_value. Functionality is analigous
+    match the value of the argument strip_value. Functionality is analogous
     to that of the method str.rstrip. Returns a list.
 
     >>> rstrip(['Foo', 'Bar', 'Bam'], 'Bam')
@@ -250,7 +250,7 @@ def rstrip(iterable, strip_value=None):
 
 def rstrip_iter(iterable, strip_value=None):
     """Strips values from the end of an iterable. Stripped items will
-    match the value of the argument strip_value. Functionality is analigous
+    match the value of the argument strip_value. Functionality is analogous
     to that of the method str.rstrip. Returns a generator.
 
     >>> list(rstrip_iter(['Foo', 'Bar', 'Bam'], 'Bam'))
@@ -279,7 +279,7 @@ def rstrip_iter(iterable, strip_value=None):
 def strip(iterable, strip_value=None):
     """Strips values from the beginning and end of an iterable. Stripped items
     will match the value of the argument strip_value. Functionality is
-    analigous to that of the method str.strip. Returns a list.
+    analogous to that of the method str.strip. Returns a list.
 
     >>> strip(['Fu', 'Foo', 'Bar', 'Bam', 'Fu'], 'Fu')
     ['Foo', 'Bar', 'Bam']
@@ -291,7 +291,7 @@ def strip(iterable, strip_value=None):
 def strip_iter(iterable,strip_value=None):
     """Strips values from the beginning and end of an iterable. Stripped items
     will match the value of the argument strip_value. Functionality is
-    analigous to that of the method str.strip. Returns a generator.
+    analogous to that of the method str.strip. Returns a generator.
 
     >>> list(strip_iter(['Fu', 'Foo', 'Bar', 'Bam', 'Fu'], 'Fu'))
     ['Foo', 'Bar', 'Bam']
