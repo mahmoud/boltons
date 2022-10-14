@@ -47,4 +47,7 @@ nosetests.xml
 # Vim
 *.sw[op]
 
+# IDEA
+.idea
+
 .cache/
