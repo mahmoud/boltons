@@ -48,6 +48,20 @@ def test_daterange_years():
     assert years_from_2025[0] == date(2025, 1, 1)
     assert years_from_2025[-1] == date(2017, 1, 1)
 
+
+def test_daterange_years_step():
+    start_day = date(year=2012, month=12, day=25)
+    end_day = date(year=2016, month=1, day=1)
+    dates = list(daterange(start_day, end_day, step=(1, 0, 0), inclusive=False))
+    expected = [date(year=2012, month=12, day=25), date(year=2013, month=12, day=25), date(year=2014, month=12, day=25), date(year=2015, month=12, day=25)]
+
+    assert dates == expected
+
+    dates = list(daterange(start_day, end_day, step=(0, 13, 0), inclusive=False))
+    expected = [date(year=2012, month=12, day=25), date(year=2014, month=1, day=25), date(year=2015, month=2, day=25)]
+    assert dates == expected
+
+
 def test_daterange_infinite():
     today = date.today()
     infinite_dates = daterange(today, None)
