@@ -26,7 +26,7 @@ jobs:
           - {name: '3.7', python: '3.7', os: ubuntu-latest, tox: py37}
           - {name: '3.6', python: '3.6.15', os: ubuntu-20.04, tox: py36}
           - {name: '2.7', python: '2.7.18', os: ubuntu-latest, tox: py27}
-          - {name: 'PyPy3', python: 'pypy3.9.15', os: ubuntu-latest, tox: pypy3}
+          - {name: 'PyPy3', python: 'pypy3.9-dev', os: ubuntu-latest, tox: pypy3}
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-python@v2
