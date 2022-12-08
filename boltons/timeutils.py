@@ -382,7 +382,7 @@ def daterange(start, stop, step=1, inclusive=False):
 
     if stop is None:
         finished = lambda now, stop: False
-    elif start < stop:
+    elif start <= stop:
         finished = operator.gt if inclusive else operator.ge
     else:
         finished = operator.lt if inclusive else operator.le

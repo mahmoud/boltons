@@ -1,5 +1,8 @@
 
 from datetime import timedelta, date
+
+import pytest
+
 from boltons.timeutils import total_seconds, daterange
 
 
@@ -60,10 +63,23 @@ def test_daterange_years_step():
     dates = list(daterange(start_day, end_day, step=(0, 13, 0), inclusive=False))
     expected = [date(year=2012, month=12, day=25), date(year=2014, month=1, day=25), date(year=2015, month=2, day=25)]
     assert dates == expected
-
-
+    
+    
 def test_daterange_infinite():
     today = date.today()
     infinite_dates = daterange(today, None)
     for i in range(10):
         assert next(infinite_dates) == today + timedelta(days=i)
+
+
+def test_daterange_with_same_start_stop():
+    today = date.today()
+
+    date_range = daterange(today, today)
+    with pytest.raises(StopIteration):
+        next(date_range)
+
+    date_range_inclusive = daterange(today, today, inclusive=True)
+    assert next(date_range_inclusive) == today
+    with pytest.raises(StopIteration):
+        next(date_range_inclusive)
