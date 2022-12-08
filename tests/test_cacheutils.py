@@ -38,7 +38,7 @@ def test_lri():
             for char in string.ascii_letters[least_recent_insert_index+1:idx]:
                 assert char in bc
 
-    # test that reinserting an exising key changes eviction behavior
+    # test that reinserting an existing key changes eviction behavior
     bc[string.ascii_letters[-cache_size+1]] = "new value"
     least_recently_inserted_key = string.ascii_letters[-cache_size+2]
     bc["unreferenced_key"] = "value"

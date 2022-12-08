@@ -1176,7 +1176,7 @@ class MultiReplace(object):
 
     Dictionary Usage::
 
-        from lrmslib import stringutils
+        from boltons import stringutils
         s = stringutils.MultiReplace({
             'foo': 'zoo',
             'cat': 'hat',
@@ -1187,7 +1187,7 @@ class MultiReplace(object):
 
     Iterable Usage::
 
-        from lrmslib import stringutils
+        from boltons import stringutils
         s = stringutils.MultiReplace([
             ('foo', 'zoo'),
             ('cat', 'hat'),
@@ -1239,10 +1239,7 @@ class MultiReplace(object):
             else:
                 exp = vals[0].pattern
 
-            regex_values.append('(?P<{0}>{1})'.format(
-                group_name,
-                exp
-            ))
+            regex_values.append('(?P<{}>{})'.format(group_name, exp))
             self.group_map[group_name] = vals[1]
 
         self.combined_pattern = re.compile(
@@ -1267,7 +1264,18 @@ class MultiReplace(object):
 
 
 def multi_replace(text, sub_map, **kwargs):
-    """Shortcut function to invoke MultiReplace in a single call."""
+    """
+    Shortcut function to invoke MultiReplace in a single call.
+
+    Example Usage::
+
+        from boltons.stringutils import multi_replace
+        new = multi_replace(
+            'The foo bar cat ate a bat',
+            {'foo': 'zoo', 'cat': 'hat', 'bat': 'kraken'}
+        )
+        new == 'The zoo bar hat ate a kraken'
+    """
     m = MultiReplace(sub_map, **kwargs)
     return m.sub(text)
 

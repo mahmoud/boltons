@@ -99,7 +99,7 @@ def test_idna():
 def test_query_params(test_url):
     url_obj = URL(test_url)
     if not url_obj.query_params or url_obj.fragment:
-        return True
+        return 
     qp_text = url_obj.query_params.to_text(full_quote=True)
     assert test_url.endswith(qp_text)
 

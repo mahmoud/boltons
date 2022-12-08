@@ -588,7 +588,7 @@ def update_wrapper(wrapper, func, injected=None, expected=None, build_from=None,
             in the updated function.
 
     In opposition to the built-in :func:`functools.update_wrapper` bolton's
-    version returns a copy of the function and does not modifiy anything in place.
+    version returns a copy of the function and does not modify anything in place.
     For more in-depth wrapping of functions, see the
     :class:`FunctionBuilder` type, on which update_wrapper was built.
     """
