@@ -40,7 +40,7 @@ are useful when dealing with input, output, and bytestreams in a variety of
 ways.
 """
 import os
-from io import BytesIO
+from io import BytesIO, IOBase
 from abc import (
     ABCMeta,
     abstractmethod,
@@ -49,6 +49,11 @@ from abc import (
 from errno import EINVAL
 from codecs import EncodedFile
 from tempfile import TemporaryFile
+
+try:
+    from itertools import izip_longest as zip_longest # Python 2
+except ImportError:
+    from itertools import zip_longest  # Python 3
 
 try:
     text_type = unicode  # Python 2
@@ -66,16 +71,14 @@ value.
 """
 
 
-class SpooledIOBase(object):
+class SpooledIOBase(IOBase):
     """
-    The SpooledTempoaryFile class doesn't support a number of attributes and
-    methods that a StringIO instance does. This brings the api as close to
-    compatible as possible with StringIO so that it may be used as a near
-    drop-in replacement to save memory.
+    A base class shared by the SpooledBytesIO and SpooledStringIO classes.
 
-    Another issue with SpooledTemporaryFile is that the spooled file is always
-    a cStringIO rather than a StringIO which causes issues with some of our
-    tools.
+    The SpooledTemporaryFile class is missing several attributes and methods
+    present in the StringIO implementation. This brings the api as close to
+    parity as possible so that classes derived from SpooledIOBase can be used
+    as near drop-in replacements to save memory.
     """
     __metaclass__ = ABCMeta
 
@@ -83,6 +86,11 @@ class SpooledIOBase(object):
         self._max_size = max_size
         self._dir = dir
 
+    def _checkClosed(self, msg=None):
+        """Raise a ValueError if file is closed"""
+        if self.closed:
+            raise ValueError('I/O operation on closed file.'
+                             if msg is None else msg)
     @abstractmethod
     def read(self, n=-1):
         """Read n characters from the buffer"""
@@ -102,6 +110,16 @@ class SpooledIOBase(object):
     @abstractmethod
     def readlines(self, sizehint=0):
         """Returns a list of all lines from the current position forward"""
+
+    def writelines(self, lines):
+        """
+        Write lines to the file from an interable.
+
+        NOTE: writelines() does NOT add line separators.
+        """
+        self._checkClosed()
+        for line in lines:
+            self.write(line)
 
     @abstractmethod
     def rollover(self):
@@ -139,21 +157,12 @@ class SpooledIOBase(object):
         return self.buffer.close()
 
     def flush(self):
+        self._checkClosed()
         return self.buffer.flush()
 
     def isatty(self):
+        self._checkClosed()
         return self.buffer.isatty()
-
-    def next(self):
-        line = self.readline()
-        if not line:
-            pos = self.buffer.tell()
-            self.buffer.seek(0, os.SEEK_END)
-            if pos == self.buffer.tell():
-                raise StopIteration
-            else:
-                self.buffer.seek(pos)
-        return line
 
     @property
     def closed(self):
@@ -173,10 +182,13 @@ class SpooledIOBase(object):
 
     def truncate(self, size=None):
         """
+        Truncate the contents of the buffer.
+
         Custom version of truncate that takes either no arguments (like the
         real SpooledTemporaryFile) or a single argument that truncates the
         value to a certain index location.
         """
+        self._checkClosed()
         if size is None:
             return self.buffer.truncate()
 
@@ -191,7 +203,8 @@ class SpooledIOBase(object):
             self.seek(pos)
 
     def getvalue(self):
-        """Return the entire files contents"""
+        """Return the entire files contents."""
+        self._checkClosed()
         pos = self.tell()
         self.seek(0)
         val = self.read()
@@ -207,15 +220,29 @@ class SpooledIOBase(object):
     def writable(self):
         return True
 
-    __next__ = next
+    def __next__(self):
+        self._checkClosed()
+        line = self.readline()
+        if not line:
+            pos = self.buffer.tell()
+            self.buffer.seek(0, os.SEEK_END)
+            if pos == self.buffer.tell():
+                raise StopIteration
+            else:
+                self.buffer.seek(pos)
+        return line
+
+    next = __next__
 
     def __len__(self):
         return self.len
 
     def __iter__(self):
+        self._checkClosed()
         return self
 
     def __enter__(self):
+        self._checkClosed()
         return self
 
     def __exit__(self, *args):
@@ -223,7 +250,31 @@ class SpooledIOBase(object):
 
     def __eq__(self, other):
         if isinstance(other, self.__class__):
-            return self.getvalue() == other.getvalue()
+            self_pos = self.tell()
+            other_pos = other.tell()
+            try:
+                self.seek(0)
+                other.seek(0)
+                eq = True
+                for self_line, other_line in zip_longest(self, other):
+                    if self_line != other_line:
+                        eq = False
+                        break
+                self.seek(self_pos)
+                other.seek(other_pos)
+            except Exception:
+                # Attempt to return files to original position if there were any errors
+                try:
+                    self.seek(self_pos)
+                except Exception:
+                    pass
+                try:
+                    other.seek(other_pos)
+                except Exception:
+                    pass
+                raise
+            else:
+                return eq
         return False
 
     def __ne__(self, other):
@@ -231,6 +282,13 @@ class SpooledIOBase(object):
 
     def __bool__(self):
         return True
+
+    def __del__(self):
+        """Can fail when called at program exit so suppress traceback."""
+        try:
+            self.close()
+        except Exception:
+            pass
 
     __nonzero__ = __bool__
 
@@ -253,11 +311,13 @@ class SpooledBytesIO(SpooledIOBase):
     """
 
     def read(self, n=-1):
+        self._checkClosed()
         return self.buffer.read(n)
 
     def write(self, s):
+        self._checkClosed()
         if not isinstance(s, binary_type):
-            raise TypeError("{0} expected, got {1}".format(
+            raise TypeError("{} expected, got {}".format(
                 binary_type.__name__,
                 type(s).__name__
             ))
@@ -267,9 +327,11 @@ class SpooledBytesIO(SpooledIOBase):
         self.buffer.write(s)
 
     def seek(self, pos, mode=0):
+        self._checkClosed()
         return self.buffer.seek(pos, mode)
 
     def readline(self, length=None):
+        self._checkClosed()
         if length:
             return self.buffer.readline(length)
         else:
@@ -314,6 +376,7 @@ class SpooledBytesIO(SpooledIOBase):
         return val
 
     def tell(self):
+        self._checkClosed()
         return self.buffer.tell()
 
 
@@ -340,13 +403,15 @@ class SpooledStringIO(SpooledIOBase):
         super(SpooledStringIO, self).__init__(*args, **kwargs)
 
     def read(self, n=-1):
+        self._checkClosed()
         ret = self.buffer.reader.read(n, n)
         self._tell = self.tell() + len(ret)
         return ret
 
     def write(self, s):
+        self._checkClosed()
         if not isinstance(s, text_type):
-            raise TypeError("{0} expected, got {1}".format(
+            raise TypeError("{} expected, got {}".format(
                 text_type.__name__,
                 type(s).__name__
             ))
@@ -384,6 +449,7 @@ class SpooledStringIO(SpooledIOBase):
 
     def seek(self, pos, mode=0):
         """Traverse from offset to the specified codepoint"""
+        self._checkClosed()
         # Seek to position from the start of the file
         if mode == os.SEEK_SET:
             self.buffer.seek(0)
@@ -406,6 +472,7 @@ class SpooledStringIO(SpooledIOBase):
         return self.tell()
 
     def readline(self, length=None):
+        self._checkClosed()
         ret = self.buffer.readline(length).decode('utf-8')
         self._tell = self.tell() + len(ret)
         return ret
@@ -428,7 +495,7 @@ class SpooledStringIO(SpooledIOBase):
         return not isinstance(self.buffer.stream, BytesIO)
 
     def rollover(self):
-        """Roll the StringIO over to a TempFile"""
+        """Roll the buffer over to a TempFile"""
         if not self._rolled:
             tmp = EncodedFile(TemporaryFile(dir=self._dir),
                               data_encoding='utf-8')
@@ -440,6 +507,7 @@ class SpooledStringIO(SpooledIOBase):
 
     def tell(self):
         """Return the codepoint position"""
+        self._checkClosed()
         return self._tell
 
     @property
