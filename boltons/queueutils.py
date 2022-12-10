@@ -70,13 +70,13 @@ from bisect import insort
 import itertools
 
 try:
-    from typeutils import make_sentinel
+    from .typeutils import make_sentinel
     _REMOVED = make_sentinel(var_name='_REMOVED')
 except ImportError:
     _REMOVED = object()
 
 try:
-    from listutils import BList
+    from .listutils import BList
     # see BarrelList docstring for notes
 except ImportError:
     BList = list

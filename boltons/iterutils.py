@@ -55,7 +55,7 @@ except ImportError:
 
 
 try:
-    from typeutils import make_sentinel
+    from .typeutils import make_sentinel
     _UNSET = make_sentinel('_UNSET')
     _REMAP_EXIT = make_sentinel('_REMAP_EXIT')
 except ImportError:
