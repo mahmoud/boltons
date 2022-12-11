@@ -95,15 +95,13 @@ def test_bits():
     chk(Bits('11') >> 1, Bits('1'))
     chk(Bits('1') << 1, Bits('10'))
     assert Bits('0') != Bits('00')
-    chk(
-        Bits.from_bytes(
-            Bits.from_int(
-                Bits.from_hex(
-                    Bits.from_bin(
-                        Bits.from_list(
-                            Bits('101').as_list()
-                        ).as_bin()
-                    ).as_hex()
-                ).as_int()
-            ).as_bytes()
-    ), Bits('00000101'))
+    chk(Bits.from_bytes(Bits('10101010').as_bytes()), '10101010')
+    chk(Bits.from_hex(Bits('1010').as_hex()), '1010')
+    chk(Bits.from_int(
+            Bits.from_bin(
+                Bits.from_list(
+                    Bits('101').as_list()
+                ).as_bin()
+            ).as_int()
+        ),
+        Bits('00000101'))
