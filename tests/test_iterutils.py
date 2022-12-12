@@ -9,7 +9,9 @@ from boltons.iterutils import (first,
                                research,
                                default_enter,
                                default_exit,
-                               get_path)
+                               get_path,
+                               NumIterator,
+                              )
 from boltons.namedutils import namedtuple
 
 CUR_PATH = os.path.abspath(__file__)
@@ -535,3 +537,9 @@ def test_strip():
     assert strip([0,0,0,1,0,2,0,3,0,0,0],0) == [1,0,2,0,3]
     assert strip([]) == []
 
+class TestNumIterator:
+    def test_constant(self):
+        assert list(NumIterator.constant(5)[:3]) == [5, 5, 5]
+
+    def test_fib(self):
+        assert list(NumIterator.fib()[:4]) == [0, 1, 1, 2]
