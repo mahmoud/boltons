@@ -567,3 +567,15 @@ class TestNumIterator:
 
     def test_rpow(self):
         assert list(2 ** NumIterator.count()[:3]) == [1, 2, 4]
+
+    def test_div(self):
+        assert list(NumIterator.count()[:2] / 2) == [0.0, 0.5]
+
+    def test_floordiv(self):
+        assert list(NumIterator.count()[:3] // 2) == [0, 0, 1]
+
+    def test_rdiv(self):
+        assert list(1 / NumIterator.count()[1:3]) == [1.0, 0.5]
+
+    def test_rfloordiv(self):
+        assert list(2 // NumIterator.count()[1:5]) == [2, 1, 0, 0]
