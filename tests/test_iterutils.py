@@ -556,6 +556,12 @@ class TestNumIterator:
     def test_radd(self):
         assert list(1 + NumIterator.count()[:3]) == [1, 2, 3]
 
+    def test_sub(self):
+        assert list(NumIterator.count()[:3] - 1) == [-1, 0, 1]
+
+    def test_rsub(self):
+        assert list(2 -  NumIterator.count()[:3]) == [2, 1, 0]
+
     def test_mul(self):
         assert list(NumIterator.count()[:3] * 2) == [0, 2, 4]
 
