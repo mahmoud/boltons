@@ -550,6 +550,10 @@ class TestNumIterator:
     def test_slice(self):
         assert list(NumIterator.count()[1:4:2]) == [1, 3]
 
+    def test_no_access(self):
+        with pytest.raises(TypeError):
+            NumIterator.count()[5]
+
     def test_add(self):
         assert list(NumIterator.count()[:3] + 1) == [1, 2, 3]
 
