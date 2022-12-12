@@ -1524,6 +1524,51 @@ def _iter_or_num(thing: Union[Iterable[float], float]) -> Iterator[float]:
 
 @dataclasses.dataclass
 class NumIterator:
+
+    """An iterator of numbers.
+    
+    Supports math operations and slicing.
+
+    >>> list(NumIterator(range(3)))
+    [0, 1, 2]
+    >>> list(NumIterator(range(3)) + 1)
+    [1, 2, 3]
+    >>> list(NumIterator(range(3)) * 2)
+    [0, 2, 4]
+    >>> list(NumIterator(x + 1 for x in range(10))[:3])
+    [1, 2, 3]
+    
+    There are also a few helper class methods to generate
+    common iterators.
+    They all generate *infinite* iterators.
+    Convert them to finite iterators using slicing.
+    
+    Counting:
+    
+    >>> list(NumIterator.count()[:5])
+    [0, 1, 2, 3, 4]
+    
+    Constant:
+    
+    >>> list(NumIterator.constant(7)[:2])
+    [7, 7]
+    
+    Fibonacci sequence:
+    
+    >>> list(NumIterator.fib()[:8])
+    [0, 1, 1, 2, 3, 5, 8, 13]
+    
+    Since the iterators support math operations,
+    you can combine them to generate more sophisticated
+    sequences.
+    
+    For example,
+    
+    >>> fib_pow_of_2 = 2 ** NumIterator.count() + NumIterator.fib()
+    >>> list(fib_pow_of_2[:5])
+    [1, 3, 5, 10, 19]
+    """
+
     _original: Iterable[float]
 
     @classmethod
