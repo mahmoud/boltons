@@ -585,3 +585,12 @@ class TestNumIterator:
 
     def test_rfloordiv(self):
         assert list(2 // NumIterator.count()[1:5]) == [2, 1, 0, 0]
+
+    def test_neg(self):
+        assert list(-NumIterator.count()[:3]) == [0, -1, -2]
+
+    def test_pos(self):
+        assert list(+NumIterator.count()[:3]) == [0, +1, +2]
+
+    def test_pos(self):
+        assert list(round(NumIterator.count()[:4] / 3)) == [0, 0, 1, 1]
