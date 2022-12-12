@@ -546,3 +546,24 @@ class TestNumIterator:
 
     def test_count(self):
         assert list(NumIterator.count()[:4]) == [0, 1, 2, 3]
+
+    def test_slice(self):
+        assert list(NumIterator.count()[1:4:2]) == [1, 3]
+
+    def test_add(self):
+        assert list(NumIterator.count()[:3] + 1) == [1, 2, 3]
+
+    def test_radd(self):
+        assert list(1 + NumIterator.count()[:3]) == [1, 2, 3]
+
+    def test_mul(self):
+        assert list(NumIterator.count()[:3] * 2) == [0, 2, 4]
+
+    def test_rmul(self):
+        assert list(2 * NumIterator.count()[:3]) == [0, 2, 4]
+
+    def test_pow(self):
+        assert list(NumIterator.count()[:3] ** 2) == [0, 1, 4]
+
+    def test_rpow(self):
+        assert list(2 ** NumIterator.count()[:3]) == [1, 2, 4]
