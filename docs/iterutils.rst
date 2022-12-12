@@ -115,3 +115,12 @@ In the same vein as the feature-checking builtin, :func:`callable`.
 .. autofunction:: is_iterable
 .. autofunction:: is_scalar
 .. autofunction:: is_collection
+
+Numeric Iterators
+-----------------
+
+A class to wrap iterators producing numbers
+to allow it to support arithmetic operations
+and slicing.
+
+.. autoclass:: NumIterator
