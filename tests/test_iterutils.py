@@ -543,3 +543,6 @@ class TestNumIterator:
 
     def test_fib(self):
         assert list(NumIterator.fib()[:4]) == [0, 1, 1, 2]
+
+    def test_count(self):
+        assert list(NumIterator.count()[:4]) == [0, 1, 2, 3]
