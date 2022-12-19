@@ -95,8 +95,9 @@ def test_bits():
     chk(Bits('11') >> 1, Bits('1'))
     chk(Bits('1') << 1, Bits('10'))
     assert Bits('0') != Bits('00')
-    chk(Bits.from_bytes(Bits('10101010').as_bytes()), Bits('10101010'))
-    chk(Bits.from_hex(Bits('1010').as_hex()), Bits('1010'))
+    chk(
+        Bits.from_bytes(Bits.from_hex(Bits('10101010').as_bytes()).as_hex()),
+        Bits('10101010'))
     chk(Bits.from_int(
             Bits.from_bin(
                 Bits.from_list(
