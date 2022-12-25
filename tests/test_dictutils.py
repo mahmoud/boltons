@@ -474,6 +474,7 @@ def test_frozendict_api():
                        '__ge__',
                        '__getattribute__',
                        '__getitem__',
+                       '__getstate__',
                        '__gt__',
                        '__init__',
                        '__iter__',
