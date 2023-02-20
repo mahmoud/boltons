@@ -6,6 +6,16 @@ for an average of one 33-commit release about every 9 weeks. Versions
 are named according to the [CalVer](https://calver.org) versioning
 scheme (`YY.MINOR.MICRO`).
 
+23.0.0
+------
+*(February 19, 2023)*
+
+* Overdue update for Python 3.10 and 3.11 support ([#294][i294], [#303][i303], [#320][i320], [#323][i323], [#326][i326]/[#327][i327])
+* Add [iterutils.chunk_ranges][iterutils.chunk_ranges] ([#312][i312])
+* Improvements to `SpooledBytesIO`/`SpooledStringIO` ([#305][i305])
+* Bugfix for infinite daterange issue when start and stop is the same ([#302][i302])
+* Fix `Bits.as_list` behavior ([#315][i315])
+
 21.0.0
 ------
 *(May 16, 2021)*
@@ -1027,6 +1037,16 @@ added in this release.
 [i161]: https://github.com/mahmoud/boltons/issues/161
 [i162]: https://github.com/mahmoud/boltons/issues/162
 [i164]: https://github.com/mahmoud/boltons/issues/164
+[i294]: https://github.com/mahmoud/boltons/issues/294
+[i302]: https://github.com/mahmoud/boltons/issues/302
+[i303]: https://github.com/mahmoud/boltons/issues/303
+[i305]: https://github.com/mahmoud/boltons/issues/305
+[i312]: https://github.com/mahmoud/boltons/issues/312
+[i315]: https://github.com/mahmoud/boltons/issues/315
+[i320]: https://github.com/mahmoud/boltons/issues/320
+[i323]: https://github.com/mahmoud/boltons/issues/323
+[i326]: https://github.com/mahmoud/boltons/issues/326
+[i327]: https://github.com/mahmoud/boltons/issues/327
 [ioutils]: http://boltons.readthedocs.org/en/latest/ioutils.html
 [ioutils.MultiFileReader]: http://boltons.readthedocs.org/en/latest/ioutils.html#boltons.ioutils.MultiFileReader
 [ioutils.SpooledBytesIO]: http://boltons.readthedocs.org/en/latest/ioutils.html#boltons.ioutils.SpooledBytesIO
@@ -1036,6 +1056,7 @@ added in this release.
 [iterutils.backoff_iter]: http://boltons.readthedocs.org/en/latest/iterutils.html#boltons.iterutils.backoff_iter
 [iterutils.chunked]: http://boltons.readthedocs.org/en/latest/iterutils.html#boltons.iterutils.chunked
 [iterutils.chunked_iter]: http://boltons.readthedocs.org/en/latest/iterutils.html#boltons.iterutils.chunked_iter
+[iterutils.chunk_ranges]: http://boltons.readthedocs.org/en/latest/iterutils.html#boltons.iterutils.chunk_ranges
 [iterutils.first]: http://boltons.readthedocs.org/en/latest/iterutils.html#boltons.iterutils.first
 [iterutils.flatten]: http://boltons.readthedocs.org/en/latest/iterutils.html#boltons.iterutils.flatten
 [iterutils.flatten_iter]: http://boltons.readthedocs.org/en/latest/iterutils.html#boltons.iterutils.flatten_iter
