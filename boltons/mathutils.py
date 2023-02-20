@@ -215,7 +215,7 @@ class Bits(object):
         return hash(self.val)
 
     def as_list(self):
-        return [c == '1' for c in '{0:b}'.format(self.val)]
+        return [c == '1' for c in self.as_bin()]
 
     def as_bin(self):
         return '{{0:0{0}b}}'.format(self.len).format(self.val)
