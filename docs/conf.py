@@ -97,7 +97,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'boltons'
-copyright = u'2020, Mahmoud Hashemi'
+copyright = u'2023, Mahmoud Hashemi'
 author = u'Mahmoud Hashemi'
 
 version = '21.0'
