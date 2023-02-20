@@ -1,7 +1,7 @@
 try:
     from collections.abc import ItemsView, KeysView, ValuesView
 except ImportError:
-    from collections import KeysView, ValuesView, ItemsView
+    from collections import ItemsView, KeysView, ValuesView
 
 from collections.abc import Callable, Generator, Hashable, Iterable, Iterator
 from typing import Any, Never
