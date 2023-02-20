@@ -13,7 +13,7 @@ from setuptools import setup
 
 
 __author__ = 'Mahmoud Hashemi'
-__version__ = '23.0.0'
+__version__ = '23.0.1dev'
 __contact__ = 'mahmoud@hatnote.com'
 __url__ = 'https://github.com/mahmoud/boltons'
 __license__ = 'BSD'
@@ -60,7 +60,9 @@ A brief checklist for release:
 * git commit (if applicable)
 * Bump setup.py version off of -dev
 * git commit -a -m "bump version for x.y.z release"
-* python setup.py sdist bdist_wheel upload
+* rm -rf dist/*
+* python setup.py sdist bdist_wheel
+* twine upload dist/*
 * bump docs/conf.py version
 * git commit
 * git tag -a x.y.z -m "brief summary"
