@@ -82,7 +82,7 @@ except ImportError:
     from itertools import zip_longest as izip_longest
 
 try:
-    from typeutils import make_sentinel
+    from .typeutils import make_sentinel
     _MISSING = make_sentinel(var_name='_MISSING')
 except ImportError:
     _MISSING = object()

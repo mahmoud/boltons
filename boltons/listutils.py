@@ -47,7 +47,7 @@ from math import log as math_log
 from itertools import chain, islice
 
 try:
-    from typeutils import make_sentinel
+    from .typeutils import make_sentinel
     _MISSING = make_sentinel(var_name='_MISSING')
 except ImportError:
     _MISSING = object()

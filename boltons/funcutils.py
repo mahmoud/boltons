@@ -64,7 +64,7 @@ except AttributeError:
 
 
 try:
-    from boltons.typeutils import make_sentinel
+    from .typeutils import make_sentinel
     NO_DEFAULT = make_sentinel(var_name='NO_DEFAULT')
 except ImportError:
     NO_DEFAULT = object()

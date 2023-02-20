@@ -377,10 +377,12 @@ def daterange(start, stop, step=1, inclusive=False):
     else:
         raise ValueError('step expected int, timedelta, or tuple'
                          ' (year, month, day), not: %r' % step)
+    
+    m_step += y_step * 12
 
     if stop is None:
         finished = lambda now, stop: False
-    elif start < stop:
+    elif start <= stop:
         finished = operator.gt if inclusive else operator.ge
     else:
         finished = operator.lt if inclusive else operator.le
@@ -388,10 +390,10 @@ def daterange(start, stop, step=1, inclusive=False):
 
     while not finished(now, stop):
         yield now
-        if y_step or m_step:
-            m_y_step, cur_month = divmod(now.month + m_step, 12)
-            now = now.replace(year=now.year + y_step + m_y_step,
-                              month=cur_month or 12)
+        if m_step:
+            m_y_step, cur_month = divmod((now.month - 1) + m_step, 12)
+            now = now.replace(year=now.year + m_y_step,
+                              month=(cur_month + 1))
         now = now + d_step
     return
 

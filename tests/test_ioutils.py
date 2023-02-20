@@ -75,6 +75,29 @@ class BaseTestMixin(object):
         finally:
             os.rmdir(custom_dir)
 
+    def test_compare_err(self):
+        """Read-heads are reset if a comparison raises an error."""
+        def _monkey_err(*args, **kwargs):
+            raise Exception('A sad error has occurred today')
+
+        a = self.spooled_flo.__class__()
+        a.write(self.test_str)
+        b = self.spooled_flo.__class__()
+        b.write(self.test_str)
+
+        a.seek(1)
+        b.seek(2)
+
+        b.__next__ = _monkey_err
+
+        try:
+            a == b
+        except Exception:
+            pass
+
+        self.assertEqual(a.tell(), 1)
+        self.assertEqual(b.tell(), 2)
+
     def test_truncate_noargs_norollover(self):
         """Test truncating with no args with in-memory flo"""
         self.spooled_flo.write(self.test_str)
@@ -190,6 +213,23 @@ class BaseTestMixin(object):
         if not self.spooled_flo:
             raise AssertionError("Instance is not truthy")
 
+    def test_instance_check(self):
+        """Instance checks against IOBase succeed."""
+        if not isinstance(self.spooled_flo, io.IOBase):
+            raise AssertionError('{} is not an instance of IOBase'.format(type(self.spooled_flo)))
+
+    def test_closed_file_method_valueerrors(self):
+        """ValueError raised on closed files for certain methods."""
+        self.spooled_flo.close()
+        methods = (
+            'flush', 'isatty', 'pos', 'buf', 'truncate', '__next__', '__iter__',
+            '__enter__', 'read', 'readline', 'tell',
+        )
+        for method_name in methods:
+            with self.assertRaises(ValueError):
+                getattr(self.spooled_flo, method_name)()
+
+
 
 class TestSpooledBytesIO(TestCase, BaseTestMixin, AssertionsMixin):
     linesep = os.linesep.encode('ascii')
@@ -269,6 +309,13 @@ class TestSpooledBytesIO(TestCase, BaseTestMixin, AssertionsMixin):
         self.spooled_flo.write(b"a\nb")
         self.spooled_flo.seek(0)
         self.assertEqual([x for x in self.spooled_flo], [b"a\n", b"b"])
+
+    def test_writelines(self):
+        """An iterable of lines can be written"""
+        lines = [b"1", b"2", b"3"]
+        expected = b"123"
+        self.spooled_flo.writelines(lines)
+        self.assertEqual(self.spooled_flo.getvalue(), expected)
 
 
 class TestSpooledStringIO(TestCase, BaseTestMixin, AssertionsMixin):
@@ -407,6 +454,13 @@ class TestSpooledStringIO(TestCase, BaseTestMixin, AssertionsMixin):
         self.spooled_flo.write(u"a\nb")
         self.spooled_flo.seek(0)
         self.assertEqual([x for x in self.spooled_flo], [u"a\n", u"b"])
+
+    def test_writelines(self):
+        """An iterable of lines can be written"""
+        lines = [u"1", u"2", u"3"]
+        expected = u"123"
+        self.spooled_flo.writelines(lines)
+        self.assertEqual(self.spooled_flo.getvalue(), expected)
 
 
 class TestMultiFileReader(TestCase):
