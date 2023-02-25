@@ -4,6 +4,8 @@ import re
 import uuid
 from unittest import TestCase
 
+import pytest
+
 from boltons import strutils
 
 
@@ -58,6 +60,19 @@ def test_is_uuid():
     assert strutils.is_uuid(str(uuid.uuid4())) == True
     assert strutils.is_uuid(str(uuid.uuid4()), version=1) == False
     assert strutils.is_uuid(set('garbage')) == False
+
+
+def test_parse_int_or_float():
+    assert strutils.parse_int_or_float("1") == 1
+    assert strutils.parse_int_or_float("1.0") == 1
+    assert strutils.parse_int_or_float("1.05") == 1.05
+    assert str(strutils.parse_int_or_float(1)) == "1"
+    assert str(strutils.parse_int_or_float(1.0)) == "1"
+    assert str(strutils.parse_int_or_float(1.05)) == "1.05"
+    with pytest.raises(TypeError):
+        strutils.parse_int_or_float(dict())
+    with pytest.raises(ValueError):
+        strutils.parse_int_or_float("text")
 
 
 def test_parse_int_list():

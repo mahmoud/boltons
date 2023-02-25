@@ -908,6 +908,21 @@ def args2cmd(args, sep=' '):
     return ''.join(result)
 
 
+def parse_int_or_float(num):
+    try:
+        num_float = float(num)
+    except TypeError:
+        # Reraise errors with modified messages
+        err = "parse_int_or_float() argument must be a string, int, or float, not '{}'"
+        raise TypeError(err.format(type(num).__name__))
+    except ValueError:
+        err = "could not convert string to int or float: '{}'"
+        raise ValueError(err.format(num))
+    if num_float == int(num_float):
+        return int(num_float)
+    return num_float
+
+
 def parse_int_list(range_string, delim=',', range_delim='-'):
     """Returns a sorted list of positive integers based on
     *range_string*. Reverse of :func:`format_int_list`.
