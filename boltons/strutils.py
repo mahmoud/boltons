@@ -909,6 +909,47 @@ def args2cmd(args, sep=' '):
 
 
 def parse_int_or_float(num):
+    """
+    Convert a number string into an int or float, based on its value.
+
+    Especially helpful when an application can accept either type based on user
+    input, but also displays the value back to the user (e.g. a settings
+    window). If a user enters `1`, you typically don't want to display `1.0`
+    back to them.
+
+    Args:
+        num (str, int, float): The number to convert.
+    Returns:
+        an `int` or `float` parsed from the input.
+    Raises:
+        TypeError: If `num` is not a `str`, `int`, or `float`
+        ValueError: If `num` is unparsable as a number
+
+    >>> strutils.parse_int_or_float("1")
+    1
+    >>> strutils.parse_int_or_float("1.0")
+    1
+    >>> strutils.parse_int_or_float("1.05")
+    1.05
+    >>> strutils.parse_int_or_float("not a number")
+    Traceback (most recent call last):
+        ...
+    TypeError: parse_int_or_float() argument must be a string, int, or float, not 'dict'
+    >>> strutils.parse_int_or_float("dict()")
+    Traceback (most recent call last):
+        ...
+    ValueError: could not convert string to int or float: 'not a number'
+
+    Also accepts `int` and `float` directly, in case you do want to keep the
+    value as a float, and only convert it at the time of display.
+
+    >>> strutils.parse_int_or_float(1)
+    1
+    >>> strutils.parse_int_or_float(1.0)
+    1
+    >>> strutils.parse_int_or_float(1.05)
+    1.05
+    """
     try:
         num_float = float(num)
     except TypeError:
