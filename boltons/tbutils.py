@@ -682,7 +682,7 @@ def fix_print_exception():
 _frame_re = re.compile(r'^File "(?P<filepath>.+)", line (?P<lineno>\d+)'
                        r', in (?P<funcname>.+)$')
 _se_frame_re = re.compile(r'^File "(?P<filepath>.+)", line (?P<lineno>\d+)')
-
+_underline_re = re.compile(r'^[~^ ]*$')
 
 # TODO: ParsedException generator over large bodies of text
 
@@ -810,6 +810,9 @@ class ParsedException(object):
                 else:
                     frame_dict['source_line'] = next_line_stripped
                     line_no += 1
+                if _underline_re.match(tb_lines[line_no + 1]):
+                  # To deal with anchors
+                  line_no += 1
             else:
                 break
             line_no += 1
