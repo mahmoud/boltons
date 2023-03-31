@@ -51,3 +51,33 @@ RuntimeError"""
                                    'lineno': u'2',
                                    'funcname': u'load'}
     assert parsed_tb.to_string() == _tb_str
+
+def test_parsed_exc_with_anchor():
+    """parse a traceback with anchor lines beneath source lines"""
+    _tb_str = u"""\
+Traceback (most recent call last):
+  File "main.py", line 3, in <module>
+    print(add(1, "two"))
+          ^^^^^^^^^^^^^
+  File "add.py", line 2, in add
+    return a + b
+           ~~^~~
+TypeError: unsupported operand type(s) for +: 'int' and 'str'"""
+
+    parsed_tb = ParsedException.from_string(_tb_str)
+
+    assert parsed_tb.exc_type == 'TypeError'
+    assert parsed_tb.exc_msg == "unsupported operand type(s) for +: 'int' and 'str'"
+    assert parsed_tb.frames == [{'source_line': u'print(add(1, "two"))',
+                                  'filepath': u'main.py',
+                                  'lineno': u'3',
+                                  'funcname': u'<module>'},
+                                  {'source_line': u'return a + b',
+                                  'filepath': u'add.py',
+                                  'lineno': u'2',
+                                  'funcname': u'add'}]
+    
+    # Note: not checking the anchor lines (indices 3, 6) because column details not currently stored in ParsedException
+    _tb_str_lines = _tb_str.splitlines()
+    _tb_str_without_anchor = "\n".join(_tb_str_lines[:3] + _tb_str_lines[4:6] + _tb_str_lines[7:])
+    assert parsed_tb.to_string() == _tb_str_without_anchor
