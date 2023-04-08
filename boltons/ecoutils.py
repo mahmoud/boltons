@@ -363,9 +363,10 @@ try:
         return json.dumps(val, sort_keys=True)
 
 except ImportError:
-    _real_safe_repr = pprint._safe_repr
 
     def _fake_json_dumps(val, indent=2):
+        _real_safe_repr = pprint._safe_repr
+
         # never do this. this is a hack for Python 2.4. Python 2.5 added
         # the json module for a reason.
         def _fake_safe_repr(*a, **kw):
