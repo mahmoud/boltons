@@ -215,6 +215,8 @@ def copy_function(orig, copy_dict=True):
                        name=orig.__name__,
                        argdefs=getattr(orig, "__defaults__", None),
                        closure=getattr(orig, "__closure__", None))
+    if hasattr(orig, "__kwdefaults__"):
+        ret.__kwdefaults__ = orig.__kwdefaults__
     if copy_dict:
         ret.__dict__.update(orig.__dict__)
     return ret

@@ -52,6 +52,11 @@ def test_copy_function():
     assert callee is not callee_copy
     assert callee() == callee_copy()
 
+    # test that the copy works with keyword-only defaults!
+    f = lambda x, *, y=2: x * y
+    f_copy = copy_function(f)
+    assert f(21) == f_copy(21) == 42
+
 
 def test_total_ordering():
     @total_ordering
