@@ -74,6 +74,16 @@ def test_copy():
     return
 
 
+def test_omd_pickle():
+    import pickle
+
+    empty = OMD()
+    assert pickle.loads(pickle.dumps(empty)) == empty
+
+    nonempty = OMD([('a', 1), ('b', 2)])
+    assert pickle.loads(pickle.dumps(nonempty)) == nonempty
+
+
 def test_clear():
     for itemset in _ITEMSETS:
         omd = OMD(itemset)

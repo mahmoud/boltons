@@ -173,13 +173,17 @@ class OrderedMultiDict(dict):
        behavior, just use :meth:`~OrderedMultiDict.todict()`.
 
     """
+    def __new__(cls, *a, **kw):
+        ret = super(OrderedMultiDict, cls).__new__(cls)
+        ret._clear_ll()
+        return ret 
+
     def __init__(self, *args, **kwargs):
         if len(args) > 1:
             raise TypeError('%s expected at most 1 argument, got %s'
                             % (self.__class__.__name__, len(args)))
         super(OrderedMultiDict, self).__init__()
 
-        self._clear_ll()
         if args:
             self.update_extend(args[0])
         if kwargs:
