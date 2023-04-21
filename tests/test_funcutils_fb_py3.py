@@ -5,7 +5,7 @@ from collections import defaultdict
 
 import pytest
 
-from boltons.funcutils import wraps, FunctionBuilder, update_wrapper
+from boltons.funcutils import wraps, FunctionBuilder, update_wrapper, copy_function
 import boltons.funcutils as funcutils
 
 
@@ -51,6 +51,13 @@ def test_wraps_py3():
 
     assert kwonly_non_roundtrippable_repr() == (
         True, 'kwonly_non_roundtrippable_repr', 2)
+
+
+def test_copy_function_kw_defaults_py3():
+    # test that the copy works with keyword-only defaults
+    f = lambda x, *, y=2: x * y
+    f_copy = copy_function(f)
+    assert f(21) == f_copy(21) == 42
 
 
 @pytest.mark.parametrize('partial_kind', (functools, funcutils))
