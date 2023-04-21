@@ -71,8 +71,10 @@ thanks to `Mark Williams`_ for all his help.
 
 try:
     from collections.abc import KeysView, ValuesView, ItemsView
+    PY3 = True
 except ImportError:
     from collections import KeysView, ValuesView, ItemsView
+    PY3 = False
 
 import itertools
 
@@ -173,17 +175,29 @@ class OrderedMultiDict(dict):
        behavior, just use :meth:`~OrderedMultiDict.todict()`.
 
     """
+    def __new__(cls, *a, **kw):
+        ret = super(OrderedMultiDict, cls).__new__(cls)
+        ret._clear_ll()
+        return ret 
+    
     def __init__(self, *args, **kwargs):
         if len(args) > 1:
             raise TypeError('%s expected at most 1 argument, got %s'
                             % (self.__class__.__name__, len(args)))
         super(OrderedMultiDict, self).__init__()
 
-        self._clear_ll()
         if args:
             self.update_extend(args[0])
         if kwargs:
             self.update(kwargs)
+
+    if PY3:
+        def __getstate__(self):
+            return list(self.iteritems(multi=True))
+        
+        def __setstate__(self, state):
+            self.clear()
+            self.update_extend(state)
 
     def _clear_ll(self):
         try:

@@ -74,6 +74,22 @@ def test_copy():
     return
 
 
+def test_omd_pickle():
+    import pickle
+
+    empty = OMD()
+    pickled = pickle.dumps(empty)
+    roundtripped = pickle.loads(pickled)
+    assert roundtripped == empty
+
+    nonempty = OMD([('a', 1), ('b', 2), ('b', 3)])
+
+    roundtripped = pickle.loads(pickle.dumps(nonempty)) 
+    assert roundtripped == nonempty
+    assert roundtripped.getlist('b') == [2, 3]
+
+
+
 def test_clear():
     for itemset in _ITEMSETS:
         omd = OMD(itemset)
