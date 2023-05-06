@@ -301,6 +301,19 @@ def test_setdefault():
     assert e_omd.popall(1, None) is None
     assert len(e_omd) == 0
 
+
+def test_ior():
+    omd_a = OMD(_ITEMSETS[1])
+    omd_b = OMD(_ITEMSETS[2])
+    omd_c = OMD(_ITEMSETS[1])
+
+    omd_a_id = id(omd_a)
+    omd_a |= omd_b
+    omd_c.update(omd_b)
+
+    assert omd_a_id == id(omd_a)
+    assert omd_a == omd_c
+
 ## END OMD TESTS
 
 import string

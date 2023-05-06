@@ -386,6 +386,10 @@ class OrderedMultiDict(dict):
     def __ne__(self, other):
         return not (self == other)
 
+    def __ior__(self, other):
+        self.update(other)
+        return self
+
     def pop(self, k, default=_MISSING):
         """Remove all values under key *k*, returning the most-recently
         inserted value. Raises :exc:`KeyError` if the key is not
