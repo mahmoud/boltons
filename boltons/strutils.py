@@ -77,9 +77,9 @@ __all__ = ['camel2under', 'under2camel', 'slugify', 'split_punct_ws',
            'asciify', 'is_ascii', 'is_uuid', 'html2text', 'strip_ansi',
            'bytes2human', 'find_hashtags', 'a10n', 'gzip_bytes', 'gunzip_bytes',
            'iter_splitlines', 'indent', 'escape_shell_args',
-           'args2cmd', 'args2sh', 'parse_int_list', 'format_int_list',
-           'int_list_complement', 'int_list_to_int_tuples', 'MultiReplace',
-           'multi_replace', 'unwrap_text']
+           'args2cmd', 'args2sh', 'parse_int_or_float', 'parse_int_list',
+           'format_int_list', 'int_list_complement', 'int_list_to_int_tuples',
+           'MultiReplace', 'multi_replace', 'unwrap_text']
 
 
 _punct_ws_str = string.punctuation + string.whitespace
@@ -906,6 +906,62 @@ def args2cmd(args, sep=' '):
             result.append('"')
 
     return ''.join(result)
+
+
+def parse_int_or_float(num):
+    """
+    Convert a number string into an int or float, based on its value.
+
+    Especially helpful when an application can accept either type based on user
+    input, but also displays the value back to the user (e.g. a settings
+    window). If a user enters ``1``, you typically don't want to display ``1.0``
+    back to them.
+
+    Args:
+        num (str, int, float): The number to convert.
+    Returns:
+        an ``int`` or ``float`` parsed from the input.
+    Raises:
+        TypeError: If *num* is not a ``str``, ``int``, or ``float``
+        ValueError: If *num* is unparsable as a number
+
+    >>> strutils.parse_int_or_float("1")
+    1
+    >>> strutils.parse_int_or_float("1.0")
+    1
+    >>> strutils.parse_int_or_float("1.05")
+    1.05
+    >>> strutils.parse_int_or_float(dict())
+    Traceback (most recent call last):
+        ...
+    TypeError: parse_int_or_float() argument must be a string, int, or float, not 'dict'
+    >>> strutils.parse_int_or_float("not a number")
+    Traceback (most recent call last):
+        ...
+    ValueError: could not convert string to int or float: 'not a number'
+
+    Also accepts ``int`` and ``float`` directly, in case you do want to keep the
+    value as a float, and only convert it at the time of display.
+
+    >>> strutils.parse_int_or_float(1)
+    1
+    >>> strutils.parse_int_or_float(1.0)
+    1
+    >>> strutils.parse_int_or_float(1.05)
+    1.05
+    """
+    try:
+        num_float = float(num)
+    except TypeError:
+        # Reraise errors with modified messages
+        err = "parse_int_or_float() argument must be a string, int, or float, not '{}'"
+        raise TypeError(err.format(type(num).__name__))
+    except ValueError:
+        err = "could not convert string to int or float: '{}'"
+        raise ValueError(err.format(num))
+    if num_float == int(num_float):
+        return int(num_float)
+    return num_float
 
 
 def parse_int_list(range_string, delim=',', range_delim='-'):
