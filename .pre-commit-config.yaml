@@ -1,0 +1,48 @@
+# Check out https://pre-commit.com/ for documentation
+minimum_pre_commit_version: 3.3.3
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.4.0
+    hooks:
+      - id: check-case-conflict
+      - id: check-merge-conflict
+      - id: check-toml
+      - id: check-json
+      - id: check-shebang-scripts-are-executable
+      - id: check-symlinks
+      - id: check-yaml
+      - id: end-of-file-fixer
+      - id: fix-byte-order-marker
+      - id: fix-encoding-pragma
+        args: [--remove]
+      - id: trailing-whitespace
+
+  - repo: https://github.com/asottile/pyupgrade
+    rev: v3.7.0
+    hooks:
+      - id: pyupgrade
+        args: [--py38-plus]
+
+  - repo: https://github.com/pycqa/isort
+    rev: 5.12.0
+    hooks:
+      - id: isort
+        args: [--profile, black]
+
+  - repo: https://github.com/psf/black
+    rev: 23.3.0
+    hooks:
+      - id: black
+
+  - repo: https://github.com/asottile/blacken-docs
+    rev: 1.14.0
+    hooks:
+      - id: blacken-docs
+
+  - repo: https://github.com/pre-commit/mirrors-prettier
+    rev: v2.7.1
+    hooks:
+      - id: prettier
+        stages: [commit]
+        args: [--print-width, "100"]
+        exclude: ^recipes/.*
