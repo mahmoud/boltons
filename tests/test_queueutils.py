@@ -1,13 +1,11 @@
-# -*- coding: utf-8 -*-
-
-from boltons.queueutils import SortedPriorityQueue, HeapPriorityQueue
+from boltons.queueutils import HeapPriorityQueue, SortedPriorityQueue
 
 
 def _test_priority_queue(queue_type):
     pq = queue_type()
-    item1 = 'a'
-    item2 = 'b'
-    item3 = 'c'
+    item1 = "a"
+    item2 = "b"
+    item3 = "c"
     pq.add(item1)
     pq.remove(item1)
 
@@ -40,7 +38,7 @@ def _test_priority_queue(queue_type):
     except IndexError:
         pass
     else:
-        assert False, 'priority queue should be empty'
+        assert False, "priority queue should be empty"
     return
 
 

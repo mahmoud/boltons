@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # Copyright (c) 2013, Mahmoud Hashemi
 #
 # Redistribution and use in source and binary forms, with or without
@@ -35,15 +33,14 @@ utilities on top of Python's first-class function
 support. ``funcutils`` generally stays in the same vein, adding to and
 correcting Python's standard metaprogramming facilities.
 """
-from __future__ import print_function
 
-import sys
-import re
-import inspect
 import functools
+import inspect
 import itertools
+import re
+import sys
 from inspect import formatannotation
-from types import MethodType, FunctionType
+from types import FunctionType, MethodType
 
 make_method = lambda desc, obj, obj_type: MethodType(desc, obj)
 basestring = (str, bytes)
@@ -52,7 +49,8 @@ _inspect_iscoroutinefunction = inspect.iscoroutinefunction
 
 try:
     from .typeutils import make_sentinel
-    NO_DEFAULT = make_sentinel(var_name='NO_DEFAULT')
+
+    NO_DEFAULT = make_sentinel(var_name="NO_DEFAULT")
 except ImportError:
     NO_DEFAULT = object()
 
@@ -63,14 +61,20 @@ except ImportError:
 
 
 def inspect_formatargspec(
-        args, varargs=None, varkw=None, defaults=None,
-        kwonlyargs=(), kwonlydefaults={}, annotations={},
-        formatarg=str,
-        formatvarargs=lambda name: '*' + name,
-        formatvarkw=lambda name: '**' + name,
-        formatvalue=lambda value: '=' + repr(value),
-        formatreturns=lambda text: ' -> ' + text,
-        formatannotation=formatannotation):
+    args,
+    varargs=None,
+    varkw=None,
+    defaults=None,
+    kwonlyargs=(),
+    kwonlydefaults={},
+    annotations={},
+    formatarg=str,
+    formatvarargs=lambda name: "*" + name,
+    formatvarkw=lambda name: "**" + name,
+    formatvalue=lambda value: "=" + repr(value),
+    formatreturns=lambda text: " -> " + text,
+    formatannotation=formatannotation,
+):
     """Copy formatargspec from python 3.7 standard library.
     Python 3 has deprecated formatargspec and requested that Signature
     be used instead, however this requires a full reimplementation
@@ -82,8 +86,9 @@ def inspect_formatargspec(
     def formatargandannotation(arg):
         result = formatarg(arg)
         if arg in annotations:
-            result += ': ' + formatannotation(annotations[arg])
+            result += ": " + formatannotation(annotations[arg])
         return result
+
     specs = []
     if defaults:
         firstdefault = len(args) - len(defaults)
@@ -96,7 +101,7 @@ def inspect_formatargspec(
         specs.append(formatvarargs(formatargandannotation(varargs)))
     else:
         if kwonlyargs:
-            specs.append('*')
+            specs.append("*")
     if kwonlyargs:
         for kwonlyarg in kwonlyargs:
             spec = formatargandannotation(kwonlyarg)
@@ -105,9 +110,9 @@ def inspect_formatargspec(
             specs.append(spec)
     if varkw is not None:
         specs.append(formatvarkw(formatargandannotation(varkw)))
-    result = '(' + ', '.join(specs) + ')'
-    if 'return' in annotations:
-        result += formatreturns(formatannotation(annotations['return']))
+    result = "(" + ", ".join(specs) + ")"
+    if "return" in annotations:
+        result += formatreturns(formatannotation(annotations["return"]))
     return result
 
 
@@ -148,8 +153,7 @@ def mro_items(type_obj):
     ['denominator', 'imag', 'numerator', 'real']
     """
     # TODO: handle slots?
-    return itertools.chain.from_iterable(ct.__dict__.items()
-                                         for ct in type_obj.__mro__)
+    return itertools.chain.from_iterable(ct.__dict__.items() for ct in type_obj.__mro__)
 
 
 def dir_dict(obj, raise_exc=False):
@@ -187,11 +191,13 @@ def copy_function(orig, copy_dict=True):
         copy_dict (bool): Also copy any attributes set on the function
             instance. Defaults to ``True``.
     """
-    ret = FunctionType(orig.__code__,
-                       orig.__globals__,
-                       name=orig.__name__,
-                       argdefs=getattr(orig, "__defaults__", None),
-                       closure=getattr(orig, "__closure__", None))
+    ret = FunctionType(
+        orig.__code__,
+        orig.__globals__,
+        name=orig.__name__,
+        argdefs=getattr(orig, "__defaults__", None),
+        closure=getattr(orig, "__closure__", None),
+    )
     if hasattr(orig, "__kwdefaults__"):
         ret.__kwdefaults__ = orig.__kwdefaults__
     if copy_dict:
@@ -230,13 +236,22 @@ def partial_ordering(cls):
     >>> c > a
     False
     """
-    def __lt__(self, other): return self <= other and not self >= other
-    def __gt__(self, other): return self >= other and not self <= other
-    def __eq__(self, other): return self >= other and self <= other
 
-    if not hasattr(cls, '__lt__'): cls.__lt__ = __lt__
-    if not hasattr(cls, '__gt__'): cls.__gt__ = __gt__
-    if not hasattr(cls, '__eq__'): cls.__eq__ = __eq__
+    def __lt__(self, other):
+        return self <= other and not self >= other
+
+    def __gt__(self, other):
+        return self >= other and not self <= other
+
+    def __eq__(self, other):
+        return self >= other and self <= other
+
+    if not hasattr(cls, "__lt__"):
+        cls.__lt__ = __lt__
+    if not hasattr(cls, "__gt__"):
+        cls.__gt__ = __gt__
+    if not hasattr(cls, "__eq__"):
+        cls.__eq__ = __eq__
 
     return cls
 
@@ -257,14 +272,15 @@ class InstancePartial(functools.partial):
     has the same ability, but is slightly more efficient.
 
     """
+
     if partialmethod is not None:  # NB: See https://github.com/mahmoud/boltons/pull/244
+
         @property
         def _partialmethod(self):
             return partialmethod(self.func, *self.args, **self.keywords)
 
     def __get__(self, obj, obj_type):
         return make_method(self, obj, obj_type)
-
 
 
 class CachedInstancePartial(functools.partial):
@@ -277,14 +293,15 @@ class CachedInstancePartial(functools.partial):
 
     See the :class:`InstancePartial` docstring for more details.
     """
+
     if partialmethod is not None:  # NB: See https://github.com/mahmoud/boltons/pull/244
+
         @property
         def _partialmethod(self):
             return partialmethod(self.func, *self.args, **self.keywords)
 
-    if sys.version_info >= (3, 6):
-        def __set_name__(self, obj_type, name):
-            self.__name__ = name
+    def __set_name__(self, obj_type, name):
+        self.__name__ = name
 
     def __get__(self, obj, obj_type):
         # These assignments could've been in __init__, but there was
@@ -314,7 +331,7 @@ class CachedInstancePartial(functools.partial):
 partial = CachedInstancePartial
 
 
-def format_invocation(name='', args=(), kwargs=None, **kw):
+def format_invocation(name="", args=(), kwargs=None, **kw):
     """Given a name, positional arguments, and keyword arguments, format
     a basic Python-style function call.
 
@@ -326,23 +343,23 @@ def format_invocation(name='', args=(), kwargs=None, **kw):
     kw_func(a=1, b=2)
 
     """
-    _repr = kw.pop('repr', repr)
+    _repr = kw.pop("repr", repr)
     if kw:
-        raise TypeError('unexpected keyword args: %r' % ', '.join(kw.keys()))
+        raise TypeError("unexpected keyword args: %r" % ", ".join(kw.keys()))
     kwargs = kwargs or {}
-    a_text = ', '.join([_repr(a) for a in args])
+    a_text = ", ".join([_repr(a) for a in args])
     if isinstance(kwargs, dict):
         kwarg_items = [(k, kwargs[k]) for k in sorted(kwargs)]
     else:
         kwarg_items = kwargs
-    kw_text = ', '.join(['%s=%s' % (k, _repr(v)) for k, v in kwarg_items])
+    kw_text = ", ".join([f"{k}={_repr(v)}" for k, v in kwarg_items])
 
     all_args_text = a_text
     if all_args_text and kw_text:
-        all_args_text += ', '
+        all_args_text += ", "
     all_args_text += kw_text
 
-    return '%s(%s)' % (name, all_args_text)
+    return f"{name}({all_args_text})"
 
 
 def format_exp_repr(obj, pos_names, req_names=None, opt_names=None, opt_key=None):
@@ -400,8 +417,11 @@ def format_exp_repr(obj, pos_names, req_names=None, opt_names=None, opt_key=None
     args = [getattr(obj, name, None) for name in pos_names]
 
     kw_items = [(name, getattr(obj, name, None)) for name in all_names]
-    kw_items = [(name, val) for name, val in kw_items
-                if not (name in opt_names and opt_key(val))]
+    kw_items = [
+        (name, val)
+        for name, val in kw_items
+        if not (name in opt_names and opt_key(val))
+    ]
 
     return format_invocation(cn, args, kw_items)
 
@@ -449,13 +469,15 @@ def format_nonexp_repr(obj, req_names=None, opt_names=None, opt_key=None):
     assert callable(opt_key)
 
     items = [(name, getattr(obj, name, None)) for name in all_names]
-    labels = ['%s=%r' % (name, val) for name, val in items
-              if not (name in opt_names and opt_key(val))]
+    labels = [
+        f"{name}={val!r}"
+        for name, val in items
+        if not (name in opt_names and opt_key(val))
+    ]
     if not labels:
-        labels = ['id=%s' % id(obj)]
-    ret = '<%s %s>' % (cn, ' '.join(labels))
+        labels = ["id=%s" % id(obj)]
+    ret = "<{} {}>".format(cn, " ".join(labels))
     return ret
-
 
 
 # # #
@@ -496,8 +518,14 @@ def wraps(func, injected=None, expected=None, **kw):
         >>> example.__doc__
         'docstring'
     """
-    return partial(update_wrapper, func=func, build_from=None,
-                   injected=injected, expected=expected, **kw)
+    return partial(
+        update_wrapper,
+        func=func,
+        build_from=None,
+        injected=injected,
+        expected=expected,
+        **kw,
+    )
 
 
 def update_wrapper(wrapper, func, injected=None, expected=None, build_from=None, **kw):
@@ -581,16 +609,17 @@ def update_wrapper(wrapper, func, injected=None, expected=None, build_from=None,
     expected_items = _parse_wraps_expected(expected)
 
     if isinstance(func, (classmethod, staticmethod)):
-        raise TypeError('wraps does not support wrapping classmethods and'
-                        ' staticmethods, change the order of wrapping to'
-                        ' wrap the underlying function: %r'
-                        % (getattr(func, '__func__', None),))
+        raise TypeError(
+            "wraps does not support wrapping classmethods and"
+            " staticmethods, change the order of wrapping to"
+            " wrap the underlying function: %r" % (getattr(func, "__func__", None),)
+        )
 
-    update_dict = kw.pop('update_dict', True)
-    inject_to_varkw = kw.pop('inject_to_varkw', True)
-    hide_wrapped = kw.pop('hide_wrapped', False)
+    update_dict = kw.pop("update_dict", True)
+    inject_to_varkw = kw.pop("inject_to_varkw", True)
+    hide_wrapped = kw.pop("hide_wrapped", False)
     if kw:
-        raise TypeError('unexpected kwargs: %r' % kw.keys())
+        raise TypeError("unexpected kwargs: %r" % kw.keys())
 
     if isinstance(wrapper, functools.partial) and func is wrapper.func:
         build_from = build_from or wrapper
@@ -609,15 +638,15 @@ def update_wrapper(wrapper, func, injected=None, expected=None, build_from=None,
         fb.add_arg(arg, default)  # may raise ExistingArgument
 
     if fb.is_async:
-        fb.body = 'return await _call(%s)' % fb.get_invocation_str()
+        fb.body = "return await _call(%s)" % fb.get_invocation_str()
     else:
-        fb.body = 'return _call(%s)' % fb.get_invocation_str()
+        fb.body = "return _call(%s)" % fb.get_invocation_str()
 
     execdict = dict(_call=wrapper, _func=func)
     fully_wrapped = fb.get_func(execdict, with_dict=update_dict)
 
-    if hide_wrapped and hasattr(fully_wrapped, '__wrapped__'):
-        del fully_wrapped.__dict__['__wrapped__']
+    if hide_wrapped and hasattr(fully_wrapped, "__wrapped__"):
+        del fully_wrapped.__dict__["__wrapped__"]
     elif not hide_wrapped:
         fully_wrapped.__wrapped__ = func  # ref to the original function (#115)
 
@@ -638,9 +667,11 @@ def _parse_wraps_expected(expected):
     try:
         expected_iter = iter(expected)
     except TypeError as e:
-        raise ValueError('"expected" takes string name, sequence of string names,'
-                         ' iterable of (name, default) pairs, or a mapping of '
-                         ' {name: default}, not %r (got: %r)' % (expected, e))
+        raise ValueError(
+            '"expected" takes string name, sequence of string names,'
+            " iterable of (name, default) pairs, or a mapping of "
+            " {name: default}, not %r (got: %r)" % (expected, e)
+        )
     for argname in expected_iter:
         if isinstance(argname, basestring):
             # dict keys and bare strings
@@ -653,11 +684,15 @@ def _parse_wraps_expected(expected):
             try:
                 argname, default = argname
             except (TypeError, ValueError):
-                raise ValueError('"expected" takes string name, sequence of string names,'
-                                 ' iterable of (name, default) pairs, or a mapping of '
-                                 ' {name: default}, not %r')
+                raise ValueError(
+                    '"expected" takes string name, sequence of string names,'
+                    " iterable of (name, default) pairs, or a mapping of "
+                    " {name: default}, not %r"
+                )
         if not isinstance(argname, basestring):
-            raise ValueError('all "expected" argnames must be strings, not %r' % (argname,))
+            raise ValueError(
+                f'all "expected" argnames must be strings, not {argname!r}'
+            )
 
         expected_items.append((argname, default))
 
@@ -728,28 +763,31 @@ class FunctionBuilder:
 
     """
 
-    _argspec_defaults = {'args': list,
-                         'varargs': lambda: None,
-                         'varkw': lambda: None,
-                         'defaults': lambda: None,
-                         'kwonlyargs': list,
-                         'kwonlydefaults': dict,
-                         'annotations': dict}
+    _argspec_defaults = {
+        "args": list,
+        "varargs": lambda: None,
+        "varkw": lambda: None,
+        "defaults": lambda: None,
+        "kwonlyargs": list,
+        "kwonlydefaults": dict,
+        "annotations": dict,
+    }
 
     @classmethod
     def _argspec_to_dict(cls, f):
         argspec = inspect.getfullargspec(f)
-        return dict((attr, getattr(argspec, attr))
-                    for attr in cls._argspec_defaults)
+        return {attr: getattr(argspec, attr) for attr in cls._argspec_defaults}
 
-    _defaults = {'doc': str,
-                 'dict': dict,
-                 'is_async': lambda: False,
-                 'module': lambda: None,
-                 'body': lambda: 'pass',
-                 'indent': lambda: 4,
-                 "annotations": dict,
-                 'filename': lambda: 'boltons.funcutils.FunctionBuilder'}
+    _defaults = {
+        "doc": str,
+        "dict": dict,
+        "is_async": lambda: False,
+        "module": lambda: None,
+        "body": lambda: "pass",
+        "indent": lambda: 4,
+        "annotations": dict,
+        "filename": lambda: "boltons.funcutils.FunctionBuilder",
+    }
 
     _defaults.update(_argspec_defaults)
 
@@ -764,7 +802,7 @@ class FunctionBuilder:
             setattr(self, a, val)
 
         if kw:
-            raise TypeError('unexpected kwargs: %r' % kw.keys())
+            raise TypeError("unexpected kwargs: %r" % kw.keys())
         return
 
     # def get_argspec(self):  # TODO
@@ -780,38 +818,38 @@ class FunctionBuilder:
         else:
             annotations = {}
 
-        return inspect_formatargspec(self.args,
-                                     self.varargs,
-                                     self.varkw,
-                                     [],
-                                     self.kwonlyargs,
-                                     {},
-                                     annotations)
+        return inspect_formatargspec(
+            self.args, self.varargs, self.varkw, [], self.kwonlyargs, {}, annotations
+        )
 
-    _KWONLY_MARKER = re.compile(r"""
+    _KWONLY_MARKER = re.compile(
+        r"""
     \*     # a star
     \s*    # followed by any amount of whitespace
     ,      # followed by a comma
     \s*    # followed by any amount of whitespace
-    """, re.VERBOSE)
+    """,
+        re.VERBOSE,
+    )
 
     def get_invocation_str(self):
         kwonly_pairs = None
         formatters = {}
         if self.kwonlyargs:
-            kwonly_pairs = dict((arg, arg)
-                                for arg in self.kwonlyargs)
-            formatters['formatvalue'] = lambda value: '=' + value
+            kwonly_pairs = {arg: arg for arg in self.kwonlyargs}
+            formatters["formatvalue"] = lambda value: "=" + value
 
-        sig = inspect_formatargspec(self.args,
-                                    self.varargs,
-                                    self.varkw,
-                                    [],
-                                    kwonly_pairs,
-                                    kwonly_pairs,
-                                    {},
-                                    **formatters)
-        sig = self._KWONLY_MARKER.sub('', sig)
+        sig = inspect_formatargspec(
+            self.args,
+            self.varargs,
+            self.varkw,
+            [],
+            kwonly_pairs,
+            kwonly_pairs,
+            {},
+            **formatters,
+        )
+        sig = self._KWONLY_MARKER.sub("", sig)
         return sig[1:-1]
 
     @classmethod
@@ -823,25 +861,31 @@ class FunctionBuilder:
         # TODO: copy_body? gonna need a good signature regex.
         # TODO: might worry about __closure__?
         if not callable(func):
-            raise TypeError('expected callable object, not %r' % (func,))
+            raise TypeError(f"expected callable object, not {func!r}")
 
         if isinstance(func, functools.partial):
-            kwargs = {'name': func.func.__name__,
-                      'doc': func.func.__doc__,
-                      'module': getattr(func.func, '__module__', None),  # e.g., method_descriptor
-                      'annotations': getattr(func.func, "__annotations__", {}),
-                      'dict': getattr(func.func, '__dict__', {})}
+            kwargs = {
+                "name": func.func.__name__,
+                "doc": func.func.__doc__,
+                "module": getattr(
+                    func.func, "__module__", None
+                ),  # e.g., method_descriptor
+                "annotations": getattr(func.func, "__annotations__", {}),
+                "dict": getattr(func.func, "__dict__", {}),
+            }
         else:
-            kwargs = {'name': func.__name__,
-                      'doc': func.__doc__,
-                      'module': getattr(func, '__module__', None),  # e.g., method_descriptor
-                      'annotations': getattr(func, "__annotations__", {}),
-                      'dict': getattr(func, '__dict__', {})}
+            kwargs = {
+                "name": func.__name__,
+                "doc": func.__doc__,
+                "module": getattr(func, "__module__", None),  # e.g., method_descriptor
+                "annotations": getattr(func, "__annotations__", {}),
+                "dict": getattr(func, "__dict__", {}),
+            }
 
         kwargs.update(cls._argspec_to_dict(func))
 
         if _inspect_iscoroutinefunction(func):
-            kwargs['is_async'] = True
+            kwargs["is_async"] = True
 
         return cls(**kwargs)
 
@@ -865,17 +909,21 @@ class FunctionBuilder:
         execdict = execdict or {}
         body = self.body or self._default_body
 
-        tmpl = 'def {name}{sig_str}:'
-        tmpl += '\n{body}'
+        tmpl = "def {name}{sig_str}:"
+        tmpl += "\n{body}"
 
         if self.is_async:
-            tmpl = 'async ' + tmpl
+            tmpl = "async " + tmpl
 
-        body = _indent(self.body, ' ' * self.indent)
+        body = _indent(self.body, " " * self.indent)
 
-        name = self.name.replace('<', '_').replace('>', '_')  # lambdas
-        src = tmpl.format(name=name, sig_str=self.get_sig_str(with_annotations=False),
-                          doc=self.doc, body=body)
+        name = self.name.replace("<", "_").replace(">", "_")  # lambdas
+        src = tmpl.format(
+            name=name,
+            sig_str=self.get_sig_str(with_annotations=False),
+            doc=self.doc,
+            body=body,
+        )
         self._compile(src, execdict)
         func = execdict[name]
 
@@ -899,15 +947,16 @@ class FunctionBuilder:
         """Get a dictionary of function arguments with defaults and the
         respective values.
         """
-        ret = dict(reversed(list(zip(reversed(self.args),
-                                     reversed(self.defaults or [])))))
-        kwonlydefaults = getattr(self, 'kwonlydefaults', None)
+        ret = dict(
+            reversed(list(zip(reversed(self.args), reversed(self.defaults or []))))
+        )
+        kwonlydefaults = getattr(self, "kwonlydefaults", None)
         if kwonlydefaults:
             ret.update(kwonlydefaults)
         return ret
 
     def get_arg_names(self, only_required=False):
-        arg_names = tuple(self.args) + tuple(getattr(self, 'kwonlyargs', ()))
+        arg_names = tuple(self.args) + tuple(getattr(self, "kwonlyargs", ()))
         if only_required:
             defaults_dict = self.get_defaults_dict()
             arg_names = tuple([an for an in arg_names if an not in defaults_dict])
@@ -919,9 +968,13 @@ class FunctionBuilder:
         keyword-only argument
         """
         if arg_name in self.args:
-            raise ExistingArgument('arg %r already in func %s arg list' % (arg_name, self.name))
+            raise ExistingArgument(
+                f"arg {arg_name!r} already in func {self.name} arg list"
+            )
         if arg_name in self.kwonlyargs:
-            raise ExistingArgument('arg %r already in func %s kwonly arg list' % (arg_name, self.name))
+            raise ExistingArgument(
+                f"arg {arg_name!r} already in func {self.name} kwonly arg list"
+            )
         if not kwonly:
             self.args.append(arg_name)
             if default is not NO_DEFAULT:
@@ -952,8 +1005,10 @@ class FunctionBuilder:
                 self.kwonlyargs.remove(arg_name)
             except (AttributeError, ValueError):
                 # py3 and missing from both
-                exc = MissingArgument('arg %r not found in %s argument list:'
-                                      ' %r' % (arg_name, self.name, args))
+                exc = MissingArgument(
+                    "arg %r not found in %s argument list:"
+                    " %r" % (arg_name, self.name, args)
+                )
                 exc.arg_name = arg_name
                 raise exc
             else:
@@ -964,11 +1019,12 @@ class FunctionBuilder:
         return
 
     def _compile(self, src, execdict):
-
-        filename = ('<%s-%d>'
-                    % (self.filename, next(self._compile_count),))
+        filename = "<%s-%d>" % (
+            self.filename,
+            next(self._compile_count),
+        )
         try:
-            code = compile(src, filename, 'single')
+            code = compile(src, filename, "single")
             exec(code, execdict)
         except Exception:
             raise
@@ -983,10 +1039,11 @@ class ExistingArgument(ValueError):
     pass
 
 
-def _indent(text, margin, newline='\n', key=bool):
+def _indent(text, margin, newline="\n", key=bool):
     "based on boltons.strutils.indent"
-    indented_lines = [(margin + line if key(line) else line)
-                      for line in text.splitlines()]
+    indented_lines = [
+        (margin + line if key(line) else line) for line in text.splitlines()
+    ]
     return newline.join(indented_lines)
 
 
@@ -1002,46 +1059,40 @@ except ImportError:
         Code from http://code.activestate.com/recipes/576685/
         """
         convert = {
-            '__lt__': [
-                ('__gt__',
-                 lambda self, other: not (self < other or self == other)),
-                ('__le__',
-                 lambda self, other: self < other or self == other),
-                ('__ge__',
-                 lambda self, other: not self < other)],
-            '__le__': [
-                ('__ge__',
-                 lambda self, other: not self <= other or self == other),
-                ('__lt__',
-                 lambda self, other: self <= other and not self == other),
-                ('__gt__',
-                 lambda self, other: not self <= other)],
-            '__gt__': [
-                ('__lt__',
-                 lambda self, other: not (self > other or self == other)),
-                ('__ge__',
-                 lambda self, other: self > other or self == other),
-                ('__le__',
-                 lambda self, other: not self > other)],
-            '__ge__': [
-                ('__le__',
-                 lambda self, other: (not self >= other) or self == other),
-                ('__gt__',
-                 lambda self, other: self >= other and not self == other),
-                ('__lt__',
-                 lambda self, other: not self >= other)]
+            "__lt__": [
+                ("__gt__", lambda self, other: not (self < other or self == other)),
+                ("__le__", lambda self, other: self < other or self == other),
+                ("__ge__", lambda self, other: not self < other),
+            ],
+            "__le__": [
+                ("__ge__", lambda self, other: not self <= other or self == other),
+                ("__lt__", lambda self, other: self <= other and not self == other),
+                ("__gt__", lambda self, other: not self <= other),
+            ],
+            "__gt__": [
+                ("__lt__", lambda self, other: not (self > other or self == other)),
+                ("__ge__", lambda self, other: self > other or self == other),
+                ("__le__", lambda self, other: not self > other),
+            ],
+            "__ge__": [
+                ("__le__", lambda self, other: (not self >= other) or self == other),
+                ("__gt__", lambda self, other: self >= other and not self == other),
+                ("__lt__", lambda self, other: not self >= other),
+            ],
         }
         roots = set(dir(cls)) & set(convert)
         if not roots:
-            raise ValueError('must define at least one ordering operation:'
-                             ' < > <= >=')
-        root = max(roots)       # prefer __lt__ to __le__ to __gt__ to __ge__
+            raise ValueError(
+                "must define at least one ordering operation:" " < > <= >="
+            )
+        root = max(roots)  # prefer __lt__ to __le__ to __gt__ to __ge__
         for opname, opfunc in convert[root]:
             if opname not in roots:
                 opfunc.__name__ = opname
                 opfunc.__doc__ = getattr(int, opname).__doc__
                 setattr(cls, opname, opfunc)
         return cls
+
 
 def noop(*args, **kwargs):
     """
@@ -1064,5 +1115,6 @@ def noop(*args, **kwargs):
         post_func()
     """
     return None
+
 
 # end funcutils.py

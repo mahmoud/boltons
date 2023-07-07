@@ -1,11 +1,18 @@
-# -*- coding: utf-8 -*-
 import string
 import sys
-from abc import abstractmethod, ABCMeta
+from abc import ABCMeta, abstractmethod
 
 import pytest
 
-from boltons.cacheutils import LRU, LRI, cached, cachedmethod, cachedproperty, MinIDMap, ThresholdCounter
+from boltons.cacheutils import (
+    LRI,
+    LRU,
+    MinIDMap,
+    ThresholdCounter,
+    cached,
+    cachedmethod,
+    cachedproperty,
+)
 
 
 class CountingCallable:
@@ -35,12 +42,12 @@ def test_lri():
         if least_recent_insert_index >= 0:
             # least recently inserted object evicted
             assert len(bc) == cache_size
-            for char in string.ascii_letters[least_recent_insert_index+1:idx]:
+            for char in string.ascii_letters[least_recent_insert_index + 1 : idx]:
                 assert char in bc
 
     # test that reinserting an existing key changes eviction behavior
-    bc[string.ascii_letters[-cache_size+1]] = "new value"
-    least_recently_inserted_key = string.ascii_letters[-cache_size+2]
+    bc[string.ascii_letters[-cache_size + 1]] = "new value"
+    least_recently_inserted_key = string.ascii_letters[-cache_size + 2]
     bc["unreferenced_key"] = "value"
     keys_in_cache = [
         string.ascii_letters[i]
@@ -102,28 +109,28 @@ def test_cache_sizes_on_repeat_insertions():
 
 def test_lru_basic():
     lru = LRU(max_size=1)
-    repr(lru)                   # sanity
+    repr(lru)  # sanity
 
-    lru['hi'] = 0
-    lru['bye'] = 1
+    lru["hi"] = 0
+    lru["bye"] = 1
     assert len(lru) == 1
-    lru['bye']
-    assert lru.get('hi') is None
+    lru["bye"]
+    assert lru.get("hi") is None
 
-    del lru['bye']
-    assert 'bye' not in lru
+    del lru["bye"]
+    assert "bye" not in lru
     assert len(lru) == 0
     assert not lru
 
     try:
-        lru.pop('bye')
+        lru.pop("bye")
     except KeyError:
         pass
     else:
         assert False
 
     default = object()
-    assert lru.pop('bye', default) is default
+    assert lru.pop("bye", default) is default
 
     try:
         lru.popitem()
@@ -132,36 +139,35 @@ def test_lru_basic():
     else:
         assert False
 
-    lru['another'] = 1
-    assert lru.popitem() == ('another', 1)
+    lru["another"] = 1
+    assert lru.popitem() == ("another", 1)
 
-    lru['yet_another'] = 2
-    assert lru.pop('yet_another') == 2
+    lru["yet_another"] = 2
+    assert lru.pop("yet_another") == 2
 
-    lru['yet_another'] = 3
-    assert lru.pop('yet_another', default) == 3
+    lru["yet_another"] = 3
+    assert lru.pop("yet_another", default) == 3
 
-    lru['yet_another'] = 4
+    lru["yet_another"] = 4
     lru.clear()
     assert not lru
 
-    lru['yet_another'] = 5
+    lru["yet_another"] = 5
     second_lru = LRU(max_size=1)
     assert lru.copy() == lru
 
-    second_lru['yet_another'] = 5
+    second_lru["yet_another"] = 5
     assert second_lru == lru
     assert lru == second_lru
 
-    lru.update(LRU(max_size=2, values=[('a', 1),
-                                       ('b', 2)]))
+    lru.update(LRU(max_size=2, values=[("a", 1), ("b", 2)]))
     assert len(lru) == 1
-    assert 'yet_another' not in lru
+    assert "yet_another" not in lru
 
-    lru.setdefault('x', 2)
-    assert dict(lru) == {'x': 2}
-    lru.setdefault('x', 3)
-    assert dict(lru) == {'x': 2}
+    lru.setdefault("x", 2)
+    assert dict(lru) == {"x": 2}
+    lru.setdefault("x", 3)
+    assert dict(lru) == {"x": 2}
 
     assert lru != second_lru
     assert second_lru != lru
@@ -172,17 +178,17 @@ def test_lru_with_dupes():
     lru = LRU(max_size=SIZE)
     for i in [0, 0, 1, 1, 2, 2]:
         lru[i] = i
-        assert _test_linkage(lru._anchor, SIZE + 1), 'linked list invalid'
+        assert _test_linkage(lru._anchor, SIZE + 1), "linked list invalid"
 
 
 def test_lru_with_dupes_2():
     "From Issue #55, h/t github.com/mt"
     SIZE = 3
     lru = LRU(max_size=SIZE)
-    keys = ['A', 'A', 'B', 'A', 'C', 'B', 'D', 'E']
+    keys = ["A", "A", "B", "A", "C", "B", "D", "E"]
     for i, k in enumerate(keys):
-        lru[k] = 'HIT'
-        assert _test_linkage(lru._anchor, SIZE + 1), 'linked list invalid'
+        lru[k] = "HIT"
+        assert _test_linkage(lru._anchor, SIZE + 1), "linked list invalid"
 
     return
 
@@ -202,14 +208,13 @@ def _test_linkage(dll, max_count=10000, prev_idx=0, next_idx=1):
     prev = None
     while 1:
         if i > max_count:
-            raise Exception("did not return to anchor link after %r rounds"
-                            % max_count)
+            raise Exception("did not return to anchor link after %r rounds" % max_count)
         if prev is not None and cur is start:
             break
         prev = cur
         cur = cur[next_idx]
         if cur[prev_idx] is not prev:
-            raise Exception('prev_idx does not point to prev at i = %r' % i)
+            raise Exception("prev_idx does not point to prev at i = %r" % i)
         i += 1
 
     return True
@@ -225,7 +230,7 @@ def test_cached_dec():
     assert inner_func.call_count == 1
     func()
     assert inner_func.call_count == 1
-    func('man door hand hook car door')
+    func("man door hand hook car door")
     assert inner_func.call_count == 2
 
     return
@@ -240,11 +245,11 @@ def test_unscoped_cached_dec():
     other_func = cached(lru)(other_inner_func)
 
     assert inner_func.call_count == 0
-    func('a')
+    func("a")
     assert inner_func.call_count == 1
-    func('a')
+    func("a")
 
-    other_func('a')
+    other_func("a")
     assert other_inner_func.call_count == 0
     return
 
@@ -282,7 +287,7 @@ def test_cachedmethod():
             self.hook_count = 0
             self.hand_count = 0
 
-        @cachedmethod('h_cache')
+        @cachedmethod("h_cache")
         def hand(self, *a, **kw):
             self.hand_count += 1
 
@@ -290,7 +295,7 @@ def test_cachedmethod():
         def hook(self, *a, **kw):
             self.hook_count += 1
 
-        @cachedmethod('h_cache', scoped=False)
+        @cachedmethod("h_cache", scoped=False)
         def door(self, *a, **kw):
             self.door_count += 1
 
@@ -298,9 +303,9 @@ def test_cachedmethod():
 
     # attribute name-style
     assert car.hand_count == 0
-    car.hand('h', a='nd')
+    car.hand("h", a="nd")
     assert car.hand_count == 1
-    car.hand('h', a='nd')
+    car.hand("h", a="nd")
     assert car.hand_count == 1
 
     # callable-style
@@ -314,18 +319,18 @@ def test_cachedmethod():
     lru = LRU()
     car_one = Car(cache=lru)
     assert car_one.door_count == 0
-    car_one.door('bob')
+    car_one.door("bob")
     assert car_one.door_count == 1
-    car_one.door('bob')
+    car_one.door("bob")
     assert car_one.door_count == 1
 
     car_two = Car(cache=lru)
     assert car_two.door_count == 0
-    car_two.door('bob')
+    car_two.door("bob")
     assert car_two.door_count == 0
 
     # try unbound for kicks
-    Car.door(Car(), 'bob')
+    Car.door(Car(), "bob")
 
     # always check the repr
     print(repr(car_two.door))
@@ -334,15 +339,14 @@ def test_cachedmethod():
 
 
 def test_cachedmethod_maintains_func_abstraction():
-    ABC = ABCMeta('ABC', (object,), {})
+    ABC = ABCMeta("ABC", (object,), {})
 
     class Car(ABC):
-
         def __init__(self, cache=None):
             self.h_cache = LRI() if cache is None else cache
             self.hand_count = 0
 
-        @cachedmethod('h_cache')
+        @cachedmethod("h_cache")
         @abstractmethod
         def hand(self, *a, **kw):
             self.hand_count += 1
@@ -375,7 +379,7 @@ def test_cachedproperty():
     prop.useful_attr += 1  # would not be possible with normal properties
     assert prop.useful_attr == 2
 
-    delattr(prop, 'useful_attr')
+    delattr(prop, "useful_attr")
     assert prop.expensive_func.call_count == 1
     assert prop.useful_attr
     assert prop.expensive_func.call_count == 2
@@ -384,10 +388,9 @@ def test_cachedproperty():
 
 
 def test_cachedproperty_maintains_func_abstraction():
-    ABC = ABCMeta('ABC', (object,), {})
+    ABC = ABCMeta("ABC", (object,), {})
 
     class AbstractExpensiveCalculator(ABC):
-
         @cachedproperty
         @abstractmethod
         def calculate(self):
@@ -399,7 +402,8 @@ def test_cachedproperty_maintains_func_abstraction():
 
 def test_min_id_map():
     import sys
-    if '__pypy__' in sys.builtin_module_names:
+
+    if "__pypy__" in sys.builtin_module_names:
         return  # TODO: pypy still needs some work
 
     midm = MinIDMap()
@@ -419,7 +423,9 @@ def test_min_id_map():
             midm.drop(nxt)
 
     # test __iter__
-    assert sorted([f.val for f in list(midm)[:10]]) == list(range(1000 - len(ref_wheel), 1000))
+    assert sorted([f.val for f in list(midm)[:10]]) == list(
+        range(1000 - len(ref_wheel), 1000)
+    )
 
     items = list(midm.iteritems())
     assert isinstance(items[0][0], Foo)

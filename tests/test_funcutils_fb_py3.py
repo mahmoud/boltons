@@ -1,12 +1,11 @@
-
-import inspect
 import functools
+import inspect
 from collections import defaultdict
 
 import pytest
 
-from boltons.funcutils import wraps, FunctionBuilder, update_wrapper, copy_function
 import boltons.funcutils as funcutils
+from boltons.funcutils import FunctionBuilder, copy_function, update_wrapper, wraps
 
 
 def wrappable_varkw_func(a, b, **kw):
@@ -14,26 +13,28 @@ def wrappable_varkw_func(a, b, **kw):
 
 
 def pita_wrap(flag=False):
-
     def cedar_dec(func):
         @wraps(func)
         def cedar_wrapper(*a, **kw):
             return (flag, func.__name__, func(*a, **kw))
+
         return cedar_wrapper
 
     return cedar_dec
 
 
 def test_wraps_py3():
-
     @pita_wrap(flag=True)
-    def annotations(a: int, b: float=1, c: defaultdict=()) -> defaultdict:
+    def annotations(a: int, b: float = 1, c: defaultdict = ()) -> defaultdict:
         return a, b, c
 
     assert annotations(0) == (True, "annotations", (0, 1, ()))
-    assert annotations.__annotations__ == {'a': int, 'b': float,
-                                           'c': defaultdict,
-                                           'return': defaultdict}
+    assert annotations.__annotations__ == {
+        "a": int,
+        "b": float,
+        "c": defaultdict,
+        "return": defaultdict,
+    }
 
     @pita_wrap(flag=False)
     def kwonly_arg(a, *, b, c=2):
@@ -50,7 +51,10 @@ def test_wraps_py3():
         return x(1)
 
     assert kwonly_non_roundtrippable_repr() == (
-        True, 'kwonly_non_roundtrippable_repr', 2)
+        True,
+        "kwonly_non_roundtrippable_repr",
+        2,
+    )
 
 
 def test_copy_function_kw_defaults_py3():
@@ -60,7 +64,7 @@ def test_copy_function_kw_defaults_py3():
     assert f(21) == f_copy(21) == 42
 
 
-@pytest.mark.parametrize('partial_kind', (functools, funcutils))
+@pytest.mark.parametrize("partial_kind", (functools, funcutils))
 def test_update_wrapper_partial(partial_kind):
     wrapper = partial_kind.partial(wrappable_varkw_func, b=1)
 
@@ -73,67 +77,71 @@ def test_remove_kwonly_arg():
 
     def darkhelm_inject_loop(func):
         sig = inspect.signature(func)
-        loop_param = sig.parameters['loop'].replace(default=None)
+        loop_param = sig.parameters["loop"].replace(default=None)
         sig = sig.replace(parameters=[loop_param])
 
         def add_loop(args, kwargs):
             bargs = sig.bind(*args, **kwargs)
             bargs.apply_defaults()
-            if bargs.arguments['loop'] is None:
-                bargs.arguments['loop'] = "don't look at me, I just use gevent"
+            if bargs.arguments["loop"] is None:
+                bargs.arguments["loop"] = "don't look at me, I just use gevent"
 
             return bargs.arguments
 
         def wrapper(*args, **kwargs):
             return func(**add_loop(args, kwargs))
 
-        return wraps(func, injected=['loop'])(wrapper)
+        return wraps(func, injected=["loop"])(wrapper)
 
     @darkhelm_inject_loop
-    def example(test='default', *, loop='lol'):
+    def example(test="default", *, loop="lol"):
         return loop
 
     fb_example = FunctionBuilder.from_func(example)
-    assert 'test' in fb_example.args
-    assert fb_example.get_defaults_dict()['test'] == 'default'
+    assert "test" in fb_example.args
+    assert fb_example.get_defaults_dict()["test"] == "default"
 
-    assert 'loop' not in fb_example.kwonlyargs
-    assert 'loop' not in fb_example.kwonlydefaults
+    assert "loop" not in fb_example.kwonlyargs
+    assert "loop" not in fb_example.kwonlydefaults
 
 
 def test_defaults_dict():
-    def example(req, test='default', *, loop='lol'):
+    def example(req, test="default", *, loop="lol"):
         return loop
 
     fb_example = FunctionBuilder.from_func(example)
-    assert 'test' in fb_example.args
+    assert "test" in fb_example.args
     dd = fb_example.get_defaults_dict()
-    assert dd['test'] == 'default'
-    assert dd['loop'] == 'lol'
-    assert 'req' not in dd
+    assert dd["test"] == "default"
+    assert dd["loop"] == "lol"
+    assert "req" not in dd
 
 
 def test_get_arg_names():
-    def example(req, test='default', *, loop='lol'):
+    def example(req, test="default", *, loop="lol"):
         return loop
 
     fb_example = FunctionBuilder.from_func(example)
-    assert 'test' in fb_example.args
-    assert fb_example.get_arg_names() == ('req', 'test', 'loop')
-    assert fb_example.get_arg_names(only_required=True) == ('req',)
+    assert "test" in fb_example.args
+    assert fb_example.get_arg_names() == ("req", "test", "loop")
+    assert fb_example.get_arg_names(only_required=True) == ("req",)
 
 
-@pytest.mark.parametrize('signature,should_match',
-                         [('a, *, b', True),
-                          ('a,*,b', True),
-                          ('a, * , b', True),
-                          ('a, *,\nb', True),
-                          ('a, *\n,b', True),
-                          ('a, b', False),
-                          ('a, *args', False),
-                          ('a, *args, **kwargs', False),
-                          ('*args', False),
-                          ('*args, **kwargs', False)])
+@pytest.mark.parametrize(
+    "signature,should_match",
+    [
+        ("a, *, b", True),
+        ("a,*,b", True),
+        ("a, * , b", True),
+        ("a, *,\nb", True),
+        ("a, *\n,b", True),
+        ("a, b", False),
+        ("a, *args", False),
+        ("a, *args, **kwargs", False),
+        ("*args", False),
+        ("*args, **kwargs", False),
+    ],
+)
 def test_FunctionBuilder_KWONLY_MARKER(signature, should_match):
     """
     _KWONLY_MARKER matches the keyword-only argument separator,
@@ -143,30 +151,30 @@ def test_FunctionBuilder_KWONLY_MARKER(signature, should_match):
     """
     matched = bool(FunctionBuilder._KWONLY_MARKER.search(signature))
     message = "{!r}: should_match was {}, but result was {}".format(
-        signature, should_match, matched)
+        signature, should_match, matched
+    )
     assert bool(matched) == should_match, message
 
 
 def test_FunctionBuilder_add_arg_kwonly():
-    fb = FunctionBuilder('return_val', doc='returns the value',
-                         body='return val')
+    fb = FunctionBuilder("return_val", doc="returns the value", body="return val")
 
     broken_func = fb.get_func()
     with pytest.raises(NameError):
         broken_func()
 
-    fb.add_arg('val', default='default_val', kwonly=True)
+    fb.add_arg("val", default="default_val", kwonly=True)
 
     better_func = fb.get_func()
-    assert better_func() == 'default_val'
+    assert better_func() == "default_val"
 
     with pytest.raises(ValueError):
-        fb.add_arg('val')
+        fb.add_arg("val")
 
-    assert better_func(val='keyword') == 'keyword'
+    assert better_func(val="keyword") == "keyword"
 
     with pytest.raises(TypeError):
-        assert better_func('positional')
+        assert better_func("positional")
     return
 
 
@@ -235,13 +243,15 @@ def test_wraps_inner_kwarg_only():
     def g(a: float, b=10):
         return a * b
 
-    def f(a: int,  *, b=1):
+    def f(a: int, *, b=1):
         return a * b
 
     # all is well here...
     assert f(3) == 3
     assert g(3) == 30
-    assert wraps(f)(g)(3) == 3  # yay, g got the f default (not so with functools.wraps!)
+    assert (
+        wraps(f)(g)(3) == 3
+    )  # yay, g got the f default (not so with functools.wraps!)
 
     # but this doesn't work
     with pytest.raises(TypeError):

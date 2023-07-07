@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # Copyright (c) 2013, Mahmoud Hashemi
 #
 # Redistribution and use in source and binary forms, with or without
@@ -65,25 +63,31 @@ application use cases.
 """
 
 
-from heapq import heappush, heappop
-from bisect import insort
 import itertools
+from bisect import insort
+from heapq import heappop, heappush
 
 try:
     from .typeutils import make_sentinel
-    _REMOVED = make_sentinel(var_name='_REMOVED')
+
+    _REMOVED = make_sentinel(var_name="_REMOVED")
 except ImportError:
     _REMOVED = object()
 
 try:
     from .listutils import BList
+
     # see BarrelList docstring for notes
 except ImportError:
     BList = list
 
 
-__all__ = ['PriorityQueue', 'BasePriorityQueue',
-           'HeapPriorityQueue', 'SortedPriorityQueue']
+__all__ = [
+    "PriorityQueue",
+    "BasePriorityQueue",
+    "HeapPriorityQueue",
+    "SortedPriorityQueue",
+]
 
 
 # TODO: make Base a real abstract class
@@ -103,6 +107,7 @@ class BasePriorityQueue:
             representing the effective priority.
 
     """
+
     # negating priority means larger numbers = higher priority
     _default_priority_key = staticmethod(lambda p: -float(p or 0))
     _backend_type = list
@@ -111,9 +116,9 @@ class BasePriorityQueue:
         self._pq = self._backend_type()
         self._entry_map = {}
         self._counter = itertools.count()
-        self._get_priority = kw.pop('priority_key', self._default_priority_key)
+        self._get_priority = kw.pop("priority_key", self._default_priority_key)
         if kw:
-            raise TypeError('unexpected keyword arguments: %r' % kw.keys())
+            raise TypeError("unexpected keyword arguments: %r" % kw.keys())
 
     @staticmethod
     def _push_entry(backend, entry):
@@ -155,7 +160,7 @@ class BasePriorityQueue:
                 continue
             return
         if raise_exc:
-            raise IndexError('empty priority queue')
+            raise IndexError("empty priority queue")
 
     def peek(self, default=_REMOVED):
         """Read the next value in the queue without removing it. Returns
@@ -168,7 +173,7 @@ class BasePriorityQueue:
         except IndexError:
             if default is not _REMOVED:
                 return default
-            raise IndexError('peek on empty queue')
+            raise IndexError("peek on empty queue")
         return task
 
     def pop(self, default=_REMOVED):
@@ -183,7 +188,7 @@ class BasePriorityQueue:
         except IndexError:
             if default is not _REMOVED:
                 return default
-            raise IndexError('pop on empty queue')
+            raise IndexError("pop on empty queue")
         return task
 
     def __len__(self):
@@ -197,6 +202,7 @@ class HeapPriorityQueue(BasePriorityQueue):
     :func:`heapq.heappush` functions in the built-in :mod:`heapq`
     module.
     """
+
     @staticmethod
     def _pop_entry(backend):
         return heappop(backend)
@@ -211,6 +217,7 @@ class SortedPriorityQueue(BasePriorityQueue):
     on the :func:`bisect.insort` approach for in-order insertion into
     a sorted list.
     """
+
     _backend_type = BList
 
     @staticmethod

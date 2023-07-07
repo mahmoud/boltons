@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # Copyright (c) 2013, Mahmoud Hashemi
 #
 # Redistribution and use in source and binary forms, with or without
@@ -41,7 +39,7 @@ from collections import deque
 _issubclass = issubclass
 
 
-def make_sentinel(name='_MISSING', var_name=None):
+def make_sentinel(name="_MISSING", var_name=None):
     """Creates and returns a new **instance** of a new class, suitable for
     usage as a "sentinel", a kind of singleton often used to indicate
     a value is missing when ``None`` is a valid input.
@@ -73,6 +71,7 @@ def make_sentinel(name='_MISSING', var_name=None):
       False
 
     """
+
     class Sentinel:
         def __init__(self):
             self.name = name
@@ -81,9 +80,10 @@ def make_sentinel(name='_MISSING', var_name=None):
         def __repr__(self):
             if self.var_name:
                 return self.var_name
-            return '%s(%r)' % (self.__class__.__name__, self.name)
+            return f"{self.__class__.__name__}({self.name!r})"
 
         if var_name:
+
             def __reduce__(self):
                 return self.var_name
 
@@ -94,10 +94,12 @@ def make_sentinel(name='_MISSING', var_name=None):
 
     if var_name:
         frame = sys._getframe(1)
-        module = frame.f_globals.get('__name__')
+        module = frame.f_globals.get("__name__")
         if not module or module not in sys.modules:
-            raise ValueError('Pickleable sentinel objects (with var_name) can only'
-                             ' be created from top-level module scopes')
+            raise ValueError(
+                "Pickleable sentinel objects (with var_name) can only"
+                " be created from top-level module scopes"
+            )
         Sentinel.__module__ = module
 
     return Sentinel()
@@ -153,7 +155,7 @@ def get_all_subclasses(cls):
     try:
         to_check = deque(cls.__subclasses__())
     except (AttributeError, TypeError):
-        raise TypeError('expected type object, not %r' % cls)
+        raise TypeError("expected type object, not %r" % cls)
     seen, ret = set(), []
     while to_check:
         cur = to_check.popleft()

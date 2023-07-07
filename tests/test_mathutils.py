@@ -1,19 +1,40 @@
-
-from pytest import raises
-from boltons.mathutils import clamp, ceil, floor, Bits
 import math
 
-INF, NAN = float('inf'), float('nan')
+from pytest import raises
 
-OPTIONS = [1618, 1378, 166, 1521, 2347, 2016, 879, 2123,
-           269.3, 1230, 66, 425.2, 250, 2399, 2314, 439,
-           247, 208, 379, 1861]
+from boltons.mathutils import Bits, ceil, clamp, floor
+
+INF, NAN = float("inf"), float("nan")
+
+OPTIONS = [
+    1618,
+    1378,
+    166,
+    1521,
+    2347,
+    2016,
+    879,
+    2123,
+    269.3,
+    1230,
+    66,
+    425.2,
+    250,
+    2399,
+    2314,
+    439,
+    247,
+    208,
+    379,
+    1861,
+]
 OPTIONS_SORTED = sorted(OPTIONS)
 OUT_OF_RANGE_LOWER = 60
 OUT_OF_RANGE_UPPER = 2500
 VALID_LOWER = 247
 VALID_UPPER = 2314
 VALID_BETWEEN = 248.5
+
 
 def test_clamp_examples():
     """some examples for clamp()"""
@@ -23,6 +44,7 @@ def test_clamp_examples():
     assert 1 == clamp(5, upper=1)
     assert 0.5 == clamp(7, upper=0.5)
     assert 1 == clamp(7.7, upper=1)
+
 
 def test_clamp_transparent():
     """clamp(x) should equal x because both limits are omitted"""
@@ -79,35 +101,31 @@ def test_floor_oor_lower():
 def test_bits():
     def chk(a, b):
         assert a == b, a
-    chk(Bits('10')[:1], Bits('1'))
-    chk(Bits('10')[1:], Bits('0'))
-    chk(Bits('10')[0], True)
-    chk(Bits('10')[1], False)
-    chk(Bits('0000100')[4], True)
-    chk(Bits('10').as_list(), [True, False])
-    chk(Bits('10').as_int(), 2)
-    chk(Bits('10').as_bin(), '10')
-    chk(Bits('1111').as_hex(), '0F')
-    chk(Bits('10'), Bits([True, False]))
-    chk(Bits('10'), Bits(2))
-    chk(Bits('01') | Bits('10'), Bits('11'))
-    chk(Bits('01') & Bits('10'), Bits('00'))
-    chk(Bits('11') >> 1, Bits('1'))
-    chk(Bits('1') << 1, Bits('10'))
-    assert Bits('0') != Bits('00')
+
+    chk(Bits("10")[:1], Bits("1"))
+    chk(Bits("10")[1:], Bits("0"))
+    chk(Bits("10")[0], True)
+    chk(Bits("10")[1], False)
+    chk(Bits("0000100")[4], True)
+    chk(Bits("10").as_list(), [True, False])
+    chk(Bits("10").as_int(), 2)
+    chk(Bits("10").as_bin(), "10")
+    chk(Bits("1111").as_hex(), "0F")
+    chk(Bits("10"), Bits([True, False]))
+    chk(Bits("10"), Bits(2))
+    chk(Bits("01") | Bits("10"), Bits("11"))
+    chk(Bits("01") & Bits("10"), Bits("00"))
+    chk(Bits("11") >> 1, Bits("1"))
+    chk(Bits("1") << 1, Bits("10"))
+    assert Bits("0") != Bits("00")
     # test roundtrip as_/from_hex
-    chk(Bits.from_hex(Bits('10101010').as_hex()),
-        Bits('10101010'))
+    chk(Bits.from_hex(Bits("10101010").as_hex()), Bits("10101010"))
     # test roundtrip as_/from_bytes
-    chk(
-        Bits.from_bytes(Bits('10101010').as_bytes()),
-        Bits('10101010'))
+    chk(Bits.from_bytes(Bits("10101010").as_bytes()), Bits("10101010"))
     # pile of roundtripping
-    chk(Bits.from_int(
-            Bits.from_bin(
-                Bits.from_list(
-                    Bits('101').as_list()
-                ).as_bin()
-            ).as_int()
+    chk(
+        Bits.from_int(
+            Bits.from_bin(Bits.from_list(Bits("101").as_list()).as_bin()).as_int()
         ),
-        Bits('101'))
+        Bits("101"),
+    )

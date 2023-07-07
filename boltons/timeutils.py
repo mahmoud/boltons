@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # Copyright (c) 2013, Mahmoud Hashemi
 #
 # Redistribution and use in source and binary forms, with or without
@@ -52,11 +50,11 @@ degree of accuracy in corner cases, check out `pytz`_ and `dateutil`_.
 .. _dateutil: https://dateutil.readthedocs.io/en/stable/index.html
 """
 
-import re
-import time
 import bisect
 import operator
-from datetime import tzinfo, timedelta, date, datetime
+import re
+import time
+from datetime import date, datetime, timedelta, tzinfo
 
 
 def total_seconds(td):
@@ -105,7 +103,7 @@ def dt_to_timestamp(dt):
     return total_seconds(td)
 
 
-_NONDIGIT_RE = re.compile(r'\D')
+_NONDIGIT_RE = re.compile(r"\D")
 
 
 def isoparse(iso_str):
@@ -135,20 +133,21 @@ def isoparse(iso_str):
     return datetime(*dt_args)
 
 
-_BOUNDS = [(0, timedelta(seconds=1), 'second'),
-           (1, timedelta(seconds=60), 'minute'),
-           (1, timedelta(seconds=3600), 'hour'),
-           (1, timedelta(days=1), 'day'),
-           (1, timedelta(days=7), 'week'),
-           (2, timedelta(days=30), 'month'),
-           (1, timedelta(days=365), 'year')]
+_BOUNDS = [
+    (0, timedelta(seconds=1), "second"),
+    (1, timedelta(seconds=60), "minute"),
+    (1, timedelta(seconds=3600), "hour"),
+    (1, timedelta(days=1), "day"),
+    (1, timedelta(days=7), "week"),
+    (2, timedelta(days=30), "month"),
+    (1, timedelta(days=365), "year"),
+]
 _BOUNDS = [(b[0] * b[1], b[1], b[2]) for b in _BOUNDS]
 _BOUND_DELTAS = [b[0] for b in _BOUNDS]
 
-_FLOAT_PATTERN = r'[+-]?\ *(\d+(\.\d*)?|\.\d+)([eE][+-]?\d+)?'
+_FLOAT_PATTERN = r"[+-]?\ *(\d+(\.\d*)?|\.\d+)([eE][+-]?\d+)?"
 _PARSE_TD_RE = re.compile(r"((?P<value>%s)\s*(?P<unit>\w)\w*)" % _FLOAT_PATTERN)
-_PARSE_TD_KW_MAP = dict([(unit[0], unit + 's')
-                         for _, _, unit in reversed(_BOUNDS[:-2])])
+_PARSE_TD_KW_MAP = {unit[0]: unit + "s" for _, _, unit in reversed(_BOUNDS[:-2])}
 
 
 def parse_timedelta(text):
@@ -178,17 +177,18 @@ def parse_timedelta(text):
     """
     td_kwargs = {}
     for match in _PARSE_TD_RE.finditer(text):
-        value, unit = match.group('value'), match.group('unit')
+        value, unit = match.group("value"), match.group("unit")
         try:
             unit_key = _PARSE_TD_KW_MAP[unit]
         except KeyError:
-            raise ValueError('invalid time unit %r, expected one of %r'
-                             % (unit, _PARSE_TD_KW_MAP.keys()))
+            raise ValueError(
+                "invalid time unit %r, expected one of %r"
+                % (unit, _PARSE_TD_KW_MAP.keys())
+            )
         try:
             value = float(value)
         except ValueError:
-            raise ValueError('invalid time value for unit %r: %r'
-                             % (unit, value))
+            raise ValueError(f"invalid time value for unit {unit!r}: {value!r}")
         td_kwargs[unit_key] = value
     return timedelta(**td_kwargs)
 
@@ -201,7 +201,7 @@ def _cardinalize_time_unit(unit, value):
     # all time units cardinalize normally
     if value == 1:
         return unit
-    return unit + 's'
+    return unit + "s"
 
 
 def decimal_relative_time(d, other=None, ndigits=0, cardinalize=True):
@@ -276,10 +276,10 @@ def relative_time(d, other=None, ndigits=0):
 
     """
     drt, unit = decimal_relative_time(d, other, ndigits, cardinalize=True)
-    phrase = 'ago'
+    phrase = "ago"
     if drt < 0:
-        phrase = 'from now'
-    return '%g %s %s' % (abs(drt), unit, phrase)
+        phrase = "from now"
+    return f"{abs(drt):g} {unit} {phrase}"
 
 
 def strpdate(string, format):
@@ -375,9 +375,11 @@ def daterange(start, stop, step=1, inclusive=False):
     elif isinstance(d_step, timedelta):
         pass
     else:
-        raise ValueError('step expected int, timedelta, or tuple'
-                         ' (year, month, day), not: %r' % step)
-    
+        raise ValueError(
+            "step expected int, timedelta, or tuple"
+            " (year, month, day), not: %r" % step
+        )
+
     m_step += y_step * 12
 
     if stop is None:
@@ -392,8 +394,7 @@ def daterange(start, stop, step=1, inclusive=False):
         yield now
         if m_step:
             m_y_step, cur_month = divmod((now.month - 1) + m_step, 12)
-            now = now.replace(year=now.year + m_y_step,
-                              month=(cur_month + 1))
+            now = now.replace(year=now.year + m_y_step, month=(cur_month + 1))
         now = now + d_step
     return
 
@@ -414,6 +415,7 @@ class ConstantTZInfo(tzinfo):
         name (str): Name of the timezone.
         offset (datetime.timedelta): Offset of the timezone.
     """
+
     def __init__(self, name="ConstantTZ", offset=ZERO):
         self.name = name
         self.offset = offset
@@ -433,10 +435,10 @@ class ConstantTZInfo(tzinfo):
 
     def __repr__(self):
         cn = self.__class__.__name__
-        return '%s(name=%r, offset=%r)' % (cn, self.name, self.offset)
+        return f"{cn}(name={self.name!r}, offset={self.offset!r})"
 
 
-UTC = ConstantTZInfo('UTC')
+UTC = ConstantTZInfo("UTC")
 EPOCH_AWARE = datetime.fromtimestamp(0, UTC)
 EPOCH_NAIVE = datetime.utcfromtimestamp(0)
 
@@ -456,14 +458,24 @@ class LocalTZInfo(tzinfo):
     .. _pytz: https://pypi.python.org/pypi/pytz
 
     """
+
     _std_offset = timedelta(seconds=-time.timezone)
     _dst_offset = _std_offset
     if time.daylight:
         _dst_offset = timedelta(seconds=-time.altzone)
 
     def is_dst(self, dt):
-        dt_t = (dt.year, dt.month, dt.day, dt.hour, dt.minute,
-                dt.second, dt.weekday(), 0, -1)
+        dt_t = (
+            dt.year,
+            dt.month,
+            dt.day,
+            dt.hour,
+            dt.minute,
+            dt.second,
+            dt.weekday(),
+            0,
+            -1,
+        )
         local_t = time.localtime(time.mktime(dt_t))
         return local_t.tm_isdst > 0
 
@@ -481,7 +493,7 @@ class LocalTZInfo(tzinfo):
         return time.tzname[self.is_dst(dt)]
 
     def __repr__(self):
-        return '%s()' % self.__class__.__name__
+        return "%s()" % self.__class__.__name__
 
 
 LocalTZ = LocalTZInfo()
@@ -526,6 +538,7 @@ class USTimeZone(tzinfo):
     :data:`Eastern`, :data:`Central`, :data:`Mountain`, and
     :data:`Pacific` tzinfo types.
     """
+
     def __init__(self, hours, reprname, stdname, dstname):
         self.stdoffset = timedelta(hours=hours)
         self.reprname = reprname
@@ -575,7 +588,7 @@ class USTimeZone(tzinfo):
             return ZERO
 
 
-Eastern = USTimeZone(-5, "Eastern",  "EST", "EDT")
-Central = USTimeZone(-6, "Central",  "CST", "CDT")
+Eastern = USTimeZone(-5, "Eastern", "EST", "EDT")
+Central = USTimeZone(-6, "Central", "CST", "CDT")
 Mountain = USTimeZone(-7, "Mountain", "MST", "MDT")
-Pacific = USTimeZone(-8, "Pacific",  "PST", "PDT")
+Pacific = USTimeZone(-8, "Pacific", "PST", "PDT")

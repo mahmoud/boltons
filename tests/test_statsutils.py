@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 from boltons.statsutils import Stats
 
 
@@ -14,6 +13,7 @@ def test_stats_basic():
 
 def _test_pearson():
     import random
+
     from statsutils import pearson_type
 
     def get_pt(dist):
@@ -28,6 +28,6 @@ def _test_pearson():
         # pt = get_pt(dist=lambda: random.betavariate(2, 3))  # expect 1, beta
         # pt = get_pt(dist=lambda: random.expovariate(0.2))  # expect 3, beta
         pt = get_pt(dist=lambda: random.uniform(0.0, 10.0))  # gets 2
-        print('pearson type:', pt)
+        print("pearson type:", pt)
 
         # import pdb;pdb.set_trace()

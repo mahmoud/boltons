@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # Copyright (c) 2013, Mahmoud Hashemi
 #
 # Redistribution and use in source and binary forms, with or without
@@ -41,20 +39,19 @@ shorter-named convenience form that returns a list. Some of the
 following are based on examples in itertools docs.
 """
 
-import os
-import math
-import time
 import codecs
-import random
 import itertools
-
-from collections.abc import Mapping, Sequence, Set, ItemsView, Iterable
-
+import math
+import os
+import random
+import time
+from collections.abc import ItemsView, Iterable, Mapping, Sequence, Set
 
 try:
     from .typeutils import make_sentinel
-    _UNSET = make_sentinel('_UNSET')
-    _REMAP_EXIT = make_sentinel('_REMAP_EXIT')
+
+    _UNSET = make_sentinel("_UNSET")
+    _REMAP_EXIT = make_sentinel("_REMAP_EXIT")
 except ImportError:
     _REMAP_EXIT = object()
     _UNSET = object()
@@ -158,7 +155,7 @@ def split_iter(src, sep=None, maxsplit=None):
 
     """
     if not is_iterable(src):
-        raise TypeError('expected an iterable')
+        raise TypeError("expected an iterable")
 
     if maxsplit is not None:
         maxsplit = int(maxsplit)
@@ -234,7 +231,7 @@ def rstrip(iterable, strip_value=None):
     ['Foo', 'Bar']
 
     """
-    return list(rstrip_iter(iterable,strip_value))
+    return list(rstrip_iter(iterable, strip_value))
 
 
 def rstrip_iter(iterable, strip_value=None):
@@ -258,10 +255,9 @@ def rstrip_iter(iterable, strip_value=None):
                 else:
                     broken = True
                     break
-            if not broken: # Return to caller here because the end of the
-                return     # iterator has been reached
-            for t in cache:
-                yield t
+            if not broken:  # Return to caller here because the end of the
+                return  # iterator has been reached
+            yield from cache
         yield i
 
 
@@ -274,10 +270,10 @@ def strip(iterable, strip_value=None):
     ['Foo', 'Bar', 'Bam']
 
     """
-    return list(strip_iter(iterable,strip_value))
+    return list(strip_iter(iterable, strip_value))
 
 
-def strip_iter(iterable,strip_value=None):
+def strip_iter(iterable, strip_value=None):
     """Strips values from the beginning and end of an iterable. Stripped items
     will match the value of the argument strip_value. Functionality is
     analogous to that of the method str.strip. Returns a generator.
@@ -286,7 +282,7 @@ def strip_iter(iterable,strip_value=None):
     ['Foo', 'Bar', 'Bam']
 
     """
-    return rstrip_iter(lstrip_iter(iterable,strip_value),strip_value)
+    return rstrip_iter(lstrip_iter(iterable, strip_value), strip_value)
 
 
 def chunked(src, size, count=None, **kw):
@@ -315,7 +311,7 @@ def chunked(src, size, count=None, **kw):
 def _validate_positive_int(value, name, strictly_positive=True):
     value = int(value)
     if value < 0 or (strictly_positive and value == 0):
-        raise ValueError('expected a positive integer ' + name)
+        raise ValueError("expected a positive integer " + name)
     return value
 
 
@@ -334,16 +330,16 @@ def chunked_iter(src, size, **kw):
     """
     # TODO: add count kwarg?
     if not is_iterable(src):
-        raise TypeError('expected an iterable')
-    size = _validate_positive_int(size, 'chunk size')
+        raise TypeError("expected an iterable")
+    size = _validate_positive_int(size, "chunk size")
     do_fill = True
     try:
-        fill_val = kw.pop('fill')
+        fill_val = kw.pop("fill")
     except KeyError:
         do_fill = False
         fill_val = None
     if kw:
-        raise ValueError('got unexpected keyword arguments: %r' % kw.keys())
+        raise ValueError("got unexpected keyword arguments: %r" % kw.keys())
     if not src:
         return
     postprocess = lambda chk: chk
@@ -391,10 +387,16 @@ def chunk_ranges(input_size, chunk_size, input_offset=0, overlap_size=0, align=F
     >>> list(chunk_ranges(input_offset=3, input_size=15, chunk_size=5, overlap_size=1, align=True))
     [(3, 5), (4, 9), (8, 13), (12, 17), (16, 18)]
     """
-    input_size = _validate_positive_int(input_size, 'input_size', strictly_positive=False)
-    chunk_size = _validate_positive_int(chunk_size, 'chunk_size')
-    input_offset = _validate_positive_int(input_offset, 'input_offset', strictly_positive=False)
-    overlap_size = _validate_positive_int(overlap_size, 'overlap_size', strictly_positive=False)
+    input_size = _validate_positive_int(
+        input_size, "input_size", strictly_positive=False
+    )
+    chunk_size = _validate_positive_int(chunk_size, "chunk_size")
+    input_offset = _validate_positive_int(
+        input_offset, "input_offset", strictly_positive=False
+    )
+    overlap_size = _validate_positive_int(
+        overlap_size, "overlap_size", strictly_positive=False
+    )
 
     input_stop = input_offset + input_size
 
@@ -487,7 +489,7 @@ def xfrange(stop, start=None, step=1.0):
     See :func:`frange` for more details.
     """
     if not step:
-        raise ValueError('step must be non-zero')
+        raise ValueError("step must be non-zero")
     if start is None:
         start, stop = 0.0, stop * 1.0
     else:
@@ -514,7 +516,7 @@ def frange(stop, start=None, step=1.0):
     [5.0, 3.75, 2.5, 1.25]
     """
     if not step:
-        raise ValueError('step must be non-zero')
+        raise ValueError("step must be non-zero")
     if start is None:
         start, stop = 0.0, stop * 1.0
     else:
@@ -541,10 +543,9 @@ def backoff(start, stop, count=None, factor=2.0, jitter=False):
     >>> backoff(1, 10)
     [1.0, 2.0, 4.0, 8.0, 10.0]
     """
-    if count == 'repeat':
+    if count == "repeat":
         raise ValueError("'repeat' supported in backoff_iter, not backoff")
-    return list(backoff_iter(start, stop, count=count,
-                             factor=factor, jitter=jitter))
+    return list(backoff_iter(start, stop, count=count, factor=factor, jitter=jitter))
 
 
 def backoff_iter(start, stop, count=None, factor=2.0, jitter=False):
@@ -606,26 +607,26 @@ def backoff_iter(start, stop, count=None, factor=2.0, jitter=False):
     stop = float(stop)
     factor = float(factor)
     if start < 0.0:
-        raise ValueError('expected start >= 0, not %r' % start)
+        raise ValueError("expected start >= 0, not %r" % start)
     if factor < 1.0:
-        raise ValueError('expected factor >= 1.0, not %r' % factor)
+        raise ValueError("expected factor >= 1.0, not %r" % factor)
     if stop == 0.0:
-        raise ValueError('expected stop >= 0')
+        raise ValueError("expected stop >= 0")
     if stop < start:
-        raise ValueError('expected stop >= start, not %r' % stop)
+        raise ValueError("expected stop >= start, not %r" % stop)
     if count is None:
         denom = start if start else 1
-        count = 1 + math.ceil(math.log(stop/denom, factor))
+        count = 1 + math.ceil(math.log(stop / denom, factor))
         count = count if start else count + 1
-    if count != 'repeat' and count < 0:
+    if count != "repeat" and count < 0:
         raise ValueError('count must be positive or "repeat", not %r' % count)
     if jitter:
         jitter = float(jitter)
         if not (-1.0 <= jitter <= 1.0):
-            raise ValueError('expected jitter -1 <= j <= 1, not: %r' % jitter)
+            raise ValueError("expected jitter -1 <= j <= 1, not: %r" % jitter)
 
     cur, i = start, 0
-    while count == 'repeat' or i < count:
+    while count == "repeat" or i < count:
         if not jitter:
             cur_ret = cur
         elif jitter:
@@ -690,7 +691,7 @@ def bucketize(src, key=bool, value_transform=None, key_filter=None):
 
     """
     if not is_iterable(src):
-        raise TypeError('expected an iterable')
+        raise TypeError("expected an iterable")
     elif isinstance(key, list):
         if len(key) != len(src):
             raise ValueError("key and src have to be the same length")
@@ -703,15 +704,15 @@ def bucketize(src, key=bool, value_transform=None, key_filter=None):
     elif isinstance(key, list):
         key_func = lambda x: x[0]
     else:
-        raise TypeError('expected key to be callable or a string or a list')
+        raise TypeError("expected key to be callable or a string or a list")
 
     if value_transform is None:
         value_transform = lambda x: x
     if not callable(value_transform):
-        raise TypeError('expected callable value transform function')
+        raise TypeError("expected callable value transform function")
     if isinstance(key, list):
         f = value_transform
-        value_transform=lambda x: f(x[1])
+        value_transform = lambda x: f(x[1])
 
     ret = {}
     for val in src:
@@ -776,7 +777,7 @@ def unique_iter(src, key=None):
     ['hi', 'hello', 'bye']
     """
     if not is_iterable(src):
-        raise TypeError('expected an iterable, not %r' % type(src))
+        raise TypeError("expected an iterable, not %r" % type(src))
     if key is None:
         key_func = lambda x: x
     elif callable(key):
@@ -931,10 +932,10 @@ def flatten_iter(iterable):
     """
     for item in iterable:
         if isinstance(item, Iterable) and not isinstance(item, basestring):
-            for subitem in flatten_iter(item):
-                yield subitem
+            yield from flatten_iter(item)
         else:
             yield item
+
 
 def flatten(iterable):
     """``flatten()`` returns a collapsed list of all the elements from
@@ -978,6 +979,7 @@ def default_visit(path, key, value):
     # print('visit(%r, %r, %r)' % (path, key, value))
     return key, value
 
+
 # enable the extreme: monkeypatching iterutils with a different default_visit
 _orig_default_visit = default_visit
 
@@ -1017,12 +1019,11 @@ def default_exit(path, key, old_parent, new_parent, new_items):
         except AttributeError:
             ret = new_parent.__class__(vals)  # frozensets
     else:
-        raise RuntimeError('unexpected iterable type: %r' % type(new_parent))
+        raise RuntimeError("unexpected iterable type: %r" % type(new_parent))
     return ret
 
 
-def remap(root, visit=default_visit, enter=default_enter, exit=default_exit,
-          **kwargs):
+def remap(root, visit=default_visit, enter=default_enter, exit=default_exit, **kwargs):
     """The remap ("recursive map") function is used to traverse and
     transform nested structures. Lists, tuples, sets, and dictionaries
     are just a few of the data structures nested into heterogeneous
@@ -1122,14 +1123,14 @@ def remap(root, visit=default_visit, enter=default_enter, exit=default_exit,
     # TODO: improve argument formatting in sphinx doc
     # TODO: enter() return (False, items) to continue traverse but cancel copy?
     if not callable(visit):
-        raise TypeError('visit expected callable, not: %r' % visit)
+        raise TypeError("visit expected callable, not: %r" % visit)
     if not callable(enter):
-        raise TypeError('enter expected callable, not: %r' % enter)
+        raise TypeError("enter expected callable, not: %r" % enter)
     if not callable(exit):
-        raise TypeError('exit expected callable, not: %r' % exit)
-    reraise_visit = kwargs.pop('reraise_visit', True)
+        raise TypeError("exit expected callable, not: %r" % exit)
+    reraise_visit = kwargs.pop("reraise_visit", True)
     if kwargs:
-        raise TypeError('unexpected keyword arguments: %r' % kwargs.keys())
+        raise TypeError("unexpected keyword arguments: %r" % kwargs.keys())
 
     path, registry, stack = (), {}, [(None, root)]
     new_items_stack = []
@@ -1152,8 +1153,10 @@ def remap(root, visit=default_visit, enter=default_enter, exit=default_exit,
                 new_parent, new_items = res
             except TypeError:
                 # TODO: handle False?
-                raise TypeError('enter should return a tuple of (new_parent,'
-                                ' items_iterator), not: %r' % res)
+                raise TypeError(
+                    "enter should return a tuple of (new_parent,"
+                    " items_iterator), not: %r" % res
+                )
             if new_items is not False:
                 # traverse unless False is explicitly passed
                 registry[id_value] = new_parent
@@ -1184,7 +1187,7 @@ def remap(root, visit=default_visit, enter=default_enter, exit=default_exit,
         try:
             new_items_stack[-1][1].append(visited_item)
         except IndexError:
-            raise TypeError('expected remappable root, not: %r' % root)
+            raise TypeError("expected remappable root, not: %r" % root)
     return value
 
 
@@ -1193,6 +1196,7 @@ class PathAccessError(KeyError, IndexError, TypeError):
     representing what can occur when looking up a path in a nested
     object.
     """
+
     def __init__(self, exc, seg, path):
         self.exc = exc
         self.seg = seg
@@ -1200,11 +1204,14 @@ class PathAccessError(KeyError, IndexError, TypeError):
 
     def __repr__(self):
         cn = self.__class__.__name__
-        return '%s(%r, %r, %r)' % (cn, self.exc, self.seg, self.path)
+        return f"{cn}({self.exc!r}, {self.seg!r}, {self.path!r})"
 
     def __str__(self):
-        return ('could not access %r from path %r, got error: %r'
-                % (self.seg, self.path, self.exc))
+        return "could not access {!r} from path {!r}, got error: {!r}".format(
+            self.seg,
+            self.path,
+            self.exc,
+        )
 
 
 def get_path(root, path, default=_UNSET):
@@ -1241,7 +1248,7 @@ def get_path(root, path, default=_UNSET):
           ``PathAccessError`` exceptions be raised.
     """
     if isinstance(path, basestring):
-        path = path.split('.')
+        path = path.split(".")
     cur = root
     try:
         for seg in path:
@@ -1257,8 +1264,9 @@ def get_path(root, path, default=_UNSET):
                     cur = cur[seg]
                 except (ValueError, KeyError, IndexError, TypeError):
                     if not is_iterable(cur):
-                        exc = TypeError('%r object is not indexable'
-                                        % type(cur).__name__)
+                        exc = TypeError(
+                            "%r object is not indexable" % type(cur).__name__
+                        )
                     raise PathAccessError(exc, seg, path)
     except PathAccessError:
         if default is _UNSET:
@@ -1312,7 +1320,7 @@ def research(root, query=lambda p, k, v: True, reraise=False):
     ret = []
 
     if not callable(query):
-        raise TypeError('query expected callable, not: %r' % query)
+        raise TypeError("query expected callable, not: %r" % query)
 
     def enter(path, key, value):
         try:
@@ -1334,6 +1342,7 @@ def research(root, query=lambda p, k, v: True, reraise=False):
 
 # GUID iterators: 10x faster and somewhat more compact than uuid.
 
+
 class GUIDerator:
     """The GUIDerator is an iterator that yields a globally-unique
     identifier (GUID) on every iteration. The GUIDs produced are
@@ -1354,23 +1363,29 @@ class GUIDerator:
     detect a fork on next iteration and reseed accordingly.
 
     """
+
     def __init__(self, size=24):
         self.size = size
         if size < 20 or size > 36:
-            raise ValueError('expected 20 < size <= 36')
+            raise ValueError("expected 20 < size <= 36")
         import hashlib
+
         self._sha1 = hashlib.sha1
         self.count = itertools.count()
         self.reseed()
 
     def reseed(self):
         import socket
+
         self.pid = os.getpid()
-        self.salt = '-'.join([str(self.pid),
-                              socket.gethostname() or b'<nohostname>',
-                              str(time.time()),
-                              codecs.encode(os.urandom(6),
-                                            'hex_codec').decode('ascii')])
+        self.salt = "-".join(
+            [
+                str(self.pid),
+                socket.gethostname() or b"<nohostname>",
+                str(time.time()),
+                codecs.encode(os.urandom(6), "hex_codec").decode("ascii"),
+            ]
+        )
         # that codecs trick is the best/only way to get a bytes to
         # hexbytes in py2/3
         return
@@ -1381,8 +1396,8 @@ class GUIDerator:
     def __next__(self):
         if os.getpid() != self.pid:
             self.reseed()
-        target_bytes = (self.salt + str(next(self.count))).encode('utf8')
-        hash_text = self._sha1(target_bytes).hexdigest()[:self.size]
+        target_bytes = (self.salt + str(next(self.count))).encode("utf8")
+        hash_text = self._sha1(target_bytes).hexdigest()[: self.size]
         return hash_text
 
     next = __next__
@@ -1416,15 +1431,15 @@ class SequentialGUIDerator(GUIDerator):
     """
 
     def reseed(self):
-        super(SequentialGUIDerator, self).reseed()
-        start_str = self._sha1(self.salt.encode('utf8')).hexdigest()
-        self.start = int(start_str[:self.size], 16)
-        self.start |= (1 << ((self.size * 4) - 2))
+        super().reseed()
+        start_str = self._sha1(self.salt.encode("utf8")).hexdigest()
+        self.start = int(start_str[: self.size], 16)
+        self.start |= 1 << ((self.size * 4) - 2)
 
     def __next__(self):
         if os.getpid() != self.pid:
             self.reseed()
-        return '%x' % (next(self.count) + self.start)
+        return "%x" % (next(self.count) + self.start)
 
     next = __next__
 
@@ -1469,13 +1484,19 @@ def soft_sorted(iterable, first=None, last=None, key=None, reverse=False):
     last = last or []
     key = key or (lambda x: x)
     seq = list(iterable)
-    other = [x for x in seq if not ((first and key(x) in first) or (last and key(x) in last))]
+    other = [
+        x for x in seq if not ((first and key(x) in first) or (last and key(x) in last))
+    ]
     other.sort(key=key, reverse=reverse)
 
     if first:
-        first = sorted([x for x in seq if key(x) in first], key=lambda x: first.index(key(x)))
+        first = sorted(
+            [x for x in seq if key(x) in first], key=lambda x: first.index(key(x))
+        )
     if last:
-        last = sorted([x for x in seq if key(x) in last], key=lambda x: last.index(key(x)))
+        last = sorted(
+            [x for x in seq if key(x) in last], key=lambda x: last.index(key(x))
+        )
     return first + other + last
 
 
@@ -1497,8 +1518,9 @@ def untyped_sorted(iterable, key=None, reverse=False):
        explicitly unorderable objects.
 
     """
+
     class _Wrapper:
-        slots = ('obj',)
+        slots = ("obj",)
 
         def __init__(self, obj):
             self.obj = obj
@@ -1509,15 +1531,18 @@ def untyped_sorted(iterable, key=None, reverse=False):
             try:
                 ret = obj < other
             except TypeError:
-                ret = ((type(obj).__name__, id(type(obj)), obj)
-                        < (type(other).__name__, id(type(other)), other))
+                ret = (type(obj).__name__, id(type(obj)), obj) < (
+                    type(other).__name__,
+                    id(type(other)),
+                    other,
+                )
             return ret
 
     if key is not None and not callable(key):
-        raise TypeError('expected function or callable object for key, not: %r'
-                        % key)
+        raise TypeError("expected function or callable object for key, not: %r" % key)
 
     return sorted(iterable, key=_Wrapper, reverse=reverse)
+
 
 """
 May actually be faster to do an isinstance check for a str path

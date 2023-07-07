@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # Copyright (c) 2013, Mahmoud Hashemi
 #
 # Redistribution and use in source and binary forms, with or without
@@ -148,26 +146,26 @@ and print a profile in JSON format::
 
 """
 
-import re
+import datetime
+import getpass
+import json
 import os
-import sys
-import time
+import platform
 import pprint
 import random
-import json
+import re
 import socket
-import struct
-import getpass
-import datetime
-import platform
 import sqlite3
 import ssl
-import zlib
+import struct
+import sys
+import time
 import tkinter
-from xml.parsers import expat
+import zlib
 from multiprocessing import cpu_count
+from xml.parsers import expat
 
-ECO_VERSION = '1.0.1'  # see version history below
+ECO_VERSION = "1.0.1"  # see version history below
 
 try:
     getrandbits = random.SystemRandom().getrandbits
@@ -189,43 +187,47 @@ HAVE_IPV6 = socket.has_ipv6
 
 
 try:
-    from resource import getrlimit, RLIMIT_NOFILE
+    from resource import RLIMIT_NOFILE, getrlimit
+
     RLIMIT_FDS_SOFT, RLIMIT_FDS_HARD = getrlimit(RLIMIT_NOFILE)
 except Exception:
     RLIMIT_FDS_SOFT, RLIMIT_FDS_HARD = 0, 0
 
 
-START_TIME_INFO = {'time_utc': str(datetime.datetime.utcnow()),
-                   'time_utc_offset': -time.timezone / 3600.0}
+START_TIME_INFO = {
+    "time_utc": str(datetime.datetime.utcnow()),
+    "time_utc_offset": -time.timezone / 3600.0,
+}
 
 
 def get_python_info():
     ret = {}
-    ret['argv'] = _escape_shell_args(sys.argv)
-    ret['bin'] = sys.executable
+    ret["argv"] = _escape_shell_args(sys.argv)
+    ret["bin"] = sys.executable
 
     # Even though compiler/build_date are already here, they're
     # actually parsed from the version string. So, in the rare case of
     # the unparsable version string, we're still transmitting it.
     # TODO: why split and join?
-    ret['version'] = ' '.join(sys.version.split())
+    ret["version"] = " ".join(sys.version.split())
 
-    ret['compiler'] = platform.python_compiler()
-    ret['build_date'] = platform.python_build()[1]
-    ret['version_info'] = list(sys.version_info)
+    ret["compiler"] = platform.python_compiler()
+    ret["build_date"] = platform.python_build()[1]
+    ret["version_info"] = list(sys.version_info)
 
-    ret['features'] = {'openssl': OPENSSL_VERSION,
-                       'expat': EXPAT_VERSION,
-                       'sqlite': SQLITE_VERSION,
-                       'tkinter': TKINTER_VERSION,
-                       'zlib': ZLIB_VERSION,
-                       '64bit': IS_64BIT,
-                       'ipv6': HAVE_IPV6,
-                       'urandom': HAVE_URANDOM,
-                       'unicode_wide': True,
-                       'readline': True,
-                       'threading': True,
-                      }
+    ret["features"] = {
+        "openssl": OPENSSL_VERSION,
+        "expat": EXPAT_VERSION,
+        "sqlite": SQLITE_VERSION,
+        "tkinter": TKINTER_VERSION,
+        "zlib": ZLIB_VERSION,
+        "64bit": IS_64BIT,
+        "ipv6": HAVE_IPV6,
+        "urandom": HAVE_URANDOM,
+        "unicode_wide": True,
+        "readline": True,
+        "threading": True,
+    }
 
     return ret
 
@@ -247,53 +249,56 @@ def get_profile(**kwargs):
     remain in place.
 
     """
-    scrub = kwargs.get('scrub', False)
+    scrub = kwargs.get("scrub", False)
     if kwargs:
-        raise TypeError('unexpected keyword arguments: %r' % (kwargs.keys(),))
+        raise TypeError(f"unexpected keyword arguments: {kwargs.keys()!r}")
     ret = {}
     try:
-        ret['username'] = getpass.getuser()
+        ret["username"] = getpass.getuser()
     except Exception:
-        ret['username'] = ''
-    ret['guid'] = str(INSTANCE_ID)
-    ret['hostname'] = socket.gethostname()
-    ret['hostfqdn'] = socket.getfqdn()
-    ret['uname'] = {'system': platform.system(),
-                    'node': platform.node(),
-                    'release': platform.release(),  # linux: distro name
-                    'version': platform.version(),  # linux: kernel version
-                    'machine': platform.machine(),
-                    'processor': platform.processor()}
+        ret["username"] = ""
+    ret["guid"] = str(INSTANCE_ID)
+    ret["hostname"] = socket.gethostname()
+    ret["hostfqdn"] = socket.getfqdn()
+    ret["uname"] = {
+        "system": platform.system(),
+        "node": platform.node(),
+        "release": platform.release(),  # linux: distro name
+        "version": platform.version(),  # linux: kernel version
+        "machine": platform.machine(),
+        "processor": platform.processor(),
+    }
     # TODO: remove because deprecated; consider using https://pypi.org/project/distro
     try:
         linux_dist = platform.linux_distribution()
     except Exception:
-        linux_dist = ('', '', '')
-    ret['linux_dist_name'] = linux_dist[0]
-    ret['linux_dist_version'] = linux_dist[1]
-    ret['cpu_count'] = CPU_COUNT
+        linux_dist = ("", "", "")
+    ret["linux_dist_name"] = linux_dist[0]
+    ret["linux_dist_version"] = linux_dist[1]
+    ret["cpu_count"] = CPU_COUNT
 
-    ret['fs_encoding'] = sys.getfilesystemencoding()
-    ret['ulimit_soft'] = RLIMIT_FDS_SOFT
-    ret['ulimit_hard'] = RLIMIT_FDS_HARD
-    ret['cwd'] = os.getcwd()
-    ret['umask'] = oct(os.umask(os.umask(2))).rjust(3, '0')
+    ret["fs_encoding"] = sys.getfilesystemencoding()
+    ret["ulimit_soft"] = RLIMIT_FDS_SOFT
+    ret["ulimit_hard"] = RLIMIT_FDS_HARD
+    ret["cwd"] = os.getcwd()
+    ret["umask"] = oct(os.umask(os.umask(2))).rjust(3, "0")
 
-    ret['python'] = get_python_info()
+    ret["python"] = get_python_info()
     ret.update(START_TIME_INFO)
-    ret['_eco_version'] = ECO_VERSION
+    ret["_eco_version"] = ECO_VERSION
 
     if scrub:
         # mask identifiable information
-        ret['cwd'] = '-'
-        ret['hostname'] = '-'
-        ret['hostfqdn'] = '-'
-        ret['python']['bin'] = '-'
-        ret['python']['argv'] = '-'
-        ret['uname']['node'] = '-'
-        ret['username'] = '-'
+        ret["cwd"] = "-"
+        ret["hostname"] = "-"
+        ret["hostfqdn"] = "-"
+        ret["python"]["bin"] = "-"
+        ret["python"]["argv"] = "-"
+        ret["uname"]["node"] = "-"
+        ret["username"] = "-"
 
     return ret
+
 
 def get_profile_json(indent=False):
     return json.dumps(get_profile(), sort_keys=True, indent=2 if indent else None)
@@ -302,30 +307,31 @@ def get_profile_json(indent=False):
 def main():
     print(get_profile_json())
 
+
 #############################################
 #  The shell escaping copied in from strutils
 #############################################
 
 
-def _escape_shell_args(args, sep=' ', style=None):
+def _escape_shell_args(args, sep=" ", style=None):
     if not style:
-        if sys.platform == 'win32':
-            style = 'cmd'
+        if sys.platform == "win32":
+            style = "cmd"
         else:
-            style = 'sh'
+            style = "sh"
 
-    if style == 'sh':
+    if style == "sh":
         return _args2sh(args, sep=sep)
-    elif style == 'cmd':
+    elif style == "cmd":
         return _args2cmd(args, sep=sep)
 
     raise ValueError("style expected one of 'cmd' or 'sh', not %r" % style)
 
 
-_find_sh_unsafe = re.compile(r'[^a-zA-Z0-9_@%+=:,./-]').search
+_find_sh_unsafe = re.compile(r"[^a-zA-Z0-9_@%+=:,./-]").search
 
 
-def _args2sh(args, sep=' '):
+def _args2sh(args, sep=" "):
     # see strutils
     ret_list = []
 
@@ -340,10 +346,10 @@ def _args2sh(args, sep=' '):
         # the string $'b is then quoted as '$'"'"'b'
         ret_list.append("'" + arg.replace("'", "'\"'\"'") + "'")
 
-    return ' '.join(ret_list)
+    return " ".join(ret_list)
 
 
-def _args2cmd(args, sep=' '):
+def _args2cmd(args, sep=" "):
     # see strutils
     result = []
     needquote = False
@@ -352,19 +358,19 @@ def _args2cmd(args, sep=' '):
 
         # Add a space to separate this argument from the others
         if result:
-            result.append(' ')
+            result.append(" ")
 
         needquote = (" " in arg) or ("\t" in arg) or not arg
         if needquote:
             result.append('"')
 
         for c in arg:
-            if c == '\\':
+            if c == "\\":
                 # Don't know if we need to double yet.
                 bs_buf.append(c)
             elif c == '"':
                 # Double backslashes.
-                result.append('\\' * len(bs_buf)*2)
+                result.append("\\" * len(bs_buf) * 2)
                 bs_buf = []
                 result.append('\\"')
             else:
@@ -382,14 +388,14 @@ def _args2cmd(args, sep=' '):
             result.extend(bs_buf)
             result.append('"')
 
-    return ''.join(result)
+    return "".join(result)
 
 
 ############################
 #  End shell escaping code
 ############################
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
 
 

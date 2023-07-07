@@ -1,6 +1,6 @@
+import codecs
 import io
 import os
-import codecs
 import random
 import string
 
@@ -8,8 +8,7 @@ StringIO = io.StringIO
 
 from tempfile import mkdtemp
 from unittest import TestCase
-from zipfile import ZipFile, ZIP_DEFLATED
-
+from zipfile import ZIP_DEFLATED, ZipFile
 
 from boltons import ioutils
 
@@ -17,7 +16,6 @@ CUR_FILE_PATH = os.path.abspath(__file__)
 
 
 class AssertionsMixin:
-
     def assertIsNone(self, item, msg=None):
         self.assertTrue(item is None, msg)
 
@@ -65,8 +63,9 @@ class BaseTestMixin:
 
     def test_compare_err(self):
         """Read-heads are reset if a comparison raises an error."""
+
         def _monkey_err(*args, **kwargs):
-            raise Exception('A sad error has occurred today')
+            raise Exception("A sad error has occurred today")
 
         a = self.spooled_flo.__class__()
         a.write(self.test_str)
@@ -129,9 +128,9 @@ class BaseTestMixin:
     def test_compare_different_instances(self):
         """Make sure two different instance types are not considered equal"""
         a = ioutils.SpooledBytesIO()
-        a.write(bytes(b"I am equal!"))
+        a.write(b"I am equal!")
         b = ioutils.SpooledStringIO()
-        b.write(str("I am equal!"))
+        b.write("I am equal!")
         self.assertNotEqual(a, b)
 
     def test_compare_unequal_instances(self):
@@ -169,8 +168,10 @@ class BaseTestMixin:
         """Make readline returns expected values"""
         self.spooled_flo.write(self.test_str_lines)
         self.spooled_flo.seek(0)
-        self.assertEqual(self.spooled_flo.readline().rstrip(self.linesep),
-                         self.test_str_lines.split(self.linesep)[0])
+        self.assertEqual(
+            self.spooled_flo.readline().rstrip(self.linesep),
+            self.test_str_lines.split(self.linesep)[0],
+        )
 
     def test_readlines(self):
         """Make sure readlines returns expected values"""
@@ -178,21 +179,24 @@ class BaseTestMixin:
         self.spooled_flo.seek(0)
         self.assertEqual(
             [x.rstrip(self.linesep) for x in self.spooled_flo.readlines()],
-            self.test_str_lines.split(self.linesep)
+            self.test_str_lines.split(self.linesep),
         )
 
     def test_next(self):
         """Make next returns expected values"""
         self.spooled_flo.write(self.test_str_lines)
         self.spooled_flo.seek(0)
-        self.assertEqual(self.spooled_flo.next().rstrip(self.linesep),
-                         self.test_str_lines.split(self.linesep)[0])
+        self.assertEqual(
+            self.spooled_flo.next().rstrip(self.linesep),
+            self.test_str_lines.split(self.linesep)[0],
+        )
 
     def test_isatty(self):
         """Make sure we can check if the value is a tty"""
         # This should simply not fail
-        self.assertTrue(self.spooled_flo.isatty() is True or
-                        self.spooled_flo.isatty() is False)
+        self.assertTrue(
+            self.spooled_flo.isatty() is True or self.spooled_flo.isatty() is False
+        )
 
     def test_truthy(self):
         """Make sure empty instances are still considered truthy"""
@@ -204,30 +208,38 @@ class BaseTestMixin:
     def test_instance_check(self):
         """Instance checks against IOBase succeed."""
         if not isinstance(self.spooled_flo, io.IOBase):
-            raise AssertionError('{} is not an instance of IOBase'.format(type(self.spooled_flo)))
+            raise AssertionError(
+                f"{type(self.spooled_flo)} is not an instance of IOBase"
+            )
 
     def test_closed_file_method_valueerrors(self):
         """ValueError raised on closed files for certain methods."""
         self.spooled_flo.close()
         methods = (
-            'flush', 'isatty', 'pos', 'buf', 'truncate', '__next__', '__iter__',
-            '__enter__', 'read', 'readline', 'tell',
+            "flush",
+            "isatty",
+            "pos",
+            "buf",
+            "truncate",
+            "__next__",
+            "__iter__",
+            "__enter__",
+            "read",
+            "readline",
+            "tell",
         )
         for method_name in methods:
             with self.assertRaises(ValueError):
                 getattr(self.spooled_flo, method_name)()
 
 
-
 class TestSpooledBytesIO(TestCase, BaseTestMixin, AssertionsMixin):
-    linesep = os.linesep.encode('ascii')
+    linesep = os.linesep.encode("ascii")
 
     def setUp(self):
         self.spooled_flo = ioutils.SpooledBytesIO()
         self.test_str = b"Armado en los EE, UU. para S. P. Richards co.,"
-        self.test_str_lines = (
-            "Text with:{0}newlines!".format(os.linesep).encode('ascii')
-        )
+        self.test_str_lines = f"Text with:{os.linesep}newlines!".encode("ascii")
         self.data_type = bytes
 
     def test_compare_not_equal_instances(self):
@@ -274,7 +286,7 @@ class TestSpooledBytesIO(TestCase, BaseTestMixin, AssertionsMixin):
 
     def test_invalid_type(self):
         """Ensure TypeError raised when writing unicode to SpooledBytesIO"""
-        self.assertRaises(TypeError, self.spooled_flo.write, u"hi")
+        self.assertRaises(TypeError, self.spooled_flo.write, "hi")
 
     def test_flush_after_rollover(self):
         """Make sure we can flush before and after rolling to a real file"""
@@ -287,9 +299,9 @@ class TestSpooledBytesIO(TestCase, BaseTestMixin, AssertionsMixin):
         """Make sure object is compatible with ZipFile library"""
         self.spooled_flo.seek(0)
         self.spooled_flo.truncate()
-        doc = ZipFile(self.spooled_flo, 'w', ZIP_DEFLATED)
+        doc = ZipFile(self.spooled_flo, "w", ZIP_DEFLATED)
         doc.writestr("content.txt", "test")
-        self.assertTrue('content.txt' in doc.namelist())
+        self.assertTrue("content.txt" in doc.namelist())
         doc.close()
 
     def test_iter(self):
@@ -311,35 +323,35 @@ class TestSpooledStringIO(TestCase, BaseTestMixin, AssertionsMixin):
 
     def setUp(self):
         self.spooled_flo = ioutils.SpooledStringIO()
-        self.test_str = u"Remember kids, always use an emdash: '\u2014'"
-        self.test_str_lines = u"Text with\u2014{0}newlines!".format(os.linesep)
+        self.test_str = "Remember kids, always use an emdash: '\u2014'"
+        self.test_str_lines = f"Text with\u2014{os.linesep}newlines!"
         self.data_type = str
 
     def test_compare_not_equal_instances(self):
         """Make sure instances with different values fail == check."""
         a = ioutils.SpooledStringIO()
-        a.write(u"I am a!")
+        a.write("I am a!")
         b = ioutils.SpooledStringIO()
-        b.write(u"I am b!")
+        b.write("I am b!")
         self.assertNotEqual(a, b)
 
     def test_compare_two_equal_instances(self):
         """Make sure we can compare instances"""
         a = ioutils.SpooledStringIO()
-        a.write(u"I am equal!")
+        a.write("I am equal!")
         b = ioutils.SpooledStringIO()
-        b.write(u"I am equal!")
+        b.write("I am equal!")
         self.assertEqual(a, b)
 
     def test_auto_rollover(self):
         """Make sure file rolls over to disk after max_size reached"""
         tmp = ioutils.SpooledStringIO(max_size=10)
-        tmp.write(u"The quick brown fox jumped over the lazy dogs.")
+        tmp.write("The quick brown fox jumped over the lazy dogs.")
         self.assertTrue(tmp._rolled)
 
     def test_use_as_context_mgr(self):
         """Make sure SpooledStringIO can be used as a context manager"""
-        test_str = u"Armado en los EE, UU. para S. P. Richards co.,"
+        test_str = "Armado en los EE, UU. para S. P. Richards co.,"
         with ioutils.SpooledStringIO() as f:
             f.write(test_str)
             self.assertEqual(f.getvalue(), test_str)
@@ -369,11 +381,11 @@ class TestSpooledStringIO(TestCase, BaseTestMixin, AssertionsMixin):
         self.assertEqual(self.spooled_flo.tell(), 10)
 
     def test_codepoints_all_enc(self):
-        """"Test getting read, seek, tell, on various codepoints"""
-        test_str = u"\u2014\u2014\u2014"
+        """ "Test getting read, seek, tell, on various codepoints"""
+        test_str = "\u2014\u2014\u2014"
         self.spooled_flo.write(test_str)
         self.spooled_flo.seek(1)
-        self.assertEqual(self.spooled_flo.read(), u"\u2014\u2014")
+        self.assertEqual(self.spooled_flo.read(), "\u2014\u2014")
         self.assertEqual(len(self.spooled_flo), len(test_str))
 
     def test_seek_codepoints_SEEK_END(self):
@@ -384,8 +396,7 @@ class TestSpooledStringIO(TestCase, BaseTestMixin, AssertionsMixin):
 
     def test_seek_codepoints_large_SEEK_END(self):
         """Make sure seek() moves to codepoints relative to file end"""
-        test_str = u"".join(random.choice(string.ascii_letters) for
-                            x in range(34000))
+        test_str = "".join(random.choice(string.ascii_letters) for x in range(34000))
         self.spooled_flo.write(test_str)
         ret = self.spooled_flo.seek(0, os.SEEK_END)
         self.assertEqual(ret, len(test_str))
@@ -398,15 +409,14 @@ class TestSpooledStringIO(TestCase, BaseTestMixin, AssertionsMixin):
 
     def test_seek_codepoints_large_SEEK_SET(self):
         """Make sure seek() moves to codepoints relative to file start"""
-        test_str = u"".join(random.choice(string.ascii_letters) for
-                            x in range(34000))
+        test_str = "".join(random.choice(string.ascii_letters) for x in range(34000))
         self.spooled_flo.write(test_str)
         ret = self.spooled_flo.seek(33000, os.SEEK_SET)
         self.assertEqual(ret, 33000)
 
     def test_seek_codepoints_SEEK_CUR(self):
         """Make sure seek() moves to codepoints relative to current_position"""
-        test_str = u"\u2014\u2014\u2014"
+        test_str = "\u2014\u2014\u2014"
         self.spooled_flo.write(test_str)
         self.spooled_flo.seek(1)
         self.assertEqual(self.spooled_flo.tell(), 1)
@@ -415,8 +425,7 @@ class TestSpooledStringIO(TestCase, BaseTestMixin, AssertionsMixin):
 
     def test_seek_codepoints_large_SEEK_CUR(self):
         """Make sure seek() moves to codepoints relative to current_position"""
-        test_str = u"".join(random.choice(string.ascii_letters) for
-                            x in range(34000))
+        test_str = "".join(random.choice(string.ascii_letters) for x in range(34000))
         self.spooled_flo.write(test_str)
         self.spooled_flo.seek(1)
         ret = self.spooled_flo.seek(33000, os.SEEK_CUR)
@@ -424,76 +433,79 @@ class TestSpooledStringIO(TestCase, BaseTestMixin, AssertionsMixin):
 
     def test_x80_codepoint(self):
         """Make sure x80 codepoint doesn't confuse read value"""
-        test_str = u'\x8000'
+        test_str = "\x8000"
         self.spooled_flo.write(test_str)
         self.spooled_flo.seek(0)
         self.assertEqual(len(self.spooled_flo.read(2)), 2)
-        self.assertEqual(self.spooled_flo.read(), '0')
+        self.assertEqual(self.spooled_flo.read(), "0")
 
     def test_seek_encoded(self):
         """Make sure reading works when bytes exceeds read val"""
-        test_str = u"\u2014\u2014\u2014"
+        test_str = "\u2014\u2014\u2014"
         self.spooled_flo.write(test_str)
         self.spooled_flo.seek(0)
         self.assertEqual(self.spooled_flo.read(3), test_str)
 
     def test_iter(self):
         """Make sure iter works as expected"""
-        self.spooled_flo.write(u"a\nb")
+        self.spooled_flo.write("a\nb")
         self.spooled_flo.seek(0)
-        self.assertEqual([x for x in self.spooled_flo], [u"a\n", u"b"])
+        self.assertEqual([x for x in self.spooled_flo], ["a\n", "b"])
 
     def test_writelines(self):
         """An iterable of lines can be written"""
-        lines = [u"1", u"2", u"3"]
-        expected = u"123"
+        lines = ["1", "2", "3"]
+        expected = "123"
         self.spooled_flo.writelines(lines)
         self.assertEqual(self.spooled_flo.getvalue(), expected)
 
 
 class TestMultiFileReader(TestCase):
     def test_read_seek_bytes(self):
-        r = ioutils.MultiFileReader(io.BytesIO(b'narf'), io.BytesIO(b'troz'))
-        self.assertEqual([b'nar', b'ftr', b'oz'],
-                         list(iter(lambda: r.read(3), b'')))
+        r = ioutils.MultiFileReader(io.BytesIO(b"narf"), io.BytesIO(b"troz"))
+        self.assertEqual([b"nar", b"ftr", b"oz"], list(iter(lambda: r.read(3), b"")))
         r.seek(0)
-        self.assertEqual(b'narftroz', r.read())
+        self.assertEqual(b"narftroz", r.read())
 
     def test_read_seek_text(self):
         # also tests StringIO.StringIO on py2
-        r = ioutils.MultiFileReader(StringIO(u'narf'),
-                                    io.StringIO(u'troz'))
-        self.assertEqual([u'nar', u'ftr', u'oz'],
-                         list(iter(lambda: r.read(3), u'')))
+        r = ioutils.MultiFileReader(StringIO("narf"), io.StringIO("troz"))
+        self.assertEqual(["nar", "ftr", "oz"], list(iter(lambda: r.read(3), "")))
         r.seek(0)
-        self.assertEqual(u'narftroz', r.read())
+        self.assertEqual("narftroz", r.read())
 
     def test_no_mixed_bytes_and_text(self):
-        self.assertRaises(ValueError, ioutils.MultiFileReader,
-                          io.BytesIO(b'narf'), io.StringIO(u'troz'))
+        self.assertRaises(
+            ValueError,
+            ioutils.MultiFileReader,
+            io.BytesIO(b"narf"),
+            io.StringIO("troz"),
+        )
 
     def test_open(self):
-        with open(CUR_FILE_PATH, 'r') as f:
+        with open(CUR_FILE_PATH) as f:
             r_file_str = f.read()
-        with open(CUR_FILE_PATH, 'r') as f1:
-            with open(CUR_FILE_PATH, 'r') as f2:
+        with open(CUR_FILE_PATH) as f1:
+            with open(CUR_FILE_PATH) as f2:
                 mfr = ioutils.MultiFileReader(f1, f2)
                 r_double_file_str = mfr.read()
 
         assert r_double_file_str == (r_file_str * 2)
 
-        with open(CUR_FILE_PATH, 'rb') as f:
+        with open(CUR_FILE_PATH, "rb") as f:
             rb_file_str = f.read()
-        with open(CUR_FILE_PATH, 'rb') as f1:
-            with open(CUR_FILE_PATH, 'rb') as f2:
+        with open(CUR_FILE_PATH, "rb") as f1:
+            with open(CUR_FILE_PATH, "rb") as f2:
                 mfr = ioutils.MultiFileReader(f1, f2)
                 rb_double_file_str = mfr.read()
 
         assert rb_double_file_str == (rb_file_str * 2)
 
-        utf8_file_str = codecs.open(CUR_FILE_PATH, encoding='utf8').read()
-        f1, f2 = (codecs.open(CUR_FILE_PATH, encoding='utf8'),
-                  codecs.open(CUR_FILE_PATH, encoding='utf8'))
+        utf8_file_str = codecs.open(CUR_FILE_PATH, encoding="utf8").read()
+        f1, f2 = (
+            codecs.open(CUR_FILE_PATH, encoding="utf8"),
+            codecs.open(CUR_FILE_PATH, encoding="utf8"),
+        )
         mfr = ioutils.MultiFileReader(f1, f2)
         utf8_double_file_str = mfr.read()
         assert utf8_double_file_str == (utf8_file_str * 2)

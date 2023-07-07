@@ -1,22 +1,23 @@
-# -*- coding: utf-8 -*-
-
 import re
 from collections import namedtuple
 
-from boltons.formatutils import (get_format_args,
-                                 split_format_str,
-                                 tokenize_format_str,
-                                 infer_positional_format_args,
-                                 DeferredValue as DV)
-
+from boltons.formatutils import DeferredValue as DV
+from boltons.formatutils import (
+    get_format_args,
+    infer_positional_format_args,
+    split_format_str,
+    tokenize_format_str,
+)
 
 PFAT = namedtuple("PositionalFormatArgTest", "fstr arg_vals res")
 
-_PFATS = [PFAT('{} {} {}', ('hi', 'hello', 'bye'), "hi hello bye"),
-          PFAT('{:d} {}', (1, 2), "1 2"),
-          PFAT('{!s} {!r}', ('str', 'repr'), "str 'repr'"),
-          PFAT('{[hi]}, {.__name__!r}', ({'hi': 'hi'}, re), "hi, 're'"),
-          PFAT('{{joek}} ({} {})', ('so', 'funny'), "{joek} (so funny)")]
+_PFATS = [
+    PFAT("{} {} {}", ("hi", "hello", "bye"), "hi hello bye"),
+    PFAT("{:d} {}", (1, 2), "1 2"),
+    PFAT("{!s} {!r}", ("str", "repr"), "str 'repr'"),
+    PFAT("{[hi]}, {.__name__!r}", ({"hi": "hi"}, re), "hi, 're'"),
+    PFAT("{{joek}} ({} {})", ("so", "funny"), "{joek} (so funny)"),
+]
 
 
 def test_pos_infer():
@@ -25,12 +26,14 @@ def test_pos_infer():
         assert converted.format(*args) == res
 
 
-_TEST_TMPLS = ["example 1: {hello}",
-               "example 2: {hello:*10}",
-               "example 3: {hello:*{width}}",
-               "example 4: {hello!r:{fchar}{width}}, {width}, yes",
-               "example 5: {0}, {1:d}, {2:f}, {1}",
-               "example 6: {}, {}, {}, {1}"]
+_TEST_TMPLS = [
+    "example 1: {hello}",
+    "example 2: {hello:*10}",
+    "example 3: {hello:*{width}}",
+    "example 4: {hello!r:{fchar}{width}}, {width}, yes",
+    "example 5: {0}, {1:d}, {2:f}, {1}",
+    "example 6: {}, {}, {}, {1}",
+]
 
 
 def test_get_fstr_args():
@@ -65,12 +68,12 @@ def test_deferredvalue():
     myfunc.called = 0
 
     dv = DV(myfunc)
-    assert str(dv) == '123'
+    assert str(dv) == "123"
     assert myfunc.called == 1
-    assert str(dv) == '123'
+    assert str(dv) == "123"
     assert myfunc.called == 1
     dv.cache_value = False
-    assert str(dv) == '123'
+    assert str(dv) == "123"
     assert myfunc.called == 2
-    assert str(dv) == '123'
+    assert str(dv) == "123"
     assert myfunc.called == 3

@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # Copyright (c) 2013, Mahmoud Hashemi
 #
 # Redistribution and use in source and binary forms, with or without
@@ -67,19 +65,23 @@ format strings:
 # TODO: also include percent-formatting utils?
 # TODO: include lithoxyl.formatters.Formatter (or some adaptation)?
 
-from __future__ import print_function
 
 import re
 from string import Formatter
 
-__all__ = ['DeferredValue', 'get_format_args', 'tokenize_format_str',
-           'construct_format_field_str', 'infer_positional_format_args',
-           'BaseFormatField']
+__all__ = [
+    "DeferredValue",
+    "get_format_args",
+    "tokenize_format_str",
+    "construct_format_field_str",
+    "infer_positional_format_args",
+    "BaseFormatField",
+]
 
 
-_pos_farg_re = re.compile('({{)|'         # escaped open-brace
-                          '(}})|'         # escaped close-brace
-                          r'({[:!.\[}])')  # anon positional format arg
+_pos_farg_re = re.compile(
+    "({{)|" "(}})|" r"({[:!.\[}])"  # escaped open-brace  # escaped close-brace
+)  # anon positional format arg
 
 
 def construct_format_field_str(fname, fspec, conv):
@@ -89,13 +91,13 @@ def construct_format_field_str(fname, fspec, conv):
     String Formatting for more info.
     """
     if fname is None:
-        return ''
-    ret = '{' + fname
+        return ""
+    ret = "{" + fname
     if conv:
-        ret += '!' + conv
+        ret += "!" + conv
     if fspec:
-        ret += ':' + fspec
-    ret += '}'
+        ret += ":" + fspec
+    ret += "}"
     return ret
 
 
@@ -123,7 +125,7 @@ def infer_positional_format_args(fstr):
     Returns a string with the inferred positional arguments.
     """
     # TODO: memoize
-    ret, max_anon = '', 0
+    ret, max_anon = "", 0
     # look for {: or {! or {. or {[ or {}
     start, end, prev_end = 0, 0, 0
     for match in _pos_farg_re.finditer(fstr):
@@ -131,21 +133,20 @@ def infer_positional_format_args(fstr):
         if prev_end < start:
             ret += fstr[prev_end:start]
         prev_end = end
-        if group == '{{' or group == '}}':
+        if group == "{{" or group == "}}":
             ret += group
             continue
-        ret += '{%s%s' % (max_anon, group[1:])
+        ret += f"{{{max_anon}{group[1:]}"
         max_anon += 1
     ret += fstr[prev_end:]
     return ret
 
 
 # This approach is hardly exhaustive but it works for most builtins
-_INTCHARS = 'bcdoxXn'
-_FLOATCHARS = 'eEfFgGn%'
-_TYPE_MAP = dict([(x, int) for x in _INTCHARS] +
-                 [(x, float) for x in _FLOATCHARS])
-_TYPE_MAP['s'] = str
+_INTCHARS = "bcdoxXn"
+_FLOATCHARS = "eEfFgGn%"
+_TYPE_MAP = dict([(x, int) for x in _INTCHARS] + [(x, float) for x in _FLOATCHARS])
+_TYPE_MAP["s"] = str
 
 
 def get_format_args(fstr):
@@ -167,7 +168,7 @@ def get_format_args(fstr):
     formatter = Formatter()
     fargs, fkwargs, _dedup = [], [], set()
 
-    def _add_arg(argname, type_char='s'):
+    def _add_arg(argname, type_char="s"):
         if argname not in _dedup:
             _dedup.add(argname)
             argtype = _TYPE_MAP.get(type_char, str)
@@ -179,14 +180,14 @@ def get_format_args(fstr):
     for lit, fname, fspec, conv in formatter.parse(fstr):
         if fname is not None:
             type_char = fspec[-1:]
-            fname_list = re.split('[.[]', fname)
+            fname_list = re.split("[.[]", fname)
             if len(fname_list) > 1:
-                raise ValueError('encountered compound format arg: %r' % fname)
+                raise ValueError("encountered compound format arg: %r" % fname)
             try:
                 base_fname = fname_list[0]
                 assert base_fname
             except (IndexError, AssertionError):
-                raise ValueError('encountered anonymous positional argument')
+                raise ValueError("encountered anonymous positional argument")
             _add_arg(fname, type_char)
             for sublit, subfname, _, _ in formatter.parse(fspec):
                 # TODO: positional and anon args not allowed here.
@@ -225,7 +226,8 @@ class BaseFormatField:
 
     .. _Format String Syntax: https://docs.python.org/2/library/string.html#string-formatting
     """
-    def __init__(self, fname, fspec='', conv=None):
+
+    def __init__(self, fname, fspec="", conv=None):
         self.set_fname(fname)
         self.set_fspec(fspec)
         self.set_conv(conv)
@@ -233,7 +235,7 @@ class BaseFormatField:
     def set_fname(self, fname):
         "Set the field name."
 
-        path_list = re.split('[.[]', fname)  # TODO
+        path_list = re.split("[.[]", fname)  # TODO
 
         self.base_name = path_list[0]
         self.fname = fname
@@ -242,7 +244,7 @@ class BaseFormatField:
 
     def set_fspec(self, fspec):
         "Set the field spec."
-        fspec = fspec or ''
+        fspec = fspec or ""
         subfields = []
         for sublit, subfname, _, _ in Formatter().parse(fspec):
             if subfname is not None:
@@ -269,10 +271,10 @@ class BaseFormatField:
         args = [self.fname]
         if self.conv is not None:
             args.extend([self.fspec, self.conv])
-        elif self.fspec != '':
+        elif self.fspec != "":
             args.append(self.fspec)
-        args_repr = ', '.join([repr(a) for a in args])
-        return '%s(%s)' % (cn, args_repr)
+        args_repr = ", ".join([repr(a) for a in args])
+        return f"{cn}({args_repr})"
 
     def __str__(self):
         return self.fstr
@@ -310,6 +312,7 @@ class DeferredValue:
     PROTIP: To keep lines shorter, use: ``from formatutils import
     DeferredValue as DV``
     """
+
     def __init__(self, func, cache_value=True):
         self.func = func
         self.cache_value = cache_value
@@ -352,5 +355,6 @@ class DeferredValue:
         except (ValueError, TypeError):
             # TODO: this may be overkill
             return type_conv(value).__format__(fmt)
+
 
 # end formatutils.py

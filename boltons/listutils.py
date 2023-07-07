@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # Copyright (c) 2013, Mahmoud Hashemi
 #
 # Redistribution and use in source and binary forms, with or without
@@ -40,25 +38,26 @@ For utilities for working with iterables and lists, check out
 :class:`collections.namedtuple`, check out :mod:`namedutils`.
 """
 
-from __future__ import print_function, division
 
 import operator
-from math import log as math_log
 from itertools import chain, islice
+from math import log as math_log
 
 try:
     from .typeutils import make_sentinel
-    _MISSING = make_sentinel(var_name='_MISSING')
+
+    _MISSING = make_sentinel(var_name="_MISSING")
 except ImportError:
     _MISSING = object()
 
 # TODO: expose splaylist?
-__all__ = ['BList', 'BarrelList']
+__all__ = ["BList", "BarrelList"]
 
 
 # TODO: comparators
 # TODO: keep track of list lengths and bisect to the right list for
 # faster getitem (and slightly slower setitem and delitem ops)
+
 
 class BarrelList(list):
     """The ``BarrelList`` is a :class:`list` subtype backed by many
@@ -191,8 +190,9 @@ class BarrelList(list):
 
     def del_slice(self, start, stop, step=None):
         if step is not None and abs(step) > 1:  # punt
-            new_list = chain(self.iter_slice(0, start, step),
-                             self.iter_slice(stop, None, step))
+            new_list = chain(
+                self.iter_slice(0, start, step), self.iter_slice(stop, None, step)
+            )
             self.lists[0][:] = new_list
             self._balance_list(0)
             return
@@ -210,12 +210,14 @@ class BarrelList(list):
         if start_list_idx == stop_list_idx:
             del self.lists[start_list_idx][start_rel_idx:stop_rel_idx]
         elif start_list_idx < stop_list_idx:
-            del self.lists[start_list_idx + 1:stop_list_idx]
+            del self.lists[start_list_idx + 1 : stop_list_idx]
             del self.lists[start_list_idx][start_rel_idx:]
             del self.lists[stop_list_idx][:stop_rel_idx]
         else:
-            assert False, ('start list index should never translate to'
-                           ' greater than stop list index')
+            assert False, (
+                "start list index should never translate to"
+                " greater than stop list index"
+            )
 
     __delslice__ = del_slice
 
@@ -299,7 +301,7 @@ class BarrelList(list):
         return
 
     def __repr__(self):
-        return '%s(%r)' % (self.__class__.__name__, list(self))
+        return f"{self.__class__.__name__}({list(self)!r})"
 
     def sort(self):
         # poor pythonist's mergesort, it's faster than sorted(self)
@@ -330,7 +332,7 @@ class BarrelList(list):
                 return len_accum + rel_idx
             except ValueError:
                 len_accum += len(cur)
-        raise ValueError('%r is not in list' % (item,))
+        raise ValueError(f"{item!r} is not in list")
 
 
 BList = BarrelList

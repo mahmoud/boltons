@@ -1,25 +1,25 @@
-# -*- coding: utf-8 -*-
-
-from boltons.funcutils import (copy_function,
-                               total_ordering,
-                               format_invocation,
-                               InstancePartial,
-                               CachedInstancePartial,
-                               noop)
+from boltons.funcutils import (
+    CachedInstancePartial,
+    InstancePartial,
+    copy_function,
+    format_invocation,
+    noop,
+    total_ordering,
+)
 
 
 class Greeter:
     def __init__(self, greeting):
         self.greeting = greeting
 
-    def greet(self, excitement='.'):
+    def greet(self, excitement="."):
         return self.greeting.capitalize() + excitement
 
-    partial_greet = InstancePartial(greet, excitement='!')
-    cached_partial_greet = CachedInstancePartial(greet, excitement='...')
+    partial_greet = InstancePartial(greet, excitement="!")
+    cached_partial_greet = CachedInstancePartial(greet, excitement="...")
 
     def native_greet(self):
-        return self.greet(';')
+        return self.greet(";")
 
 
 class SubGreeter(Greeter):
@@ -27,27 +27,28 @@ class SubGreeter(Greeter):
 
 
 def test_partials():
-    g = SubGreeter('hello')
+    g = SubGreeter("hello")
 
-    assert g.greet() == 'Hello.'
-    assert g.native_greet() == 'Hello;'
-    assert g.partial_greet() == 'Hello!'
-    assert g.cached_partial_greet() == 'Hello...'
-    assert CachedInstancePartial(g.greet, excitement='s')() == 'Hellos'
+    assert g.greet() == "Hello."
+    assert g.native_greet() == "Hello;"
+    assert g.partial_greet() == "Hello!"
+    assert g.cached_partial_greet() == "Hello..."
+    assert CachedInstancePartial(g.greet, excitement="s")() == "Hellos"
 
-    g.native_greet = 'native reassigned'
-    assert g.native_greet == 'native reassigned'
+    g.native_greet = "native reassigned"
+    assert g.native_greet == "native reassigned"
 
-    g.partial_greet = 'partial reassigned'
-    assert g.partial_greet == 'partial reassigned'
+    g.partial_greet = "partial reassigned"
+    assert g.partial_greet == "partial reassigned"
 
-    g.cached_partial_greet = 'cached_partial reassigned'
-    assert g.cached_partial_greet == 'cached_partial reassigned'
+    g.cached_partial_greet = "cached_partial reassigned"
+    assert g.cached_partial_greet == "cached_partial reassigned"
 
 
 def test_copy_function():
     def callee():
         return 1
+
     callee_copy = copy_function(callee)
     assert callee is not callee_copy
     assert callee() == callee_copy()
@@ -75,10 +76,14 @@ def test_total_ordering():
 
 
 def test_format_invocation():
-    assert format_invocation('d') == "d()"
-    assert format_invocation('f', ('a', 'b')) == "f('a', 'b')"
-    assert format_invocation('g', (), {'x': 'y'})  == "g(x='y')"
-    assert format_invocation('h', ('a', 'b'), {'x': 'y', 'z': 'zz'}) == "h('a', 'b', x='y', z='zz')"
+    assert format_invocation("d") == "d()"
+    assert format_invocation("f", ("a", "b")) == "f('a', 'b')"
+    assert format_invocation("g", (), {"x": "y"}) == "g(x='y')"
+    assert (
+        format_invocation("h", ("a", "b"), {"x": "y", "z": "zz"})
+        == "h('a', 'b', x='y', z='zz')"
+    )
+
 
 def test_noop():
     assert noop() is None

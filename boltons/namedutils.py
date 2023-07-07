@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # Copyright (c) 2013, Mahmoud Hashemi
 #
 # Redistribution and use in source and binary forms, with or without
@@ -47,37 +45,38 @@ in a tree, graph, or other mutable data structure. If you want an even
 skinnier approach, you'll probably have to look to C.
 """
 
-from __future__ import print_function
 
 import sys as _sys
 from collections import namedtuple
 from keyword import iskeyword as _iskeyword
 from operator import itemgetter as _itemgetter
 
-
 basestring = (str, bytes)
+
+
 def exec_(code, global_env):
     exec(code, global_env)
 
-__all__ = ['namedlist', 'namedtuple']
+
+__all__ = ["namedlist", "namedtuple"]
 
 # Tiny templates
 
-_repr_tmpl = '{name}=%r'
+_repr_tmpl = "{name}=%r"
 
-_imm_field_tmpl = '''\
+_imm_field_tmpl = """\
     {name} = _property(_itemgetter({index:d}), doc='Alias for field {index:d}')
-'''
+"""
 
-_m_field_tmpl = '''\
+_m_field_tmpl = """\
     {name} = _property(_itemgetter({index:d}), _itemsetter({index:d}), doc='Alias for field {index:d}')
-'''
+"""
 
 #################################################################
 ### namedtuple
 #################################################################
 
-_namedtuple_tmpl = '''\
+_namedtuple_tmpl = """\
 class {typename}(tuple):
     '{typename}({arg_list})'
 
@@ -125,14 +124,14 @@ class {typename}(tuple):
         pass
 
 {field_defs}
-'''
+"""
 
 
 #################################################################
 ### namedlist
 #################################################################
 
-_namedlist_tmpl = '''\
+_namedlist_tmpl = """\
 class {typename}(list):
     '{typename}({arg_list})'
 
@@ -185,7 +184,7 @@ class {typename}(list):
         pass
 
 {field_defs}
-'''
+"""
 
 
 def namedlist(typename, field_names, verbose=False, rename=False):
@@ -214,48 +213,55 @@ def namedlist(typename, field_names, verbose=False, rename=False):
     # Validate the field names.  At the user's option, either generate an error
     # message or automatically replace the field name with a valid name.
     if isinstance(field_names, basestring):
-        field_names = field_names.replace(',', ' ').split()
+        field_names = field_names.replace(",", " ").split()
     field_names = [str(x) for x in field_names]
     if rename:
         seen = set()
         for index, name in enumerate(field_names):
-            if (not all(c.isalnum() or c == '_' for c in name)
+            if (
+                not all(c.isalnum() or c == "_" for c in name)
                 or _iskeyword(name)
                 or not name
                 or name[0].isdigit()
-                or name.startswith('_')
-                or name in seen):
-                field_names[index] = '_%d' % index
+                or name.startswith("_")
+                or name in seen
+            ):
+                field_names[index] = "_%d" % index
             seen.add(name)
     for name in [typename] + field_names:
-        if not all(c.isalnum() or c == '_' for c in name):
-            raise ValueError('Type names and field names can only contain '
-                             'alphanumeric characters and underscores: %r'
-                             % name)
+        if not all(c.isalnum() or c == "_" for c in name):
+            raise ValueError(
+                "Type names and field names can only contain "
+                "alphanumeric characters and underscores: %r" % name
+            )
         if _iskeyword(name):
-            raise ValueError('Type names and field names cannot be a '
-                             'keyword: %r' % name)
+            raise ValueError(
+                "Type names and field names cannot be a " "keyword: %r" % name
+            )
         if name[0].isdigit():
-            raise ValueError('Type names and field names cannot start with '
-                             'a number: %r' % name)
+            raise ValueError(
+                "Type names and field names cannot start with " "a number: %r" % name
+            )
     seen = set()
     for name in field_names:
-        if name.startswith('_') and not rename:
-            raise ValueError('Field names cannot start with an underscore: '
-                             '%r' % name)
+        if name.startswith("_") and not rename:
+            raise ValueError(
+                "Field names cannot start with an underscore: " "%r" % name
+            )
         if name in seen:
-            raise ValueError('Encountered duplicate field name: %r' % name)
+            raise ValueError("Encountered duplicate field name: %r" % name)
         seen.add(name)
 
     # Fill-in the class template
-    fmt_kw = {'typename': typename}
-    fmt_kw['field_names'] = tuple(field_names)
-    fmt_kw['num_fields'] = len(field_names)
-    fmt_kw['arg_list'] = repr(tuple(field_names)).replace("'", "")[1:-1]
-    fmt_kw['repr_fmt'] = ', '.join(_repr_tmpl.format(name=name)
-                                   for name in field_names)
-    fmt_kw['field_defs'] = '\n'.join(_m_field_tmpl.format(index=index, name=name)
-                                     for index, name in enumerate(field_names))
+    fmt_kw = {"typename": typename}
+    fmt_kw["field_names"] = tuple(field_names)
+    fmt_kw["num_fields"] = len(field_names)
+    fmt_kw["arg_list"] = repr(tuple(field_names)).replace("'", "")[1:-1]
+    fmt_kw["repr_fmt"] = ", ".join(_repr_tmpl.format(name=name) for name in field_names)
+    fmt_kw["field_defs"] = "\n".join(
+        _m_field_tmpl.format(index=index, name=name)
+        for index, name in enumerate(field_names)
+    )
     class_definition = _namedlist_tmpl.format(**fmt_kw)
 
     if verbose:
@@ -264,22 +270,25 @@ def namedlist(typename, field_names, verbose=False, rename=False):
     def _itemsetter(key):
         def _itemsetter(obj, value):
             obj[key] = value
+
         return _itemsetter
 
     # Execute the template string in a temporary namespace and support
     # tracing utilities by setting a value for frame.f_globals['__name__']
     # TODO: is this still ok with dict=dict, OrderedDict=dict?
-    namespace = dict(_itemgetter=_itemgetter,
-                     _itemsetter=_itemsetter,
-                     __name__='namedlist_%s' % typename,
-                     dict=dict,
-                     OrderedDict=dict,
-                     _property=property,
-                     _list=list)
+    namespace = dict(
+        _itemgetter=_itemgetter,
+        _itemsetter=_itemsetter,
+        __name__="namedlist_%s" % typename,
+        dict=dict,
+        OrderedDict=dict,
+        _property=property,
+        _list=list,
+    )
     try:
         exec_(class_definition, namespace)
     except SyntaxError as e:
-        raise SyntaxError(str(e) + ':\n' + class_definition)
+        raise SyntaxError(str(e) + ":\n" + class_definition)
     result = namespace[typename]
 
     # For pickling to work, the __module__ variable needs to be set to
@@ -289,7 +298,7 @@ def namedlist(typename, field_names, verbose=False, rename=False):
     # than 0 (IronPython).
     try:
         frame = _sys._getframe(1)
-        result.__module__ = frame.f_globals.get('__name__', '__main__')
+        result.__module__ = frame.f_globals.get("__name__", "__main__")
     except (AttributeError, ValueError):
         pass
 

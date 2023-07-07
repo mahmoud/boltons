@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # Copyright (c) 2013, Mahmoud Hashemi
 #
 # Redistribution and use in source and binary forms, with or without
@@ -41,17 +39,12 @@ ways.
 """
 import abc
 import os
-from io import BytesIO, IOBase
-from abc import (
-    ABCMeta,
-    abstractmethod,
-    abstractproperty,
-)
-from errno import EINVAL
+from abc import ABCMeta, abstractmethod, abstractproperty
 from codecs import EncodedFile
-from tempfile import TemporaryFile
-
+from errno import EINVAL
+from io import BytesIO, IOBase
 from itertools import zip_longest  # Python 3
+from tempfile import TemporaryFile
 
 READ_CHUNK_SIZE = 21333
 """
@@ -79,8 +72,8 @@ class SpooledIOBase(IOBase, metaclass=abc.ABCMeta):
     def _checkClosed(self, msg=None):
         """Raise a ValueError if file is closed"""
         if self.closed:
-            raise ValueError('I/O operation on closed file.'
-                             if msg is None else msg)
+            raise ValueError("I/O operation on closed file." if msg is None else msg)
+
     @abstractmethod
     def read(self, n=-1):
         """Read n characters from the buffer"""
@@ -186,7 +179,7 @@ class SpooledIOBase(IOBase, metaclass=abc.ABCMeta):
             return self.buffer.truncate()
 
         if size < 0:
-            raise IOError(EINVAL, "Negative size not allowed")
+            raise OSError(EINVAL, "Negative size not allowed")
 
         # Emulate truncation to a particular location
         pos = self.tell()
@@ -310,10 +303,7 @@ class SpooledBytesIO(SpooledIOBase):
     def write(self, s):
         self._checkClosed()
         if not isinstance(s, bytes):
-            raise TypeError("{} expected, got {}".format(
-                bytes.__name__,
-                type(s).__name__
-            ))
+            raise TypeError(f"{bytes.__name__} expected, got {type(s).__name__}")
 
         if self.tell() + len(s) >= self._max_size:
             self.rollover()
@@ -391,9 +381,10 @@ class SpooledStringIO(SpooledIOBase):
         True
 
     """
+
     def __init__(self, *args, **kwargs):
         self._tell = 0
-        super(SpooledStringIO, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     def read(self, n=-1):
         self._checkClosed()
@@ -404,14 +395,11 @@ class SpooledStringIO(SpooledIOBase):
     def write(self, s):
         self._checkClosed()
         if not isinstance(s, str):
-            raise TypeError("{} expected, got {}".format(
-                str.__name__,
-                type(s).__name__
-            ))
+            raise TypeError(f"{str.__name__} expected, got {type(s).__name__}")
         current_pos = self.tell()
-        if self.buffer.tell() + len(s.encode('utf-8')) >= self._max_size:
+        if self.buffer.tell() + len(s.encode("utf-8")) >= self._max_size:
             self.rollover()
-        self.buffer.write(s.encode('utf-8'))
+        self.buffer.write(s.encode("utf-8"))
         self._tell = current_pos + len(s)
 
     def _traverse_codepoints(self, current_position, n):
@@ -459,20 +447,18 @@ class SpooledStringIO(SpooledIOBase):
             self._traverse_codepoints(0, dest_position)
             self._tell = dest_position
         else:
-            raise ValueError(
-                "Invalid whence ({0}, should be 0, 1, or 2)".format(mode)
-            )
+            raise ValueError(f"Invalid whence ({mode}, should be 0, 1, or 2)")
         return self.tell()
 
     def readline(self, length=None):
         self._checkClosed()
-        ret = self.buffer.readline(length).decode('utf-8')
+        ret = self.buffer.readline(length).decode("utf-8")
         self._tell = self.tell() + len(ret)
         return ret
 
     def readlines(self, sizehint=0):
-        ret = [x.decode('utf-8') for x in self.buffer.readlines(sizehint)]
-        self._tell = self.tell() + sum((len(x) for x in ret))
+        ret = [x.decode("utf-8") for x in self.buffer.readlines(sizehint)]
+        self._tell = self.tell() + sum(len(x) for x in ret)
         return ret
 
     @property
@@ -480,7 +466,7 @@ class SpooledStringIO(SpooledIOBase):
         try:
             return self._buffer
         except AttributeError:
-            self._buffer = EncodedFile(BytesIO(), data_encoding='utf-8')
+            self._buffer = EncodedFile(BytesIO(), data_encoding="utf-8")
         return self._buffer
 
     @property
@@ -490,8 +476,7 @@ class SpooledStringIO(SpooledIOBase):
     def rollover(self):
         """Roll the buffer over to a TempFile"""
         if not self._rolled:
-            tmp = EncodedFile(TemporaryFile(dir=self._dir),
-                              data_encoding='utf-8')
+            tmp = EncodedFile(TemporaryFile(dir=self._dir), data_encoding="utf-8")
             pos = self.buffer.tell()
             tmp.write(self.buffer.getvalue())
             tmp.seek(pos)
@@ -519,13 +504,13 @@ class SpooledStringIO(SpooledIOBase):
 
 
 def is_text_fileobj(fileobj):
-    if getattr(fileobj, 'encoding', False):
+    if getattr(fileobj, "encoding", False):
         # codecs.open and io.TextIOBase
         return True
-    if getattr(fileobj, 'getvalue', False):
+    if getattr(fileobj, "getvalue", False):
         # StringIO.StringIO / cStringIO.StringIO / io.StringIO
         try:
-            if isinstance(fileobj.getvalue(), type(u'')):
+            if isinstance(fileobj.getvalue(), str):
                 return True
         except Exception:
             pass
@@ -550,19 +535,27 @@ class MultiFileReader:
     """
 
     def __init__(self, *fileobjs):
-        if not all([callable(getattr(f, 'read', None)) and
-                    callable(getattr(f, 'seek', None)) for f in fileobjs]):
-            raise TypeError('MultiFileReader expected file-like objects'
-                            ' with .read() and .seek()')
+        if not all(
+            [
+                callable(getattr(f, "read", None))
+                and callable(getattr(f, "seek", None))
+                for f in fileobjs
+            ]
+        ):
+            raise TypeError(
+                "MultiFileReader expected file-like objects" " with .read() and .seek()"
+            )
         if all([is_text_fileobj(f) for f in fileobjs]):
             # codecs.open and io.TextIOBase
-            self._joiner = u''
+            self._joiner = ""
         elif any([is_text_fileobj(f) for f in fileobjs]):
-            raise ValueError('All arguments to MultiFileReader must handle'
-                             ' bytes OR text, not a mix')
+            raise ValueError(
+                "All arguments to MultiFileReader must handle"
+                " bytes OR text, not a mix"
+            )
         else:
             # open/file and io.BytesIO
-            self._joiner = b''
+            self._joiner = b""
         self._fileobjs = fileobjs
         self._index = 0
 
@@ -589,9 +582,11 @@ class MultiFileReader:
         """
         if whence != os.SEEK_SET:
             raise NotImplementedError(
-                'MultiFileReader.seek() only supports os.SEEK_SET')
+                "MultiFileReader.seek() only supports os.SEEK_SET"
+            )
         if offset != 0:
             raise NotImplementedError(
-                'MultiFileReader only supports seeking to start at this time')
+                "MultiFileReader only supports seeking to start at this time"
+            )
         for f in self._fileobjs:
             f.seek(0)

@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # Copyright (c) 2013, Mahmoud Hashemi
 #
 # Redistribution and use in source and binary forms, with or without
@@ -38,20 +36,20 @@ of working with `JSON Lines`_-formatted files.
 
 """
 
-from __future__ import print_function
 
 import io
-import os
 import json
-
+import os
 
 DEFAULT_BLOCKSIZE = 4096
 
 
-__all__ = ['JSONLIterator', 'reverse_iter_lines']
+__all__ = ["JSONLIterator", "reverse_iter_lines"]
 
 
-def reverse_iter_lines(file_obj, blocksize=DEFAULT_BLOCKSIZE, preseek=True, encoding=None):
+def reverse_iter_lines(
+    file_obj, blocksize=DEFAULT_BLOCKSIZE, preseek=True, encoding=None
+):
     """Returns an iterator over the lines from a file object, in
     reverse order, i.e., last line first, first line last. Uses the
     :meth:`file.seek` method of file objects, and is tested compatible with
@@ -81,7 +79,7 @@ def reverse_iter_lines(file_obj, blocksize=DEFAULT_BLOCKSIZE, preseek=True, enco
         # BytesIO
         encoding = None
     else:
-        encoding = 'utf-8'
+        encoding = "utf-8"
 
     # need orig_obj to keep alive otherwise __del__ on the TextWrapper will close the file
     orig_obj = file_obj
@@ -90,7 +88,7 @@ def reverse_iter_lines(file_obj, blocksize=DEFAULT_BLOCKSIZE, preseek=True, enco
     except (AttributeError, io.UnsupportedOperation):
         pass
 
-    empty_bytes, newline_bytes, empty_text = b'', b'\n', u''
+    empty_bytes, newline_bytes, empty_text = b"", b"\n", ""
 
     if preseek:
         file_obj.seek(0, os.SEEK_END)
@@ -113,7 +111,6 @@ def reverse_iter_lines(file_obj, blocksize=DEFAULT_BLOCKSIZE, preseek=True, enco
         buff = lines[0]
     if buff:
         yield buff.decode(encoding) if encoding else buff
-
 
 
 """
@@ -146,8 +143,8 @@ class JSONLIterator:
 
     .. _JSON Lines format: http://jsonlines.org/
     """
-    def __init__(self, file_obj,
-                 ignore_errors=False, reverse=False, rel_seek=None):
+
+    def __init__(self, file_obj, ignore_errors=False, reverse=False, rel_seek=None):
         self._reverse = bool(reverse)
         self._file_obj = file_obj
         self.ignore_errors = ignore_errors
@@ -156,8 +153,9 @@ class JSONLIterator:
             if reverse:
                 rel_seek = 1.0
         elif not -1.0 < rel_seek < 1.0:
-            raise ValueError("'rel_seek' expected a float between"
-                             " -1.0 and 1.0, not %r" % rel_seek)
+            raise ValueError(
+                "'rel_seek' expected a float between" " -1.0 and 1.0, not %r" % rel_seek
+            )
         elif rel_seek < 0:
             rel_seek = 1.0 - rel_seek
         self._rel_seek = rel_seek
@@ -165,9 +163,9 @@ class JSONLIterator:
         if rel_seek is not None:
             self._init_rel_seek()
         if self._reverse:
-            self._line_iter = reverse_iter_lines(self._file_obj,
-                                                 blocksize=self._blocksize,
-                                                 preseek=False)
+            self._line_iter = reverse_iter_lines(
+                self._file_obj, blocksize=self._blocksize, preseek=False
+            )
         else:
             self._line_iter = iter(self._file_obj)
 
@@ -179,13 +177,13 @@ class JSONLIterator:
     def _align_to_newline(self):
         "Aligns the file object's position to the next newline."
         fo, bsize = self._file_obj, self._blocksize
-        cur, total_read = '', 0
+        cur, total_read = "", 0
         cur_pos = fo.tell()
-        while '\n' not in cur:
+        while "\n" not in cur:
             cur = fo.read(bsize)
             total_read += bsize
         try:
-            newline_offset = cur.index('\n') + total_read - bsize
+            newline_offset = cur.index("\n") + total_read - bsize
         except ValueError:
             raise  # TODO: seek to end?
         fo.seek(cur_pos + newline_offset)
@@ -229,42 +227,46 @@ class JSONLIterator:
     __next__ = next
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
+
     def _main():
         import sys
-        if '-h' in sys.argv or '--help' in sys.argv:
-            print('loads one or more JSON Line files for basic validation.')
+
+        if "-h" in sys.argv or "--help" in sys.argv:
+            print("loads one or more JSON Line files for basic validation.")
             return
         verbose = False
-        if '-v' in sys.argv or '--verbose' in sys.argv:
+        if "-v" in sys.argv or "--verbose" in sys.argv:
             verbose = True
         file_count, obj_count = 0, 0
         filenames = sys.argv[1:]
         for filename in filenames:
-            if filename in ('-h', '--help', '-v', '--verbose'):
+            if filename in ("-h", "--help", "-v", "--verbose"):
                 continue
             file_count += 1
-            with open(filename, 'rb') as file_obj:
+            with open(filename, "rb") as file_obj:
                 iterator = JSONLIterator(file_obj)
                 cur_obj_count = 0
                 while 1:
                     try:
                         next(iterator)
                     except ValueError:
-                        print('error reading object #%s around byte %s in %s'
-                              % (cur_obj_count + 1, iterator.cur_byte_pos, filename))
+                        print(
+                            "error reading object #%s around byte %s in %s"
+                            % (cur_obj_count + 1, iterator.cur_byte_pos, filename)
+                        )
                         return
                     except StopIteration:
                         break
                     obj_count += 1
                     cur_obj_count += 1
                     if verbose and obj_count and obj_count % 100 == 0:
-                        sys.stdout.write('.')
+                        sys.stdout.write(".")
                         if obj_count % 10000:
-                            sys.stdout.write('%s\n' % obj_count)
+                            sys.stdout.write("%s\n" % obj_count)
         if verbose:
-            print('files checked: %s' % file_count)
-            print('objects loaded: %s' % obj_count)
+            print("files checked: %s" % file_count)
+            print("objects loaded: %s" % obj_count)
         return
 
     _main()

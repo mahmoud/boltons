@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # Copyright (c) 2013, Mahmoud Hashemi
 #
 # Redistribution and use in source and binary forms, with or without
@@ -60,12 +58,11 @@ further.
 """
 # TODO: type survey
 
-from __future__ import print_function
 
 import gc
 import sys
 
-__all__ = ['get_all', 'GCToggler', 'toggle_gc', 'toggle_gc_postcollect']
+__all__ = ["get_all", "GCToggler", "toggle_gc", "toggle_gc_postcollect"]
 
 
 def get_all(type_obj, include_subtypes=True):
@@ -102,7 +99,7 @@ def get_all(type_obj, include_subtypes=True):
     """
     # TODO: old-style classes
     if not isinstance(type_obj, type):
-        raise TypeError('expected a type, not %r' % type_obj)
+        raise TypeError("expected a type, not %r" % type_obj)
     try:
         type_is_tracked = gc.is_tracked(type_obj)
     except AttributeError:
@@ -119,7 +116,7 @@ def get_all(type_obj, include_subtypes=True):
     return ret
 
 
-_IS_PYPY = '__pypy__' in sys.builtin_module_names
+_IS_PYPY = "__pypy__" in sys.builtin_module_names
 if _IS_PYPY:
     # pypy's gc is just different, y'all
     del get_all
@@ -145,6 +142,7 @@ class GCToggler:
     Between those two instances, the ``GCToggler`` type probably won't
     be used much directly, but is documented for inheritance purposes.
     """
+
     def __init__(self, postcollect=False):
         self.postcollect = postcollect
 

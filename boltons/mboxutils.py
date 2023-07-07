@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # Copyright (c) 2013, Mahmoud Hashemi
 #
 # Redistribution and use in source and binary forms, with or without
@@ -39,7 +37,6 @@ mailboxes. Credit to Mark Williams for these.
 import mailbox
 import tempfile
 
-
 DEFAULT_MAXMEM = 4 * 1024 * 1024  # 4MB
 
 
@@ -69,6 +66,7 @@ class mbox_readonlydir(mailbox.mbox):
 
     .. _Heirloom mailx: http://heirloom.sourceforge.net/mailx.html
     """
+
     def __init__(self, path, factory=None, create=True, maxmem=1024 * 1024):
         mailbox.mbox.__init__(self, path, factory, create)
         self.maxmem = maxmem
@@ -102,9 +100,10 @@ class mbox_readonlydir(mailbox.mbox):
         self._file.seek(0, 2)
         cur_len = self._file.tell()
         if cur_len != self._file_length:
-            raise mailbox.ExternalClashError('Size of mailbox file changed '
-                                             '(expected %i, found %i)' %
-                                             (self._file_length, cur_len))
+            raise mailbox.ExternalClashError(
+                "Size of mailbox file changed "
+                "(expected %i, found %i)" % (self._file_length, cur_len)
+            )
 
         self._file.seek(0)
 
@@ -119,9 +118,8 @@ class mbox_readonlydir(mailbox.mbox):
                 self._pre_message_hook(new_file)
                 new_start = new_file.tell()
                 while True:
-                    buffer = self._file.read(min(4096,
-                                                 stop - self._file.tell()))
-                    if buffer == '':
+                    buffer = self._file.read(min(4096, stop - self._file.tell()))
+                    if buffer == "":
                         break
                     new_file.write(buffer)
                 new_toc[key] = (new_start, new_file.tell())

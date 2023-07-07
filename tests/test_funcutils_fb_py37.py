@@ -1,8 +1,7 @@
-
-import time
 import inspect
+import time
 
-from boltons.funcutils import wraps, FunctionBuilder
+from boltons.funcutils import FunctionBuilder, wraps
 
 
 def wrappable_func(a, b):
@@ -21,7 +20,6 @@ def test_wraps_async():
 
         return wrapped
 
-
     async def f():
         await asyncio.sleep(0.1)
 
@@ -36,11 +34,11 @@ def test_wraps_async():
         def make_time_decorator(wrapped):
             @wraps(wrapped)
             async def decorator(*args, **kw):
-                return (await wrapped(*args, **kw))
+                return await wrapped(*args, **kw)
+
             return decorator
 
         return make_time_decorator
-
 
     @yolo()
     async def foo(x):
@@ -56,18 +54,22 @@ def test_wraps_async():
 
 
 def test_wraps_hide_wrapped():
-    new_func = wraps(wrappable_func, injected='b')(lambda a: wrappable_func(a, b=1))
+    new_func = wraps(wrappable_func, injected="b")(lambda a: wrappable_func(a, b=1))
     new_sig = inspect.signature(new_func, follow_wrapped=True)
 
-    assert list(new_sig.parameters.keys()) == ['a', 'b']
+    assert list(new_sig.parameters.keys()) == ["a", "b"]
 
-    new_func = wraps(wrappable_func, injected='b', hide_wrapped=True)(lambda a: wrappable_func(a, b=1))
+    new_func = wraps(wrappable_func, injected="b", hide_wrapped=True)(
+        lambda a: wrappable_func(a, b=1)
+    )
     new_sig = inspect.signature(new_func, follow_wrapped=True)
 
-    assert list(new_sig.parameters.keys()) == ['a']
+    assert list(new_sig.parameters.keys()) == ["a"]
 
-    new_func = wraps(wrappable_func, injected='b')(lambda a: wrappable_func(a, b=1))
-    new_new_func = wraps(new_func, injected='a', hide_wrapped=True)(lambda: new_func(a=1))
+    new_func = wraps(wrappable_func, injected="b")(lambda a: wrappable_func(a, b=1))
+    new_new_func = wraps(new_func, injected="a", hide_wrapped=True)(
+        lambda: new_func(a=1)
+    )
     new_new_sig = inspect.signature(new_new_func, follow_wrapped=True)
 
     assert len(new_new_sig.parameters) == 0

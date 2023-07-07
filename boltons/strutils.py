@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # Copyright (c) 2013, Mahmoud Hashemi
 #
 # Redistribution and use in source and binary forms, with or without
@@ -36,15 +34,14 @@ common capabilities missing from the standard library, several of them
 provided by ``strutils``.
 """
 
-from __future__ import print_function
 
+import collections
 import re
+import string
 import sys
+import unicodedata
 import uuid
 import zlib
-import string
-import unicodedata
-import collections
 from gzip import GzipFile
 
 try:
@@ -53,23 +50,45 @@ except ImportError:
     from io import BytesIO as StringIO
 
 from collections.abc import Mapping
-
-from html.parser import HTMLParser
 from html import entities as htmlentitydefs
+from html.parser import HTMLParser
 
-__all__ = ['camel2under', 'under2camel', 'slugify', 'split_punct_ws',
-           'unit_len', 'ordinalize', 'cardinalize', 'pluralize', 'singularize',
-           'asciify', 'is_ascii', 'is_uuid', 'html2text', 'strip_ansi',
-           'bytes2human', 'find_hashtags', 'a10n', 'gzip_bytes', 'gunzip_bytes',
-           'iter_splitlines', 'indent', 'escape_shell_args',
-           'args2cmd', 'args2sh', 'parse_int_list', 'format_int_list',
-           'MultiReplace',
-           'multi_replace', 'unwrap_text']
+__all__ = [
+    "camel2under",
+    "under2camel",
+    "slugify",
+    "split_punct_ws",
+    "unit_len",
+    "ordinalize",
+    "cardinalize",
+    "pluralize",
+    "singularize",
+    "asciify",
+    "is_ascii",
+    "is_uuid",
+    "html2text",
+    "strip_ansi",
+    "bytes2human",
+    "find_hashtags",
+    "a10n",
+    "gzip_bytes",
+    "gunzip_bytes",
+    "iter_splitlines",
+    "indent",
+    "escape_shell_args",
+    "args2cmd",
+    "args2sh",
+    "parse_int_list",
+    "format_int_list",
+    "MultiReplace",
+    "multi_replace",
+    "unwrap_text",
+]
 
 
 _punct_ws_str = string.punctuation + string.whitespace
-_punct_re = re.compile('[' + _punct_ws_str + ']+')
-_camel2under_re = re.compile('((?<=[a-z0-9])[A-Z]|(?!^)[A-Z](?=[a-z]))')
+_punct_re = re.compile("[" + _punct_ws_str + "]+")
+_camel2under_re = re.compile("((?<=[a-z0-9])[A-Z]|(?!^)[A-Z](?=[a-z]))")
 
 
 def camel2under(camel_string):
@@ -79,7 +98,7 @@ def camel2under(camel_string):
     >>> camel2under('BasicParseTest')
     'basic_parse_test'
     """
-    return _camel2under_re.sub(r'_\1', camel_string).lower()
+    return _camel2under_re.sub(r"_\1", camel_string).lower()
 
 
 def under2camel(under_string):
@@ -89,10 +108,10 @@ def under2camel(under_string):
     >>> under2camel('complex_tokenizer')
     'ComplexTokenizer'
     """
-    return ''.join(w.capitalize() or '_' for w in under_string.split('_'))
+    return "".join(w.capitalize() or "_" for w in under_string.split("_"))
 
 
-def slugify(text, delim='_', lower=True, ascii=False):
+def slugify(text, delim="_", lower=True, ascii=False):
     """
     A basic function that turns text full of scary characters
     (i.e., punctuation and whitespace), into a relatively safe
@@ -110,7 +129,7 @@ def slugify(text, delim='_', lower=True, ascii=False):
     True
 
     """
-    ret = delim.join(split_punct_ws(text)) or delim if text else ''
+    ret = delim.join(split_punct_ws(text)) or delim if text else ""
     if ascii:
         ret = asciify(ret)
     if lower:
@@ -129,7 +148,7 @@ def split_punct_ws(text):
     return [w for w in _punct_re.split(text) if w]
 
 
-def unit_len(sized_iterable, unit_noun='item'):  # TODO: len_units()/unitize()?
+def unit_len(sized_iterable, unit_noun="item"):  # TODO: len_units()/unitize()?
     """Returns a plain-English description of an iterable's
     :func:`len()`, conditionally pluralized with :func:`cardinalize`,
     detailed below.
@@ -144,13 +163,11 @@ def unit_len(sized_iterable, unit_noun='item'):  # TODO: len_units()/unitize()?
     count = len(sized_iterable)
     units = cardinalize(unit_noun, count)
     if count:
-        return u'%s %s' % (count, units)
-    return u'No %s' % (units,)
+        return f"{count} {units}"
+    return f"No {units}"
 
 
-_ORDINAL_MAP = {'1': 'st',
-                '2': 'nd',
-                '3': 'rd'}  # 'th' is the default
+_ORDINAL_MAP = {"1": "st", "2": "nd", "3": "rd"}  # 'th' is the default
 
 
 def ordinalize(number, ext_only=False):
@@ -171,18 +188,18 @@ def ordinalize(number, ext_only=False):
     >>> print(ordinalize(1515))
     1515th
     """
-    numstr, ext = str(number), ''
+    numstr, ext = str(number), ""
     if numstr and numstr[-1] in string.digits:
         try:
             # first check for teens
-            if numstr[-2] == '1':
-                ext = 'th'
+            if numstr[-2] == "1":
+                ext = "th"
             else:
                 # all other cases
-                ext = _ORDINAL_MAP.get(numstr[-1], 'th')
+                ext = _ORDINAL_MAP.get(numstr[-1], "th")
         except IndexError:
             # single digit numbers (will reach here based on [-2] above)
-            ext = _ORDINAL_MAP.get(numstr[-1], 'th')
+            ext = _ORDINAL_MAP.get(numstr[-1], "th")
     if ext_only:
         return ext
     else:
@@ -225,13 +242,13 @@ def singularize(word):
     irr_singular = _IRR_P2S.get(word)
     if irr_singular:
         singular = irr_singular
-    elif not word.endswith('s'):
+    elif not word.endswith("s"):
         return orig_word
     elif len(word) == 2:
         singular = word[:-1]  # or just return word?
-    elif word.endswith('ies') and word[-4:-3] not in 'aeiou':
-        singular = word[:-3] + 'y'
-    elif word.endswith('es') and word[-3] == 's':
+    elif word.endswith("ies") and word[-4:-3] not in "aeiou":
+        singular = word[:-3] + "y"
+    elif word.endswith("es") and word[-3] == "s":
         singular = word[:-2]
     else:
         singular = word[:-1]
@@ -255,12 +272,12 @@ def pluralize(word):
     irr_plural = _IRR_S2P.get(word)
     if irr_plural:
         plural = irr_plural
-    elif word.endswith('y') and word[-2:-1] not in 'aeiou':
-        plural = word[:-1] + 'ies'
-    elif word[-1] == 's' or word.endswith('ch') or word.endswith('sh'):
-        plural = word if word.endswith('es') else word + 'es'
+    elif word.endswith("y") and word[-2:-1] not in "aeiou":
+        plural = word[:-1] + "ies"
+    elif word[-1] == "s" or word.endswith("ch") or word.endswith("sh"):
+        plural = word if word.endswith("es") else word + "es"
     else:
-        plural = word + 's'
+        plural = word + "s"
     return _match_case(orig_word, plural)
 
 
@@ -277,45 +294,117 @@ def _match_case(master, disciple):
 
 
 # Singular to plural map of irregular pluralizations
-_IRR_S2P = {'addendum': 'addenda', 'alga': 'algae', 'alumna': 'alumnae',
-            'alumnus': 'alumni', 'analysis': 'analyses', 'antenna': 'antennae',
-            'appendix': 'appendices', 'axis': 'axes', 'bacillus': 'bacilli',
-            'bacterium': 'bacteria', 'basis': 'bases', 'beau': 'beaux',
-            'bison': 'bison', 'bureau': 'bureaus', 'cactus': 'cacti',
-            'calf': 'calves', 'child': 'children', 'corps': 'corps',
-            'corpus': 'corpora', 'crisis': 'crises', 'criterion': 'criteria',
-            'curriculum': 'curricula', 'datum': 'data', 'deer': 'deer',
-            'diagnosis': 'diagnoses', 'die': 'dice', 'dwarf': 'dwarves',
-            'echo': 'echoes', 'elf': 'elves', 'ellipsis': 'ellipses',
-            'embargo': 'embargoes', 'emphasis': 'emphases', 'erratum': 'errata',
-            'fireman': 'firemen', 'fish': 'fish', 'focus': 'foci',
-            'foot': 'feet', 'formula': 'formulae', 'formula': 'formulas',
-            'fungus': 'fungi', 'genus': 'genera', 'goose': 'geese',
-            'half': 'halves', 'hero': 'heroes', 'hippopotamus': 'hippopotami',
-            'hoof': 'hooves', 'hypothesis': 'hypotheses', 'index': 'indices',
-            'knife': 'knives', 'leaf': 'leaves', 'life': 'lives',
-            'loaf': 'loaves', 'louse': 'lice', 'man': 'men',
-            'matrix': 'matrices', 'means': 'means', 'medium': 'media',
-            'memorandum': 'memoranda', 'millennium': 'milennia', 'moose': 'moose',
-            'mosquito': 'mosquitoes', 'mouse': 'mice', 'nebula': 'nebulae',
-            'neurosis': 'neuroses', 'nucleus': 'nuclei', 'oasis': 'oases',
-            'octopus': 'octopi', 'offspring': 'offspring', 'ovum': 'ova',
-            'ox': 'oxen', 'paralysis': 'paralyses', 'parenthesis': 'parentheses',
-            'person': 'people', 'phenomenon': 'phenomena', 'potato': 'potatoes',
-            'radius': 'radii', 'scarf': 'scarves', 'scissors': 'scissors',
-            'self': 'selves', 'sense': 'senses', 'series': 'series', 'sheep':
-            'sheep', 'shelf': 'shelves', 'species': 'species', 'stimulus':
-            'stimuli', 'stratum': 'strata', 'syllabus': 'syllabi', 'symposium':
-            'symposia', 'synopsis': 'synopses', 'synthesis': 'syntheses',
-            'tableau': 'tableaux', 'that': 'those', 'thesis': 'theses',
-            'thief': 'thieves', 'this': 'these', 'tomato': 'tomatoes', 'tooth':
-            'teeth', 'torpedo': 'torpedoes', 'vertebra': 'vertebrae', 'veto':
-            'vetoes', 'vita': 'vitae', 'watch': 'watches', 'wife': 'wives',
-            'wolf': 'wolves', 'woman': 'women'}
+_IRR_S2P = {
+    "addendum": "addenda",
+    "alga": "algae",
+    "alumna": "alumnae",
+    "alumnus": "alumni",
+    "analysis": "analyses",
+    "antenna": "antennae",
+    "appendix": "appendices",
+    "axis": "axes",
+    "bacillus": "bacilli",
+    "bacterium": "bacteria",
+    "basis": "bases",
+    "beau": "beaux",
+    "bison": "bison",
+    "bureau": "bureaus",
+    "cactus": "cacti",
+    "calf": "calves",
+    "child": "children",
+    "corps": "corps",
+    "corpus": "corpora",
+    "crisis": "crises",
+    "criterion": "criteria",
+    "curriculum": "curricula",
+    "datum": "data",
+    "deer": "deer",
+    "diagnosis": "diagnoses",
+    "die": "dice",
+    "dwarf": "dwarves",
+    "echo": "echoes",
+    "elf": "elves",
+    "ellipsis": "ellipses",
+    "embargo": "embargoes",
+    "emphasis": "emphases",
+    "erratum": "errata",
+    "fireman": "firemen",
+    "fish": "fish",
+    "focus": "foci",
+    "foot": "feet",
+    "formula": "formulae",
+    "formula": "formulas",
+    "fungus": "fungi",
+    "genus": "genera",
+    "goose": "geese",
+    "half": "halves",
+    "hero": "heroes",
+    "hippopotamus": "hippopotami",
+    "hoof": "hooves",
+    "hypothesis": "hypotheses",
+    "index": "indices",
+    "knife": "knives",
+    "leaf": "leaves",
+    "life": "lives",
+    "loaf": "loaves",
+    "louse": "lice",
+    "man": "men",
+    "matrix": "matrices",
+    "means": "means",
+    "medium": "media",
+    "memorandum": "memoranda",
+    "millennium": "milennia",
+    "moose": "moose",
+    "mosquito": "mosquitoes",
+    "mouse": "mice",
+    "nebula": "nebulae",
+    "neurosis": "neuroses",
+    "nucleus": "nuclei",
+    "oasis": "oases",
+    "octopus": "octopi",
+    "offspring": "offspring",
+    "ovum": "ova",
+    "ox": "oxen",
+    "paralysis": "paralyses",
+    "parenthesis": "parentheses",
+    "person": "people",
+    "phenomenon": "phenomena",
+    "potato": "potatoes",
+    "radius": "radii",
+    "scarf": "scarves",
+    "scissors": "scissors",
+    "self": "selves",
+    "sense": "senses",
+    "series": "series",
+    "sheep": "sheep",
+    "shelf": "shelves",
+    "species": "species",
+    "stimulus": "stimuli",
+    "stratum": "strata",
+    "syllabus": "syllabi",
+    "symposium": "symposia",
+    "synopsis": "synopses",
+    "synthesis": "syntheses",
+    "tableau": "tableaux",
+    "that": "those",
+    "thesis": "theses",
+    "thief": "thieves",
+    "this": "these",
+    "tomato": "tomatoes",
+    "tooth": "teeth",
+    "torpedo": "torpedoes",
+    "vertebra": "vertebrae",
+    "veto": "vetoes",
+    "vita": "vitae",
+    "watch": "watches",
+    "wife": "wives",
+    "wolf": "wolves",
+    "woman": "women",
+}
 
 
 # Reverse index of the above
-_IRR_P2S = dict([(v, k) for k, v in _IRR_S2P.items()])
+_IRR_P2S = {v: k for k, v in _IRR_S2P.items()}
 
 HASHTAG_RE = re.compile(r"(?:^|\s)[＃#]{1}(\w+)", re.UNICODE)
 
@@ -353,11 +442,12 @@ def a10n(string):
     """
     if len(string) < 3:
         return string
-    return '%s%s%s' % (string[0], len(string[1:-1]), string[-1])
+    return f"{string[0]}{len(string[1:-1])}{string[-1]}"
 
 
 # Based on https://en.wikipedia.org/wiki/ANSI_escape_code#Escape_sequences
-ANSI_SEQUENCES = re.compile(r'''
+ANSI_SEQUENCES = re.compile(
+    r"""
     \x1B            # Sequence starts with ESC, i.e. hex 0x1B
     (?:
         [@-Z\\-_]   # Second byte:
@@ -371,7 +461,9 @@ ANSI_SEQUENCES = re.compile(r'''
         [@-~]       # Final byte
                     #   range 0x40–0x7E, ASCII @A–Z[\]^_`a–z{|}~
     )
-''', re.VERBOSE)
+""",
+    re.VERBOSE,
+)
 
 
 def strip_ansi(text):
@@ -401,13 +493,13 @@ def strip_ansi(text):
     # Unicode type aliased to str is code-smell for Boltons in Python 3 env
     if isinstance(text, (bytes, bytearray)):
         target_type = type(text)
-        text = text.decode('utf-8')
+        text = text.decode("utf-8")
 
-    cleaned = ANSI_SEQUENCES.sub('', text)
+    cleaned = ANSI_SEQUENCES.sub("", text)
 
     # Transform back the result to the same bytearray type provided by the user.
     if target_type and target_type != type(cleaned):
-        cleaned = target_type(cleaned, 'utf-8')
+        cleaned = target_type(cleaned, "utf-8")
 
     return cleaned
 
@@ -431,17 +523,17 @@ def asciify(text, ignore=False):
     """
     try:
         try:
-            return text.encode('ascii')
+            return text.encode("ascii")
         except UnicodeDecodeError:
             # this usually means you passed in a non-unicode string
-            text = text.decode('utf-8')
-            return text.encode('ascii')
+            text = text.decode("utf-8")
+            return text.encode("ascii")
     except UnicodeEncodeError:
-        mode = 'replace'
+        mode = "replace"
         if ignore:
-            mode = 'ignore'
-        transd = unicodedata.normalize('NFKD', text.translate(DEACCENT_MAP))
-        ret = transd.encode('ascii', mode)
+            mode = "ignore"
+        transd = unicodedata.normalize("NFKD", text.translate(DEACCENT_MAP))
+        ret = transd.encode("ascii", mode)
         return ret
 
 
@@ -459,28 +551,29 @@ def is_ascii(text):
     """
     if isinstance(text, str):
         try:
-            text.encode('ascii')
+            text.encode("ascii")
         except UnicodeEncodeError:
             return False
     elif isinstance(text, bytes):
         try:
-            text.decode('ascii')
+            text.decode("ascii")
         except UnicodeDecodeError:
             return False
     else:
-        raise ValueError('expected text or bytes, not %r' % type(text))
+        raise ValueError("expected text or bytes, not %r" % type(text))
     return True
 
 
 class DeaccenterDict(dict):
     "A small caching dictionary for deaccenting."
+
     def __missing__(self, key):
         ch = self.get(key)
         if ch is not None:
             return ch
         try:
             de = unicodedata.decomposition(chr(key))
-            p1, _, p2 = de.rpartition(' ')
+            p1, _, p2 = de.rpartition(" ")
             if int(p2, 16) == 0x308:
                 ch = self.get(key)
             else:
@@ -497,9 +590,10 @@ class DeaccenterDict(dict):
         # this version of python, so we define __getitem__
         def __getitem__(self, key):
             try:
-                return super(DeaccenterDict, self).__getitem__(key)
+                return super().__getitem__(key)
             except KeyError:
                 return self.__missing__(key)
+
     else:
         del defaultdict
 
@@ -509,61 +603,61 @@ class DeaccenterDict(dict):
 # or isounidecode packages, which are capable of performing
 # crude transliteration.
 _BASE_DEACCENT_MAP = {
-    0xc6: u"AE", # Æ LATIN CAPITAL LETTER AE
-    0xd0: u"D",  # Ð LATIN CAPITAL LETTER ETH
-    0xd8: u"OE", # Ø LATIN CAPITAL LETTER O WITH STROKE
-    0xde: u"Th", # Þ LATIN CAPITAL LETTER THORN
-    0xc4: u'Ae', # Ä LATIN CAPITAL LETTER A WITH DIAERESIS
-    0xd6: u'Oe', # Ö LATIN CAPITAL LETTER O WITH DIAERESIS
-    0xdc: u'Ue', # Ü LATIN CAPITAL LETTER U WITH DIAERESIS
-    0xc0: u"A",  # À LATIN CAPITAL LETTER A WITH GRAVE
-    0xc1: u"A",  # Á LATIN CAPITAL LETTER A WITH ACUTE
-    0xc3: u"A",  # Ã LATIN CAPITAL LETTER A WITH TILDE
-    0xc7: u"C",  # Ç LATIN CAPITAL LETTER C WITH CEDILLA
-    0xc8: u"E",  # È LATIN CAPITAL LETTER E WITH GRAVE
-    0xc9: u"E",  # É LATIN CAPITAL LETTER E WITH ACUTE
-    0xca: u"E",  # Ê LATIN CAPITAL LETTER E WITH CIRCUMFLEX
-    0xcc: u"I",  # Ì LATIN CAPITAL LETTER I WITH GRAVE
-    0xcd: u"I",  # Í LATIN CAPITAL LETTER I WITH ACUTE
-    0xd2: u"O",  # Ò LATIN CAPITAL LETTER O WITH GRAVE
-    0xd3: u"O",  # Ó LATIN CAPITAL LETTER O WITH ACUTE
-    0xd5: u"O",  # Õ LATIN CAPITAL LETTER O WITH TILDE
-    0xd9: u"U",  # Ù LATIN CAPITAL LETTER U WITH GRAVE
-    0xda: u"U",  # Ú LATIN CAPITAL LETTER U WITH ACUTE
-    0xdf: u"ss", # ß LATIN SMALL LETTER SHARP S
-    0xe6: u"ae", # æ LATIN SMALL LETTER AE
-    0xf0: u"d",  # ð LATIN SMALL LETTER ETH
-    0xf8: u"oe", # ø LATIN SMALL LETTER O WITH STROKE
-    0xfe: u"th", # þ LATIN SMALL LETTER THORN,
-    0xe4: u'ae', # ä LATIN SMALL LETTER A WITH DIAERESIS
-    0xf6: u'oe', # ö LATIN SMALL LETTER O WITH DIAERESIS
-    0xfc: u'ue', # ü LATIN SMALL LETTER U WITH DIAERESIS
-    0xe0: u"a",  # à LATIN SMALL LETTER A WITH GRAVE
-    0xe1: u"a",  # á LATIN SMALL LETTER A WITH ACUTE
-    0xe3: u"a",  # ã LATIN SMALL LETTER A WITH TILDE
-    0xe7: u"c",  # ç LATIN SMALL LETTER C WITH CEDILLA
-    0xe8: u"e",  # è LATIN SMALL LETTER E WITH GRAVE
-    0xe9: u"e",  # é LATIN SMALL LETTER E WITH ACUTE
-    0xea: u"e",  # ê LATIN SMALL LETTER E WITH CIRCUMFLEX
-    0xec: u"i",  # ì LATIN SMALL LETTER I WITH GRAVE
-    0xed: u"i",  # í LATIN SMALL LETTER I WITH ACUTE
-    0xf2: u"o",  # ò LATIN SMALL LETTER O WITH GRAVE
-    0xf3: u"o",  # ó LATIN SMALL LETTER O WITH ACUTE
-    0xf5: u"o",  # õ LATIN SMALL LETTER O WITH TILDE
-    0xf9: u"u",  # ù LATIN SMALL LETTER U WITH GRAVE
-    0xfa: u"u",  # ú LATIN SMALL LETTER U WITH ACUTE
-    0x2018: u"'",  # ‘ LEFT SINGLE QUOTATION MARK
-    0x2019: u"'",  # ’ RIGHT SINGLE QUOTATION MARK
-    0x201c: u'"',  # “ LEFT DOUBLE QUOTATION MARK
-    0x201d: u'"',  # ” RIGHT DOUBLE QUOTATION MARK
-    }
+    0xC6: "AE",  # Æ LATIN CAPITAL LETTER AE
+    0xD0: "D",  # Ð LATIN CAPITAL LETTER ETH
+    0xD8: "OE",  # Ø LATIN CAPITAL LETTER O WITH STROKE
+    0xDE: "Th",  # Þ LATIN CAPITAL LETTER THORN
+    0xC4: "Ae",  # Ä LATIN CAPITAL LETTER A WITH DIAERESIS
+    0xD6: "Oe",  # Ö LATIN CAPITAL LETTER O WITH DIAERESIS
+    0xDC: "Ue",  # Ü LATIN CAPITAL LETTER U WITH DIAERESIS
+    0xC0: "A",  # À LATIN CAPITAL LETTER A WITH GRAVE
+    0xC1: "A",  # Á LATIN CAPITAL LETTER A WITH ACUTE
+    0xC3: "A",  # Ã LATIN CAPITAL LETTER A WITH TILDE
+    0xC7: "C",  # Ç LATIN CAPITAL LETTER C WITH CEDILLA
+    0xC8: "E",  # È LATIN CAPITAL LETTER E WITH GRAVE
+    0xC9: "E",  # É LATIN CAPITAL LETTER E WITH ACUTE
+    0xCA: "E",  # Ê LATIN CAPITAL LETTER E WITH CIRCUMFLEX
+    0xCC: "I",  # Ì LATIN CAPITAL LETTER I WITH GRAVE
+    0xCD: "I",  # Í LATIN CAPITAL LETTER I WITH ACUTE
+    0xD2: "O",  # Ò LATIN CAPITAL LETTER O WITH GRAVE
+    0xD3: "O",  # Ó LATIN CAPITAL LETTER O WITH ACUTE
+    0xD5: "O",  # Õ LATIN CAPITAL LETTER O WITH TILDE
+    0xD9: "U",  # Ù LATIN CAPITAL LETTER U WITH GRAVE
+    0xDA: "U",  # Ú LATIN CAPITAL LETTER U WITH ACUTE
+    0xDF: "ss",  # ß LATIN SMALL LETTER SHARP S
+    0xE6: "ae",  # æ LATIN SMALL LETTER AE
+    0xF0: "d",  # ð LATIN SMALL LETTER ETH
+    0xF8: "oe",  # ø LATIN SMALL LETTER O WITH STROKE
+    0xFE: "th",  # þ LATIN SMALL LETTER THORN,
+    0xE4: "ae",  # ä LATIN SMALL LETTER A WITH DIAERESIS
+    0xF6: "oe",  # ö LATIN SMALL LETTER O WITH DIAERESIS
+    0xFC: "ue",  # ü LATIN SMALL LETTER U WITH DIAERESIS
+    0xE0: "a",  # à LATIN SMALL LETTER A WITH GRAVE
+    0xE1: "a",  # á LATIN SMALL LETTER A WITH ACUTE
+    0xE3: "a",  # ã LATIN SMALL LETTER A WITH TILDE
+    0xE7: "c",  # ç LATIN SMALL LETTER C WITH CEDILLA
+    0xE8: "e",  # è LATIN SMALL LETTER E WITH GRAVE
+    0xE9: "e",  # é LATIN SMALL LETTER E WITH ACUTE
+    0xEA: "e",  # ê LATIN SMALL LETTER E WITH CIRCUMFLEX
+    0xEC: "i",  # ì LATIN SMALL LETTER I WITH GRAVE
+    0xED: "i",  # í LATIN SMALL LETTER I WITH ACUTE
+    0xF2: "o",  # ò LATIN SMALL LETTER O WITH GRAVE
+    0xF3: "o",  # ó LATIN SMALL LETTER O WITH ACUTE
+    0xF5: "o",  # õ LATIN SMALL LETTER O WITH TILDE
+    0xF9: "u",  # ù LATIN SMALL LETTER U WITH GRAVE
+    0xFA: "u",  # ú LATIN SMALL LETTER U WITH ACUTE
+    0x2018: "'",  # ‘ LEFT SINGLE QUOTATION MARK
+    0x2019: "'",  # ’ RIGHT SINGLE QUOTATION MARK
+    0x201C: '"',  # “ LEFT DOUBLE QUOTATION MARK
+    0x201D: '"',  # ” RIGHT DOUBLE QUOTATION MARK
+}
 
 
 DEACCENT_MAP = DeaccenterDict(_BASE_DEACCENT_MAP)
 
 
-_SIZE_SYMBOLS = ('B', 'K', 'M', 'G', 'T', 'P', 'E', 'Z', 'Y')
-_SIZE_BOUNDS = [(1024 ** i, sym) for i, sym in enumerate(_SIZE_SYMBOLS)]
+_SIZE_SYMBOLS = ("B", "K", "M", "G", "T", "P", "E", "Z", "Y")
+_SIZE_BOUNDS = [(1024**i, sym) for i, sym in enumerate(_SIZE_SYMBOLS)]
 _SIZE_RANGES = list(zip(_SIZE_BOUNDS, _SIZE_BOUNDS[1:]))
 
 
@@ -584,9 +678,9 @@ def bytes2human(nbytes, ndigits=0):
         if abs_bytes <= next_size:
             break
     hnbytes = float(nbytes) / size
-    return '{hnbytes:.{ndigits}f}{symbol}'.format(hnbytes=hnbytes,
-                                                  ndigits=ndigits,
-                                                  symbol=symbol)
+    return "{hnbytes:.{ndigits}f}{symbol}".format(
+        hnbytes=hnbytes, ndigits=ndigits, symbol=symbol
+    )
 
 
 class HTMLTextExtractor(HTMLParser):
@@ -600,7 +694,7 @@ class HTMLTextExtractor(HTMLParser):
         self.result.append(d)
 
     def handle_charref(self, number):
-        if number[0] == u'x' or number[0] == u'X':
+        if number[0] == "x" or number[0] == "X":
             codepoint = int(number[1:], 16)
         else:
             codepoint = int(number)
@@ -610,12 +704,12 @@ class HTMLTextExtractor(HTMLParser):
         try:
             codepoint = htmlentitydefs.name2codepoint[name]
         except KeyError:
-            self.result.append(u'&' + name + u';')
+            self.result.append("&" + name + ";")
         else:
             self.result.append(chr(codepoint))
 
     def get_text(self):
-        return u''.join(self.result)
+        return "".join(self.result)
 
 
 def html2text(html):
@@ -632,8 +726,8 @@ def html2text(html):
     return s.get_text()
 
 
-_EMPTY_GZIP_BYTES = b'\x1f\x8b\x08\x089\xf3\xb9U\x00\x03empty\x00\x03\x00\x00\x00\x00\x00\x00\x00\x00\x00'
-_NON_EMPTY_GZIP_BYTES = b'\x1f\x8b\x08\x08\xbc\xf7\xb9U\x00\x03not_empty\x00K\xaa,I-N\xcc\xc8\xafT\xe4\x02\x00\xf3nb\xbf\x0b\x00\x00\x00'
+_EMPTY_GZIP_BYTES = b"\x1f\x8b\x08\x089\xf3\xb9U\x00\x03empty\x00\x03\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+_NON_EMPTY_GZIP_BYTES = b"\x1f\x8b\x08\x08\xbc\xf7\xb9U\x00\x03not_empty\x00K\xaa,I-N\xcc\xc8\xafT\xe4\x02\x00\xf3nb\xbf\x0b\x00\x00\x00"
 
 
 def gunzip_bytes(bytestring):
@@ -667,15 +761,13 @@ def gzip_bytes(bytestring, level=6):
     it's not really a competitor in compression, at any level.
     """
     out = StringIO()
-    f = GzipFile(fileobj=out, mode='wb', compresslevel=level)
+    f = GzipFile(fileobj=out, mode="wb", compresslevel=level)
     f.write(bytestring)
     f.close()
     return out.getvalue()
 
 
-
-_line_ending_re = re.compile(r'(\r\n|\n|\x0b|\f|\r|\x85|\x2028|\x2029)',
-                             re.UNICODE)
+_line_ending_re = re.compile(r"(\r\n|\n|\x0b|\f|\r|\x85|\x2028|\x2029)", re.UNICODE)
 
 
 def iter_splitlines(text):
@@ -702,7 +794,7 @@ def iter_splitlines(text):
         if prev_end <= start:
             yield text[prev_end:start]
         if end == len_text:
-            yield ''
+            yield ""
         prev_end = end
     tail = text[prev_end:]
     if tail:
@@ -710,7 +802,7 @@ def iter_splitlines(text):
     return
 
 
-def indent(text, margin, newline='\n', key=bool):
+def indent(text, margin, newline="\n", key=bool):
     """The missing counterpart to the built-in :func:`textwrap.dedent`.
 
     Args:
@@ -721,8 +813,9 @@ def indent(text, margin, newline='\n', key=bool):
           indent it. Default: :class:`bool`, to ensure that empty lines do
           not get whitespace added.
     """
-    indented_lines = [(margin + line if key(line) else line)
-                      for line in iter_splitlines(text)]
+    indented_lines = [
+        (margin + line if key(line) else line) for line in iter_splitlines(text)
+    ]
     return newline.join(indented_lines)
 
 
@@ -750,7 +843,7 @@ def is_uuid(obj, version=4):
     return True
 
 
-def escape_shell_args(args, sep=' ', style=None):
+def escape_shell_args(args, sep=" ", style=None):
     """Returns an escaped version of each string in *args*, according to
     *style*.
 
@@ -766,20 +859,20 @@ def escape_shell_args(args, sep=' ', style=None):
     output for each style.
     """
     if not style:
-        style = 'cmd' if sys.platform == 'win32' else 'sh'
+        style = "cmd" if sys.platform == "win32" else "sh"
 
-    if style == 'sh':
+    if style == "sh":
         return args2sh(args, sep=sep)
-    elif style == 'cmd':
+    elif style == "cmd":
         return args2cmd(args, sep=sep)
 
     raise ValueError("style expected one of 'cmd' or 'sh', not %r" % style)
 
 
-_find_sh_unsafe = re.compile(r'[^a-zA-Z0-9_@%+=:,./-]').search
+_find_sh_unsafe = re.compile(r"[^a-zA-Z0-9_@%+=:,./-]").search
 
 
-def args2sh(args, sep=' '):
+def args2sh(args, sep=" "):
     """Return a shell-escaped string version of *args*, separated by
     *sep*, based on the rules of sh, bash, and other shells in the
     Linux/BSD/MacOS ecosystem.
@@ -810,10 +903,10 @@ def args2sh(args, sep=' '):
         # the string $'b is then quoted as '$'"'"'b'
         ret_list.append("'" + arg.replace("'", "'\"'\"'") + "'")
 
-    return ' '.join(ret_list)
+    return " ".join(ret_list)
 
 
-def args2cmd(args, sep=' '):
+def args2cmd(args, sep=" "):
     r"""Return a shell-escaped string version of *args*, separated by
     *sep*, using the same rules as the Microsoft C runtime.
 
@@ -859,19 +952,19 @@ def args2cmd(args, sep=' '):
 
         # Add a space to separate this argument from the others
         if result:
-            result.append(' ')
+            result.append(" ")
 
         needquote = (" " in arg) or ("\t" in arg) or not arg
         if needquote:
             result.append('"')
 
         for c in arg:
-            if c == '\\':
+            if c == "\\":
                 # Don't know if we need to double yet.
                 bs_buf.append(c)
             elif c == '"':
                 # Double backslashes.
-                result.append('\\' * len(bs_buf)*2)
+                result.append("\\" * len(bs_buf) * 2)
                 bs_buf = []
                 result.append('\\"')
             else:
@@ -889,10 +982,10 @@ def args2cmd(args, sep=' '):
             result.extend(bs_buf)
             result.append('"')
 
-    return ''.join(result)
+    return "".join(result)
 
 
-def parse_int_list(range_string, delim=',', range_delim='-'):
+def parse_int_list(range_string, delim=",", range_delim="-"):
     """Returns a sorted list of positive integers based on
     *range_string*. Reverse of :func:`format_int_list`.
 
@@ -912,11 +1005,10 @@ def parse_int_list(range_string, delim=',', range_delim='-'):
     output = []
 
     for x in range_string.strip().split(delim):
-
         # Range
         if range_delim in x:
             range_limits = list(map(int, x.split(range_delim)))
-            output += list(range(min(range_limits), max(range_limits)+1))
+            output += list(range(min(range_limits), max(range_limits) + 1))
 
         # Empty String
         elif not x:
@@ -929,7 +1021,7 @@ def parse_int_list(range_string, delim=',', range_delim='-'):
     return sorted(output)
 
 
-def format_int_list(int_list, delim=',', range_delim='-', delim_space=False):
+def format_int_list(int_list, delim=",", range_delim="-", delim_space=False):
     """Returns a sorted range string from a list of positive integers
     (*int_list*). Contiguous ranges of integers are collapsed to min
     and max values. Reverse of :func:`parse_int_list`.
@@ -952,7 +1044,6 @@ def format_int_list(int_list, delim=',', range_delim='-', delim_space=False):
     contig_range = collections.deque()
 
     for x in sorted(int_list):
-
         # Handle current (and first) value.
         if len(contig_range) < 1:
             contig_range.append(x)
@@ -967,9 +1058,9 @@ def format_int_list(int_list, delim=',', range_delim='-', delim_space=False):
 
             # Current value is non-contiguous.
             elif delta > 1:
-                range_substr = '{0:d}{1}{2:d}'.format(min(contig_range),
-                                                      range_delim,
-                                                      max(contig_range))
+                range_substr = "{:d}{}{:d}".format(
+                    min(contig_range), range_delim, max(contig_range)
+                )
                 output.append(range_substr)
                 contig_range.clear()
                 contig_range.append(x)
@@ -988,7 +1079,7 @@ def format_int_list(int_list, delim=',', range_delim='-', delim_space=False):
 
             # Current value is non-contiguous.
             elif delta > 1:
-                output.append('{0:d}'.format(contig_range.popleft()))
+                output.append(f"{contig_range.popleft():d}")
                 contig_range.append(x)
 
             # Current value repeated.
@@ -997,22 +1088,21 @@ def format_int_list(int_list, delim=',', range_delim='-', delim_space=False):
 
     # Handle the last value.
     else:
-
         # Last value is non-contiguous.
         if len(contig_range) == 1:
-            output.append('{0:d}'.format(contig_range.popleft()))
+            output.append(f"{contig_range.popleft():d}")
             contig_range.clear()
 
         # Last value is part of contiguous range.
         elif len(contig_range) > 1:
-            range_substr = '{0:d}{1}{2:d}'.format(min(contig_range),
-                                                  range_delim,
-                                                  max(contig_range))
+            range_substr = "{:d}{}{:d}".format(
+                min(contig_range), range_delim, max(contig_range)
+            )
             output.append(range_substr)
             contig_range.clear()
 
     if delim_space:
-        output_str = (delim+' ').join(output)
+        output_str = (delim + " ").join(output)
     else:
         output_str = delim.join(output)
 
@@ -1020,9 +1110,9 @@ def format_int_list(int_list, delim=',', range_delim='-', delim_space=False):
 
 
 def complement_int_list(
-        range_string, range_start=0, range_end=None,
-        delim=',', range_delim='-'):
-    """ Returns range string that is the complement of the one provided as
+    range_string, range_start=0, range_end=None, delim=",", range_delim="-"
+):
+    """Returns range string that is the complement of the one provided as
     *range_string* parameter.
 
     These range strings are of the kind produce by :func:`format_int_list`, and
@@ -1102,13 +1192,12 @@ def complement_int_list(
             range_end = max(int_list) + 1
         else:
             range_end = range_start
-    complement_values = set(
-        range(range_end)) - int_list - set(range(range_start))
+    complement_values = set(range(range_end)) - int_list - set(range(range_start))
     return format_int_list(complement_values, delim, range_delim)
 
 
-def int_ranges_from_int_list(range_string, delim=',', range_delim='-'):
-    """ Transform a string of ranges (*range_string*) into a tuple of tuples.
+def int_ranges_from_int_list(range_string, delim=",", range_delim="-"):
+    """Transform a string of ranges (*range_string*) into a tuple of tuples.
 
     Args:
         range_string (str): String of comma separated positive integers or
@@ -1130,12 +1219,11 @@ def int_ranges_from_int_list(range_string, delim=',', range_delim='-'):
     """
     int_tuples = []
     # Normalize the range string to our internal format for processing.
-    range_string = format_int_list(
-        parse_int_list(range_string, delim, range_delim))
+    range_string = format_int_list(parse_int_list(range_string, delim, range_delim))
     if range_string:
-        for bounds in range_string.split(','):
-            if '-' in bounds:
-                start, end = bounds.split('-')
+        for bounds in range_string.split(","):
+            if "-" in bounds:
+                start, end = bounds.split("-")
             else:
                 start, end = bounds, bounds
             int_tuples.append((int(start), int(end)))
@@ -1202,8 +1290,8 @@ class MultiReplace:
     def __init__(self, sub_map, **kwargs):
         """Compile any regular expressions that have been passed."""
         options = {
-            'regex': False,
-            'flags': 0,
+            "regex": False,
+            "flags": 0,
         }
         options.update(kwargs)
         self.group_map = {}
@@ -1213,22 +1301,21 @@ class MultiReplace:
             sub_map = sub_map.items()
 
         for idx, vals in enumerate(sub_map):
-            group_name = 'group{0}'.format(idx)
+            group_name = f"group{idx}"
             if isinstance(vals[0], basestring):
                 # If we're not treating input strings like a regex, escape it
-                if not options['regex']:
+                if not options["regex"]:
                     exp = re.escape(vals[0])
                 else:
                     exp = vals[0]
             else:
                 exp = vals[0].pattern
 
-            regex_values.append('(?P<{}>{})'.format(group_name, exp))
+            regex_values.append(f"(?P<{group_name}>{exp})")
             self.group_map[group_name] = vals[1]
 
         self.combined_pattern = re.compile(
-            '|'.join(regex_values),
-            flags=options['flags']
+            "|".join(regex_values), flags=options["flags"]
         )
 
     def _get_value(self, match):
@@ -1264,7 +1351,7 @@ def multi_replace(text, sub_map, **kwargs):
     return m.sub(text)
 
 
-def unwrap_text(text, ending='\n\n'):
+def unwrap_text(text, ending="\n\n"):
     r"""
     Unwrap text, the natural complement to :func:`textwrap.wrap`.
 
@@ -1286,10 +1373,10 @@ def unwrap_text(text, ending='\n\n'):
         if line:
             cur_graf.append(line)
         else:
-            all_grafs.append(' '.join(cur_graf))
+            all_grafs.append(" ".join(cur_graf))
             cur_graf = []
     if cur_graf:
-        all_grafs.append(' '.join(cur_graf))
+        all_grafs.append(" ".join(cur_graf))
     if ending is None:
         return all_grafs
     return ending.join(all_grafs)
