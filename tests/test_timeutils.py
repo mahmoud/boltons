@@ -7,7 +7,7 @@ from boltons.timeutils import daterange, total_seconds
 
 def test_float_total_seconds():
     """Check for floating point precision loss per
-    http://bugs.python.org/issue8644 and tests in the corresponding
+    https://bugs.python.org/issue8644 and tests in the corresponding
     diff, spurred by
     https://github.com/mahmoud/boltons/pull/13#issuecomment-93835612 .
 

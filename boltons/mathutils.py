@@ -61,7 +61,7 @@ def clamp(x, lower=float("-inf"), upper=float("inf")):
 
     Similar to `numpy's clip`_ function.
 
-    .. _numpy's clip: http://docs.scipy.org/doc/numpy/reference/generated/numpy.clip.html
+    .. _numpy's clip: https://docs.scipy.org/doc/numpy/reference/generated/numpy.clip.html
 
     """
     if upper < lower:

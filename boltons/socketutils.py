@@ -649,7 +649,7 @@ class NetstringSocket:
     Reads and writes using the netstring protocol.
 
     More info: https://en.wikipedia.org/wiki/Netstring
-    Even more info: http://cr.yp.to/proto/netstrings.txt
+    Even more info: https://cr.yp.to/proto/netstrings.txt
     """
 
     def __init__(self, sock, timeout=DEFAULT_TIMEOUT, maxsize=DEFAULT_MAXSIZE):

@@ -1056,7 +1056,7 @@ except ImportError:
         methods. Backport of :func:`functools.total_ordering` to work
         with Python 2.6.
 
-        Code from http://code.activestate.com/recipes/576685/
+        Code from https://code.activestate.com/recipes/576685/
         """
         convert = {
             "__lt__": [

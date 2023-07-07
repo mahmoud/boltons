@@ -44,7 +44,7 @@ objects).
 For more advanced :class:`Table`-style manipulation check out the
 `pandas`_ DataFrame.
 
-.. _pandas: http://pandas.pydata.org/
+.. _pandas: https://pandas.pydata.org/
 
 """
 

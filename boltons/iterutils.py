@@ -1047,7 +1047,7 @@ def remap(root, visit=default_visit, enter=default_enter, exit=default_exit, **k
     dictionary. Not bad for a one-liner, and that's just the beginning.
     See `this remap cookbook`_ for more delicious recipes.
 
-    .. _this remap cookbook: http://sedimental.org/remap.html
+    .. _this remap cookbook: https://sedimental.org/remap.html
 
     remap takes four main arguments: the object to traverse and three
     optional callables which determine how the remapped object will be
@@ -1116,8 +1116,8 @@ def remap(root, visit=default_visit, enter=default_enter, exit=default_exit, **k
     Duplicate and self-referential objects (aka reference loops) are
     automatically handled internally, `as shown here`_.
 
-    .. _this example: http://sedimental.org/remap.html#sort_all_lists
-    .. _as shown here: http://sedimental.org/remap.html#corner_cases
+    .. _this example: https://sedimental.org/remap.html#sort_all_lists
+    .. _as shown here: https://sedimental.org/remap.html#corner_cases
 
     """
     # TODO: improve argument formatting in sphinx doc

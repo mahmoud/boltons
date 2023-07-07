@@ -511,8 +511,8 @@ def _first_sunday_on_or_after(dt):
 # This is a simplified (i.e., wrong for a few cases) set of rules for US
 # DST start and end times. For a complete and up-to-date set of DST rules
 # and timezone definitions, visit the Olson Database (or try pytz):
-# http://www.twinsun.com/tz/tz-link.htm
-# http://sourceforge.net/projects/pytz/ (might not be up-to-date)
+# https://www.twinsun.com/tz/tz-link.htm
+# https://sourceforge.net/projects/pytz/ (might not be up-to-date)
 #
 # In the US, since 2007, DST starts at 2am (standard time) on the second
 # Sunday in March, which is the first Sunday on or after Mar 8.

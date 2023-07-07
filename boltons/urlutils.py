@@ -401,7 +401,7 @@ def register_scheme(text, uses_netloc=None, default_port=None):
 
     Args:
         text (str): Text representing the scheme.
-           (the 'http' in 'http://hatnote.com')
+           (the 'http' in 'https://hatnote.com')
         uses_netloc (bool): Does the scheme support specifying a
            network host? For instance, "http" does, "mailto" does not.
         default_port (int): The default port, if any, for netloc-using
@@ -631,7 +631,7 @@ class URL:
         :class:`~dictutils.OrderedMultiDict`. Also available as the
         handy alias ``qp``.
 
-        >>> url = URL('http://boltons.readthedocs.io/?utm_source=doctest&python=great')
+        >>> url = URL('https://boltons.readthedocs.io/?utm_source=doctest&python=great')
         >>> url.qp.keys()
         [u'utm_source', u'python']
         """
@@ -724,9 +724,9 @@ class URL:
 
         The newly created :class:`URL` is normalized before being returned.
 
-        >>> url = URL('http://boltons.readthedocs.io')
+        >>> url = URL('https://boltons.readthedocs.io')
         >>> url.navigate('en/latest/')
-        URL(u'http://boltons.readthedocs.io/en/latest/')
+        URL(u'https://boltons.readthedocs.io/en/latest/')
 
         Args:
            dest (str): A string or URL object representing the destination
@@ -818,10 +818,10 @@ class URL:
         """Render a string representing the current state of the URL
         object.
 
-        >>> url = URL('http://listen.hatnote.com')
+        >>> url = URL('https://listen.hatnote.com')
         >>> url.fragment = 'en'
         >>> print(url.to_text())
-        http://listen.hatnote.com#en
+        https://listen.hatnote.com#en
 
         By setting the *full_quote* flag, the URL can either be fully
         quoted or minimally quoted. The most common characteristic of
@@ -980,7 +980,7 @@ def parse_url(url_text):
     In short, do not expect this function to validate form inputs or
     other more colloquial usages of URLs.
 
-    >>> res = parse_url('http://127.0.0.1:3000/?a=1')
+    >>> res = parse_url('https://127.0.0.1:3000/?a=1')
     >>> sorted(res.keys())  # res is a basic dictionary
     ['_netloc_sep', 'authority', 'family', 'fragment', 'host', 'password', 'path', 'port', 'query', 'scheme', 'username']
     """

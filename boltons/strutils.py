@@ -414,7 +414,7 @@ def find_hashtags(string):
     removed. Supports full-width hashmarks for Asian languages and
     does not false-positive on URL anchors.
 
-    >>> find_hashtags('#atag http://asite/#ananchor')
+    >>> find_hashtags('#atag https://asite/#ananchor')
     ['atag']
 
     ``find_hashtags`` also works with unicode hashtags.
@@ -438,7 +438,7 @@ def a10n(string):
     >>> a10n('')
     ''
 
-    .. _numeronym: http://en.wikipedia.org/wiki/Numeronym
+    .. _numeronym: https://en.wikipedia.org/wiki/Numeronym
     """
     if len(string) < 3:
         return string
@@ -481,8 +481,8 @@ def strip_ansi(text):
     This function does not interpret or render ANSI art, but you can do so with
     `ansi2img`_ or `escapes.js`_.
 
-    .. _sixteencolors.net: http://sixteencolors.net
-    .. _ansi2img: http://www.bedroomlan.org/projects/ansi2img
+    .. _sixteencolors.net: https://sixteencolors.net
+    .. _ansi2img: https://www.bedroomlan.org/projects/ansi2img
     .. _escapes.js: https://github.com/atdt/escapes.js
     """
     # TODO: move to cliutils.py
@@ -598,7 +598,7 @@ class DeaccenterDict(dict):
         del defaultdict
 
 
-# http://chmullig.com/2009/12/python-unicode-ascii-ifier/
+# https://chmullig.com/2009/12/python-unicode-ascii-ifier/
 # For something more complete, investigate the unidecode
 # or isounidecode packages, which are capable of performing
 # crude transliteration.
@@ -720,7 +720,7 @@ def html2text(html):
     >>> r == u'Test &(\u0394\u03b7\u03bc\u03ce)'
     True
     """
-    # based on answers to http://stackoverflow.com/questions/753052/
+    # based on answers to https://stackoverflow.com/questions/753052/
     s = HTMLTextExtractor()
     s.feed(html)
     return s.get_text()
@@ -941,8 +941,8 @@ def args2cmd(args, sep=" "):
        backslash escapes the next double quotation mark as
        described in rule 3.
 
-    See http://msdn.microsoft.com/en-us/library/17w5ykft.aspx
-    or search http://msdn.microsoft.com for
+    See https://msdn.microsoft.com/en-us/library/17w5ykft.aspx
+    or search https://msdn.microsoft.com for
     "Parsing C++ Command-Line Arguments"
     """
     result = []

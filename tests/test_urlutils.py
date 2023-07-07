@@ -11,19 +11,19 @@ except NameError:
 
 # fully quoted urls that should round trip
 TEST_URLS = [
-    "http://googlewebsite.com/e-shops.aspx",
-    "http://example.com:8080/search?q=123&business=Nothing%20Special",
-    "http://hatnote.com:9000?arg=1&arg=2&arg=3",
+    "https://googlewebsite.com/e-shops.aspx",
+    "https://example.com:8080/search?q=123&business=Nothing%20Special",
+    "https://hatnote.com:9000?arg=1&arg=2&arg=3",
     "https://xn--bcher-kva.ch",
-    "http://xn--ggbla1c4e.xn--ngbc5azd/",
-    "http://tools.ietf.org/html/rfc3986#section-3.4",
-    "http://wiki:pedia@hatnote.com",
+    "https://xn--ggbla1c4e.xn--ngbc5azd/",
+    "https://tools.ietf.org/html/rfc3986#section-3.4",
+    "https://wiki:pedia@hatnote.com",
     "ftp://ftp.rfc-editor.org/in-notes/tar/RFCs0001-0500.tar.gz",
-    "http://[1080:0:0:0:8:800:200C:417A]/index.html",
+    "https://[1080:0:0:0:8:800:200C:417A]/index.html",
     "ssh://192.0.2.16:2222/",
     "https://[::101.45.75.219]:80/?hi=bye",
     "ldap://[::192.9.5.5]/dc=example,dc=com??sub?(sn=Jensen)",
-    "mailto:me@example.com?to=me@example.com&body=hi%20http://wikipedia.org",
+    "mailto:me@example.com?to=me@example.com&body=hi%20https://wikipedia.org",
     "news:alt.rec.motorcycle",
     "tel:+1-800-867-5309",
     "urn:oasis:member:A00024:x",
@@ -34,20 +34,20 @@ TEST_URLS = [
         "tr=udp://tracker.ccc.de:80&tr=udp://open.demonii.com:1337"
     ),
     # from twisted:
-    "http://localhost",
-    "http://localhost/",
-    "http://localhost/foo",
-    "http://localhost/foo/",
-    "http://localhost/foo!!bar/",
-    "http://localhost/foo%20bar/",
-    "http://localhost/foo%2Fbar/",
-    "http://localhost/foo?n",
-    "http://localhost/foo?n=v",
-    "http://localhost/foo?n=/a/b",
-    "http://example.com/foo!@$bar?b!@z=123",
-    "http://localhost/asd?a=asd%20sdf/345",
-    "http://(%2525)/(%2525)?(%2525)&(%2525)=(%2525)#(%2525)",
-    "http://(%C3%A9)/(%C3%A9)?(%C3%A9)&(%C3%A9)=(%C3%A9)#(%C3%A9)",
+    "https://localhost",
+    "https://localhost/",
+    "https://localhost/foo",
+    "https://localhost/foo/",
+    "https://localhost/foo!!bar/",
+    "https://localhost/foo%20bar/",
+    "https://localhost/foo%2Fbar/",
+    "https://localhost/foo?n",
+    "https://localhost/foo?n=v",
+    "https://localhost/foo?n=/a/b",
+    "https://example.com/foo!@$bar?b!@z=123",
+    "https://localhost/asd?a=asd%20sdf/345",
+    "https://(%2525)/(%2525)?(%2525)&(%2525)=(%2525)#(%2525)",
+    "https://(%C3%A9)/(%C3%A9)?(%C3%A9)&(%C3%A9)=(%C3%A9)#(%C3%A9)",
 ]
 
 
@@ -68,14 +68,14 @@ def test_roundtrip(test_url):
 
 
 def test_basic():
-    u1 = URL("http://googlewebsite.com/e-shops.aspx")
+    u1 = URL("https://googlewebsite.com/e-shops.aspx")
     assert isinstance(u1.to_text(), unicode)
     assert u1.host == "googlewebsite.com"
 
 
 def test_utf8_url():
     url_bytes = (
-        b"http://\xd9\x85\xd8\xab\xd8\xa7\xd9\x84"
+        b"https://\xd9\x85\xd8\xab\xd8\xa7\xd9\x84"
         b".\xd8\xa2\xd8\xb2\xd9\x85\xd8\xa7"
         b"\xdb\x8c\xd8\xb4\xdb\x8c"
     )
@@ -85,10 +85,10 @@ def test_utf8_url():
 
 
 def test_idna():
-    u1 = URL("http://bücher.ch")
+    u1 = URL("https://bücher.ch")
     assert u1.host == "bücher.ch"
-    assert u1.to_text(full_quote=True) == "http://xn--bcher-kva.ch"
-    assert u1.to_text(full_quote=False) == "http://bücher.ch"
+    assert u1.to_text(full_quote=True) == "https://xn--bcher-kva.ch"
+    assert u1.to_text(full_quote=False) == "https://bücher.ch"
 
     u2 = URL("https://xn--bcher-kva.ch")
     assert u2.host == "bücher.ch"
@@ -105,33 +105,33 @@ def test_query_params(test_url):
 
 
 def test_iri_query():
-    url = URL("http://minerals.mountain.ore/?rock=\N{SHAMROCK}")
+    url = URL("https://minerals.mountain.ore/?rock=\N{SHAMROCK}")
     assert url.query_params["rock"] == "\N{SHAMROCK}"
     assert url.query_params.to_text(full_quote=True).endswith("%E2%98%98")
 
 
 def test_iri_path():
-    url = URL("http://minerals.mountain.ore/rock/\N{SHAMROCK}/")
+    url = URL("https://minerals.mountain.ore/rock/\N{SHAMROCK}/")
     assert url.path == "/rock/\N{SHAMROCK}/"
     assert url.to_text(full_quote=True).endswith("%E2%98%98/")
 
 
 def test_url_copy():
-    url = URL("http://example.com/foo?bar=baz")
+    url = URL("https://example.com/foo?bar=baz")
     url_copy = URL(url)
     assert url == url_copy
 
 
 def test_invalid_port():
     with pytest.raises(ValueError):
-        URL("http://reader.googlewebsite.com:neverforget")
+        URL("https://reader.googlewebsite.com:neverforget")
 
 
 def test_invalid_ipv6():
     invalid_ipv6_ips = ["2001::0234:C1ab::A0:aabc:003F", "2001::1::3F"]
     for ip in invalid_ipv6_ips:
         with pytest.raises(ValueError):
-            URL("http://[" + ip + "]")
+            URL("https://[" + ip + "]")
 
 
 def test_parse_url():
@@ -148,43 +148,43 @@ def test_parse_url():
         "host": "127.0.0.1",
         "username": None,
     }
-    res = urlutils.parse_url("http://127.0.0.1:3000/?a=1")
+    res = urlutils.parse_url("https://127.0.0.1:3000/?a=1")
     assert res == expected
 
 
 def test_parse_equals_in_qp_value():
-    u = URL("http://localhost/?=x=x=x")
+    u = URL("https://localhost/?=x=x=x")
     assert u.qp[""] == "x=x=x"
-    assert u.to_text() == "http://localhost/?=x%3Dx%3Dx"
+    assert u.to_text() == "https://localhost/?=x%3Dx%3Dx"
 
-    u = URL("http://localhost/?foo=x=x=x&bar=y")
+    u = URL("https://localhost/?foo=x=x=x&bar=y")
     assert u.qp["foo"] == "x=x=x"
     assert u.qp["bar"] == "y"
 
 
 def test_identical_equal():
-    u = URL("http://example.com/path?query=param#frag")
+    u = URL("https://example.com/path?query=param#frag")
     assert u == u
 
 
 def test_equal():
-    u = URL("http://example.com/path?query=param#frag")
-    bono = URL("http://example.com/path?query=param#frag")
+    u = URL("https://example.com/path?query=param#frag")
+    bono = URL("https://example.com/path?query=param#frag")
     assert bono == u
 
 
 def test_not_equal():
-    u = URL("http://example.com/path?query=param1#frag")
-    bono = URL("http://example.com/path?query=param2#frag")
+    u = URL("https://example.com/path?query=param1#frag")
+    bono = URL("https://example.com/path?query=param2#frag")
     assert bono != u
 
 
 def _test_bad_utf8():  # not part of the API
-    bad_bin_url = "http://xn--9ca.com/%00%FF/%C3%A9"
+    bad_bin_url = "https://xn--9ca.com/%00%FF/%C3%A9"
     url = URL(bad_bin_url)
 
     expected = (
-        "http://\N{LATIN SMALL LETTER E WITH ACUTE}.com/"
+        "https://\N{LATIN SMALL LETTER E WITH ACUTE}.com/"
         "%00%FF/"
         "\N{LATIN SMALL LETTER E WITH ACUTE}"
     )
@@ -195,23 +195,23 @@ def _test_bad_utf8():  # not part of the API
 
 
 def test_userinfo():
-    url = URL("http://someuser:somepassword@example.com/some-segment@ignore")
+    url = URL("https://someuser:somepassword@example.com/some-segment@ignore")
     assert url.username == "someuser"
     assert url.password == "somepassword"
     assert (
-        url.to_text() == "http://someuser:somepassword@example.com/some-segment@ignore"
+        url.to_text() == "https://someuser:somepassword@example.com/some-segment@ignore"
     )
 
 
 def test_quoted_userinfo():
-    url = URL("http://wikipedia.org")
+    url = URL("https://wikipedia.org")
     url.username = "user"
     url.password = "p@ss"
-    assert url.to_text(full_quote=True) == "http://user:p%40ss@wikipedia.org"
+    assert url.to_text(full_quote=True) == "https://user:p%40ss@wikipedia.org"
 
-    url = URL("http://beyonc\xe9:b\xe9b@tmp.com")
-    # assert url.to_text(full_quote=False) == u'http://beyoncé:b%C3%A9b@tmp.com'
-    assert url.to_text(full_quote=True) == "http://beyonc%C3%A9:b%C3%A9b@tmp.com"
+    url = URL("https://beyonc\xe9:b\xe9b@tmp.com")
+    # assert url.to_text(full_quote=False) == u'https://beyoncé:b%C3%A9b@tmp.com'
+    assert url.to_text(full_quote=True) == "https://beyonc%C3%A9:b%C3%A9b@tmp.com"
 
 
 def test_mailto():
@@ -224,44 +224,44 @@ def test_mailto():
 # Examples from RFC 3986 section 5.4, Reference Resolution Examples
 # painstakingly copied from the lovingly transcribed version in
 # twisted's test_url, with inapplicable cases removed
-REL_URL_BASE = "http://a/b/c/d;p?q"
+REL_URL_BASE = "https://a/b/c/d;p?q"
 REL_URL_TEST_CASES = [
     # "Normal"
     # ('g:h', 'g:h'),     # Not supported:  scheme with relative path
-    ("g", "http://a/b/c/g"),
-    ("./g", "http://a/b/c/g"),
-    ("g/", "http://a/b/c/g/"),
-    ("/g", "http://a/g"),
-    (";x", "http://a/b/c/;x"),
-    ("g;x", "http://a/b/c/g;x"),
-    ("", "http://a/b/c/d;p?q"),
-    (".", "http://a/b/c/"),
-    ("./", "http://a/b/c/"),
-    ("..", "http://a/b/"),
-    ("../", "http://a/b/"),
-    ("../g", "http://a/b/g"),
-    ("../..", "http://a/"),
-    ("../../", "http://a/"),
-    ("../../g", "http://a/g"),
+    ("g", "https://a/b/c/g"),
+    ("./g", "https://a/b/c/g"),
+    ("g/", "https://a/b/c/g/"),
+    ("/g", "https://a/g"),
+    (";x", "https://a/b/c/;x"),
+    ("g;x", "https://a/b/c/g;x"),
+    ("", "https://a/b/c/d;p?q"),
+    (".", "https://a/b/c/"),
+    ("./", "https://a/b/c/"),
+    ("..", "https://a/b/"),
+    ("../", "https://a/b/"),
+    ("../g", "https://a/b/g"),
+    ("../..", "https://a/"),
+    ("../../", "https://a/"),
+    ("../../g", "https://a/g"),
     # Abnormal examples
     # ".." cannot be used to change the authority component of a URI.
-    ("../../../g", "http://a/g"),  # TODO (rooted?)
-    ("../../../../g", "http://a/g"),  # TODO (rooted)?
+    ("../../../g", "https://a/g"),  # TODO (rooted?)
+    ("../../../../g", "https://a/g"),  # TODO (rooted)?
     # Only include "." and ".." when they are only part of a larger segment,
     # not by themselves.
-    ("/./g", "http://a/g"),
-    ("/../g", "http://a/g"),
-    ("g.", "http://a/b/c/g."),
-    (".g", "http://a/b/c/.g"),
-    ("g..", "http://a/b/c/g.."),
-    ("..g", "http://a/b/c/..g"),
+    ("/./g", "https://a/g"),
+    ("/../g", "https://a/g"),
+    ("g.", "https://a/b/c/g."),
+    (".g", "https://a/b/c/.g"),
+    ("g..", "https://a/b/c/g.."),
+    ("..g", "https://a/b/c/..g"),
     # Unnecessary or nonsensical forms of "." and "..".
-    ("./../g", "http://a/b/g"),
-    ("./g/.", "http://a/b/c/g/"),
-    ("g/./h", "http://a/b/c/g/h"),
-    ("g/../h", "http://a/b/c/h"),
-    ("g;x=1/./y", "http://a/b/c/g;x=1/y"),
-    ("g;x=1/../y", "http://a/b/c/y"),
+    ("./../g", "https://a/b/g"),
+    ("./g/.", "https://a/b/c/g/"),
+    ("g/./h", "https://a/b/c/g/h"),
+    ("g/../h", "https://a/b/c/h"),
+    ("g;x=1/./y", "https://a/b/c/g;x=1/y"),
+    ("g;x=1/../y", "https://a/b/c/y"),
 ]
 
 
@@ -278,31 +278,31 @@ def test_rel_navigate():
 
 
 def test_navigate():
-    orig_text = "http://a.b/c/d?e#f"
+    orig_text = "https://a.b/c/d?e#f"
     orig = URL(orig_text)
     navd = orig.navigate("")
     # fragment removed on empty navigate
-    assert navd.to_text() == "http://a.b/c/d?e"
+    assert navd.to_text() == "https://a.b/c/d?e"
 
     # query also removed on non-empty navigate (interp'd as rel path)
     navd = orig.navigate("dd")
-    assert navd.to_text() == "http://a.b/c/dd"
+    assert navd.to_text() == "https://a.b/c/dd"
 
     # check trailing slash
     navd = orig.navigate("dd/")
-    assert navd.to_text() == "http://a.b/c/dd/"
+    assert navd.to_text() == "https://a.b/c/dd/"
 
     # path removed on absolute path navigate
     navd = orig.navigate("/C")
-    assert navd.to_text() == "http://a.b/C"
+    assert navd.to_text() == "https://a.b/C"
 
     # only query string
     navd = orig.navigate("?e=E&ee=EE")
-    assert navd.to_text() == "http://a.b/c/d?e=E&ee=EE"
+    assert navd.to_text() == "https://a.b/c/d?e=E&ee=EE"
 
     # only fragment
     navd = orig.navigate("#FFF")
-    assert navd.to_text() == "http://a.b/c/d?e#FFF"
+    assert navd.to_text() == "https://a.b/c/d?e#FFF"
 
     # an odd case, bears more consideration perhaps
     navd = orig.navigate("https:")
@@ -310,10 +310,10 @@ def test_navigate():
 
     # another odd one, host only
     navd = orig.navigate("//newhost")
-    assert navd.to_text() == "http://newhost/c/d?e"
+    assert navd.to_text() == "https://newhost/c/d?e"
 
     # absolute URLs (with scheme + host) replace everything
-    _dest_text = "http://hatnote.com"
+    _dest_text = "https://hatnote.com"
     _dest = URL(_dest_text)
     navd = orig.navigate(_dest)
     assert _dest is not navd  # make sure copies are made
@@ -387,15 +387,15 @@ def test_chained_navigate(expected, base, paths):
 
 # TODO: RFC3986 6.2.3 (not just for query add, either)
 # def test_add_query():
-#     url = URL('http://www.example.com')
+#     url = URL('https://www.example.com')
 #     url.qp['key'] = 'value'
-#     assert url.to_text() == 'http://www.example.com/?key=value'
+#     assert url.to_text() == 'https://www.example.com/?key=value'
 
 
 def test_self_normalize():
-    url = URL("http://hatnote.com/a/../../b?k=v#hashtags")
+    url = URL("https://hatnote.com/a/../../b?k=v#hashtags")
     url.normalize()
-    assert url.to_text() == "http://hatnote.com/b?k=v#hashtags"
+    assert url.to_text() == "https://hatnote.com/b?k=v#hashtags"
 
 
 def test_normalize_with_case():
@@ -417,9 +417,9 @@ def test_netloc_slashes():
     assert url.scheme == "mailto"
     assert url.to_text() == "mailto:mahmoud@hatnote.com"
 
-    url = URL("http://hatnote.com")
+    url = URL("https://hatnote.com")
     assert url.scheme == "http"
-    assert url.to_text() == "http://hatnote.com"
+    assert url.to_text() == "https://hatnote.com"
 
     # test that unrecognized schemes stay consistent with '//'
     url = URL("newscheme:a:b:c")
@@ -461,54 +461,57 @@ def test_netloc_slashes():
 # (link_text, expected_urls)
 # adapted from tornado test suite
 FAL_TESTS = [
-    ("hello http://world.com/!", ["http://world.com/"]),
+    ("hello https://world.com/!", ["https://world.com/"]),
     (
-        "hello http://world.com/with?param=true&stuff=yes",
-        ["http://world.com/with?param=true&stuff=yes"],
+        "hello https://world.com/with?param=true&stuff=yes",
+        ["https://world.com/with?param=true&stuff=yes"],
     ),
     (
-        "http://url.com/w(aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-        ["http://url.com/w"],
+        "https://url.com/w(aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        ["https://url.com/w"],
     ),
     (
-        "http://url.com/withmany.......................................",
-        ["http://url.com/withmany"],
+        "https://url.com/withmany.......................................",
+        ["https://url.com/withmany"],
     ),
     (
-        "http://url.com/withmany((((((((((((((((((((((((((((((((((a)",
-        ["http://url.com/withmany"],
+        "https://url.com/withmany((((((((((((((((((((((((((((((((((a)",
+        ["https://url.com/withmany"],
     ),
-    # some examples from http://daringfireball.net/2009/11/liberal_regex_for_matching_urls
-    ("http://foo.com/blah_blah", ["http://foo.com/blah_blah"]),
-    ("http://foo.com/blah_blah/", ["http://foo.com/blah_blah/"]),
-    ("(Something like http://foo.com/blah_blah)", ["http://foo.com/blah_blah"]),
-    ("http://foo.com/blah_blah_(wikipedia)", ["http://foo.com/blah_blah_(wikipedia)"]),
+    # some examples from https://daringfireball.net/2009/11/liberal_regex_for_matching_urls
+    ("https://foo.com/blah_blah", ["https://foo.com/blah_blah"]),
+    ("https://foo.com/blah_blah/", ["https://foo.com/blah_blah/"]),
+    ("(Something like https://foo.com/blah_blah)", ["https://foo.com/blah_blah"]),
     (
-        "http://foo.com/blah_(blah)_(wikipedia)_blah",
-        ["http://foo.com/blah_(blah)_(wikipedia)_blah"],
+        "https://foo.com/blah_blah_(wikipedia)",
+        ["https://foo.com/blah_blah_(wikipedia)"],
     ),
-    ("http://foo.com/blah_blah.", ["http://foo.com/blah_blah"]),
-    ("http://foo.com/blah_blah/.", ["http://foo.com/blah_blah/"]),
-    ("<http://foo.com/blah_blah>", ["http://foo.com/blah_blah"]),
-    ("<http://foo.com/blah_blah/>", ["http://foo.com/blah_blah/"]),
-    ("http://foo.com/blah_blah,", ["http://foo.com/blah_blah"]),
     (
-        "http://www.example.com/wpstyle/?p=364.",
-        ["http://www.example.com/wpstyle/?p=364"],
+        "https://foo.com/blah_(blah)_(wikipedia)_blah",
+        ["https://foo.com/blah_(blah)_(wikipedia)_blah"],
+    ),
+    ("https://foo.com/blah_blah.", ["https://foo.com/blah_blah"]),
+    ("https://foo.com/blah_blah/.", ["https://foo.com/blah_blah/"]),
+    ("<https://foo.com/blah_blah>", ["https://foo.com/blah_blah"]),
+    ("<https://foo.com/blah_blah/>", ["https://foo.com/blah_blah/"]),
+    ("https://foo.com/blah_blah,", ["https://foo.com/blah_blah"]),
+    (
+        "https://www.example.com/wpstyle/?p=364.",
+        ["https://www.example.com/wpstyle/?p=364"],
     ),
     ("rdar://1234", ["rdar://1234"]),
     ("rdar:/1234", ["rdar:/1234"]),
     (
-        "http://userid:password@example.com:8080",
-        ["http://userid:password@example.com:8080"],
+        "https://userid:password@example.com:8080",
+        ["https://userid:password@example.com:8080"],
     ),
-    ("http://userid@example.com", ["http://userid@example.com"]),
+    ("https://userid@example.com", ["https://userid@example.com"]),
     (
         "message://%3c330e7f8409726r6a4ba78dkf1fd71420c1bf6ff@mail.gmail.com%3e",
         ["message://%3C330e7f8409726r6a4ba78dkf1fd71420c1bf6ff@mail.gmail.com%3e"],
     ),
-    ("http://\u27a1.ws/\u4a39", ["http://\u27a1.ws/\u4a39"]),
-    ("<tag>http://example.com</tag>", ["http://example.com"]),
+    ("https://\u27a1.ws/\u4a39", ["https://\u27a1.ws/\u4a39"]),
+    ("<tag>https://example.com</tag>", ["https://example.com"]),
     ("Just a www.example.com link.", ["https://www.example.com"]),
     ("www.a-link.com", ["https://www.a-link.com"]),
     (
@@ -520,7 +523,7 @@ FAL_TESTS = [
 
 def test_find_all_links_basic():
     target = """hi my name is prince nigeria, please visit my website
-    http://richprince.biz or if that's blocked try
+    https://richprince.biz or if that's blocked try
     https://getprince.ly! Thanks for your attention.bye!
 
     PS if those ports are blocked, how about trying
@@ -553,7 +556,7 @@ def test_find_all_links():
 
 def test_unicodey():
     unicodey = (
-        "http://\N{LATIN SMALL LETTER E WITH ACUTE}.com/"
+        "https://\N{LATIN SMALL LETTER E WITH ACUTE}.com/"
         "\N{LATIN SMALL LETTER E}\N{COMBINING ACUTE ACCENT}"
         "?\N{LATIN SMALL LETTER A}\N{COMBINING ACUTE ACCENT}="
         "\N{LATIN SMALL LETTER I}\N{COMBINING ACUTE ACCENT}"
@@ -563,12 +566,12 @@ def test_unicodey():
     assert url.host == "é.com"
     assert url.path_parts[1] == "\N{LATIN SMALL LETTER E}\N{COMBINING ACUTE ACCENT}"
     assert url.to_text(full_quote=False) == unicodey
-    fully_quoted = "http://xn--9ca.com/%C3%A9?%C3%A1=%C3%AD#%C3%BA"
+    fully_quoted = "https://xn--9ca.com/%C3%A9?%C3%A1=%C3%AD#%C3%BA"
     assert url.to_text(full_quote=True) == fully_quoted
 
 
 def test_str_repr():
     assert (
-        str(URL("http://googlewebsite.com/e-shops.aspx"))
-        == "http://googlewebsite.com/e-shops.aspx"
+        str(URL("https://googlewebsite.com/e-shops.aspx"))
+        == "https://googlewebsite.com/e-shops.aspx"
     )

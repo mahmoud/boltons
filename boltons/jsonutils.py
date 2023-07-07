@@ -32,7 +32,7 @@
 JSON. Currently it focuses on providing a reliable and intuitive means
 of working with `JSON Lines`_-formatted files.
 
-.. _JSON Lines: http://jsonlines.org/
+.. _JSON Lines: https://jsonlines.org/
 
 """
 
@@ -141,7 +141,7 @@ class JSONLIterator:
             iteration. Set to 0.0 for the start of the file, 1.0 for the
             end, and anything in between.
 
-    .. _JSON Lines format: http://jsonlines.org/
+    .. _JSON Lines format: https://jsonlines.org/
     """
 
     def __init__(self, file_obj, ignore_errors=False, reverse=False, rel_seek=None):

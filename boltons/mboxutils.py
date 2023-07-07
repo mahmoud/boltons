@@ -64,7 +64,7 @@ class mbox_readonlydir(mailbox.mbox):
        the built-in :class:`mailbox.mbox` does not work for your use
        case.
 
-    .. _Heirloom mailx: http://heirloom.sourceforge.net/mailx.html
+    .. _Heirloom mailx: https://heirloom.sourceforge.net/mailx.html
     """
 
     def __init__(self, path, factory=None, create=True, maxmem=1024 * 1024):

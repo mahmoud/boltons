@@ -354,7 +354,7 @@ class Stats:
     def _calc_median_abs_dev(self):
         """\
         Median Absolute Deviation is a robust measure of statistical
-        dispersion: http://en.wikipedia.org/wiki/Median_absolute_deviation
+        dispersion: https://en.wikipedia.org/wiki/Median_absolute_deviation
 
         >>> median_abs_dev(range(97))
         24.0
@@ -371,7 +371,7 @@ class Stats:
         """\
         Standard deviation divided by the absolute value of the average.
 
-        http://en.wikipedia.org/wiki/Relative_standard_deviation
+        https://en.wikipedia.org/wiki/Relative_standard_deviation
 
         >>> print('%1.3f' % rel_std_dev(range(97)))
         0.583
@@ -389,7 +389,7 @@ class Stats:
         Indicates the asymmetry of a curve. Positive values mean the bulk
         of the values are on the left side of the average and vice versa.
 
-        http://en.wikipedia.org/wiki/Skewness
+        https://en.wikipedia.org/wiki/Skewness
 
         See the module docstring for more about statistical moments.
 
@@ -414,7 +414,7 @@ class Stats:
         result is always positive, with the normal "bell-curve"
         distribution having a kurtosis of 3.
 
-        http://en.wikipedia.org/wiki/Kurtosis
+        https://en.wikipedia.org/wiki/Kurtosis
 
         See the module docstring for more about statistical moments.
 
