@@ -55,13 +55,8 @@ documents`_.
 import re
 import socket
 import string
+from functools import cached_property
 from unicodedata import normalize
-
-unicode = type(u'')
-try:
-    unichr
-except NameError:
-    unichr = chr
 
 # The unreserved URI characters (per RFC 3986 Section 2.3)
 _UNRESERVED_CHARS = frozenset('~-._0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'
@@ -76,7 +71,7 @@ _URL_RE = re.compile(r'^((?P<scheme>[^:/?#]+):)?'
 
 
 _HEX_CHAR_MAP = dict([((a + b).encode('ascii'),
-                       unichr(int(a + b, 16)).encode('charmap'))
+                       chr(int(a + b, 16)).encode('charmap'))
                       for a in string.hexdigits for b in string.hexdigits])
 _ASCII_RE = re.compile('([\x00-\x7f]+)')
 
@@ -117,6 +112,9 @@ _FRAGMENT_DELIMS = _ALL_DELIMS - _FRAGMENT_SAFE
 _QUERY_SAFE = _UNRESERVED_CHARS | _FRAGMENT_SAFE - set(u'&=+')
 _QUERY_DELIMS = _ALL_DELIMS - _QUERY_SAFE
 
+# TODO: deprecate
+cachedproperty = cached_property
+
 
 class URLParseError(ValueError):
     """Exception inheriting from :exc:`ValueError`, raised when failing to
@@ -130,9 +128,9 @@ DEFAULT_ENCODING = 'utf8'
 
 def to_unicode(obj):
     try:
-        return unicode(obj)
+        return str(obj)
     except UnicodeDecodeError:
-        return unicode(obj, encoding=DEFAULT_ENCODING)
+        return str(obj, encoding=DEFAULT_ENCODING)
 
 
 # regex from gruber via tornado
@@ -180,7 +178,7 @@ def find_all_links(text, with_text=False, default_scheme='https', schemes=()):
     _add = ret.append
 
     def _add_text(t):
-        if ret and isinstance(ret[-1], unicode):
+        if ret and isinstance(ret[-1], str):
             ret[-1] += t
         else:
             _add(t)
@@ -317,7 +315,7 @@ def unquote_to_bytes(string):
         # Is it a string-like object?
         string.split
         return b''
-    if isinstance(string, unicode):
+    if isinstance(string, str):
         string = string.encode('utf-8')
     bits = string.split(b'%')
     if len(bits) == 1:
@@ -398,32 +396,7 @@ def resolve_path_parts(path_parts):
     return ret
 
 
-class cachedproperty(object):
-    """The ``cachedproperty`` is used similar to :class:`property`, except
-    that the wrapped method is only called once. This is commonly used
-    to implement lazy attributes.
-
-    After the property has been accessed, the value is stored on the
-    instance itself, using the same name as the cachedproperty. This
-    allows the cache to be cleared with :func:`delattr`, or through
-    manipulating the object's ``__dict__``.
-    """
-    def __init__(self, func):
-        self.__doc__ = getattr(func, '__doc__')
-        self.func = func
-
-    def __get__(self, obj, objtype=None):
-        if obj is None:
-            return self
-        value = obj.__dict__[self.func.__name__] = self.func(obj)
-        return value
-
-    def __repr__(self):
-        cn = self.__class__.__name__
-        return '<%s func=%s>' % (cn, self.func)
-
-
-class URL(object):
+class URL:
     r"""The URL is one of the most ubiquitous data structures in the
     virtual and physical landscape. From blogs to billboards, URLs are
     so common, that it's easy to overlook their complexity and
@@ -747,7 +720,7 @@ class URL(object):
             # TODO: 0 port?
             if self.port and self.port != self.default_port:
                 _add(':')
-                _add(unicode(self.port))
+                _add(str(self.port))
         return u''.join(parts)
 
     def to_text(self, full_quote=False):
@@ -909,7 +882,7 @@ def parse_url(url_text):
     >>> sorted(res.keys())  # res is a basic dictionary
     ['_netloc_sep', 'authority', 'family', 'fragment', 'host', 'password', 'path', 'port', 'query', 'scheme', 'username']
     """
-    url_text = unicode(url_text)
+    url_text = str(url_text)
     # raise TypeError('parse_url expected text, not %r' % url_str)
     um = _URL_RE.match(url_text)
     try:
@@ -989,10 +962,7 @@ try:
 except ImportError:
     from collections import KeysView, ValuesView, ItemsView
 
-try:
-    from itertools import izip_longest
-except ImportError:
-    from itertools import zip_longest as izip_longest
+from itertools import zip_longest
 
 try:
     from .typeutils import make_sentinel
@@ -1247,7 +1217,7 @@ class OrderedMultiDict(dict):
         if isinstance(other, OrderedMultiDict):
             selfi = self.iteritems(multi=True)
             otheri = other.iteritems(multi=True)
-            zipped_items = izip_longest(selfi, otheri, fillvalue=(None, None))
+            zipped_items = zip_longest(selfi, otheri, fillvalue=(None, None))
             for (selfk, selfv), (otherk, otherv) in zipped_items:
                 if selfk != otherk or selfv != otherv:
                     return False

@@ -31,7 +31,7 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 """``cacheutils`` contains consistent implementations of fundamental
-cache types. Currently there are two to choose from:
+cache types. Currently, there are two to choose from:
 
   * :class:`LRI` - Least-recently inserted
   * :class:`LRU` - Least-recently used
@@ -70,16 +70,7 @@ import weakref
 import itertools
 from operator import attrgetter
 
-try:
-    from threading import RLock
-except Exception:
-    class RLock(object):
-        'Dummy reentrant lock for builds without threads'
-        def __enter__(self):
-            pass
-
-        def __exit__(self, exctype, excinst, exctb):
-            pass
+from threading import RLock
 
 try:
     from .typeutils import make_sentinel
@@ -89,12 +80,8 @@ except ImportError:
     _MISSING = object()
     _KWARG_MARK = object()
 
-try:
-    xrange
-except NameError:
-    # py3
-    xrange = range
-    unicode, str, bytes, basestring = str, bytes, bytes, (str, bytes)
+xrange = range
+unicode, str, bytes, basestring = str, bytes, bytes, (str, bytes)
 
 PREV, NEXT, KEY, VALUE = range(4)   # names for the link fields
 DEFAULT_MAX_SIZE = 128
@@ -446,7 +433,7 @@ def make_cache_key(args, kwargs, typed=False,
 _make_cache_key = make_cache_key
 
 
-class CachedFunction(object):
+class CachedFunction:
     """This type is used by :func:`cached`, below. Instances of this
     class are used to wrap functions in caching logic.
     """
@@ -484,7 +471,7 @@ class CachedFunction(object):
         return "%s(func=%r)" % (cn, self.func)
 
 
-class CachedMethod(object):
+class CachedMethod:
     """Similar to :class:`CachedFunction`, this type is used by
     :func:`cachedmethod` to wrap methods in caching logic.
     """
@@ -600,7 +587,7 @@ def cachedmethod(cache, scoped=True, typed=False, key=None):
             :func:`make_cache_key` that returns a tuple of hashable
             values to be used as the key in the cache.
 
-    >>> class Lowerer(object):
+    >>> class Lowerer:
     ...     def __init__(self):
     ...         self.cache = LRI()
     ...
@@ -620,7 +607,7 @@ def cachedmethod(cache, scoped=True, typed=False, key=None):
     return cached_method_decorator
 
 
-class cachedproperty(object):
+class cachedproperty:
     """The ``cachedproperty`` is used similar to :class:`property`, except
     that the wrapped method is only called once. This is commonly used
     to implement lazy attributes.
@@ -646,7 +633,7 @@ class cachedproperty(object):
         return '<%s func=%s>' % (cn, self.func)
 
 
-class ThresholdCounter(object):
+class ThresholdCounter:
     """A **bounded** dict-like Mapping from keys to counts. The
     ThresholdCounter automatically compacts after every (1 /
     *threshold*) additions, maintaining exact counts for any keys
@@ -821,7 +808,7 @@ class ThresholdCounter(object):
             self.update(kwargs)
 
 
-class MinIDMap(object):
+class MinIDMap:
     """
     Assigns arbitrary weakref-able objects the smallest possible unique
     integer IDs, such that no two objects have the same ID at the same

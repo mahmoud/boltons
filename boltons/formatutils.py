@@ -72,11 +72,6 @@ from __future__ import print_function
 import re
 from string import Formatter
 
-try:
-    unicode        # Python 2
-except NameError:
-    unicode = str  # Python 3
-
 __all__ = ['DeferredValue', 'get_format_args', 'tokenize_format_str',
            'construct_format_field_str', 'infer_positional_format_args',
            'BaseFormatField']
@@ -175,7 +170,7 @@ def get_format_args(fstr):
     def _add_arg(argname, type_char='s'):
         if argname not in _dedup:
             _dedup.add(argname)
-            argtype = _TYPE_MAP.get(type_char, str)  # TODO: unicode
+            argtype = _TYPE_MAP.get(type_char, str)
             try:
                 fargs.append((int(argname), argtype))
             except ValueError:
@@ -220,7 +215,7 @@ def tokenize_format_str(fstr, resolve_pos=True):
     return ret
 
 
-class BaseFormatField(object):
+class BaseFormatField:
     """A class representing a reference to an argument inside of a
     bracket-style format string. For instance, in ``"{greeting},
     world!"``, there is a field named "greeting".
@@ -286,7 +281,7 @@ class BaseFormatField(object):
 _UNSET = object()
 
 
-class DeferredValue(object):
+class DeferredValue:
     """:class:`DeferredValue` is a wrapper type, used to defer computing
     values which would otherwise be expensive to stringify and
     format. This is most valuable in areas like logging, where one
@@ -342,9 +337,6 @@ class DeferredValue(object):
 
     def __str__(self):
         return str(self.get_value())
-
-    def __unicode__(self):
-        return unicode(self.get_value())
 
     def __repr__(self):
         return repr(self.get_value())

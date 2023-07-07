@@ -47,10 +47,7 @@ from bisect import bisect_left
 from itertools import chain, islice
 import operator
 
-try:
-    from collections.abc import MutableSet
-except ImportError:
-    from collections import MutableSet
+from collections.abc import MutableSet
 
 try:
     from .typeutils import make_sentinel
@@ -84,7 +81,7 @@ class IndexedSet(MutableSet):
     >>> x = IndexedSet(list(range(4)) + list(range(8)))
     >>> x
     IndexedSet([0, 1, 2, 3, 4, 5, 6, 7])
-    >>> x - set(range(2))
+    >>> x - IndexedSet(range(2))
     IndexedSet([2, 3, 4, 5, 6, 7])
     >>> x[-1]
     7
@@ -520,7 +517,7 @@ def complement(wrapped):
     way to invert an expression, you can just throw a complement on
     the set. Consider this example of a name filter::
 
-        >>> class NamesFilter(object):
+        >>> class NamesFilter:
         ...    def __init__(self, allowed):
         ...        self._allowed = allowed
         ...
@@ -581,7 +578,7 @@ def _norm_args_notimplemented(other):
     return inc, exc
 
 
-class _ComplementSet(object):
+class _ComplementSet:
     """
     helper class for complement() that implements the set methods
     """

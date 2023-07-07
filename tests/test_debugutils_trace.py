@@ -53,7 +53,7 @@ def test_trace_exc():
 
 
 def test_trace_which():
-    class Config(object):
+    class Config:
         def __init__(self, value):
             self.value = value
 

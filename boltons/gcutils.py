@@ -72,7 +72,7 @@ def get_all(type_obj, include_subtypes=True):
     """Get a list containing all instances of a given type.  This will
     work for the vast majority of types out there.
 
-    >>> class Ratking(object): pass
+    >>> class Ratking: pass
     >>> wiki, hak, sport = Ratking(), Ratking(), Ratking()
     >>> len(get_all(Ratking))
     3
@@ -125,7 +125,7 @@ if _IS_PYPY:
     del get_all
 
 
-class GCToggler(object):
+class GCToggler:
     """The ``GCToggler`` is a context-manager that allows one to safely
     take more control of your garbage collection schedule. Anecdotal
     experience says certain object-creation-heavy tasks see speedups

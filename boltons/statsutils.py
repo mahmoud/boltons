@@ -133,7 +133,7 @@ import bisect
 from math import floor, ceil
 
 
-class _StatsProperty(object):
+class _StatsProperty:
     def __init__(self, name, func):
         self.name = name
         self.func = func
@@ -155,7 +155,7 @@ class _StatsProperty(object):
             return getattr(obj, self.internal_name)
 
 
-class Stats(object):
+class Stats:
     """The ``Stats`` type is used to represent a group of unordered
     statistical datapoints for calculations such as mean, median, and
     variance.

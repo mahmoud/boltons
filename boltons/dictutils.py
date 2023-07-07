@@ -69,14 +69,7 @@ thanks to `Mark Williams`_ for all his help.
 
 """
 
-try:
-    from collections.abc import KeysView, ValuesView, ItemsView
-    PY3 = True
-except ImportError:
-    from collections import KeysView, ValuesView, ItemsView
-    PY3 = False
-
-import itertools
+from collections.abc import KeysView, ValuesView, ItemsView
 
 try:
     from itertools import izip_longest
@@ -191,13 +184,12 @@ class OrderedMultiDict(dict):
         if kwargs:
             self.update(kwargs)
 
-    if PY3:
-        def __getstate__(self):
-            return list(self.iteritems(multi=True))
-        
-        def __setstate__(self, state):
-            self.clear()
-            self.update_extend(state)
+    def __getstate__(self):
+        return list(self.iteritems(multi=True))
+
+    def __setstate__(self, state):
+        self.clear()
+        self.update_extend(state)
 
     def _clear_ll(self):
         try:
@@ -568,13 +560,11 @@ class OrderedMultiDict(dict):
         As demonstrated above, contents and key order are
         retained. Only value order changes.
         """
-        try:
-            superself_iteritems = super(OrderedMultiDict, self).iteritems()
-        except AttributeError:
-            superself_iteritems = super(OrderedMultiDict, self).items()
         # (not reverse) because they pop off in reverse order for reinsertion
-        sorted_val_map = dict([(k, sorted(v, key=key, reverse=(not reverse)))
-                               for k, v in superself_iteritems])
+        sorted_val_map = {
+            k: sorted(v, key=key, reverse=(not reverse))
+            for k, v in super().items()
+        }
         ret = self.__class__()
         for k in self.iterkeys(multi=True):
             ret.add(k, sorted_val_map[k].pop())
@@ -915,7 +905,7 @@ class OneToOne(dict):
 _PAIRING = object()
 
 
-class ManyToMany(object):
+class ManyToMany:
     """
     a dict-like entity that represents a many-to-many relationship
     between two groups of objects

@@ -53,11 +53,8 @@ __all__ = ['mkdir_p', 'atomic_save', 'AtomicSaver', 'FilePerms',
 FULL_PERMS = 511  # 0777 that both Python 2 and 3 can digest
 RW_PERMS = 438
 _SINGLE_FULL_PERM = 7  # or 07 in Python 2
-try:
-    basestring
-except NameError:
-    unicode = str  # Python 3 compat
-    basestring = (str, bytes)
+unicode = str
+basestring = (str, bytes)
 
 
 def mkdir_p(path):
@@ -76,7 +73,7 @@ def mkdir_p(path):
     return
 
 
-class FilePerms(object):
+class FilePerms:
     """The :class:`FilePerms` type is used to represent standard POSIX
     filesystem permissions:
 
@@ -118,7 +115,7 @@ class FilePerms(object):
     ways to construct :class:`FilePerms` objects.
     """
     # TODO: consider more than the lower 9 bits
-    class _FilePermProperty(object):
+    class _FilePermProperty:
         _perm_chars = 'rwx'
         _perm_set = frozenset('rwx')
         _perm_val = {'r': 4, 'w': 2, 'x': 1}  # for sorting
@@ -340,7 +337,7 @@ possible atomicity on a range of filesystems.
 """
 
 
-class AtomicSaver(object):
+class AtomicSaver:
     """``AtomicSaver`` is a configurable `context manager`_ that provides
     a writable :class:`file` which will be moved into place as long as
     no exceptions are raised within the context manager's block. These

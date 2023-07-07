@@ -52,25 +52,10 @@ try:
 except ImportError:
     from io import BytesIO as StringIO
 
-try:
-    from collections.abc import Mapping
-except ImportError:
-    from collections import Mapping
+from collections.abc import Mapping
 
-try:
-    unicode, str, bytes, basestring = unicode, str, str, basestring
-    from HTMLParser import HTMLParser
-    import htmlentitydefs
-except NameError:  # basestring not defined in Python 3
-    unicode, str, bytes, basestring = str, bytes, bytes, (str, bytes)
-    unichr = chr
-    from html.parser import HTMLParser
-    from html import entities as htmlentitydefs
-
-try:
-    import __builtin__ as builtins
-except ImportError:
-    import builtins
+from html.parser import HTMLParser
+from html import entities as htmlentitydefs
 
 __all__ = ['camel2under', 'under2camel', 'slugify', 'split_punct_ws',
            'unit_len', 'ordinalize', 'cardinalize', 'pluralize', 'singularize',
@@ -78,7 +63,7 @@ __all__ = ['camel2under', 'under2camel', 'slugify', 'split_punct_ws',
            'bytes2human', 'find_hashtags', 'a10n', 'gzip_bytes', 'gunzip_bytes',
            'iter_splitlines', 'indent', 'escape_shell_args',
            'args2cmd', 'args2sh', 'parse_int_list', 'format_int_list',
-           'int_list_complement', 'int_list_to_int_tuples', 'MultiReplace',
+           'MultiReplace',
            'multi_replace', 'unwrap_text']
 
 
@@ -186,7 +171,7 @@ def ordinalize(number, ext_only=False):
     >>> print(ordinalize(1515))
     1515th
     """
-    numstr, ext = unicode(number), ''
+    numstr, ext = str(number), ''
     if numstr and numstr[-1] in string.digits:
         try:
             # first check for teens
@@ -413,9 +398,8 @@ def strip_ansi(text):
     # Transform any ASCII-like content to unicode to allow regex to match, and
     # save input type for later.
     target_type = None
-    # Unicode type aliased to str is code-smell for Boltons in Python 3 env.
-    is_py3 = (unicode == builtins.str)
-    if is_py3 and isinstance(text, (bytes, bytearray)):
+    # Unicode type aliased to str is code-smell for Boltons in Python 3 env
+    if isinstance(text, (bytes, bytearray)):
         target_type = type(text)
         text = text.decode('utf-8')
 
@@ -473,7 +457,7 @@ def is_ascii(text):
     >>> is_ascii('Beyonce')
     True
     """
-    if isinstance(text, unicode):
+    if isinstance(text, str):
         try:
             text.encode('ascii')
         except UnicodeEncodeError:
@@ -495,7 +479,7 @@ class DeaccenterDict(dict):
         if ch is not None:
             return ch
         try:
-            de = unicodedata.decomposition(unichr(key))
+            de = unicodedata.decomposition(chr(key))
             p1, _, p2 = de.rpartition(' ')
             if int(p2, 16) == 0x308:
                 ch = self.get(key)
@@ -620,7 +604,7 @@ class HTMLTextExtractor(HTMLParser):
             codepoint = int(number[1:], 16)
         else:
             codepoint = int(number)
-        self.result.append(unichr(codepoint))
+        self.result.append(chr(codepoint))
 
     def handle_entityref(self, name):
         try:
@@ -628,7 +612,7 @@ class HTMLTextExtractor(HTMLParser):
         except KeyError:
             self.result.append(u'&' + name + u';')
         else:
-            self.result.append(unichr(codepoint))
+            self.result.append(chr(codepoint))
 
     def get_text(self):
         return u''.join(self.result)
@@ -1158,7 +1142,7 @@ def int_ranges_from_int_list(range_string, delim=',', range_delim='-'):
     return tuple(int_tuples)
 
 
-class MultiReplace(object):
+class MultiReplace:
     """
     MultiReplace is a tool for doing multiple find/replace actions in one pass.
 

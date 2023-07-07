@@ -42,25 +42,12 @@ import re
 import inspect
 import functools
 import itertools
+from inspect import formatannotation
 from types import MethodType, FunctionType
 
-try:
-    xrange
-    make_method = MethodType
-except NameError:
-    # Python 3
-    make_method = lambda desc, obj, obj_type: MethodType(desc, obj)
-    basestring = (str, bytes)  # Python 3 compat
-    _IS_PY2 = False
-else:
-    _IS_PY2 = True
-
-
-try:
-    _inspect_iscoroutinefunction = inspect.iscoroutinefunction
-except AttributeError:
-    # Python 3.4
-    _inspect_iscoroutinefunction = lambda func: False
+make_method = lambda desc, obj, obj_type: MethodType(desc, obj)
+basestring = (str, bytes)
+_inspect_iscoroutinefunction = inspect.iscoroutinefunction
 
 
 try:
@@ -75,63 +62,53 @@ except ImportError:
     partialmethod = None
 
 
-_IS_PY35 = sys.version_info >= (3, 5)
-if not _IS_PY35:
-    # py35+ wants you to use signature instead, but
-    # inspect_formatargspec is way simpler for what it is. Copied the
-    # vendoring approach from alembic:
-    # https://github.com/sqlalchemy/alembic/blob/4cdad6aec32b4b5573a2009cc356cb4b144bd359/alembic/util/compat.py#L92
-    from inspect import formatargspec as inspect_formatargspec
-else:
-    from inspect import formatannotation
+def inspect_formatargspec(
+        args, varargs=None, varkw=None, defaults=None,
+        kwonlyargs=(), kwonlydefaults={}, annotations={},
+        formatarg=str,
+        formatvarargs=lambda name: '*' + name,
+        formatvarkw=lambda name: '**' + name,
+        formatvalue=lambda value: '=' + repr(value),
+        formatreturns=lambda text: ' -> ' + text,
+        formatannotation=formatannotation):
+    """Copy formatargspec from python 3.7 standard library.
+    Python 3 has deprecated formatargspec and requested that Signature
+    be used instead, however this requires a full reimplementation
+    of formatargspec() in terms of creating Parameter objects and such.
+    Instead of introducing all the object-creation overhead and having
+    to reinvent from scratch, just copy their compatibility routine.
+    """
 
-    def inspect_formatargspec(
-            args, varargs=None, varkw=None, defaults=None,
-            kwonlyargs=(), kwonlydefaults={}, annotations={},
-            formatarg=str,
-            formatvarargs=lambda name: '*' + name,
-            formatvarkw=lambda name: '**' + name,
-            formatvalue=lambda value: '=' + repr(value),
-            formatreturns=lambda text: ' -> ' + text,
-            formatannotation=formatannotation):
-        """Copy formatargspec from python 3.7 standard library.
-        Python 3 has deprecated formatargspec and requested that Signature
-        be used instead, however this requires a full reimplementation
-        of formatargspec() in terms of creating Parameter objects and such.
-        Instead of introducing all the object-creation overhead and having
-        to reinvent from scratch, just copy their compatibility routine.
-        """
-
-        def formatargandannotation(arg):
-            result = formatarg(arg)
-            if arg in annotations:
-                result += ': ' + formatannotation(annotations[arg])
-            return result
-        specs = []
-        if defaults:
-            firstdefault = len(args) - len(defaults)
-        for i, arg in enumerate(args):
-            spec = formatargandannotation(arg)
-            if defaults and i >= firstdefault:
-                spec = spec + formatvalue(defaults[i - firstdefault])
-            specs.append(spec)
-        if varargs is not None:
-            specs.append(formatvarargs(formatargandannotation(varargs)))
-        else:
-            if kwonlyargs:
-                specs.append('*')
-        if kwonlyargs:
-            for kwonlyarg in kwonlyargs:
-                spec = formatargandannotation(kwonlyarg)
-                if kwonlydefaults and kwonlyarg in kwonlydefaults:
-                    spec += formatvalue(kwonlydefaults[kwonlyarg])
-                specs.append(spec)
-        if varkw is not None:
-            specs.append(formatvarkw(formatargandannotation(varkw)))
-        result = '(' + ', '.join(specs) + ')'
-        if 'return' in annotations:
-            result += formatreturns(formatannotation(annotations['return']))
+    def formatargandannotation(arg):
+        result = formatarg(arg)
+        if arg in annotations:
+            result += ': ' + formatannotation(annotations[arg])
         return result
+    specs = []
+    if defaults:
+        firstdefault = len(args) - len(defaults)
+    for i, arg in enumerate(args):
+        spec = formatargandannotation(arg)
+        if defaults and i >= firstdefault:
+            spec = spec + formatvalue(defaults[i - firstdefault])
+        specs.append(spec)
+    if varargs is not None:
+        specs.append(formatvarargs(formatargandannotation(varargs)))
+    else:
+        if kwonlyargs:
+            specs.append('*')
+    if kwonlyargs:
+        for kwonlyarg in kwonlyargs:
+            spec = formatargandannotation(kwonlyarg)
+            if kwonlydefaults and kwonlyarg in kwonlydefaults:
+                spec += formatvalue(kwonlydefaults[kwonlyarg])
+            specs.append(spec)
+    if varkw is not None:
+        specs.append(formatvarkw(formatargandannotation(varkw)))
+    result = '(' + ', '.join(specs) + ')'
+    if 'return' in annotations:
+        result += formatreturns(formatannotation(annotations['return']))
+    return result
 
 
 def get_module_callables(mod, ignore=None):
@@ -372,7 +349,7 @@ def format_exp_repr(obj, pos_names, req_names=None, opt_names=None, opt_key=None
     """Render an expression-style repr of an object, based on attribute
     names, which are assumed to line up with arguments to an initializer.
 
-    >>> class Flag(object):
+    >>> class Flag:
     ...    def __init__(self, length, width, depth=None):
     ...        self.length = length
     ...        self.width = width
@@ -441,7 +418,7 @@ def format_nonexp_repr(obj, req_names=None, opt_names=None, opt_key=None):
     For those objects, there is the non-expression style repr, which
     mimic's Python's default style to make a repr like so:
 
-    >>> class Flag(object):
+    >>> class Flag:
     ...    def __init__(self, length, width, depth=None):
     ...        self.length = length
     ...        self.width = width
@@ -687,7 +664,7 @@ def _parse_wraps_expected(expected):
     return expected_items
 
 
-class FunctionBuilder(object):
+class FunctionBuilder:
     """The FunctionBuilder type provides an interface for programmatically
     creating new functions, either based on existing functions or from
     scratch.
@@ -751,34 +728,19 @@ class FunctionBuilder(object):
 
     """
 
-    if _IS_PY2:
-        _argspec_defaults = {'args': list,
-                             'varargs': lambda: None,
-                             'varkw': lambda: None,
-                             'defaults': lambda: None}
+    _argspec_defaults = {'args': list,
+                         'varargs': lambda: None,
+                         'varkw': lambda: None,
+                         'defaults': lambda: None,
+                         'kwonlyargs': list,
+                         'kwonlydefaults': dict,
+                         'annotations': dict}
 
-        @classmethod
-        def _argspec_to_dict(cls, f):
-            args, varargs, varkw, defaults = inspect.getargspec(f)
-            return {'args': args,
-                    'varargs': varargs,
-                    'varkw': varkw,
-                    'defaults': defaults}
-
-    else:
-        _argspec_defaults = {'args': list,
-                             'varargs': lambda: None,
-                             'varkw': lambda: None,
-                             'defaults': lambda: None,
-                             'kwonlyargs': list,
-                             'kwonlydefaults': dict,
-                             'annotations': dict}
-
-        @classmethod
-        def _argspec_to_dict(cls, f):
-            argspec = inspect.getfullargspec(f)
-            return dict((attr, getattr(argspec, attr))
-                        for attr in cls._argspec_defaults)
+    @classmethod
+    def _argspec_to_dict(cls, f):
+        argspec = inspect.getfullargspec(f)
+        return dict((attr, getattr(argspec, attr))
+                    for attr in cls._argspec_defaults)
 
     _defaults = {'doc': str,
                  'dict': dict,
@@ -807,64 +769,50 @@ class FunctionBuilder(object):
 
     # def get_argspec(self):  # TODO
 
-    if _IS_PY2:
-        def get_sig_str(self, with_annotations=True):
-            """Return function signature as a string.
+    def get_sig_str(self, with_annotations=True):
+        """Return function signature as a string.
 
-            with_annotations is ignored on Python 2.  On Python 3 signature
-            will omit annotations if it is set to False.
-            """
-            return inspect_formatargspec(self.args, self.varargs,
-                                         self.varkw, [])
+        with_annotations is ignored on Python 2.  On Python 3 signature
+        will omit annotations if it is set to False.
+        """
+        if with_annotations:
+            annotations = self.annotations
+        else:
+            annotations = {}
 
-        def get_invocation_str(self):
-            return inspect_formatargspec(self.args, self.varargs,
-                                         self.varkw, [])[1:-1]
-    else:
-        def get_sig_str(self, with_annotations=True):
-            """Return function signature as a string.
+        return inspect_formatargspec(self.args,
+                                     self.varargs,
+                                     self.varkw,
+                                     [],
+                                     self.kwonlyargs,
+                                     {},
+                                     annotations)
 
-            with_annotations is ignored on Python 2.  On Python 3 signature
-            will omit annotations if it is set to False.
-            """
-            if with_annotations:
-                annotations = self.annotations
-            else:
-                annotations = {}
+    _KWONLY_MARKER = re.compile(r"""
+    \*     # a star
+    \s*    # followed by any amount of whitespace
+    ,      # followed by a comma
+    \s*    # followed by any amount of whitespace
+    """, re.VERBOSE)
 
-            return inspect_formatargspec(self.args,
-                                         self.varargs,
-                                         self.varkw,
-                                         [],
-                                         self.kwonlyargs,
-                                         {},
-                                         annotations)
+    def get_invocation_str(self):
+        kwonly_pairs = None
+        formatters = {}
+        if self.kwonlyargs:
+            kwonly_pairs = dict((arg, arg)
+                                for arg in self.kwonlyargs)
+            formatters['formatvalue'] = lambda value: '=' + value
 
-        _KWONLY_MARKER = re.compile(r"""
-        \*     # a star
-        \s*    # followed by any amount of whitespace
-        ,      # followed by a comma
-        \s*    # followed by any amount of whitespace
-        """, re.VERBOSE)
-
-        def get_invocation_str(self):
-            kwonly_pairs = None
-            formatters = {}
-            if self.kwonlyargs:
-                kwonly_pairs = dict((arg, arg)
-                                    for arg in self.kwonlyargs)
-                formatters['formatvalue'] = lambda value: '=' + value
-
-            sig = inspect_formatargspec(self.args,
-                                        self.varargs,
-                                        self.varkw,
-                                        [],
-                                        kwonly_pairs,
-                                        kwonly_pairs,
-                                        {},
-                                        **formatters)
-            sig = self._KWONLY_MARKER.sub('', sig)
-            return sig[1:-1]
+        sig = inspect_formatargspec(self.args,
+                                    self.varargs,
+                                    self.varkw,
+                                    [],
+                                    kwonly_pairs,
+                                    kwonly_pairs,
+                                    {},
+                                    **formatters)
+        sig = self._KWONLY_MARKER.sub('', sig)
+        return sig[1:-1]
 
     @classmethod
     def from_func(cls, func):
@@ -878,8 +826,6 @@ class FunctionBuilder(object):
             raise TypeError('expected callable object, not %r' % (func,))
 
         if isinstance(func, functools.partial):
-            if _IS_PY2:
-                raise ValueError('Cannot build FunctionBuilder instances from partials in python 2.')
             kwargs = {'name': func.func.__name__,
                       'doc': func.func.__doc__,
                       'module': getattr(func.func, '__module__', None),  # e.g., method_descriptor
@@ -936,9 +882,8 @@ class FunctionBuilder(object):
         func.__name__ = self.name
         func.__doc__ = self.doc
         func.__defaults__ = self.defaults
-        if not _IS_PY2:
-            func.__kwdefaults__ = self.kwonlydefaults
-            func.__annotations__ = self.annotations
+        func.__kwdefaults__ = self.kwonlydefaults
+        func.__annotations__ = self.annotations
 
         if with_dict:
             func.__dict__.update(self.dict)
@@ -968,34 +913,24 @@ class FunctionBuilder(object):
             arg_names = tuple([an for an in arg_names if an not in defaults_dict])
         return arg_names
 
-    if _IS_PY2:
-        def add_arg(self, arg_name, default=NO_DEFAULT):
-            "Add an argument with optional *default* (defaults to ``funcutils.NO_DEFAULT``)."
-            if arg_name in self.args:
-                raise ExistingArgument('arg %r already in func %s arg list' % (arg_name, self.name))
+    def add_arg(self, arg_name, default=NO_DEFAULT, kwonly=False):
+        """Add an argument with optional *default* (defaults to
+        ``funcutils.NO_DEFAULT``). Pass *kwonly=True* to add a
+        keyword-only argument
+        """
+        if arg_name in self.args:
+            raise ExistingArgument('arg %r already in func %s arg list' % (arg_name, self.name))
+        if arg_name in self.kwonlyargs:
+            raise ExistingArgument('arg %r already in func %s kwonly arg list' % (arg_name, self.name))
+        if not kwonly:
             self.args.append(arg_name)
             if default is not NO_DEFAULT:
                 self.defaults = (self.defaults or ()) + (default,)
-            return
-    else:
-        def add_arg(self, arg_name, default=NO_DEFAULT, kwonly=False):
-            """Add an argument with optional *default* (defaults to
-            ``funcutils.NO_DEFAULT``). Pass *kwonly=True* to add a
-            keyword-only argument
-            """
-            if arg_name in self.args:
-                raise ExistingArgument('arg %r already in func %s arg list' % (arg_name, self.name))
-            if arg_name in self.kwonlyargs:
-                raise ExistingArgument('arg %r already in func %s kwonly arg list' % (arg_name, self.name))
-            if not kwonly:
-                self.args.append(arg_name)
-                if default is not NO_DEFAULT:
-                    self.defaults = (self.defaults or ()) + (default,)
-            else:
-                self.kwonlyargs.append(arg_name)
-                if default is not NO_DEFAULT:
-                    self.kwonlydefaults[arg_name] = default
-            return
+        else:
+            self.kwonlyargs.append(arg_name)
+            if default is not NO_DEFAULT:
+                self.kwonlydefaults[arg_name] = default
+        return
 
     def remove_arg(self, arg_name):
         """Remove an argument from this FunctionBuilder's argument list. The
@@ -1016,7 +951,7 @@ class FunctionBuilder(object):
             try:
                 self.kwonlyargs.remove(arg_name)
             except (AttributeError, ValueError):
-                # py2, or py3 and missing from both
+                # py3 and missing from both
                 exc = MissingArgument('arg %r not found in %s argument list:'
                                       ' %r' % (arg_name, self.name, args))
                 exc.arg_name = arg_name

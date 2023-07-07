@@ -35,7 +35,7 @@ def fetch_json(url):
     return data
 
 
-class AutoTableRenderer(object):
+class AutoTableRenderer:
     _html_doctype = '<!doctype html>'
     _html_wrapper, _html_wrapper_close = '<html>', '</html>'
     _html_table_tag = '<table class="clastic-atr-table">'
@@ -77,7 +77,7 @@ class AutoTableRenderer(object):
         return Response('\n'.join(content_parts), mimetype='text/html')
 
 
-class BasicRender(object):
+class BasicRender:
     _default_mime = 'application/json'
     _format_mime_map = {'html': 'text/html',
                         'json': 'application/json'}

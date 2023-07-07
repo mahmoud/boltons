@@ -124,16 +124,11 @@ def floor(x, options=None):
     return options[i - 1]
 
 
-try:
-    _int_types = (int, long)
-    bytes = str
-except NameError:
-    # py3 has no long
-    _int_types = (int,)
-    unicode = str
+_int_types = (int,)
+unicode = str
 
 
-class Bits(object):
+class Bits:
     '''
     An immutable bit-string or bit-array object.
     Provides list-like access to bits as bools,
@@ -150,12 +145,12 @@ class Bits(object):
     __slots__ = ('val', 'len')
 
     def __init__(self, val=0, len_=None):
-        if type(val) not in _int_types:
-            if type(val) is list:
+        if not isinstance(val, int):
+            if isinstance(val, list):
                 val = ''.join(['1' if e else '0' for e in val])
-            if type(val) is bytes:
+            if isinstance(val, bytes):
                 val = val.decode('ascii')
-            if type(val) is unicode:
+            if isinstance(val, str):
                 if len_ is None:
                     len_ = len(val)
                     if val.startswith('0x'):
@@ -167,7 +162,7 @@ class Bits(object):
                         val = int(val, 2)
                     else:
                         val = 0
-            if type(val) not in _int_types:
+            if not isinstance(val, int):
                 raise TypeError('initialized with bad type: {0}'.format(type(val).__name__))
         if val < 0:
             raise ValueError('Bits cannot represent negative values')

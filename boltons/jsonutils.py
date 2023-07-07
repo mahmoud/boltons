@@ -123,7 +123,7 @@ json.load(fp[, encoding[, cls[, object_hook[, parse_float[, parse_int[, parse_co
 """
 
 
-class JSONLIterator(object):
+class JSONLIterator:
     """The ``JSONLIterator`` is used to iterate over JSON-encoded objects
     stored in the `JSON Lines format`_ (one object per line).
 

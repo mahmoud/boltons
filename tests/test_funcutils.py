@@ -8,7 +8,7 @@ from boltons.funcutils import (copy_function,
                                noop)
 
 
-class Greeter(object):
+class Greeter:
     def __init__(self, greeting):
         self.greeting = greeting
 
@@ -55,7 +55,7 @@ def test_copy_function():
 
 def test_total_ordering():
     @total_ordering
-    class Number(object):
+    class Number:
         def __init__(self, val):
             self.val = int(val)
 

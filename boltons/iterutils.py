@@ -48,10 +48,7 @@ import codecs
 import random
 import itertools
 
-try:
-    from collections.abc import Mapping, Sequence, Set, ItemsView, Iterable
-except ImportError:
-    from collections import Mapping, Sequence, Set, ItemsView, Iterable
+from collections.abc import Mapping, Sequence, Set, ItemsView, Iterable
 
 
 try:
@@ -62,16 +59,8 @@ except ImportError:
     _REMAP_EXIT = object()
     _UNSET = object()
 
-try:
-    from future_builtins import filter
-    from itertools import izip
-    _IS_PY3 = False
-except ImportError:
-    # Python 3 compat
-    _IS_PY3 = True
-    basestring = (str, bytes)
-    unicode = str
-    izip, xrange = zip, range
+basestring = (str, bytes)
+izip, xrange = zip, range
 
 
 def is_iterable(obj):
@@ -83,7 +72,7 @@ def is_iterable(obj):
     >>> is_iterable(object())
     False
 
-    .. _iterable: https://docs.python.org/2/glossary.html#term-iterable
+    .. _iterable: https://docs.python.org/3/glossary.html#term-iterable
     """
     try:
         iter(obj)
@@ -360,7 +349,7 @@ def chunked_iter(src, size, **kw):
     postprocess = lambda chk: chk
     if isinstance(src, basestring):
         postprocess = lambda chk, _sep=type(src)(): _sep.join(chk)
-        if _IS_PY3 and isinstance(src, bytes):
+        if isinstance(src, bytes):
             postprocess = lambda chk: bytes(chk)
     src_iter = iter(src)
     while True:
@@ -1345,7 +1334,7 @@ def research(root, query=lambda p, k, v: True, reraise=False):
 
 # GUID iterators: 10x faster and somewhat more compact than uuid.
 
-class GUIDerator(object):
+class GUIDerator:
     """The GUIDerator is an iterator that yields a globally-unique
     identifier (GUID) on every iteration. The GUIDs produced are
     hexadecimal strings.
@@ -1389,19 +1378,12 @@ class GUIDerator(object):
     def __iter__(self):
         return self
 
-    if _IS_PY3:
-        def __next__(self):
-            if os.getpid() != self.pid:
-                self.reseed()
-            target_bytes = (self.salt + str(next(self.count))).encode('utf8')
-            hash_text = self._sha1(target_bytes).hexdigest()[:self.size]
-            return hash_text
-    else:
-        def __next__(self):
-            if os.getpid() != self.pid:
-                self.reseed()
-            return self._sha1(self.salt +
-                              str(next(self.count))).hexdigest()[:self.size]
+    def __next__(self):
+        if os.getpid() != self.pid:
+            self.reseed()
+        target_bytes = (self.salt + str(next(self.count))).encode('utf8')
+        hash_text = self._sha1(target_bytes).hexdigest()[:self.size]
+        return hash_text
 
     next = __next__
 
@@ -1417,7 +1399,7 @@ class SequentialGUIDerator(GUIDerator):
 
     The SequentialGUIDerator is around 50% faster than the normal
     GUIDerator, making it almost 20x as fast as the built-in uuid
-    module. By default it is also more compact, partly due to its
+    module. By default, it is also more compact, partly due to its
     96-bit (24-hexdigit) default length. 96 bits of randomness means that
     there is a 1 in 2 ^ 32 chance of collision after 2 ^ 64
     iterations. If more or less uniqueness is desired, the *size*
@@ -1433,18 +1415,11 @@ class SequentialGUIDerator(GUIDerator):
 
     """
 
-    if _IS_PY3:
-        def reseed(self):
-            super(SequentialGUIDerator, self).reseed()
-            start_str = self._sha1(self.salt.encode('utf8')).hexdigest()
-            self.start = int(start_str[:self.size], 16)
-            self.start |= (1 << ((self.size * 4) - 2))
-    else:
-        def reseed(self):
-            super(SequentialGUIDerator, self).reseed()
-            start_str = self._sha1(self.salt).hexdigest()
-            self.start = int(start_str[:self.size], 16)
-            self.start |= (1 << ((self.size * 4) - 2))
+    def reseed(self):
+        super(SequentialGUIDerator, self).reseed()
+        start_str = self._sha1(self.salt.encode('utf8')).hexdigest()
+        self.start = int(start_str[:self.size], 16)
+        self.start |= (1 << ((self.size * 4) - 2))
 
     def __next__(self):
         if os.getpid() != self.pid:
@@ -1522,7 +1497,7 @@ def untyped_sorted(iterable, key=None, reverse=False):
        explicitly unorderable objects.
 
     """
-    class _Wrapper(object):
+    class _Wrapper:
         slots = ('obj',)
 
         def __init__(self, obj):

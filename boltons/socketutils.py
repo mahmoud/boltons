@@ -69,17 +69,7 @@ original author of `Netstring`_.
 import time
 import socket
 
-try:
-    from threading import RLock
-except Exception:
-    class RLock(object):
-        'Dummy reentrant lock for builds without threads'
-        def __enter__(self):
-            pass
-
-        def __exit__(self, exctype, excinst, exctb):
-            pass
-
+from threading import RLock
 
 try:
     from .typeutils import make_sentinel
@@ -93,7 +83,7 @@ DEFAULT_MAXSIZE = 32 * 1024  # 32kb
 _RECV_LARGE_MAXSIZE = 1024 ** 5  # 1PB
 
 
-class BufferedSocket(object):
+class BufferedSocket:
     """Mainly provides recv_until and recv_size. recv, send, sendall, and
     peek all function as similarly as possible to the built-in socket
     API.
@@ -645,7 +635,7 @@ class Timeout(socket.timeout, Error):
         super(Timeout, self).__init__(msg)
 
 
-class NetstringSocket(object):
+class NetstringSocket:
     """
     Reads and writes using the netstring protocol.
 

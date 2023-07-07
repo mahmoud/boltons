@@ -41,10 +41,6 @@ setup(name='boltons',
           'Operating System :: OS Independent',
           # List of python versions and their support status:
           # https://en.wikipedia.org/wiki/CPython#Version_history
-          'Programming Language :: Python :: 2',
-          'Programming Language :: Python :: 2.7',
-          'Programming Language :: Python :: 3',
-          'Programming Language :: Python :: 3.7',
           'Programming Language :: Python :: 3.8',
           'Programming Language :: Python :: 3.9',
           'Programming Language :: Python :: 3.10',

@@ -42,9 +42,8 @@ together.
 
 The :func:`shrinkuser` function replaces your home directory with a tilde.
 """
-from __future__ import print_function
 
-from os.path import (expanduser, expandvars, join, normpath, split, splitext)
+from os.path import expanduser, expandvars, join, normpath, split, splitext
 import os
 
 

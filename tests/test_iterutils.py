@@ -21,7 +21,7 @@ even = lambda x: isint(x) and x % 2 == 0
 is_meaning_of_life = lambda x: x == 42
 
 
-class TestFirst(object):
+class TestFirst:
     def test_empty_iterables(self):
         """
         Empty iterables return None.
@@ -57,7 +57,7 @@ class TestFirst(object):
         assert first(l, key=is_meaning_of_life) is None
 
 
-class TestRemap(object):
+class TestRemap:
     # TODO: test namedtuples and other immutable containers
 
     def test_basic_clone(self):
@@ -356,7 +356,7 @@ class TestRemap(object):
         return
 
 
-class TestGetPath(object):
+class TestGetPath:
     def test_depth_one(self):
         root = ['test']
         assert get_path(root, (0,)) == 'test'

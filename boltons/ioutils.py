@@ -39,6 +39,7 @@ Module ``ioutils`` implements a number of helper classes and functions which
 are useful when dealing with input, output, and bytestreams in a variety of
 ways.
 """
+import abc
 import os
 from io import BytesIO, IOBase
 from abc import (
@@ -50,17 +51,7 @@ from errno import EINVAL
 from codecs import EncodedFile
 from tempfile import TemporaryFile
 
-try:
-    from itertools import izip_longest as zip_longest # Python 2
-except ImportError:
-    from itertools import zip_longest  # Python 3
-
-try:
-    text_type = unicode  # Python 2
-    binary_type = str
-except NameError:
-    text_type = str      # Python 3
-    binary_type = bytes
+from itertools import zip_longest  # Python 3
 
 READ_CHUNK_SIZE = 21333
 """
@@ -71,7 +62,7 @@ value.
 """
 
 
-class SpooledIOBase(IOBase):
+class SpooledIOBase(IOBase, metaclass=abc.ABCMeta):
     """
     A base class shared by the SpooledBytesIO and SpooledStringIO classes.
 
@@ -80,7 +71,6 @@ class SpooledIOBase(IOBase):
     parity as possible so that classes derived from SpooledIOBase can be used
     as near drop-in replacements to save memory.
     """
-    __metaclass__ = ABCMeta
 
     def __init__(self, max_size=5000000, dir=None):
         self._max_size = max_size
@@ -129,17 +119,20 @@ class SpooledIOBase(IOBase):
     def tell(self):
         """Return the current position"""
 
-    @abstractproperty
+    @property
     def buffer(self):
         """Should return a flo instance"""
+        raise NotImplementedError
 
-    @abstractproperty
+    @property
     def _rolled(self):
         """Returns whether the file has been rolled to a real file or not"""
+        raise NotImplementedError
 
-    @abstractproperty
+    @property
     def len(self):
         """Returns the length of the data"""
+        raise NotImplementedError
 
     def _get_softspace(self):
         return self.buffer.softspace
@@ -306,7 +299,7 @@ class SpooledBytesIO(SpooledIOBase):
         >>> with ioutils.SpooledBytesIO() as f:
         ...     f.write(b"Happy IO")
         ...     _ = f.seek(0)
-        ...     isinstance(f.getvalue(), ioutils.binary_type)
+        ...     isinstance(f.getvalue(), ioutils.bytes)
         True
     """
 
@@ -316,9 +309,9 @@ class SpooledBytesIO(SpooledIOBase):
 
     def write(self, s):
         self._checkClosed()
-        if not isinstance(s, binary_type):
+        if not isinstance(s, bytes):
             raise TypeError("{} expected, got {}".format(
-                binary_type.__name__,
+                bytes.__name__,
                 type(s).__name__
             ))
 
@@ -394,7 +387,7 @@ class SpooledStringIO(SpooledIOBase):
         >>> with ioutils.SpooledStringIO() as f:
         ...     f.write(u"\u2014 Hey, an emdash!")
         ...     _ = f.seek(0)
-        ...     isinstance(f.read(), ioutils.text_type)
+        ...     isinstance(f.read(), ioutils.str)
         True
 
     """
@@ -410,9 +403,9 @@ class SpooledStringIO(SpooledIOBase):
 
     def write(self, s):
         self._checkClosed()
-        if not isinstance(s, text_type):
+        if not isinstance(s, str):
             raise TypeError("{} expected, got {}".format(
-                text_type.__name__,
+                str.__name__,
                 type(s).__name__
             ))
         current_pos = self.tell()
@@ -539,7 +532,7 @@ def is_text_fileobj(fileobj):
     return False
 
 
-class MultiFileReader(object):
+class MultiFileReader:
     """Takes a list of open files or file-like objects and provides an
     interface to read from them all contiguously. Like
     :func:`itertools.chain()`, but for reading files.

@@ -73,7 +73,7 @@ def make_sentinel(name='_MISSING', var_name=None):
       False
 
     """
-    class Sentinel(object):
+    class Sentinel:
         def __init__(self):
             self.name = name
             self.var_name = var_name
@@ -115,7 +115,7 @@ def issubclass(subclass, baseclass):
         subclass (type): The target class to check.
         baseclass (type): The base class *subclass* will be checked against.
 
-    >>> class MyObject(object): pass
+    >>> class MyObject: pass
     ...
     >>> issubclass(MyObject, object)  # always a fun fact
     True
@@ -132,7 +132,7 @@ def get_all_subclasses(cls):
     """Recursively finds and returns a :class:`list` of all types
     inherited from *cls*.
 
-    >>> class A(object):
+    >>> class A:
     ...     pass
     ...
     >>> class B(A):
@@ -165,7 +165,7 @@ def get_all_subclasses(cls):
     return ret
 
 
-class classproperty(object):
+class classproperty:
     """Much like a :class:`property`, but the wrapped get function is a
     class method.  For simplicity, only read-only properties are
     implemented.

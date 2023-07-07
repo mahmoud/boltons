@@ -176,7 +176,7 @@ class _TBItem(_BaseTBItem):
         return ret
 
 
-class _DeferredLine(object):
+class _DeferredLine:
     def __init__(self, filename, lineno, module_globals=None):
         self.filename = filename
         self.lineno = lineno

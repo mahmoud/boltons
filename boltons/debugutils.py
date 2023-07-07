@@ -32,19 +32,15 @@
 
 """
 A small set of utilities useful for debugging misbehaving
-applications. Currently this focuses on ways to use :mod:`pdb`, the
+applications. Currently, this focuses on ways to use :mod:`pdb`, the
 built-in Python debugger.
 """
 
 import sys
 import time
 
-try:
-    basestring
-    from repr import Repr
-except NameError:
-    basestring = (str, bytes)  # py3
-    from reprlib import Repr
+basestring = (str, bytes)
+from reprlib import Repr
 
 try:
     from .typeutils import make_sentinel

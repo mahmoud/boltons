@@ -154,15 +154,20 @@ import sys
 import time
 import pprint
 import random
+import json
 import socket
 import struct
 import getpass
 import datetime
 import platform
+import sqlite3
+import ssl
+import zlib
+import tkinter
+from xml.parsers import expat
+from multiprocessing import cpu_count
 
 ECO_VERSION = '1.0.1'  # see version history below
-
-PY_GT_2 = sys.version_info[0] > 2
 
 try:
     getrandbits = random.SystemRandom().getrandbits
@@ -171,81 +176,16 @@ except Exception:
     HAVE_URANDOM = False
     getrandbits = random.getrandbits
 
-
 # 128-bit GUID just like a UUID, but backwards compatible to 2.4
 INSTANCE_ID = hex(getrandbits(128))[2:-1].lower()
-
 IS_64BIT = struct.calcsize("P") > 4
-HAVE_UCS4 = getattr(sys, 'maxunicode', 0) > 65536
-HAVE_READLINE = True
-
-try:
-    import readline
-except Exception:
-    HAVE_READLINE = False
-
-try:
-    import sqlite3
-    SQLITE_VERSION = sqlite3.sqlite_version
-except Exception:
-    # note: 2.5 and older have sqlite, but not sqlite3
-    SQLITE_VERSION = ''
-
-
-try:
-
-    import ssl
-    try:
-        OPENSSL_VERSION = ssl.OPENSSL_VERSION
-    except AttributeError:
-        # This is a conservative estimate for Python <2.6
-        # SSL module added in 2006, when 0.9.7 was standard
-        OPENSSL_VERSION = 'OpenSSL >0.8.0'
-except Exception:
-    OPENSSL_VERSION = ''
-
-
-try:
-    if PY_GT_2:
-        import tkinter
-    else:
-        import Tkinter as tkinter
-    TKINTER_VERSION = str(tkinter.TkVersion)
-except Exception:
-    TKINTER_VERSION = ''
-
-
-try:
-    import zlib
-    ZLIB_VERSION = zlib.ZLIB_VERSION
-except Exception:
-    ZLIB_VERSION = ''
-
-
-try:
-    from xml.parsers import expat
-    EXPAT_VERSION = expat.EXPAT_VERSION
-except Exception:
-    EXPAT_VERSION = ''
-
-
-try:
-    from multiprocessing import cpu_count
-    CPU_COUNT = cpu_count()
-except Exception:
-    CPU_COUNT = 0
-
-try:
-    import threading
-    HAVE_THREADING = True
-except Exception:
-    HAVE_THREADING = False
-
-
-try:
-    HAVE_IPV6 = socket.has_ipv6
-except Exception:
-    HAVE_IPV6 = False
+SQLITE_VERSION = sqlite3.sqlite_version
+OPENSSL_VERSION = ssl.OPENSSL_VERSION
+TKINTER_VERSION = str(tkinter.TkVersion)
+ZLIB_VERSION = zlib.ZLIB_VERSION
+EXPAT_VERSION = expat.EXPAT_VERSION
+CPU_COUNT = cpu_count()
+HAVE_IPV6 = socket.has_ipv6
 
 
 try:
@@ -267,6 +207,7 @@ def get_python_info():
     # Even though compiler/build_date are already here, they're
     # actually parsed from the version string. So, in the rare case of
     # the unparsable version string, we're still transmitting it.
+    # TODO: why split and join?
     ret['version'] = ' '.join(sys.version.split())
 
     ret['compiler'] = platform.python_compiler()
@@ -278,12 +219,13 @@ def get_python_info():
                        'sqlite': SQLITE_VERSION,
                        'tkinter': TKINTER_VERSION,
                        'zlib': ZLIB_VERSION,
-                       'unicode_wide': HAVE_UCS4,
-                       'readline': HAVE_READLINE,
                        '64bit': IS_64BIT,
                        'ipv6': HAVE_IPV6,
-                       'threading': HAVE_THREADING,
-                       'urandom': HAVE_URANDOM}
+                       'urandom': HAVE_URANDOM,
+                       'unicode_wide': True,
+                       'readline': True,
+                       'threading': True,
+                      }
 
     return ret
 
@@ -305,7 +247,7 @@ def get_profile(**kwargs):
     remain in place.
 
     """
-    scrub = kwargs.pop('scrub', False)
+    scrub = kwargs.get('scrub', False)
     if kwargs:
         raise TypeError('unexpected keyword arguments: %r' % (kwargs.keys(),))
     ret = {}
@@ -316,13 +258,13 @@ def get_profile(**kwargs):
     ret['guid'] = str(INSTANCE_ID)
     ret['hostname'] = socket.gethostname()
     ret['hostfqdn'] = socket.getfqdn()
-    uname = platform.uname()
-    ret['uname'] = {'system': uname[0],
-                    'node': uname[1],
-                    'release': uname[2],  # linux: distro name
-                    'version': uname[3],  # linux: kernel version
-                    'machine': uname[4],
-                    'processor': uname[5]}
+    ret['uname'] = {'system': platform.system(),
+                    'node': platform.node(),
+                    'release': platform.release(),  # linux: distro name
+                    'version': platform.version(),  # linux: kernel version
+                    'machine': platform.machine(),
+                    'processor': platform.processor()}
+    # TODO: remove because deprecated; consider using https://pypi.org/project/distro
     try:
         linux_dist = platform.linux_distribution()
     except Exception:
@@ -353,68 +295,12 @@ def get_profile(**kwargs):
 
     return ret
 
-
-try:
-    import json
-
-    def dumps(val, indent):
-        if indent:
-            return json.dumps(val, sort_keys=True, indent=indent)
-        return json.dumps(val, sort_keys=True)
-
-except ImportError:
-    _real_safe_repr = pprint._safe_repr
-
-    def _fake_json_dumps(val, indent=2):
-        # never do this. this is a hack for Python 2.4. Python 2.5 added
-        # the json module for a reason.
-        def _fake_safe_repr(*a, **kw):
-            res, is_read, is_rec = _real_safe_repr(*a, **kw)
-            if res == 'None':
-                res = 'null'
-            if res == 'True':
-                res = 'true'
-            if res == 'False':
-                res = 'false'
-            if not (res.startswith("'") or res.startswith("u'")):
-                res = res
-            else:
-                if res.startswith('u'):
-                    res = res[1:]
-
-                contents = res[1:-1]
-                contents = contents.replace('"', '').replace(r'\"', '')
-                res = '"' + contents + '"'
-            return res, is_read, is_rec
-
-        pprint._safe_repr = _fake_safe_repr
-        try:
-            ret = pprint.pformat(val, indent=indent)
-        finally:
-            pprint._safe_repr = _real_safe_repr
-
-        return ret
-
-    def dumps(val, indent):
-        ret = _fake_json_dumps(val, indent=indent)
-        if not indent:
-            ret = re.sub(r'\n\s*', ' ', ret)
-        return ret
-
-
-
 def get_profile_json(indent=False):
-    if indent:
-        indent = 2
-    else:
-        indent = 0
-
-    data_dict = get_profile()
-    return dumps(data_dict, indent)
+    return json.dumps(get_profile(), sort_keys=True, indent=2 if indent else None)
 
 
 def main():
-    print(get_profile_json(indent=True))
+    print(get_profile_json())
 
 #############################################
 #  The shell escaping copied in from strutils

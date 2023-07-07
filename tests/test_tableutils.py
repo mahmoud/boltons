@@ -47,7 +47,7 @@ def test_table_dicts():
 
 
 def test_table_obj():
-    class TestType(object):
+    class TestType:
         def __init__(self):
             self.greeting = 'hi'
 

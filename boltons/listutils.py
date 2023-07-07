@@ -52,12 +52,6 @@ try:
 except ImportError:
     _MISSING = object()
 
-try:
-    xrange
-except NameError:
-    # Python 3 compat
-    xrange = range
-
 # TODO: expose splaylist?
 __all__ = ['BList', 'BarrelList']
 
@@ -82,7 +76,7 @@ class BarrelList(list):
     Args:
         iterable: An optional iterable of initial values for the list.
 
-    >>> blist = BList(xrange(100000))
+    >>> blist = BList(range(100000))
     >>> blist.pop(50000)
     50000
     >>> len(blist)

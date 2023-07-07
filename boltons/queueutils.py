@@ -90,7 +90,7 @@ __all__ = ['PriorityQueue', 'BasePriorityQueue',
 # TODO: add uniqueification
 
 
-class BasePriorityQueue(object):
+class BasePriorityQueue:
     """The abstract base class for the other PriorityQueues in this
     module. Override the ``_backend_type`` class attribute, as well as
     the :meth:`_push_entry` and :meth:`_pop_entry` staticmethods for

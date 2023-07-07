@@ -7,9 +7,6 @@ from pytest import raises
 from boltons.setutils import IndexedSet, _MISSING, complement
 
 
-_IS_26 = platform.python_version().startswith('2.6')
-
-
 def test_indexed_set_basic():
     zero2nine = IndexedSet(range(10))
     five2nine = zero2nine & IndexedSet(range(5, 15))
@@ -101,10 +98,10 @@ def test_complement_set():
     assert 'c' in cab
     assert (sab & cbc) == (sab - sbc)  # set theory invariant
     assert not (cab < sab)  # complement never subset of set
-    if not _IS_26: assert not (sab < cab)
+    assert not (sab < cab)
     assert not (cbc < sab)
     assert not (cbc < cab)  # not subsets of each other
-    if not _IS_26: assert sab < cc
+    assert sab < cc
     assert cab < (cab | cbc)
     assert (cab | cbc) > cab
     assert cc > sab
@@ -147,7 +144,7 @@ def test_complement_set():
     ~cab
     cab.complement()
     cab.complemented()
-    class OpOverloader(object):
+    class OpOverloader:
         # tests that operators properly return NotImplemented so they will defer to
         # another class implementation if available
         def __and__(self, other): return self

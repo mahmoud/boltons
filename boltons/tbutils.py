@@ -58,12 +58,6 @@ import sys
 import linecache
 
 
-try:
-    text = unicode  # Python 2
-except NameError:
-    text = str      # Python 3
-
-
 # TODO: chaining primitives?  what are real use cases where these help?
 
 # TODO: print_* for backwards compatibility
@@ -78,7 +72,7 @@ __all__ = ['ExceptionInfo', 'TracebackInfo', 'Callpoint',
            'ContextualCallpoint', 'print_exception', 'ParsedException']
 
 
-class Callpoint(object):
+class Callpoint:
     """The Callpoint is a lightweight object used to represent a single
     entry in the code of a call stack. It stores the code-related
     metadata of a given frame. Available attributes are the same as
@@ -174,7 +168,7 @@ class Callpoint(object):
         return ret
 
 
-class _DeferredLine(object):
+class _DeferredLine:
     """The _DeferredLine type allows Callpoints and TracebackInfos to be
     constructed without potentially hitting the filesystem, as is the
     normal behavior of the standard Python :mod:`traceback` and
@@ -233,7 +227,7 @@ class _DeferredLine(object):
 
 
 # TODO: dedup frames, look at __eq__ on _DeferredLine
-class TracebackInfo(object):
+class TracebackInfo:
     """The TracebackInfo class provides a basic representation of a stack
     trace, be it from an exception being handled or just part of
     normal execution. It is basically a wrapper around a list of
@@ -363,7 +357,7 @@ class TracebackInfo(object):
         return ret
 
 
-class ExceptionInfo(object):
+class ExceptionInfo:
     """An ExceptionInfo object ties together three main fields suitable
     for representing an instance of an exception: The exception type
     name, a string representation of the exception itself (the
@@ -632,7 +626,7 @@ def _some_str(value):
     except Exception:
         pass
     try:
-        value = text(value)
+        value = str(value)
         return value.encode("ascii", "backslashreplace")
     except Exception:
         pass
@@ -686,7 +680,7 @@ _underline_re = re.compile(r'^[~^ ]*$')
 
 # TODO: ParsedException generator over large bodies of text
 
-class ParsedException(object):
+class ParsedException:
     """Stores a parsed traceback and exception as would be typically
     output by :func:`sys.excepthook` or
     :func:`traceback.print_exception`.
@@ -760,7 +754,7 @@ class ParsedException(object):
         Args:
             tb_str (str): The traceback text (:class:`unicode` or UTF-8 bytes)
         """
-        if not isinstance(tb_str, text):
+        if not isinstance(tb_str, str):
             tb_str = tb_str.decode('utf-8')
         tb_lines = tb_str.lstrip().splitlines()
 
