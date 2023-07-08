@@ -12,7 +12,7 @@ the Docs <https://boltons.readthedocs.org>`_.
 from setuptools import setup
 
 __author__ = "Mahmoud Hashemi"
-__version__ = "23.0.1dev"
+__version__ = "24.0.0-dev"
 __contact__ = "mahmoud@hatnote.com"
 __url__ = "https://github.com/mahmoud/boltons"
 __license__ = "BSD"
