@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # Copyright (c) 2013, Mahmoud Hashemi
 #
 # Redistribution and use in source and binary forms, with or without
@@ -66,34 +64,25 @@ original author of `Netstring`_.
 
 """
 
-import time
 import socket
-
-try:
-    from threading import RLock
-except Exception:
-    class RLock(object):
-        'Dummy reentrant lock for builds without threads'
-        def __enter__(self):
-            pass
-
-        def __exit__(self, exctype, excinst, exctb):
-            pass
+import time
+from threading import RLock
 
 
-try:
-    from .typeutils import make_sentinel
-    _UNSET = make_sentinel(var_name='_UNSET')
-except ImportError:
-    _UNSET = object()
+class _Sentinel:
+    def __eq__(self, other):
+        return other is self
+
+
+_UNSET = _Sentinel()
 
 
 DEFAULT_TIMEOUT = 10  # 10 seconds
 DEFAULT_MAXSIZE = 32 * 1024  # 32kb
-_RECV_LARGE_MAXSIZE = 1024 ** 5  # 1PB
+_RECV_LARGE_MAXSIZE = 1024**5  # 1PB
 
 
-class BufferedSocket(object):
+class BufferedSocket:
     """Mainly provides recv_until and recv_size. recv, send, sendall, and
     peek all function as similarly as possible to the built-in socket
     API.
@@ -144,10 +133,10 @@ class BufferedSocket(object):
     unrelated to messages, e.g., :meth:`socket.getpeername`.
 
     """
-    def __init__(self, sock, timeout=_UNSET,
-                 maxsize=DEFAULT_MAXSIZE, recvsize=_UNSET):
+
+    def __init__(self, sock, timeout=_UNSET, maxsize=DEFAULT_MAXSIZE, recvsize=_UNSET):
         self.sock = sock
-        self.rbuf = b''
+        self.rbuf = b""
         self.sbuf = []
         self.maxsize = int(maxsize)
 
@@ -194,7 +183,7 @@ class BufferedSocket(object):
     def getsendbuffer(self):
         "Returns a copy of the send buffer list."
         with self._send_lock:
-            return b''.join(self.sbuf)
+            return b"".join(self.sbuf)
 
     def recv(self, size, flags=0, timeout=_UNSET):
         """Returns **up to** *size* bytes, using the internal buffer before
@@ -225,7 +214,7 @@ class BufferedSocket(object):
                 data, self.rbuf = self.rbuf[:size], self.rbuf[size:]
                 return data
             if self.rbuf:
-                ret, self.rbuf = self.rbuf, b''
+                ret, self.rbuf = self.rbuf, b""
                 return ret
             self.sock.settimeout(timeout)
             try:
@@ -275,7 +264,7 @@ class BufferedSocket(object):
             try:
                 recvd = self.recv_size(maxsize + 1, timeout)
             except ConnectionClosed:
-                ret, self.rbuf = self.rbuf, b''
+                ret, self.rbuf = self.rbuf, b""
             else:
                 # put extra received bytes (now in rbuf) after recvd
                 self.rbuf = recvd + self.rbuf
@@ -283,8 +272,9 @@ class BufferedSocket(object):
                 raise MessageTooLong(size_read)  # check receive buffer
         return ret
 
-    def recv_until(self, delimiter, timeout=_UNSET, maxsize=_UNSET,
-                   with_delimiter=False):
+    def recv_until(
+        self, delimiter, timeout=_UNSET, maxsize=_UNSET, with_delimiter=False
+    ):
         """Receive until *delimiter* is found, *maxsize* bytes have been read,
         or *timeout* is exceeded.
 
@@ -349,15 +339,19 @@ class BufferedSocket(object):
                     nxt = sock.recv(self._recvsize)
                     if not nxt:
                         args = (len(recvd), delimiter)
-                        msg = ('connection closed after reading %s bytes'
-                               ' without finding symbol: %r' % args)
+                        msg = (
+                            "connection closed after reading %s bytes"
+                            " without finding symbol: %r" % args
+                        )
                         raise ConnectionClosed(msg)  # check the recv buffer
                     recvd.extend(nxt)
                     find_offset_start = -len(nxt) - len_delimiter + 1
             except socket.timeout:
                 self.rbuf = bytes(recvd)
-                msg = ('read %s bytes without finding delimiter: %r'
-                       % (len(recvd), delimiter))
+                msg = "read {} bytes without finding delimiter: {!r}".format(
+                    len(recvd),
+                    delimiter,
+                )
                 raise Timeout(timeout, msg)  # check the recv buffer
             except Exception:
                 self.rbuf = bytes(recvd)
@@ -401,24 +395,26 @@ class BufferedSocket(object):
                         self.sock.settimeout(cur_timeout)
                     nxt = self.sock.recv(self._recvsize)
                 else:
-                    msg = ('connection closed after reading %s of %s requested'
-                           ' bytes' % (total_bytes, size))
+                    msg = (
+                        "connection closed after reading %s of %s requested"
+                        " bytes" % (total_bytes, size)
+                    )
                     raise ConnectionClosed(msg)  # check recv buffer
             except socket.timeout:
-                self.rbuf = b''.join(chunks)
-                msg = 'read %s of %s bytes' % (total_bytes, size)
+                self.rbuf = b"".join(chunks)
+                msg = f"read {total_bytes} of {size} bytes"
                 raise Timeout(timeout, msg)  # check recv buffer
             except Exception:
                 # received data is still buffered in the case of errors
-                self.rbuf = b''.join(chunks)
+                self.rbuf = b"".join(chunks)
                 raise
             extra_bytes = total_bytes - size
             if extra_bytes:
                 last, self.rbuf = nxt[:-extra_bytes], nxt[-extra_bytes:]
             else:
-                last, self.rbuf = nxt, b''
+                last, self.rbuf = nxt, b""
             chunks.append(last)
-        return b''.join(chunks)
+        return b"".join(chunks)
 
     def send(self, data, flags=0, timeout=_UNSET):
         """Send the contents of the internal send buffer, as well as *data*,
@@ -447,7 +443,7 @@ class BufferedSocket(object):
             sbuf = self.sbuf
             sbuf.append(data)
             if len(sbuf) > 1:
-                sbuf[:] = [b''.join([s for s in sbuf if s])]
+                sbuf[:] = [b"".join([s for s in sbuf if s])]
             self.sock.settimeout(timeout)
             start, total_sent = time.time(), 0
             try:
@@ -461,7 +457,7 @@ class BufferedSocket(object):
                             raise socket.timeout()
                         self.sock.settimeout(cur_timeout)
             except socket.timeout:
-                raise Timeout(timeout, '%s bytes unsent' % len(sbuf[0]))
+                raise Timeout(timeout, "%s bytes unsent" % len(sbuf[0]))
         return total_sent
 
     def sendall(self, data, flags=0, timeout=_UNSET):
@@ -473,7 +469,7 @@ class BufferedSocket(object):
     def flush(self):
         "Send the contents of the internal send buffer."
         with self._send_lock:
-            self.send(b'')
+            self.send(b"")
         return
 
     def buffer(self, data):
@@ -568,7 +564,7 @@ class BufferedSocket(object):
         """
         with self._recv_lock:
             with self._send_lock:
-                self.rbuf = b''
+                self.rbuf = b""
                 self.rbuf_unconsumed = self.rbuf
                 self.sbuf[:] = []
                 self.sock.close()
@@ -601,6 +597,7 @@ class Error(socket.error):
     types, generally you want to catch one of the specific exception
     types below, or :exc:`socket.error`.
     """
+
     pass
 
 
@@ -612,6 +609,7 @@ class ConnectionClosed(Error):
     :meth:`~BufferedSocket.recv` or
     :meth:`~BufferedSocket.recv_close`.
     """
+
     pass
 
 
@@ -621,13 +619,14 @@ class MessageTooLong(Error):
     read without encountering the delimiter or a closed connection,
     respectively.
     """
+
     def __init__(self, bytes_read=None, delimiter=None):
-        msg = 'message exceeded maximum size'
+        msg = "message exceeded maximum size"
         if bytes_read is not None:
-            msg += '. %s bytes read' % (bytes_read,)
+            msg += f". {bytes_read} bytes read"
         if delimiter is not None:
-            msg += '. Delimiter not found: %r' % (delimiter,)
-        super(MessageTooLong, self).__init__(msg)
+            msg += f". Delimiter not found: {delimiter!r}"
+        super().__init__(msg)
 
 
 class Timeout(socket.timeout, Error):
@@ -636,22 +635,24 @@ class Timeout(socket.timeout, Error):
     specified. Raised from any of :class:`BufferedSocket`'s ``recv``
     methods.
     """
+
     def __init__(self, timeout, extra=""):
-        msg = 'socket operation timed out'
+        msg = "socket operation timed out"
         if timeout is not None:
-            msg += ' after %sms.' % (timeout * 1000)
+            msg += " after %sms." % (timeout * 1000)
         if extra:
-            msg += ' ' + extra
-        super(Timeout, self).__init__(msg)
+            msg += " " + extra
+        super().__init__(msg)
 
 
-class NetstringSocket(object):
+class NetstringSocket:
     """
     Reads and writes using the netstring protocol.
 
     More info: https://en.wikipedia.org/wiki/Netstring
-    Even more info: http://cr.yp.to/proto/netstrings.txt
+    Even more info: https://cr.yp.to/proto/netstrings.txt
     """
+
     def __init__(self, sock, timeout=DEFAULT_TIMEOUT, maxsize=DEFAULT_MAXSIZE):
         self.bsock = BufferedSocket(sock)
         self.timeout = timeout
@@ -681,19 +682,20 @@ class NetstringSocket(object):
         else:
             msgsize_maxsize = self._calc_msgsize_maxsize(maxsize)
 
-        size_prefix = self.bsock.recv_until(b':',
-                                            timeout=timeout,
-                                            maxsize=msgsize_maxsize)
+        size_prefix = self.bsock.recv_until(
+            b":", timeout=timeout, maxsize=msgsize_maxsize
+        )
         try:
             size = int(size_prefix)
         except ValueError:
-            raise NetstringInvalidSize('netstring message size must be valid'
-                                       ' integer, not %r' % size_prefix)
+            raise NetstringInvalidSize(
+                "netstring message size must be valid" " integer, not %r" % size_prefix
+            )
 
         if size > maxsize:
             raise NetstringMessageTooLong(size, maxsize)
         payload = self.bsock.recv_size(size)
-        if self.bsock.recv(1) != b',':
+        if self.bsock.recv(1) != b",":
             raise NetstringProtocolError("expected trailing ',' after message")
 
         return payload
@@ -702,7 +704,7 @@ class NetstringSocket(object):
         size = len(payload)
         if size > self.maxsize:
             raise NetstringMessageTooLong(size, self.maxsize)
-        data = str(size).encode('ascii') + b':' + payload + b','
+        data = str(size).encode("ascii") + b":" + payload + b","
         self.bsock.send(data)
 
 
@@ -723,8 +725,9 @@ class NetstringInvalidSize(NetstringProtocolError):
     is not parsable as a Python integer (i.e., :class:`int`) will raise
     this exception.
     """
+
     def __init__(self, msg):
-        super(NetstringInvalidSize, self).__init__(msg)
+        super().__init__(msg)
 
 
 class NetstringMessageTooLong(NetstringProtocolError):
@@ -735,10 +738,13 @@ class NetstringMessageTooLong(NetstringProtocolError):
     When this exception is raised, it's recommended to simply close
     the connection instead of trying to recover.
     """
+
     def __init__(self, size, maxsize):
-        msg = ('netstring message length exceeds configured maxsize: %s > %s'
-               % (size, maxsize))
-        super(NetstringMessageTooLong, self).__init__(msg)
+        msg = "netstring message length exceeds configured maxsize: {} > {}".format(
+            size,
+            maxsize,
+        )
+        super().__init__(msg)
 
 
 """

@@ -1,19 +1,17 @@
-# -*- coding: utf-8 -*-
-
-from __future__ import print_function
 import string
 import sys
-sys.path.append('/home/mahmoud/projects/lithoxyl/')
+
+sys.path.append("/home/mahmoud/projects/lithoxyl/")
 
 import time
-import lithoxyl
-from lithoxyl import sinks, logger
-
-from dictutils import OMD, FastIterOrderedMultiDict
 from collections import OrderedDict as OD
 
+import lithoxyl
+from dictutils import OMD, FastIterOrderedMultiDict
+from lithoxyl import logger, sinks
+
 q_sink = lithoxyl.sinks.QuantileSink()
-log = lithoxyl.logger.BaseLogger('bench_stats', sinks=[q_sink])
+log = lithoxyl.logger.BaseLogger("bench_stats", sinks=[q_sink])
 
 try:
     profile
@@ -32,48 +30,53 @@ _bad_rng = range(size, size + size)
 _pairs = zip(_rng, _rng)
 
 # order matters because 'pop' mutates
-_shared_actions = ('setitem', 'iteritems', 'iterkeys', 'getitem', 'keyerror', 'pop')
-_multi_actions = ('multi_iteritems',)
-_all_actions = ('init',) + _multi_actions + _shared_actions
+_shared_actions = ("setitem", "iteritems", "iterkeys", "getitem", "keyerror", "pop")
+_multi_actions = ("multi_iteritems",)
+_all_actions = ("init",) + _multi_actions + _shared_actions
 
 MULTI_IMPLS = (FastIterOrderedMultiDict, OMD)
 try:
-    from werkzeug.datastructures import MultiDict, OrderedMultiDict as WOMD
+    from werkzeug.datastructures import MultiDict
+    from werkzeug.datastructures import OrderedMultiDict as WOMD
+
     MULTI_IMPLS += (WOMD, MultiDict)
 except ImportError:
-    print('(installing werkzeug is recommended for full comparison)')
+    print("(installing werkzeug is recommended for full comparison)")
 ALL_IMPLS = MULTI_IMPLS + (OD, dict)
 
 
 def bench():
     for impl in ALL_IMPLS:
         q_sink = lithoxyl.sinks.QuantileSink()
-        impl_name = '.'.join([impl.__module__, impl.__name__])
+        impl_name = ".".join([impl.__module__, impl.__name__])
         log = lithoxyl.logger.BaseLogger(impl_name, sinks=[q_sink])
         print()
-        print('+ %s' % impl_name)
+        print("+ %s" % impl_name)
         for _ in range(times):
-            with log.info('total'):
+            with log.info("total"):
                 for _ in range(times):
-                    with log.info('init'):
+                    with log.info("init"):
                         target_dict = impl(_pairs)
                     if impl in MULTI_IMPLS:
                         _actions = _multi_actions + _shared_actions
                     else:
                         _actions = _shared_actions
                     for action in _actions:
-                        action_func = globals()['_do_' + action]
+                        action_func = globals()["_do_" + action]
                         with log.info(action):
                             action_func(target_dict)
         for action in _all_actions:
             try:
                 best_msecs = q_sink.qas[impl_name][action].min * 1000
-                print('   - %s - %g ms' % (action, best_msecs))
+                print(f"   - {action} - {best_msecs:g} ms")
             except KeyError:
                 pass
-        best_msecs = q_sink.qas[impl_name]['total'].min * 1000
-        median_msecs = q_sink.qas[impl_name]['total'].median * 1000
-        print(' > ran %d loops of %d items each, best time: %g ms, median time: %g ms' % (times, size, best_msecs, median_msecs))
+        best_msecs = q_sink.qas[impl_name]["total"].min * 1000
+        median_msecs = q_sink.qas[impl_name]["total"].median * 1000
+        print(
+            " > ran %d loops of %d items each, best time: %g ms, median time: %g ms"
+            % (times, size, best_msecs, median_msecs)
+        )
 
     print()
     return
@@ -119,5 +122,5 @@ def _do_pop(target_dict):
     assert not target_dict
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     bench()

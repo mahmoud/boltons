@@ -1,16 +1,13 @@
-# -*- coding: utf-8 -*-
-
 from boltons.tableutils import Table
 
 
 def test_table_lists():
-    data_lists = [['id', 'name'],
-                  [1, 'John Doe'],
-                  [2, 'Dale Simmons']]
+    data_lists = [["id", "name"], [1, "John Doe"], [2, "Dale Simmons"]]
     t1 = Table(data_lists)
-    assert set(t1.headers) == set(['id', 'name'])
+    assert set(t1.headers) == {"id", "name"}
     assert len(t1) == 2
-    assert 'John Doe' in repr(t1)
+    assert "John Doe" in repr(t1)
+
 
 T2_REF_HTML = """<table>
 <tr><th>id</th><td>1</td></tr>
@@ -31,13 +28,12 @@ T3_REF_HTML = """<table>
 
 
 def test_table_dicts():
-    data_dicts = [{'id': 1, 'name': 'John Doe'},
-                  {'id': 2, 'name': 'Dale Simmons'}]
+    data_dicts = [{"id": 1, "name": "John Doe"}, {"id": 2, "name": "Dale Simmons"}]
     t2 = Table.from_dict(data_dicts[0])
     t3 = Table.from_dict(data_dicts)
-    t3.extend([[3, 'Kurt Rose'], [4]])
+    t3.extend([[3, "Kurt Rose"], [4]])
 
-    assert set(t2.headers) == set(['id', 'name'])
+    assert set(t2.headers) == {"id", "name"}
     assert len(t2) == 1
     # the sorted() stuff handles ordering differences between versions
     # TODO: should maybe change Table to sort the headers of dicts and such?
@@ -47,10 +43,10 @@ def test_table_dicts():
 
 
 def test_table_obj():
-    class TestType(object):
+    class TestType:
         def __init__(self):
-            self.greeting = 'hi'
+            self.greeting = "hi"
 
     t4 = Table.from_object(TestType())
     assert len(t4) == 1
-    assert 'greeting' in t4.headers
+    assert "greeting" in t4.headers

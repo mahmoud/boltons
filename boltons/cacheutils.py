@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # Copyright (c) 2013, Mahmoud Hashemi
 #
 # Redistribution and use in source and binary forms, with or without
@@ -31,7 +29,7 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 """``cacheutils`` contains consistent implementations of fundamental
-cache types. Currently there are two to choose from:
+cache types. Currently, there are two to choose from:
 
   * :class:`LRI` - Least-recently inserted
   * :class:`LRU` - Least-recently used
@@ -66,38 +64,54 @@ Learn more about `caching algorithms on Wikipedia
 
 
 import heapq
-import weakref
 import itertools
+import warnings
+import weakref
+from functools import cached_property, wraps
 from operator import attrgetter
+from threading import RLock
 
 try:
-    from threading import RLock
-except Exception:
-    class RLock(object):
-        'Dummy reentrant lock for builds without threads'
-        def __enter__(self):
-            pass
-
-        def __exit__(self, exctype, excinst, exctb):
-            pass
-
-try:
-    from .typeutils import make_sentinel
-    _MISSING = make_sentinel(var_name='_MISSING')
-    _KWARG_MARK = make_sentinel(var_name='_KWARG_MARK')
+    from typing import deprecated as typing_deprecated
 except ImportError:
-    _MISSING = object()
-    _KWARG_MARK = object()
+    typing_deprecated = None
 
-try:
-    xrange
-except NameError:
-    # py3
-    xrange = range
-    unicode, str, bytes, basestring = str, bytes, bytes, (str, bytes)
 
-PREV, NEXT, KEY, VALUE = range(4)   # names for the link fields
+def deprecated(f, msg: str):
+    @wraps(f)
+    def wrapper(*args, **kwargs):
+        warnings.warn(msg, DeprecationWarning)
+        if typing_deprecated:
+            return typing_deprecated(f(*args, **kwargs))
+        return f(*args, **kwargs)
+
+    return wrapper
+
+
+class _Sentinel:
+    def __eq__(self, other):
+        return other is self
+
+
+_MISSING = _Sentinel()
+_KWARG_MARK = _Sentinel()
+
+basestring = (str, bytes)
+
+PREV, NEXT, KEY, VALUE = range(4)  # names for the link fields
 DEFAULT_MAX_SIZE = 128
+
+
+@deprecated("Use functools.cached_property instead")
+def cachedproperty():
+    pass
+
+
+# noinspection PyPep8Naming
+class cachedproperty(cached_property):
+    @deprecated("Use functools.cached_property instead")
+    def __init__(self, func):
+        super().__init__(func)
 
 
 class LRI(dict):
@@ -122,18 +136,19 @@ class LRI(dict):
     >>> cap_cache.hit_count, cap_cache.miss_count, cap_cache.soft_miss_count
     (3, 1, 1)
     """
-    def __init__(self, max_size=DEFAULT_MAX_SIZE, values=None,
-                 on_miss=None):
+
+    def __init__(self, max_size=DEFAULT_MAX_SIZE, values=None, on_miss=None):
         if max_size <= 0:
-            raise ValueError('expected max_size > 0, not %r' % max_size)
+            raise ValueError("expected max_size > 0, not %r" % max_size)
         self.hit_count = self.miss_count = self.soft_miss_count = 0
         self.max_size = max_size
         self._lock = RLock()
         self._init_ll()
 
         if on_miss is not None and not callable(on_miss):
-            raise TypeError('expected on_miss to be a callable'
-                            ' (or None), not %r' % on_miss)
+            raise TypeError(
+                "expected on_miss to be a callable" " (or None), not %r" % on_miss
+            )
         self.on_miss = on_miss
 
         if values:
@@ -157,10 +172,10 @@ class LRI(dict):
         self._anchor = anchor
 
     def _print_ll(self):
-        print('***')
-        for (key, val) in self._get_flattened_ll():
+        print("***")
+        for key, val in self._get_flattened_ll():
             print(key, val)
-        print('***')
+        print("***")
         return
 
     def _get_flattened_ll(self):
@@ -234,8 +249,8 @@ class LRI(dict):
                     self._set_key_and_add_to_front_of_ll(key, value)
                 else:
                     evicted = self._set_key_and_evict_last_in_ll(key, value)
-                    super(LRI, self).__delitem__(evicted)
-                super(LRI, self).__setitem__(key, value)
+                    super().__delitem__(evicted)
+                super().__setitem__(key, value)
             else:
                 link[VALUE] = value
 
@@ -262,14 +277,14 @@ class LRI(dict):
 
     def __delitem__(self, key):
         with self._lock:
-            super(LRI, self).__delitem__(key)
+            super().__delitem__(key)
             self._remove_from_ll(key)
 
     def pop(self, key, default=_MISSING):
         # NB: hit/miss counts are bypassed for pop()
         with self._lock:
             try:
-                ret = super(LRI, self).pop(key)
+                ret = super().pop(key)
             except KeyError:
                 if default is _MISSING:
                     raise
@@ -280,13 +295,13 @@ class LRI(dict):
 
     def popitem(self):
         with self._lock:
-            item = super(LRI, self).popitem()
+            item = super().popitem()
             self._remove_from_ll(item[0])
             return item
 
     def clear(self):
         with self._lock:
-            super(LRI, self).clear()
+            super().clear()
             self._init_ll()
 
     def copy(self):
@@ -307,7 +322,7 @@ class LRI(dict):
             if E is self:
                 return
             setitem = self.__setitem__
-            if callable(getattr(E, 'keys', None)):
+            if callable(getattr(E, "keys", None)):
                 for k in E.keys():
                     setitem(k, E[k])
             else:
@@ -325,16 +340,20 @@ class LRI(dict):
                 return False
             if not isinstance(other, LRI):
                 return other == self
-            return super(LRI, self).__eq__(other)
+            return super().__eq__(other)
 
     def __ne__(self, other):
         return not (self == other)
 
     def __repr__(self):
         cn = self.__class__.__name__
-        val_map = super(LRI, self).__repr__()
-        return ('%s(max_size=%r, on_miss=%r, values=%s)'
-                % (cn, self.max_size, self.on_miss, val_map))
+        val_map = super().__repr__()
+        return "{}(max_size={!r}, on_miss={!r}, values={})".format(
+            cn,
+            self.max_size,
+            self.on_miss,
+            val_map,
+        )
 
 
 class LRU(LRI):
@@ -371,6 +390,7 @@ class LRU(LRI):
     Other than the size-limiting caching behavior and statistics,
     ``LRU`` acts like its parent class, the built-in Python :class:`dict`.
     """
+
     def __getitem__(self, key):
         with self._lock:
             try:
@@ -389,11 +409,13 @@ class LRU(LRI):
 ### Cached decorator
 # Key-making technique adapted from Python 3.4's functools
 
+
 class _HashedKey(list):
     """The _HashedKey guarantees that hash() will be called no more than once
     per cached function invocation.
     """
-    __slots__ = 'hash_value'
+
+    __slots__ = "hash_value"
 
     def __init__(self, key):
         self[:] = key
@@ -403,12 +425,16 @@ class _HashedKey(list):
         return self.hash_value
 
     def __repr__(self):
-        return '%s(%s)' % (self.__class__.__name__, list.__repr__(self))
+        return f"{self.__class__.__name__}({list.__repr__(self)})"
 
 
-def make_cache_key(args, kwargs, typed=False,
-                   kwarg_mark=_KWARG_MARK,
-                   fasttypes=frozenset([int, str, frozenset, type(None)])):
+def make_cache_key(
+    args,
+    kwargs,
+    typed=False,
+    kwarg_mark=_KWARG_MARK,
+    fasttypes=frozenset([int, str, frozenset, type(None)]),
+):
     """Make a generic key from a function's positional and keyword
     arguments, suitable for use in caches. Arguments within *args* and
     *kwargs* must be `hashable`_. If *typed* is ``True``, ``3`` and
@@ -442,26 +468,33 @@ def make_cache_key(args, kwargs, typed=False,
         return key[0]
     return _HashedKey(key)
 
+
 # for backwards compatibility in case someone was importing it
 _make_cache_key = make_cache_key
 
 
-class CachedFunction(object):
+class CachedFunction:
     """This type is used by :func:`cached`, below. Instances of this
     class are used to wrap functions in caching logic.
     """
+
     def __init__(self, func, cache, scoped=True, typed=False, key=None):
         self.func = func
         if callable(cache):
             self.get_cache = cache
-        elif not (callable(getattr(cache, '__getitem__', None))
-                  and callable(getattr(cache, '__setitem__', None))):
-            raise TypeError('expected cache to be a dict-like object,'
-                            ' or callable returning a dict-like object, not %r'
-                            % cache)
+        elif not (
+            callable(getattr(cache, "__getitem__", None))
+            and callable(getattr(cache, "__setitem__", None))
+        ):
+            raise TypeError(
+                "expected cache to be a dict-like object,"
+                " or callable returning a dict-like object, not %r" % cache
+            )
         else:
+
             def _get_cache():
                 return cache
+
             self.get_cache = _get_cache
         self.scoped = scoped
         self.typed = typed
@@ -479,30 +512,41 @@ class CachedFunction(object):
     def __repr__(self):
         cn = self.__class__.__name__
         if self.typed or not self.scoped:
-            return ("%s(func=%r, scoped=%r, typed=%r)"
-                    % (cn, self.func, self.scoped, self.typed))
-        return "%s(func=%r)" % (cn, self.func)
+            return "{}(func={!r}, scoped={!r}, typed={!r})".format(
+                cn,
+                self.func,
+                self.scoped,
+                self.typed,
+            )
+        return f"{cn}(func={self.func!r})"
 
 
-class CachedMethod(object):
+class CachedMethod:
     """Similar to :class:`CachedFunction`, this type is used by
     :func:`cachedmethod` to wrap methods in caching logic.
     """
+
     def __init__(self, func, cache, scoped=True, typed=False, key=None):
         self.func = func
-        self.__isabstractmethod__ = getattr(func, '__isabstractmethod__', False)
+        self.__isabstractmethod__ = getattr(func, "__isabstractmethod__", False)
         if isinstance(cache, basestring):
             self.get_cache = attrgetter(cache)
         elif callable(cache):
             self.get_cache = cache
-        elif not (callable(getattr(cache, '__getitem__', None))
-                  and callable(getattr(cache, '__setitem__', None))):
-            raise TypeError('expected cache to be an attribute name,'
-                            ' dict-like object, or callable returning'
-                            ' a dict-like object, not %r' % cache)
+        elif not (
+            callable(getattr(cache, "__getitem__", None))
+            and callable(getattr(cache, "__setitem__", None))
+        ):
+            raise TypeError(
+                "expected cache to be an attribute name,"
+                " dict-like object, or callable returning"
+                " a dict-like object, not %r" % cache
+            )
         else:
+
             def _get_cache(obj):
                 return cache
+
             self.get_cache = _get_cache
         self.scoped = scoped
         self.typed = typed
@@ -513,8 +557,13 @@ class CachedMethod(object):
         if obj is None:
             return self
         cls = self.__class__
-        ret = cls(self.func, self.get_cache, typed=self.typed,
-                  scoped=self.scoped, key=self.key_func)
+        ret = cls(
+            self.func,
+            self.get_cache,
+            typed=self.typed,
+            scoped=self.scoped,
+            key=self.key_func,
+        )
         ret.bound_to = obj
         return ret
 
@@ -536,11 +585,11 @@ class CachedMethod(object):
         args = (cn, self.func, self.scoped, self.typed)
         if self.bound_to is not None:
             args += (self.bound_to,)
-            return ('<%s func=%r scoped=%r typed=%r bound_to=%r>' % args)
-        return ("%s(func=%r, scoped=%r, typed=%r)" % args)
+            return "<%s func=%r scoped=%r typed=%r bound_to=%r>" % args
+        return "%s(func=%r, scoped=%r, typed=%r)" % args
 
 
-def cached(cache, scoped=True, typed=False, key=None):
+def cached(cache, scoped=True, typed=False, key=None):  # TODO: document key
     """Cache any function with the cache object of your choosing. Note
     that the function wrapped should take only `hashable`_ arguments.
 
@@ -573,8 +622,10 @@ def cached(cache, scoped=True, typed=False, key=None):
     .. _hashable: https://docs.python.org/2/glossary.html#term-hashable
 
     """
+
     def cached_func_decorator(func):
         return CachedFunction(func, cache, scoped=scoped, typed=typed, key=key)
+
     return cached_func_decorator
 
 
@@ -600,7 +651,7 @@ def cachedmethod(cache, scoped=True, typed=False, key=None):
             :func:`make_cache_key` that returns a tuple of hashable
             values to be used as the key in the cache.
 
-    >>> class Lowerer(object):
+    >>> class Lowerer:
     ...     def __init__(self):
     ...         self.cache = LRI()
     ...
@@ -615,38 +666,14 @@ def cachedmethod(cache, scoped=True, typed=False, key=None):
     1
 
     """
+
     def cached_method_decorator(func):
         return CachedMethod(func, cache, scoped=scoped, typed=typed, key=key)
+
     return cached_method_decorator
 
 
-class cachedproperty(object):
-    """The ``cachedproperty`` is used similar to :class:`property`, except
-    that the wrapped method is only called once. This is commonly used
-    to implement lazy attributes.
-
-    After the property has been accessed, the value is stored on the
-    instance itself, using the same name as the cachedproperty. This
-    allows the cache to be cleared with :func:`delattr`, or through
-    manipulating the object's ``__dict__``.
-    """
-    def __init__(self, func):
-        self.__doc__ = getattr(func, '__doc__')
-        self.__isabstractmethod__ = getattr(func, '__isabstractmethod__', False)
-        self.func = func
-
-    def __get__(self, obj, objtype=None):
-        if obj is None:
-            return self
-        value = obj.__dict__[self.func.__name__] = self.func(obj)
-        return value
-
-    def __repr__(self):
-        cn = self.__class__.__name__
-        return '<%s func=%s>' % (cn, self.func)
-
-
-class ThresholdCounter(object):
+class ThresholdCounter:
     """A **bounded** dict-like Mapping from keys to counts. The
     ThresholdCounter automatically compacts after every (1 /
     *threshold*) additions, maintaining exact counts for any keys
@@ -689,11 +716,11 @@ class ThresholdCounter(object):
     and initial implementation.
 
     """
+
     # TODO: hit_count/miss_count?
     def __init__(self, threshold=0.001):
         if not 0 < threshold < 1:
-            raise ValueError('expected threshold between 0 and 1, not: %r'
-                             % threshold)
+            raise ValueError("expected threshold between 0 and 1, not: %r" % threshold)
 
         self.total = 0
         self._count_map = {}
@@ -718,8 +745,9 @@ class ThresholdCounter(object):
             self._count_map[key] = [1, self._cur_bucket - 1]
 
         if self.total % self._thresh_count == 0:
-            self._count_map = dict([(k, v) for k, v in self._count_map.items()
-                                    if sum(v) > self._cur_bucket])
+            self._count_map = {
+                k: v for k, v in self._count_map.items() if sum(v) > self._cur_bucket
+            }
             self._cur_bucket += 1
         return
 
@@ -810,9 +838,9 @@ class ThresholdCounter(object):
         to integer counts.
         """
         if iterable is not None:
-            if callable(getattr(iterable, 'iteritems', None)):
+            if callable(getattr(iterable, "iteritems", None)):
                 for key, count in iterable.iteritems():
-                    for i in xrange(count):
+                    for i in range(count):
                         self.add(key)
             else:
                 for key in iterable:
@@ -821,7 +849,7 @@ class ThresholdCounter(object):
             self.update(kwargs)
 
 
-class MinIDMap(object):
+class MinIDMap:
     """
     Assigns arbitrary weakref-able objects the smallest possible unique
     integer IDs, such that no two objects have the same ID at the same
@@ -831,6 +859,7 @@ class MinIDMap(object):
 
     Based on https://gist.github.com/kurtbrose/25b48114de216a5e55df
     """
+
     def __init__(self):
         self.mapping = weakref.WeakKeyDictionary()
         self.ref_map = {}

@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # Copyright (c) 2013, Mahmoud Hashemi
 #
 # Redistribution and use in source and binary forms, with or without
@@ -42,19 +40,20 @@ together.
 
 The :func:`shrinkuser` function replaces your home directory with a tilde.
 """
-from __future__ import print_function
 
-from os.path import (expanduser, expandvars, join, normpath, split, splitext)
 import os
-
+from os.path import expanduser, expandvars, join, normpath, split, splitext
 
 __all__ = [
-    'augpath', 'shrinkuser', 'expandpath',
+    "augpath",
+    "shrinkuser",
+    "expandpath",
 ]
 
 
-def augpath(path, suffix='', prefix='', ext=None, base=None, dpath=None,
-            multidot=False):
+def augpath(
+    path, suffix="", prefix="", ext=None, base=None, dpath=None, multidot=False
+):
     """
     Augment a path by modifying its components.
 
@@ -115,9 +114,9 @@ def augpath(path, suffix='', prefix='', ext=None, base=None, dpath=None,
     orig_dpath, fname = split(path)
     if multidot:
         # The first dot defines the extension
-        parts = fname.split('.', 1)
+        parts = fname.split(".", 1)
         orig_base = parts[0]
-        orig_ext = '' if len(parts) == 1 else '.' + parts[1]
+        orig_ext = "" if len(parts) == 1 else "." + parts[1]
     else:
         # The last dot defines the extension
         orig_base, orig_ext = splitext(fname)
@@ -129,12 +128,12 @@ def augpath(path, suffix='', prefix='', ext=None, base=None, dpath=None,
     if base is None:
         base = orig_base
     # Recombine into new path
-    new_fname = ''.join((prefix, base, suffix, ext))
+    new_fname = "".join((prefix, base, suffix, ext))
     newpath = join(dpath, new_fname)
     return newpath
 
 
-def shrinkuser(path, home='~'):
+def shrinkuser(path, home="~"):
     """
     Inverse of :func:`os.path.expanduser`.
 
@@ -156,12 +155,12 @@ def shrinkuser(path, home='~'):
         >>> assert shrinkuser(path + '/1', '$HOME') == join('$HOME', '1')
     """
     path = normpath(path)
-    userhome_dpath = expanduser('~')
+    userhome_dpath = expanduser("~")
     if path.startswith(userhome_dpath):
         if len(path) == len(userhome_dpath):
             path = home
         elif path[len(userhome_dpath)] == os.path.sep:
-            path = home + path[len(userhome_dpath):]
+            path = home + path[len(userhome_dpath) :]
     return path
 
 

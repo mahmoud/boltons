@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # Copyright (c) 2013, Mahmoud Hashemi
 #
 # Redistribution and use in source and binary forms, with or without
@@ -38,29 +36,27 @@ Python with the -Wd flag.
 """
 
 import sys
-from warnings import warn
+import warnings
 
 ModuleType = type(sys)
-
-# todo: only warn once
 
 
 class DeprecatableModule(ModuleType):
     def __init__(self, module):
         name = module.__name__
-        super(DeprecatableModule, self).__init__(name=name)
+        super().__init__(name=name)
         self.__dict__.update(module.__dict__)
 
     def __getattribute__(self, name):
-        get_attribute = super(DeprecatableModule, self).__getattribute__
+        get_attribute = super().__getattribute__
         try:
-            depros = get_attribute('_deprecated_members')
+            depros = get_attribute("_deprecated_members")
         except AttributeError:
             self._deprecated_members = depros = {}
         ret = get_attribute(name)
         message = depros.get(name)
         if message is not None:
-            warn(message, DeprecationWarning, stacklevel=2)
+            warnings.warn(message, DeprecationWarning, stacklevel=2)
         return ret
 
 

@@ -1,0 +1,22 @@
+# Check https://editorconfig.org for more information
+# Also see https://ukupat.github.io/tabs-or-spaces/
+root = true
+
+[*]
+end_of_line = lf
+charset = utf-8
+trim_trailing_whitespace = true
+insert_final_newline = true
+
+[*.{md,rst,yml,yaml}]
+indent_style = space
+indent_size = 2
+
+[*.py]
+indent_size = 4
+
+# CSV-like
+[*.{tsv,tab,csv}]
+# don't add a newline or trim whitespace
+trim_trailing_whitespace = false
+insert_final_newline = false

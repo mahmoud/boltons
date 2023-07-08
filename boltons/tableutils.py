@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # Copyright (c) 2013, Mahmoud Hashemi
 #
 # Redistribution and use in source and binary forms, with or without
@@ -39,43 +37,30 @@ data structures which behave intuitively.
 
 The :class:`Table` class is one example. When handed one- or
 two-dimensional data, it can provide useful, if basic, text and HTML
-renditions of small to medium sized data. It also heuristically
+renditions of small to medium-sized data. It also heuristically
 handles recursive data of various formats (lists, dicts, namedtuples,
 objects).
 
 For more advanced :class:`Table`-style manipulation check out the
 `pandas`_ DataFrame.
 
-.. _pandas: http://pandas.pydata.org/
+.. _pandas: https://pandas.pydata.org/
 
 """
 
-from __future__ import print_function
-
-try:
-    from html import escape as html_escape
-except ImportError:
-    from cgi import escape as html_escape
 import types
+from collections.abc import Mapping, MutableSequence, Sequence
+from html import escape as html_escape
 from itertools import islice
-try:
-    from collections.abc import Sequence, Mapping, MutableSequence
-except ImportError:
-    from collections import Sequence, Mapping, MutableSequence
-try:
-    string_types, integer_types = (str, unicode), (int, long)
-    from cgi import escape as html_escape
-except NameError:
-    # Python 3 compat
-    unicode = str
-    string_types, integer_types = (str, bytes), (int,)
-    from html import escape as html_escape
 
-try:
-    from .typeutils import make_sentinel
-    _MISSING = make_sentinel(var_name='_MISSING')
-except ImportError:
-    _MISSING = object()
+
+class _Sentinel:
+    def __eq__(self, other):
+        return other is self
+
+
+_MISSING = _Sentinel()
+
 
 """
 Some idle feature thoughts:
@@ -95,19 +80,19 @@ Some idle feature thoughts:
 TODO: make iterable on rows?
 """
 
-__all__ = ['Table']
+__all__ = ["Table"]
 
 
 def to_text(obj, maxlen=None):
     try:
-        text = unicode(obj)
+        text = str(obj)
     except Exception:
         try:
-            text = unicode(repr(obj))
+            text = str(repr(obj))
         except Exception:
-            text = unicode(object.__repr__(obj))
+            text = str(object.__repr__(obj))
     if maxlen and len(text) > maxlen:
-        text = text[:maxlen - 3] + '...'
+        text = text[: maxlen - 3] + "..."
         # TODO: inverse of ljust/rjust/center
     return text
 
@@ -117,17 +102,27 @@ def escape_html(obj, maxlen=None):
     return html_escape(text, quote=True)
 
 
-_DNR = set((type(None), bool, complex, float,
-            type(NotImplemented), slice,
-            types.FunctionType, types.MethodType, types.BuiltinFunctionType,
-            types.GeneratorType) + string_types + integer_types)
+_DNR = {
+    type(None),
+    bool,
+    complex,
+    float,
+    type(NotImplemented),
+    slice,
+    types.FunctionType,
+    types.MethodType,
+    types.BuiltinFunctionType,
+    types.GeneratorType,
+    str,
+    int,
+}
 
 
 class UnsupportedData(TypeError):
     pass
 
 
-class InputType(object):
+class InputType:
     def __init__(self, *a, **kw):
         pass
 
@@ -151,7 +146,7 @@ class DictInputType(InputType):
 
 class ObjectInputType(InputType):
     def check_type(self, obj):
-        return type(obj) not in _DNR and hasattr(obj, '__class__')
+        return type(obj) not in _DNR and hasattr(obj, "__class__")
 
     def guess_headers(self, obj):
         headers = []
@@ -211,7 +206,7 @@ class TupleInputType(InputType):
 
 class NamedTupleInputType(InputType):
     def check_type(self, obj):
-        return hasattr(obj, '_fields') and isinstance(obj, tuple)
+        return hasattr(obj, "_fields") and isinstance(obj, tuple)
 
     def guess_headers(self, obj):
         return list(obj._fields)
@@ -223,7 +218,7 @@ class NamedTupleInputType(InputType):
         return [[getattr(obj, h, None) for h in headers] for obj in obj_seq]
 
 
-class Table(object):
+class Table:
     """
     This Table class is meant to be simple, low-overhead, and extensible. Its
     most common use would be for translation between in-memory data
@@ -264,18 +259,22 @@ class Table(object):
     """
 
     # order definitely matters here
-    _input_types = [DictInputType(), ListInputType(),
-                    NamedTupleInputType(), TupleInputType(),
-                    ObjectInputType()]
+    _input_types = [
+        DictInputType(),
+        ListInputType(),
+        NamedTupleInputType(),
+        TupleInputType(),
+        ObjectInputType(),
+    ]
 
-    _html_tr, _html_tr_close = '<tr>', '</tr>'
-    _html_th, _html_th_close = '<th>', '</th>'
-    _html_td, _html_td_close = '<td>', '</td>'
-    _html_thead, _html_thead_close = '<thead>', '</thead>'
-    _html_tbody, _html_tbody_close = '<tbody>', '</tbody>'
+    _html_tr, _html_tr_close = "<tr>", "</tr>"
+    _html_th, _html_th_close = "<th>", "</th>"
+    _html_td, _html_td_close = "<td>", "</td>"
+    _html_thead, _html_thead_close = "<thead>", "</thead>"
+    _html_tbody, _html_tbody_close = "<tbody>", "</tbody>"
 
     # _html_tfoot, _html_tfoot_close = '<tfoot>', '</tfoot>'
-    _html_table_tag, _html_table_tag_close = '<table>', '</table>'
+    _html_table_tag, _html_table_tag_close = "<table>", "</table>"
 
     def __init__(self, data=None, headers=_MISSING, metadata=None):
         if headers is _MISSING:
@@ -325,9 +324,13 @@ class Table(object):
         :meth:`from_data`, but forces interpretation of the data as a
         Mapping.
         """
-        return cls.from_data(data=data, headers=headers,
-                             max_depth=max_depth, _data_type=DictInputType(),
-                             metadata=metadata)
+        return cls.from_data(
+            data=data,
+            headers=headers,
+            max_depth=max_depth,
+            _data_type=DictInputType(),
+            metadata=metadata,
+        )
 
     @classmethod
     def from_list(cls, data, headers=_MISSING, max_depth=1, metadata=None):
@@ -335,9 +338,13 @@ class Table(object):
         :meth:`from_data`, but forces the interpretation of the data
         as a Sequence.
         """
-        return cls.from_data(data=data, headers=headers,
-                             max_depth=max_depth, _data_type=ListInputType(),
-                             metadata=metadata)
+        return cls.from_data(
+            data=data,
+            headers=headers,
+            max_depth=max_depth,
+            _data_type=ListInputType(),
+            metadata=metadata,
+        )
 
     @classmethod
     def from_object(cls, data, headers=_MISSING, max_depth=1, metadata=None):
@@ -346,13 +353,16 @@ class Table(object):
         as an object. May be useful for some :class:`dict` and
         :class:`list` subtypes.
         """
-        return cls.from_data(data=data, headers=headers,
-                             max_depth=max_depth, _data_type=ObjectInputType(),
-                             metadata=metadata)
+        return cls.from_data(
+            data=data,
+            headers=headers,
+            max_depth=max_depth,
+            _data_type=ObjectInputType(),
+            metadata=metadata,
+        )
 
     @classmethod
     def from_data(cls, data, headers=_MISSING, max_depth=1, **kwargs):
-
         """Create a Table from any supported data, heuristically
         selecting how to represent the data in Table format.
 
@@ -374,8 +384,8 @@ class Table(object):
         # TODO: seen/cycle detection/reuse ?
         # maxdepth follows the same behavior as find command
         # i.e., it doesn't work if max_depth=0 is passed in
-        metadata = kwargs.pop('metadata', None)
-        _data_type = kwargs.pop('_data_type', None)
+        metadata = kwargs.pop("metadata", None)
+        _data_type = kwargs.pop("_data_type", None)
 
         if max_depth < 1:
             # return data instead?
@@ -406,8 +416,7 @@ class Table(object):
                     _data_type = it
                     break
             else:
-                raise UnsupportedData('unsupported data type %r'
-                                      % type(data))
+                raise UnsupportedData("unsupported data type %r" % type(data))
         if headers is _MISSING:
             headers = _data_type.guess_headers(to_check)
         if is_seq:
@@ -422,8 +431,7 @@ class Table(object):
                         # optimization to avoid function overhead
                         continue
                     try:
-                        entries[i][j] = cls.from_data(cell,
-                                                      max_depth=new_max_depth)
+                        entries[i][j] = cls.from_data(cell, max_depth=new_max_depth)
                     except UnsupportedData:
                         continue
         return cls(entries, headers=headers, metadata=metadata)
@@ -437,13 +445,19 @@ class Table(object):
     def __repr__(self):
         cn = self.__class__.__name__
         if self.headers:
-            return '%s(headers=%r, data=%r)' % (cn, self.headers, self._data)
+            return f"{cn}(headers={self.headers!r}, data={self._data!r})"
         else:
-            return '%s(%r)' % (cn, self._data)
+            return f"{cn}({self._data!r})"
 
-    def to_html(self, orientation=None, wrapped=True,
-                with_headers=True, with_newlines=True,
-                with_metadata=False, max_depth=1):
+    def to_html(
+        self,
+        orientation=None,
+        wrapped=True,
+        with_headers=True,
+        with_newlines=True,
+        with_metadata=False,
+        max_depth=1,
+    ):
         """Render this Table to HTML. Configure the structure of Table
         HTML by subclassing and overriding ``_html_*`` class
         attributes.
@@ -474,41 +488,42 @@ class Table(object):
         lines = []
         headers = []
         if with_metadata and self.metadata:
-            metadata_table = Table.from_data(self.metadata,
-                                             max_depth=max_depth)
-            metadata_html = metadata_table.to_html(with_headers=True,
-                                                   with_newlines=with_newlines,
-                                                   with_metadata=False,
-                                                   max_depth=max_depth)
-            if with_metadata != 'bottom':
+            metadata_table = Table.from_data(self.metadata, max_depth=max_depth)
+            metadata_html = metadata_table.to_html(
+                with_headers=True,
+                with_newlines=with_newlines,
+                with_metadata=False,
+                max_depth=max_depth,
+            )
+            if with_metadata != "bottom":
                 lines.append(metadata_html)
-                lines.append('<br />')
+                lines.append("<br />")
 
         if with_headers and self.headers:
             headers.extend(self.headers)
             headers.extend([None] * (self._width - len(self.headers)))
         if wrapped:
             lines.append(self._html_table_tag)
-        orientation = orientation or 'auto'
+        orientation = orientation or "auto"
         ol = orientation[0].lower()
-        if ol == 'a':
-            ol = 'h' if len(self) > 1 else 'v'
-        if ol == 'h':
-            self._add_horizontal_html_lines(lines, headers=headers,
-                                            max_depth=max_depth)
-        elif ol == 'v':
-            self._add_vertical_html_lines(lines, headers=headers,
-                                          max_depth=max_depth)
+        if ol == "a":
+            ol = "h" if len(self) > 1 else "v"
+        if ol == "h":
+            self._add_horizontal_html_lines(lines, headers=headers, max_depth=max_depth)
+        elif ol == "v":
+            self._add_vertical_html_lines(lines, headers=headers, max_depth=max_depth)
         else:
-            raise ValueError("expected one of 'auto', 'vertical', or"
-                             " 'horizontal', not %r" % orientation)
-        if with_metadata and self.metadata and with_metadata == 'bottom':
-            lines.append('<br />')
+            raise ValueError(
+                "expected one of 'auto', 'vertical', or"
+                " 'horizontal', not %r" % orientation
+            )
+        if with_metadata and self.metadata and with_metadata == "bottom":
+            lines.append("<br />")
             lines.append(metadata_html)
 
         if wrapped:
             lines.append(self._html_table_tag_close)
-        sep = '\n' if with_newlines else ''
+        sep = "\n" if with_newlines else ""
         return sep.join(lines)
 
     def get_cell_html(self, value):
@@ -527,13 +542,19 @@ class Table(object):
         if headers:
             _thth = self._html_th_close + self._html_th
             lines.append(self._html_thead)
-            lines.append(self._html_tr + self._html_th +
-                         _thth.join([esc(h) for h in headers]) +
-                         self._html_th_close + self._html_tr_close)
+            lines.append(
+                self._html_tr
+                + self._html_th
+                + _thth.join([esc(h) for h in headers])
+                + self._html_th_close
+                + self._html_tr_close
+            )
             lines.append(self._html_thead_close)
-        trtd, _tdtd, _td_tr = (self._html_tr + self._html_td,
-                               self._html_td_close + self._html_td,
-                               self._html_td_close + self._html_tr_close)
+        trtd, _tdtd, _td_tr = (
+            self._html_tr + self._html_td,
+            self._html_td_close + self._html_td,
+            self._html_td_close + self._html_tr_close,
+        )
         lines.append(self._html_tbody)
         for row in self._data:
             if max_depth > 1:
@@ -545,7 +566,7 @@ class Table(object):
                         _fill_parts.append(esc(cell))
             else:
                 _fill_parts = [esc(c) for c in row]
-            lines.append(''.join([trtd, _tdtd.join(_fill_parts), _td_tr]))
+            lines.append("".join([trtd, _tdtd.join(_fill_parts), _td_tr]))
         lines.append(self._html_tbody_close)
 
     def _add_vertical_html_lines(self, lines, headers, max_depth):
@@ -570,7 +591,7 @@ class Table(object):
             else:
                 _fill_parts = [esc(row[i]) for row in self._data]
             line_parts.extend([td, _tdtd.join(_fill_parts), _td_tr])
-            lines.append(''.join(line_parts))
+            lines.append("".join(line_parts))
 
     def to_text(self, with_headers=True, maxlen=None):
         """Get the Table's textual representation. Only works well
@@ -583,18 +604,21 @@ class Table(object):
         lines = []
         widths = []
         headers = list(self.headers)
-        text_data = [[to_text(cell, maxlen=maxlen) for cell in row]
-                     for row in self._data]
+        text_data = [
+            [to_text(cell, maxlen=maxlen) for cell in row] for row in self._data
+        ]
         for idx in range(self._width):
             cur_widths = [len(cur) for cur in text_data]
             if with_headers:
                 cur_widths.append(len(to_text(headers[idx], maxlen=maxlen)))
             widths.append(max(cur_widths))
         if with_headers:
-            lines.append(' | '.join([h.center(widths[i])
-                                     for i, h in enumerate(headers)]))
-            lines.append('-|-'.join(['-' * w for w in widths]))
+            lines.append(
+                " | ".join([h.center(widths[i]) for i, h in enumerate(headers)])
+            )
+            lines.append("-|-".join(["-" * w for w in widths]))
         for row in text_data:
-            lines.append(' | '.join([cell.center(widths[j])
-                                     for j, cell in enumerate(row)]))
-        return '\n'.join(lines)
+            lines.append(
+                " | ".join([cell.center(widths[j]) for j, cell in enumerate(row)])
+            )
+        return "\n".join(lines)

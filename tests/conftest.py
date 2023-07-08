@@ -1,8 +1,7 @@
-import sys
 import re
+import sys
 
-
-_VERSION_MARKER = re.compile(r'_py(?P<major_version>\d)(?P<minor_version>\d)?')
+_VERSION_MARKER = re.compile(r"_py(?P<major_version>\d)(?P<minor_version>\d)?")
 
 
 def pytest_ignore_collect(path, config):
@@ -11,12 +10,12 @@ def pytest_ignore_collect(path, config):
     interpreter's major version.
     """
     filename = path.basename
-    modulename = filename.split('.', 1)[0]
+    modulename = filename.split(".", 1)[0]
     match = _VERSION_MARKER.search(modulename)
     if not match:
         return False
-    major_version = match.group('major_version')
-    minor_version = match.group('minor_version')
+    major_version = match.group("major_version")
+    minor_version = match.group("minor_version")
 
     if minor_version:
         version_match = (int(major_version), int(minor_version)) == sys.version_info[:2]

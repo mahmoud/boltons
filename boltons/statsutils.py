@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # Copyright (c) 2013, Mahmoud Hashemi
 #
 # Redistribution and use in source and binary forms, with or without
@@ -65,7 +63,7 @@ Statistical moments
 
 Python programmers are probably familiar with the concept of the
 *mean* or *average*, which gives a rough quantitiative middle value by
-which a sample can be can be generalized. However, the mean is just
+which a sample can be generalized. However, the mean is just
 the first of four `moment`_-based measures by which a sample or
 distribution can be measured.
 
@@ -127,20 +125,19 @@ system instrumentation package.
 
 """
 
-from __future__ import print_function
 
 import bisect
-from math import floor, ceil
+from math import ceil, floor
 
 
-class _StatsProperty(object):
+class _StatsProperty:
     def __init__(self, name, func):
         self.name = name
         self.func = func
-        self.internal_name = '_' + name
+        self.internal_name = "_" + name
 
-        doc = func.__doc__ or ''
-        pre_doctest_doc, _, _ = doc.partition('>>>')
+        doc = func.__doc__ or ""
+        pre_doctest_doc, _, _ = doc.partition(">>>")
         self.__doc__ = pre_doctest_doc
 
     def __get__(self, obj, objtype=None):
@@ -155,7 +152,7 @@ class _StatsProperty(object):
             return getattr(obj, self.internal_name)
 
 
-class Stats(object):
+class Stats:
     """The ``Stats`` type is used to represent a group of unordered
     statistical datapoints for calculations such as mean, median, and
     variance.
@@ -173,6 +170,7 @@ class Stats(object):
             step for a little speed boost. Defaults to False.
 
     """
+
     def __init__(self, data, default=0.0, use_copy=True, is_sorted=False):
         self._use_copy = use_copy
         self._is_sorted = is_sorted
@@ -183,9 +181,9 @@ class Stats(object):
 
         self.default = default
         cls = self.__class__
-        self._prop_attr_names = [a for a in dir(self)
-                                 if isinstance(getattr(cls, a, None),
-                                               _StatsProperty)]
+        self._prop_attr_names = [
+            a for a in dir(self) if isinstance(getattr(cls, a, None), _StatsProperty)
+        ]
         self._pearson_precision = 0
 
     def __len__(self):
@@ -235,7 +233,8 @@ class Stats(object):
         20
         """
         return len(self.data)
-    count = _StatsProperty('count', _calc_count)
+
+    count = _StatsProperty("count", _calc_count)
 
     def _calc_mean(self):
         """
@@ -248,7 +247,8 @@ class Stats(object):
         56.0
         """
         return sum(self.data, 0.0) / len(self.data)
-    mean = _StatsProperty('mean', _calc_mean)
+
+    mean = _StatsProperty("mean", _calc_mean)
 
     def _calc_max(self):
         """
@@ -260,7 +260,8 @@ class Stats(object):
         if self._is_sorted:
             return self.data[-1]
         return max(self.data)
-    max = _StatsProperty('max', _calc_max)
+
+    max = _StatsProperty("max", _calc_max)
 
     def _calc_min(self):
         """
@@ -272,7 +273,8 @@ class Stats(object):
         if self._is_sorted:
             return self.data[0]
         return min(self.data)
-    min = _StatsProperty('min', _calc_min)
+
+    min = _StatsProperty("min", _calc_min)
 
     def _calc_median(self):
         """
@@ -288,7 +290,8 @@ class Stats(object):
         48
         """
         return self._get_quantile(self._get_sorted_data(), 0.5)
-    median = _StatsProperty('median', _calc_median)
+
+    median = _StatsProperty("median", _calc_median)
 
     def _calc_iqr(self):
         """Inter-quartile range (IQR) is the difference between the 75th
@@ -302,7 +305,8 @@ class Stats(object):
         500
         """
         return self.get_quantile(0.75) - self.get_quantile(0.25)
-    iqr = _StatsProperty('iqr', _calc_iqr)
+
+    iqr = _StatsProperty("iqr", _calc_iqr)
 
     def _calc_trimean(self):
         """The trimean is a robust measure of central tendency, like the
@@ -320,7 +324,8 @@ class Stats(object):
         sorted_data = self._get_sorted_data()
         gq = lambda q: self._get_quantile(sorted_data, q)
         return (gq(0.25) + (2 * gq(0.5)) + gq(0.75)) / 4.0
-    trimean = _StatsProperty('trimean', _calc_trimean)
+
+    trimean = _StatsProperty("trimean", _calc_trimean)
 
     def _calc_variance(self):
         """\
@@ -332,7 +337,8 @@ class Stats(object):
         """
         global mean  # defined elsewhere in this file
         return mean(self._get_pow_diffs(2))
-    variance = _StatsProperty('variance', _calc_variance)
+
+    variance = _StatsProperty("variance", _calc_variance)
 
     def _calc_std_dev(self):
         """\
@@ -341,13 +347,14 @@ class Stats(object):
         >>> std_dev(range(97))
         28.0
         """
-        return self.variance ** 0.5
-    std_dev = _StatsProperty('std_dev', _calc_std_dev)
+        return self.variance**0.5
+
+    std_dev = _StatsProperty("std_dev", _calc_std_dev)
 
     def _calc_median_abs_dev(self):
         """\
         Median Absolute Deviation is a robust measure of statistical
-        dispersion: http://en.wikipedia.org/wiki/Median_absolute_deviation
+        dispersion: https://en.wikipedia.org/wiki/Median_absolute_deviation
 
         >>> median_abs_dev(range(97))
         24.0
@@ -356,14 +363,15 @@ class Stats(object):
         sorted_vals = sorted(self.data)
         x = float(median(sorted_vals))
         return median([abs(x - v) for v in sorted_vals])
-    median_abs_dev = _StatsProperty('median_abs_dev', _calc_median_abs_dev)
+
+    median_abs_dev = _StatsProperty("median_abs_dev", _calc_median_abs_dev)
     mad = median_abs_dev  # convenience
 
     def _calc_rel_std_dev(self):
         """\
         Standard deviation divided by the absolute value of the average.
 
-        http://en.wikipedia.org/wiki/Relative_standard_deviation
+        https://en.wikipedia.org/wiki/Relative_standard_deviation
 
         >>> print('%1.3f' % rel_std_dev(range(97)))
         0.583
@@ -373,14 +381,15 @@ class Stats(object):
             return self.std_dev / abs_mean
         else:
             return self.default
-    rel_std_dev = _StatsProperty('rel_std_dev', _calc_rel_std_dev)
+
+    rel_std_dev = _StatsProperty("rel_std_dev", _calc_rel_std_dev)
 
     def _calc_skewness(self):
         """\
         Indicates the asymmetry of a curve. Positive values mean the bulk
         of the values are on the left side of the average and vice versa.
 
-        http://en.wikipedia.org/wiki/Skewness
+        https://en.wikipedia.org/wiki/Skewness
 
         See the module docstring for more about statistical moments.
 
@@ -393,11 +402,11 @@ class Stats(object):
         """
         data, s_dev = self.data, self.std_dev
         if len(data) > 1 and s_dev > 0:
-            return (sum(self._get_pow_diffs(3)) /
-                    float((len(data) - 1) * (s_dev ** 3)))
+            return sum(self._get_pow_diffs(3)) / float((len(data) - 1) * (s_dev**3))
         else:
             return self.default
-    skewness = _StatsProperty('skewness', _calc_skewness)
+
+    skewness = _StatsProperty("skewness", _calc_skewness)
 
     def _calc_kurtosis(self):
         """\
@@ -405,7 +414,7 @@ class Stats(object):
         result is always positive, with the normal "bell-curve"
         distribution having a kurtosis of 3.
 
-        http://en.wikipedia.org/wiki/Kurtosis
+        https://en.wikipedia.org/wiki/Kurtosis
 
         See the module docstring for more about statistical moments.
 
@@ -417,17 +426,17 @@ class Stats(object):
         """
         data, s_dev = self.data, self.std_dev
         if len(data) > 1 and s_dev > 0:
-            return (sum(self._get_pow_diffs(4)) /
-                    float((len(data) - 1) * (s_dev ** 4)))
+            return sum(self._get_pow_diffs(4)) / float((len(data) - 1) * (s_dev**4))
         else:
             return 0.0
-    kurtosis = _StatsProperty('kurtosis', _calc_kurtosis)
+
+    kurtosis = _StatsProperty("kurtosis", _calc_kurtosis)
 
     def _calc_pearson_type(self):
         precision = self._pearson_precision
         skewness = self.skewness
         kurtosis = self.kurtosis
-        beta1 = skewness ** 2.0
+        beta1 = skewness**2.0
         beta2 = kurtosis * 1.0
 
         # TODO: range checks?
@@ -447,11 +456,12 @@ class Stats(object):
         elif round(c2, precision) == 0:
             return 3  # Gamma
         else:
-            k = c1 ** 2 / (4 * c0 * c2)
+            k = c1**2 / (4 * c0 * c2)
             if k < 0:
                 return 1  # Beta
-        raise RuntimeError('missed a spot')
-    pearson_type = _StatsProperty('pearson_type', _calc_pearson_type)
+        raise RuntimeError("missed a spot")
+
+    pearson_type = _StatsProperty("pearson_type", _calc_pearson_type)
 
     @staticmethod
     def _get_quantile(sorted_data, q):
@@ -473,7 +483,7 @@ class Stats(object):
         """
         q = float(q)
         if not 0.0 <= q <= 1.0:
-            raise ValueError('expected q between 0.0 and 1.0, not %r' % q)
+            raise ValueError("expected q between 0.0 and 1.0, not %r" % q)
         elif not self.data:
             return self.default
         return self._get_quantile(self._get_sorted_data(), q)
@@ -488,9 +498,9 @@ class Stats(object):
             if value == mean:
                 return 0
             if value > mean:
-                return float('inf')
+                return float("inf")
             if value < mean:
-                return float('-inf')
+                return float("-inf")
         return (float(value) - mean) / self.std_dev
 
     def trim_relative(self, amount=0.15):
@@ -510,8 +520,7 @@ class Stats(object):
         """
         trim = float(amount)
         if not 0.0 <= trim < 0.5:
-            raise ValueError('expected amount between 0.0 and 0.5, not %r'
-                             % trim)
+            raise ValueError("expected amount between 0.0 and 0.5, not %r" % trim)
         size = len(self.data)
         size_diff = int(size * trim)
         if size_diff == 0.0:
@@ -572,9 +581,9 @@ class Stats(object):
         :meth:`~Stats.format_histogram` method. This can be useful for
         snapshotting over time.
         """
-        bin_digits = int(kw.pop('bin_digits', 1))
+        bin_digits = int(kw.pop("bin_digits", 1))
         if kw:
-            raise TypeError('unexpected keyword arguments: %r' % kw.keys())
+            raise TypeError("unexpected keyword arguments: %r" % kw.keys())
 
         if not bins:
             bins = self._get_bin_bounds()
@@ -585,15 +594,17 @@ class Stats(object):
                 try:
                     bins = [float(x) for x in bins]
                 except Exception:
-                    raise ValueError('bins expected integer bin count or list'
-                                     ' of float bin boundaries, not %r' % bins)
+                    raise ValueError(
+                        "bins expected integer bin count or list"
+                        " of float bin boundaries, not %r" % bins
+                    )
                 if self.min < bins[0]:
                     bins = [self.min] + bins
             else:
                 bins = self._get_bin_bounds(bin_count)
 
         # floor and ceil really should have taken ndigits, like round()
-        round_factor = 10.0 ** bin_digits
+        round_factor = 10.0**bin_digits
         bins = [floor(b * round_factor) / round_factor for b in bins]
         bins = sorted(set(bins))
 
@@ -655,12 +666,10 @@ class Stats(object):
 
         .. _Freedman's algorithm: https://en.wikipedia.org/wiki/Freedman%E2%80%93Diaconis_rule
         """
-        width = kw.pop('width', None)
-        format_bin = kw.pop('format_bin', None)
+        width = kw.pop("width", None)
+        format_bin = kw.pop("format_bin", None)
         bin_counts = self.get_histogram_counts(bins=bins, **kw)
-        return format_histogram_counts(bin_counts,
-                                       width=width,
-                                       format_bin=format_bin)
+        return format_histogram_counts(bin_counts, width=width, format_bin=format_bin)
 
     def describe(self, quantiles=None, format=None):
         """Provides standard summary statistics for the data in the Stats
@@ -701,32 +710,36 @@ class Stats(object):
 
         """
         if format is None:
-            format = 'dict'
-        elif format not in ('dict', 'list', 'text'):
-            raise ValueError('invalid format for describe,'
-                             ' expected one of "dict"/"list"/"text", not %r'
-                             % format)
+            format = "dict"
+        elif format not in ("dict", "list", "text"):
+            raise ValueError(
+                "invalid format for describe,"
+                ' expected one of "dict"/"list"/"text", not %r' % format
+            )
         quantiles = quantiles or [0.25, 0.5, 0.75]
         q_items = []
         for q in quantiles:
             q_val = self.get_quantile(q)
             q_items.append((str(q), q_val))
 
-        items = [('count', self.count),
-                 ('mean', self.mean),
-                 ('std_dev', self.std_dev),
-                 ('mad', self.mad),
-                 ('min', self.min)]
+        items = [
+            ("count", self.count),
+            ("mean", self.mean),
+            ("std_dev", self.std_dev),
+            ("mad", self.mad),
+            ("min", self.min),
+        ]
 
         items.extend(q_items)
-        items.append(('max', self.max))
-        if format == 'dict':
+        items.append(("max", self.max))
+        if format == "dict":
             ret = dict(items)
-        elif format == 'list':
+        elif format == "list":
             ret = items
-        elif format == 'text':
-            ret = '\n'.join(['%s%s' % ((label + ':').ljust(10), val)
-                             for label, val in items])
+        elif format == "text":
+            ret = "\n".join(
+                ["{}{}".format((label + ":").ljust(10), val) for label, val in items]
+            )
         return ret
 
 
@@ -754,21 +767,21 @@ def describe(data, quantiles=None, format=None):
 
 def _get_conv_func(attr_name):
     def stats_helper(data, default=0.0):
-        return getattr(Stats(data, default=default, use_copy=False),
-                       attr_name)
+        return getattr(Stats(data, default=default, use_copy=False), attr_name)
+
     return stats_helper
 
 
 for attr_name, attr in list(Stats.__dict__.items()):
     if isinstance(attr, _StatsProperty):
-        if attr_name in ('max', 'min', 'count'):  # don't shadow builtins
+        if attr_name in ("max", "min", "count"):  # don't shadow builtins
             continue
-        if attr_name in ('mad',):  # convenience aliases
+        if attr_name in ("mad",):  # convenience aliases
             continue
         func = _get_conv_func(attr_name)
         func.__doc__ = attr.func.__doc__
         globals()[attr_name] = func
-        delattr(Stats, '_calc_' + attr_name)
+        delattr(Stats, "_calc_" + attr_name)
 # cleanup
 del attr
 del attr_name
@@ -793,6 +806,7 @@ def format_histogram_counts(bin_counts, width=None, format_bin=None):
     if not width:
         try:
             import shutil  # python 3 convenience
+
             width = shutil.get_terminal_size()[0]
         except Exception:
             width = 80
@@ -801,21 +815,23 @@ def format_histogram_counts(bin_counts, width=None, format_bin=None):
     count_max = max([count for _, count in bin_counts])
     count_cols = len(str(count_max))
 
-    labels = ['%s' % format_bin(b) for b in bins]
+    labels = ["%s" % format_bin(b) for b in bins]
     label_cols = max([len(l) for l in labels])
-    tmp_line = '%s: %s #' % ('x' * label_cols, count_max)
+    tmp_line = "{}: {} #".format("x" * label_cols, count_max)
 
     bar_cols = max(width - len(tmp_line), 3)
     line_k = float(bar_cols) / count_max
     tmpl = "{label:>{label_cols}}: {count:>{count_cols}} {bar}"
     for label, (bin_val, count) in zip(labels, bin_counts):
         bar_len = int(round(count * line_k))
-        bar = ('#' * bar_len) or '|'
-        line = tmpl.format(label=label,
-                           label_cols=label_cols,
-                           count=count,
-                           count_cols=count_cols,
-                           bar=bar)
+        bar = ("#" * bar_len) or "|"
+        line = tmpl.format(
+            label=label,
+            label_cols=label_cols,
+            count=count,
+            count_cols=count_cols,
+            bar=bar,
+        )
         lines.append(line)
 
-    return '\n'.join(lines)
+    return "\n".join(lines)

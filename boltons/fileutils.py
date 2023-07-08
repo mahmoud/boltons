@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # Copyright (c) 2013, Mahmoud Hashemi
 #
 # Redistribution and use in source and binary forms, with or without
@@ -34,32 +32,50 @@
 disk contents, and ``fileutils`` collects solutions to some of the
 most commonly-found gaps in the standard library.
 """
-
-from __future__ import print_function
-
-import os
-import re
-import sys
-import stat
 import errno
 import fnmatch
-from shutil import copy2, copystat, Error
+import os
+import re
+import stat
+import warnings
+from functools import wraps
+from pathlib import Path
+from shutil import Error, copy2, copystat
+
+try:
+    from typing import deprecated as typing_deprecated
+except ImportError:
+    typing_deprecated = None
 
 
-__all__ = ['mkdir_p', 'atomic_save', 'AtomicSaver', 'FilePerms',
-           'iter_find_files', 'copytree']
+def deprecated(f, msg: str):
+    @wraps(f)
+    def wrapper(*args, **kwargs):
+        warnings.warn(msg, DeprecationWarning)
+        if typing_deprecated:
+            return typing_deprecated(f(*args, **kwargs))
+        return f(*args, **kwargs)
+
+    return wrapper
+
+
+__all__ = [
+    "mkdir_p",
+    "atomic_save",
+    "AtomicSaver",
+    "FilePerms",
+    "iter_find_files",
+    "copytree",
+]
 
 
 FULL_PERMS = 511  # 0777 that both Python 2 and 3 can digest
 RW_PERMS = 438
 _SINGLE_FULL_PERM = 7  # or 07 in Python 2
-try:
-    basestring
-except NameError:
-    unicode = str  # Python 3 compat
-    basestring = (str, bytes)
+basestring = (str, bytes)
 
 
+@deprecated("Use pathlib.Path.mkdir(parents=True, exist_ok=True")
 def mkdir_p(path):
     """Creates a directory and any parent directories that may need to
     be created along the way, without raising errors for any existing
@@ -67,16 +83,10 @@ def mkdir_p(path):
     command available in Linux/BSD environments, but also works on
     Windows.
     """
-    try:
-        os.makedirs(path)
-    except OSError as exc:
-        if exc.errno == errno.EEXIST and os.path.isdir(path):
-            return
-        raise
-    return
+    Path(path).mkdir(parents=True, exist_ok=True)
 
 
-class FilePerms(object):
+class FilePerms:
     """The :class:`FilePerms` type is used to represent standard POSIX
     filesystem permissions:
 
@@ -92,7 +102,7 @@ class FilePerms(object):
 
     This class assists with computing new permissions, as well as
     working with numeric octal ``777``-style and ``rwx``-style
-    permissions. Currently it only considers the bottom 9 permission
+    permissions. Currently, it only considers the bottom 9 permission
     bits; it does not support sticky bits or more advanced permission
     systems.
 
@@ -117,11 +127,12 @@ class FilePerms(object):
     :meth:`FilePerms.from_path` classmethods for useful alternative
     ways to construct :class:`FilePerms` objects.
     """
+
     # TODO: consider more than the lower 9 bits
-    class _FilePermProperty(object):
-        _perm_chars = 'rwx'
-        _perm_set = frozenset('rwx')
-        _perm_val = {'r': 4, 'w': 2, 'x': 1}  # for sorting
+    class _FilePermProperty:
+        _perm_chars = "rwx"
+        _perm_set = frozenset("rwx")
+        _perm_val = {"r": 4, "w": 2, "x": 1}  # for sorting
 
         def __init__(self, attribute, offset):
             self.attribute = attribute
@@ -139,29 +150,29 @@ class FilePerms(object):
             try:
                 invalid_chars = set(str(value)) - self._perm_set
             except TypeError:
-                raise TypeError('expected string, not %r' % value)
+                raise TypeError("expected string, not %r" % value)
             if invalid_chars:
-                raise ValueError('got invalid chars %r in permission'
-                                 ' specification %r, expected empty string'
-                                 ' or one or more of %r'
-                                 % (invalid_chars, value, self._perm_chars))
+                raise ValueError(
+                    "got invalid chars %r in permission"
+                    " specification %r, expected empty string"
+                    " or one or more of %r" % (invalid_chars, value, self._perm_chars)
+                )
 
             sort_key = lambda c: self._perm_val[c]
-            new_value = ''.join(sorted(set(value),
-                                       key=sort_key, reverse=True))
+            new_value = "".join(sorted(set(value), key=sort_key, reverse=True))
             setattr(fp_obj, self.attribute, new_value)
             self._update_integer(fp_obj, new_value)
 
         def _update_integer(self, fp_obj, value):
             mode = 0
-            key = 'xwr'
+            key = "xwr"
             for symbol in value:
                 bit = 2 ** key.index(symbol)
-                mode |= (bit << (self.offset * 3))
+                mode |= bit << (self.offset * 3)
             fp_obj._integer |= mode
 
-    def __init__(self, user='', group='', other=''):
-        self._user, self._group, self._other = '', '', ''
+    def __init__(self, user="", group="", other=""):
+        self._user, self._group, self._other = "", "", ""
         self._integer = 0
         self.user = user
         self.group = group
@@ -175,7 +186,7 @@ class FilePerms(object):
         FilePerms(user='rw', group='r', other='r')
         """
         i &= FULL_PERMS
-        key = ('', 'x', 'w', 'xw', 'r', 'rx', 'rw', 'rwx')
+        key = ("", "x", "w", "xw", "r", "rx", "rw", "rwx")
         parts = []
         while i:
             parts.append(key[i & _SINGLE_FULL_PERM])
@@ -204,38 +215,46 @@ class FilePerms(object):
         return self._integer
 
     # Sphinx tip: attribute docstrings come after the attribute
-    user = _FilePermProperty('_user', 2)
+    user = _FilePermProperty("_user", 2)
     "Stores the ``rwx``-formatted *user* permission."
-    group = _FilePermProperty('_group', 1)
+    group = _FilePermProperty("_group", 1)
     "Stores the ``rwx``-formatted *group* permission."
-    other = _FilePermProperty('_other', 0)
+    other = _FilePermProperty("_other", 0)
     "Stores the ``rwx``-formatted *other* permission."
 
     def __repr__(self):
         cn = self.__class__.__name__
-        return ('%s(user=%r, group=%r, other=%r)'
-                % (cn, self.user, self.group, self.other))
+        return "{}(user={!r}, group={!r}, other={!r})".format(
+            cn,
+            self.user,
+            self.group,
+            self.other,
+        )
+
 
 ####
 
 
 _TEXT_OPENFLAGS = os.O_RDWR | os.O_CREAT | os.O_EXCL
-if hasattr(os, 'O_NOINHERIT'):
+if hasattr(os, "O_NOINHERIT"):
     _TEXT_OPENFLAGS |= os.O_NOINHERIT
-if hasattr(os, 'O_NOFOLLOW'):
+if hasattr(os, "O_NOFOLLOW"):
     _TEXT_OPENFLAGS |= os.O_NOFOLLOW
 _BIN_OPENFLAGS = _TEXT_OPENFLAGS
-if hasattr(os, 'O_BINARY'):
+if hasattr(os, "O_BINARY"):
     _BIN_OPENFLAGS |= os.O_BINARY
 
 
 try:
     import fcntl as fcntl
 except ImportError:
+
     def set_cloexec(fd):
         "Dummy set_cloexec for platforms without fcntl support"
         pass
+
 else:
+
     def set_cloexec(fd):
         """Does a best-effort :func:`fcntl.fcntl` call to set a fd to be
         automatically closed by any future child processes.
@@ -244,7 +263,7 @@ else:
         """
         try:
             flags = fcntl.fcntl(fd, fcntl.F_GETFD, 0)
-        except IOError:
+        except OSError:
             pass
         else:
             # flags read successfully, modify
@@ -269,21 +288,18 @@ def atomic_save(dest_path, **kwargs):
     return AtomicSaver(dest_path, **kwargs)
 
 
+@deprecated("This function only returns the argument")
 def path_to_unicode(path):
-    if isinstance(path, unicode):
-        return path
-    encoding = sys.getfilesystemencoding() or sys.getdefaultencoding()
-    return path.decode(encoding)
+    return path
 
 
-if os.name == 'nt':
+if os.name == "nt":
     import ctypes
     from ctypes import c_wchar_p
     from ctypes.wintypes import DWORD, LPVOID
 
     _ReplaceFile = ctypes.windll.kernel32.ReplaceFile
-    _ReplaceFile.argtypes = [c_wchar_p, c_wchar_p, c_wchar_p,
-                             DWORD, LPVOID, LPVOID]
+    _ReplaceFile.argtypes = [c_wchar_p, c_wchar_p, c_wchar_p, DWORD, LPVOID, LPVOID]
 
     def replace(src, dst):
         # argument names match stdlib docs, docstring below
@@ -292,7 +308,7 @@ if os.name == 'nt':
             # first try to rename it into position
             os.rename(src, dst)
             return
-        except WindowsError as we:
+        except OSError as we:
             if we.errno == errno.EEXIST:
                 pass  # continue with the ReplaceFile logic below
             else:
@@ -300,10 +316,9 @@ if os.name == 'nt':
 
         src = path_to_unicode(src)
         dst = path_to_unicode(dst)
-        res = _ReplaceFile(c_wchar_p(dst), c_wchar_p(src),
-                           None, 0, None, None)
+        res = _ReplaceFile(c_wchar_p(dst), c_wchar_p(src), None, 0, None, None)
         if not res:
-            raise OSError('failed to replace %r with %r' % (dst, src))
+            raise OSError(f"failed to replace {dst!r} with {src!r}")
         return
 
     def atomic_rename(src, dst, overwrite=False):
@@ -313,6 +328,7 @@ if os.name == 'nt':
         else:
             os.rename(src, dst)
         return
+
 else:
     # wrapper func for cross compat + docs
     def replace(src, dst):
@@ -340,7 +356,7 @@ possible atomicity on a range of filesystems.
 """
 
 
-class AtomicSaver(object):
+class AtomicSaver:
     """``AtomicSaver`` is a configurable `context manager`_ that provides
     a writable :class:`file` which will be moved into place as long as
     no exceptions are raised within the context manager's block. These
@@ -390,28 +406,29 @@ class AtomicSaver(object):
     .. _umask: https://en.wikipedia.org/wiki/Umask
 
     """
+
     _default_file_perms = RW_PERMS
 
     # TODO: option to abort if target file modify date has changed since start?
     def __init__(self, dest_path, **kwargs):
         self.dest_path = dest_path
-        self.overwrite = kwargs.pop('overwrite', True)
-        self.file_perms = kwargs.pop('file_perms', None)
-        self.overwrite_part = kwargs.pop('overwrite_part', False)
-        self.part_filename = kwargs.pop('part_file', None)
-        self.rm_part_on_exc = kwargs.pop('rm_part_on_exc', True)
-        self.text_mode = kwargs.pop('text_mode', False)
-        self.buffering = kwargs.pop('buffering', -1)
+        self.overwrite = kwargs.pop("overwrite", True)
+        self.file_perms = kwargs.pop("file_perms", None)
+        self.overwrite_part = kwargs.pop("overwrite_part", False)
+        self.part_filename = kwargs.pop("part_file", None)
+        self.rm_part_on_exc = kwargs.pop("rm_part_on_exc", True)
+        self.text_mode = kwargs.pop("text_mode", False)
+        self.buffering = kwargs.pop("buffering", -1)
         if kwargs:
-            raise TypeError('unexpected kwargs: %r' % (kwargs.keys(),))
+            raise TypeError(f"unexpected kwargs: {kwargs.keys()!r}")
 
         self.dest_path = os.path.abspath(self.dest_path)
         self.dest_dir = os.path.dirname(self.dest_path)
         if not self.part_filename:
-            self.part_path = dest_path + '.part'
+            self.part_path = dest_path + ".part"
         else:
             self.part_path = os.path.join(self.dest_dir, self.part_filename)
-        self.mode = 'w+' if self.text_mode else 'w+b'
+        self.mode = "w+" if self.text_mode else "w+b"
         self.open_flags = _TEXT_OPENFLAGS if self.text_mode else _BIN_OPENFLAGS
 
         self.part_file = None
@@ -424,7 +441,7 @@ class AtomicSaver(object):
                 # try to copy from file being replaced
                 stat_res = os.stat(self.dest_path)
                 file_perms = stat.S_IMODE(stat_res.st_mode)
-            except (OSError, IOError):
+            except OSError:
                 # default if no destination file exists
                 file_perms = self._default_file_perms
                 do_chmod = False  # respect the umask
@@ -438,7 +455,7 @@ class AtomicSaver(object):
         if do_chmod:
             try:
                 os.chmod(self.part_path, file_perms)
-            except (OSError, IOError):
+            except OSError:
                 self.part_file.close()
                 raise
         return
@@ -459,9 +476,11 @@ class AtomicSaver(object):
         """
         if os.path.lexists(self.dest_path):
             if not self.overwrite:
-                raise OSError(errno.EEXIST,
-                              'Overwrite disabled and file already exists',
-                              self.dest_path)
+                raise OSError(
+                    errno.EEXIST,
+                    "Overwrite disabled and file already exists",
+                    self.dest_path,
+                )
         if self.overwrite_part and os.path.lexists(self.part_path):
             os.unlink(self.part_path)
         self._open_part_file()
@@ -481,8 +500,7 @@ class AtomicSaver(object):
                     pass  # avoid masking original error
             return
         try:
-            atomic_rename(self.part_path, self.dest_path,
-                          overwrite=self.overwrite)
+            atomic_rename(self.part_path, self.dest_path, overwrite=self.overwrite)
         except OSError:
             if self.rm_part_on_exc:
                 try:
@@ -524,13 +542,13 @@ def iter_find_files(directory, patterns, ignored=None, include_dirs=False):
     """
     if isinstance(patterns, basestring):
         patterns = [patterns]
-    pats_re = re.compile('|'.join([fnmatch.translate(p) for p in patterns]))
+    pats_re = re.compile("|".join([fnmatch.translate(p) for p in patterns]))
 
     if not ignored:
         ignored = []
     elif isinstance(ignored, basestring):
         ignored = [ignored]
-    ign_re = re.compile('|'.join([fnmatch.translate(p) for p in ignored]))
+    ign_re = re.compile("|".join([fnmatch.translate(p) for p in ignored]))
     for root, dirs, files in os.walk(directory):
         if include_dirs:
             for basename in dirs:
@@ -596,7 +614,7 @@ def copy_tree(src, dst, symlinks=False, ignore=None):
         # continue with other files
         except Error as e:
             errors.extend(e.args[0])
-        except EnvironmentError as why:
+        except OSError as why:
             errors.append((srcname, dstname, str(why)))
     try:
         copystat(src, dst)
@@ -623,7 +641,7 @@ except NameError:
 class DummyFile(file):
     # TODO: raise ValueErrors on closed for all methods?
     # TODO: enforce read/write
-    def __init__(self, path, mode='r', buffering=None):
+    def __init__(self, path, mode="r", buffering=None):
         self.name = path
         self.mode = mode
         self.closed = False
@@ -641,7 +659,7 @@ class DummyFile(file):
 
     def flush(self):
         if self.closed:
-            raise ValueError('I/O operation on a closed file')
+            raise ValueError("I/O operation on a closed file")
         return
 
     def next(self):
@@ -649,42 +667,42 @@ class DummyFile(file):
 
     def read(self, size=0):
         if self.closed:
-            raise ValueError('I/O operation on a closed file')
-        return ''
+            raise ValueError("I/O operation on a closed file")
+        return ""
 
     def readline(self, size=0):
         if self.closed:
-            raise ValueError('I/O operation on a closed file')
-        return ''
+            raise ValueError("I/O operation on a closed file")
+        return ""
 
     def readlines(self, size=0):
         if self.closed:
-            raise ValueError('I/O operation on a closed file')
+            raise ValueError("I/O operation on a closed file")
         return []
 
     def seek(self):
         if self.closed:
-            raise ValueError('I/O operation on a closed file')
+            raise ValueError("I/O operation on a closed file")
         return
 
     def tell(self):
         if self.closed:
-            raise ValueError('I/O operation on a closed file')
+            raise ValueError("I/O operation on a closed file")
         return 0
 
     def truncate(self):
         if self.closed:
-            raise ValueError('I/O operation on a closed file')
+            raise ValueError("I/O operation on a closed file")
         return
 
     def write(self, string):
         if self.closed:
-            raise ValueError('I/O operation on a closed file')
+            raise ValueError("I/O operation on a closed file")
         return
 
     def writelines(self, list_of_strings):
         if self.closed:
-            raise ValueError('I/O operation on a closed file')
+            raise ValueError("I/O operation on a closed file")
         return
 
     def __next__(self):
@@ -692,14 +710,14 @@ class DummyFile(file):
 
     def __enter__(self):
         if self.closed:
-            raise ValueError('I/O operation on a closed file')
+            raise ValueError("I/O operation on a closed file")
         return
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         return
 
 
-if __name__ == '__main__':
-    with atomic_save('/tmp/final.txt') as f:
-        f.write('rofl')
-        f.write('\n')
+if __name__ == "__main__":
+    with atomic_save("/tmp/final.txt") as f:
+        f.write("rofl")
+        f.write("\n")

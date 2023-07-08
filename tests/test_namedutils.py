@@ -1,14 +1,9 @@
-# -*- coding: utf-8 -*-
-
-try:
-    from cPickle import loads, dumps
-except:
-    from pickle import loads, dumps
+from pickle import dumps, loads
 
 from boltons.namedutils import namedlist, namedtuple
 
-Point = namedtuple('Point', 'x, y', rename=True)
-MutablePoint = namedlist('MutablePoint', 'x, y', rename=True)
+Point = namedtuple("Point", "x, y", rename=True)
+MutablePoint = namedlist("MutablePoint", "x, y", rename=True)
 
 
 def test_namedlist():
