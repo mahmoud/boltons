@@ -63,7 +63,7 @@ Statistical moments
 
 Python programmers are probably familiar with the concept of the
 *mean* or *average*, which gives a rough quantitiative middle value by
-which a sample can be can be generalized. However, the mean is just
+which a sample can be generalized. However, the mean is just
 the first of four `moment`_-based measures by which a sample or
 distribution can be measured.
 

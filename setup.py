@@ -6,7 +6,7 @@ tested.
 
 Contains over 250 BSD-licensed utility types and functions that can be
 used as a package or independently. `Extensively documented on Read
-the Docs <http://boltons.readthedocs.org>`_.
+the Docs <https://boltons.readthedocs.org>`_.
 """
 
 from setuptools import setup

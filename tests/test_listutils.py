@@ -1,5 +1,3 @@
-import sys
-
 from boltons.listutils import BarrelList, SplayList
 
 

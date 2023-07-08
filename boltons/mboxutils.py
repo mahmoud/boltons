@@ -39,6 +39,8 @@ import tempfile
 
 DEFAULT_MAXMEM = 4 * 1024 * 1024  # 4MB
 
+__all__ = ["mbox_readonlydir"]
+
 
 class mbox_readonlydir(mailbox.mbox):
     """A subclass of :class:`mailbox.mbox` suitable for use with mboxs

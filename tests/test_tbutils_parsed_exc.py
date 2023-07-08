@@ -1,9 +1,8 @@
-
 from boltons.tbutils import ParsedException
 
 
 def test_parsed_exc_basic():
-    _tb_str = u"""\
+    _tb_str = """\
 Traceback (most recent call last):
   File "example.py", line 2, in <module>
     plarp
@@ -11,12 +10,16 @@ NameError: name 'plarp' is not defined"""
 
     parsed_tb = ParsedException.from_string(_tb_str)
     print(parsed_tb)
-    assert parsed_tb.exc_type == 'NameError'
+    assert parsed_tb.exc_type == "NameError"
     assert parsed_tb.exc_msg == "name 'plarp' is not defined"
-    assert parsed_tb.frames == [{'source_line': u'plarp',
-                                 'filepath': u'example.py',
-                                 'lineno': u'2',
-                                 'funcname': u'<module>'}]
+    assert parsed_tb.frames == [
+        {
+            "source_line": "plarp",
+            "filepath": "example.py",
+            "lineno": "2",
+            "funcname": "<module>",
+        }
+    ]
 
     assert parsed_tb.to_string() == _tb_str
 
@@ -25,7 +28,7 @@ def test_parsed_exc_nosrcline():
     """just making sure that everything can be parsed even if there is
     a line without source and also if the exception has no message"""
 
-    _tb_str = u"""\
+    _tb_str = """\
 Traceback (most recent call last):
   File "/home/mahmoud/virtualenvs/chert/bin/chert", line 9, in <module>
     load_entry_point('chert==0.2.1.dev0', 'console_scripts', 'chert')()
@@ -42,19 +45,22 @@ RuntimeError"""
 
     parsed_tb = ParsedException.from_string(_tb_str)
 
-    assert parsed_tb.exc_type == 'RuntimeError'
-    assert parsed_tb.exc_msg == ''
+    assert parsed_tb.exc_type == "RuntimeError"
+    assert parsed_tb.exc_msg == ""
 
     assert len(parsed_tb.frames) == 6
-    assert parsed_tb.frames[3] == {'source_line': u'',
-                                   'filepath': u'<boltons.FunctionBuilder-0>',
-                                   'lineno': u'2',
-                                   'funcname': u'load'}
+    assert parsed_tb.frames[3] == {
+        "source_line": "",
+        "filepath": "<boltons.FunctionBuilder-0>",
+        "lineno": "2",
+        "funcname": "load",
+    }
     assert parsed_tb.to_string() == _tb_str
+
 
 def test_parsed_exc_with_anchor():
     """parse a traceback with anchor lines beneath source lines"""
-    _tb_str = u"""\
+    _tb_str = """\
 Traceback (most recent call last):
   File "main.py", line 3, in <module>
     print(add(1, "two"))
@@ -66,18 +72,26 @@ TypeError: unsupported operand type(s) for +: 'int' and 'str'"""
 
     parsed_tb = ParsedException.from_string(_tb_str)
 
-    assert parsed_tb.exc_type == 'TypeError'
+    assert parsed_tb.exc_type == "TypeError"
     assert parsed_tb.exc_msg == "unsupported operand type(s) for +: 'int' and 'str'"
-    assert parsed_tb.frames == [{'source_line': u'print(add(1, "two"))',
-                                  'filepath': u'main.py',
-                                  'lineno': u'3',
-                                  'funcname': u'<module>'},
-                                  {'source_line': u'return a + b',
-                                  'filepath': u'add.py',
-                                  'lineno': u'2',
-                                  'funcname': u'add'}]
-    
+    assert parsed_tb.frames == [
+        {
+            "source_line": 'print(add(1, "two"))',
+            "filepath": "main.py",
+            "lineno": "3",
+            "funcname": "<module>",
+        },
+        {
+            "source_line": "return a + b",
+            "filepath": "add.py",
+            "lineno": "2",
+            "funcname": "add",
+        },
+    ]
+
     # Note: not checking the anchor lines (indices 3, 6) because column details not currently stored in ParsedException
     _tb_str_lines = _tb_str.splitlines()
-    _tb_str_without_anchor = "\n".join(_tb_str_lines[:3] + _tb_str_lines[4:6] + _tb_str_lines[7:])
+    _tb_str_without_anchor = "\n".join(
+        _tb_str_lines[:3] + _tb_str_lines[4:6] + _tb_str_lines[7:]
+    )
     assert parsed_tb.to_string() == _tb_str_without_anchor

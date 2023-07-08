@@ -1,4 +1,3 @@
-
 from collections import namedtuple
 
 from pytest import raises
@@ -13,21 +12,21 @@ def test_trace_dict():
     assert target is not wrapped
     assert isinstance(wrapped, dict)
 
-    wrapped['a'] = 'A'
-    assert target['a'] == 'A'
+    wrapped["a"] = "A"
+    assert target["a"] == "A"
     assert len(wrapped) == len(target)
 
-    wrapped.pop('a')
-    assert 'a' not in target
+    wrapped.pop("a")
+    assert "a" not in target
 
     with raises(AttributeError):
-        wrapped.nonexistent_attr = 'nope'
+        wrapped.nonexistent_attr = "nope"
 
     return
 
 
 def test_trace_bytes():
-    target = u'Hello'.encode('ascii')
+    target = b"Hello"
 
     wrapped = wrap_trace(target)
 
@@ -35,7 +34,7 @@ def test_trace_bytes():
     assert isinstance(wrapped, bytes)
 
     assert len(wrapped) == len(target)
-    assert wrapped.decode('utf-8') == u'Hello'
+    assert wrapped.decode("utf-8") == "Hello"
     assert wrapped.lower() == target.lower()
 
 
@@ -43,7 +42,7 @@ def test_trace_exc():
     class TestException(Exception):
         pass
 
-    target = TestException('exceptions can be a good thing')
+    target = TestException("exceptions can be a good thing")
     wrapped = wrap_trace(target)
 
     try:
@@ -57,15 +56,15 @@ def test_trace_which():
         def __init__(self, value):
             self.value = value
 
-    config = Config('first')
-    wrapped = wrap_trace(config, which='__setattr__')
+    config = Config("first")
+    wrapped = wrap_trace(config, which="__setattr__")
 
-    wrapped.value = 'second'
-    assert config.value == 'second'
+    wrapped.value = "second"
+    assert config.value == "second"
 
 
 def test_trace_namedtuple():
-    TargetType = namedtuple('TargetType', 'x y z')
+    TargetType = namedtuple("TargetType", "x y z")
     target = TargetType(1, 2, 3)
 
     wrapped = wrap_trace(target)

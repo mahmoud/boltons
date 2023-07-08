@@ -45,13 +45,13 @@ from bisect import bisect_left
 from collections.abc import MutableSet
 from itertools import chain, islice
 
-try:
-    from .typeutils import make_sentinel
 
-    _MISSING = make_sentinel(var_name="_MISSING")
-except ImportError:
-    _MISSING = object()
+class _Sentinel:
+    def __eq__(self, other):
+        return other is self
 
+
+_MISSING = _Sentinel()
 
 __all__ = ["IndexedSet", "complement"]
 

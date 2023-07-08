@@ -39,25 +39,24 @@ import inspect
 import itertools
 import re
 import sys
+from functools import partialmethod
 from inspect import formatannotation
 from types import FunctionType, MethodType
 
-make_method = lambda desc, obj, obj_type: MethodType(desc, obj)
 basestring = (str, bytes)
 _inspect_iscoroutinefunction = inspect.iscoroutinefunction
 
 
-try:
-    from .typeutils import make_sentinel
+def make_method(desc, obj, obj_type):
+    return MethodType(desc, obj)
 
-    NO_DEFAULT = make_sentinel(var_name="NO_DEFAULT")
-except ImportError:
-    NO_DEFAULT = object()
 
-try:
-    from functools import partialmethod
-except ImportError:
-    partialmethod = None
+class _Sentinel:
+    def __eq__(self, other):
+        return other is self
+
+
+NO_DEFAULT = _Sentinel()
 
 
 def inspect_formatargspec(

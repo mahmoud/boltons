@@ -65,24 +65,53 @@ Learn more about `caching algorithms on Wikipedia
 
 import heapq
 import itertools
+import warnings
 import weakref
+from functools import cached_property, wraps
 from operator import attrgetter
 from threading import RLock
 
 try:
-    from .typeutils import make_sentinel
-
-    _MISSING = make_sentinel(var_name="_MISSING")
-    _KWARG_MARK = make_sentinel(var_name="_KWARG_MARK")
+    from typing import deprecated as typing_deprecated
 except ImportError:
-    _MISSING = object()
-    _KWARG_MARK = object()
+    typing_deprecated = None
 
-xrange = range
-unicode, str, bytes, basestring = str, bytes, bytes, (str, bytes)
+
+def deprecated(f, msg: str):
+    @wraps(f)
+    def wrapper(*args, **kwargs):
+        warnings.warn(msg, DeprecationWarning)
+        if typing_deprecated:
+            return typing_deprecated(f(*args, **kwargs))
+        return f(*args, **kwargs)
+
+    return wrapper
+
+
+class _Sentinel:
+    def __eq__(self, other):
+        return other is self
+
+
+_MISSING = _Sentinel()
+_KWARG_MARK = _Sentinel()
+
+basestring = (str, bytes)
 
 PREV, NEXT, KEY, VALUE = range(4)  # names for the link fields
 DEFAULT_MAX_SIZE = 128
+
+
+@deprecated("Use functools.cached_property instead")
+def cachedproperty():
+    pass
+
+
+# noinspection PyPep8Naming
+class cachedproperty(cached_property):
+    @deprecated("Use functools.cached_property instead")
+    def __init__(self, func):
+        super().__init__(func)
 
 
 class LRI(dict):
@@ -560,7 +589,7 @@ class CachedMethod:
         return "%s(func=%r, scoped=%r, typed=%r)" % args
 
 
-def cached(cache, scoped=True, typed=False, key=None):
+def cached(cache, scoped=True, typed=False, key=None):  # TODO: document key
     """Cache any function with the cache object of your choosing. Note
     that the function wrapped should take only `hashable`_ arguments.
 
@@ -642,33 +671,6 @@ def cachedmethod(cache, scoped=True, typed=False, key=None):
         return CachedMethod(func, cache, scoped=scoped, typed=typed, key=key)
 
     return cached_method_decorator
-
-
-class cachedproperty:
-    """The ``cachedproperty`` is used similar to :class:`property`, except
-    that the wrapped method is only called once. This is commonly used
-    to implement lazy attributes.
-
-    After the property has been accessed, the value is stored on the
-    instance itself, using the same name as the cachedproperty. This
-    allows the cache to be cleared with :func:`delattr`, or through
-    manipulating the object's ``__dict__``.
-    """
-
-    def __init__(self, func):
-        self.__doc__ = getattr(func, "__doc__")
-        self.__isabstractmethod__ = getattr(func, "__isabstractmethod__", False)
-        self.func = func
-
-    def __get__(self, obj, objtype=None):
-        if obj is None:
-            return self
-        value = obj.__dict__[self.func.__name__] = self.func(obj)
-        return value
-
-    def __repr__(self):
-        cn = self.__class__.__name__
-        return f"<{cn} func={self.func}>"
 
 
 class ThresholdCounter:
@@ -838,7 +840,7 @@ class ThresholdCounter:
         if iterable is not None:
             if callable(getattr(iterable, "iteritems", None)):
                 for key, count in iterable.iteritems():
-                    for i in xrange(count):
+                    for i in range(count):
                         self.add(key)
             else:
                 for key in iterable:

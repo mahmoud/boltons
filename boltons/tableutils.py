@@ -37,7 +37,7 @@ data structures which behave intuitively.
 
 The :class:`Table` class is one example. When handed one- or
 two-dimensional data, it can provide useful, if basic, text and HTML
-renditions of small to medium sized data. It also heuristically
+renditions of small to medium-sized data. It also heuristically
 handles recursive data of various formats (lists, dicts, namedtuples,
 objects).
 
@@ -48,23 +48,19 @@ For more advanced :class:`Table`-style manipulation check out the
 
 """
 
-
-try:
-    from html import escape as html_escape
-except ImportError:
-    from cgi import escape as html_escape
-
 import types
 from collections.abc import Mapping, MutableSequence, Sequence
 from html import escape as html_escape
 from itertools import islice
 
-try:
-    from .typeutils import make_sentinel
 
-    _MISSING = make_sentinel(var_name="_MISSING")
-except ImportError:
-    _MISSING = object()
+class _Sentinel:
+    def __eq__(self, other):
+        return other is self
+
+
+_MISSING = _Sentinel()
+
 
 """
 Some idle feature thoughts:

@@ -29,7 +29,7 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 """``jsonutils`` aims to provide various helpers for working with
-JSON. Currently it focuses on providing a reliable and intuitive means
+JSON. Currently, it focuses on providing a reliable and intuitive means
 of working with `JSON Lines`_-formatted files.
 
 .. _JSON Lines: https://jsonlines.org/
@@ -44,7 +44,7 @@ import os
 DEFAULT_BLOCKSIZE = 4096
 
 
-__all__ = ["JSONLIterator", "reverse_iter_lines"]
+__all__ = ["JSONLIterator", "reverse_iter_lines", "DEFAULT_BLOCKSIZE"]
 
 
 def reverse_iter_lines(
@@ -64,7 +64,7 @@ def reverse_iter_lines(
         blocksize (int): The block size to pass to
           :meth:`file.read()`. Warning: keep this a fairly large
           multiple of 2, defaults to 4096.
-        preseek (bool): Tells the function whether or not to automatically
+        preseek (bool): Tells the function whether to automatically
             seek to the end of the file. Defaults to ``True``.
             ``preseek=False`` is useful in cases when the
             file cursor is already in position, either at the end of

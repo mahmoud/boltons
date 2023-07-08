@@ -36,11 +36,9 @@ Python with the -Wd flag.
 """
 
 import sys
-from warnings import warn
+import warnings
 
 ModuleType = type(sys)
-
-# todo: only warn once
 
 
 class DeprecatableModule(ModuleType):
@@ -58,7 +56,7 @@ class DeprecatableModule(ModuleType):
         ret = get_attribute(name)
         message = depros.get(name)
         if message is not None:
-            warn(message, DeprecationWarning, stacklevel=2)
+            warnings.warn(message, DeprecationWarning, stacklevel=2)
         return ret
 
 

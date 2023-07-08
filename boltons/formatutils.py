@@ -76,12 +76,12 @@ __all__ = [
     "construct_format_field_str",
     "infer_positional_format_args",
     "BaseFormatField",
+    "split_format_str",
 ]
 
-
-_pos_farg_re = re.compile(
-    "({{)|" "(}})|" r"({[:!.\[}])"  # escaped open-brace  # escaped close-brace
-)  # anon positional format arg
+# escaped open-brace  # escaped close-brace
+# anon positional format arg
+_pos_farg_re = re.compile("({{)|" "(}})|" r"({[:!.\[}])")
 
 
 def construct_format_field_str(fname, fspec, conv):
@@ -142,7 +142,7 @@ def infer_positional_format_args(fstr):
     return ret
 
 
-# This approach is hardly exhaustive but it works for most builtins
+# This approach is hardly exhaustive, but it works for most builtins
 _INTCHARS = "bcdoxXn"
 _FLOATCHARS = "eEfFgGn%"
 _TYPE_MAP = dict([(x, int) for x in _INTCHARS] + [(x, float) for x in _FLOATCHARS])

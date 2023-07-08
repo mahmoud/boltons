@@ -1,10 +1,11 @@
 import os
+from pathlib import Path
 
 from boltons.jsonutils import DEFAULT_BLOCKSIZE, JSONLIterator, reverse_iter_lines
 
-CUR_PATH = os.path.dirname(os.path.abspath(__file__))
-NEWLINES_DATA_PATH = CUR_PATH + "/newlines_test_data.txt"
-JSONL_DATA_PATH = CUR_PATH + "/jsonl_test_data.txt"
+CUR_PATH = Path(__file__).resolve().parent
+NEWLINES_DATA_PATH = CUR_PATH / "/newlines_test_data.txt"
+JSONL_DATA_PATH = CUR_PATH / "/jsonl_test_data.txt"
 
 
 def _test_reverse_iter_lines(filename, blocksize=DEFAULT_BLOCKSIZE):
@@ -31,6 +32,7 @@ def test_reverse_iter_lines():
 
 def test_jsonl_iterator():
     ref = [{"4": 4}, {"3": 3}, {"2": 2}, {"1": 1}, {}]
-    jsonl_iter = JSONLIterator(open(JSONL_DATA_PATH), reverse=True)
+    with open(JSONL_DATA_PATH) as f:
+        jsonl_iter = JSONLIterator(f, reverse=True)
     jsonl_list = list(jsonl_iter)
     assert jsonl_list == ref

@@ -6,6 +6,7 @@ from boltons.mathutils import Bits, ceil, clamp, floor
 
 INF, NAN = float("inf"), float("nan")
 
+
 OPTIONS = [
     1618,
     1378,

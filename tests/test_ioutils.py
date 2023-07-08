@@ -3,9 +3,6 @@ import io
 import os
 import random
 import string
-
-StringIO = io.StringIO
-
 from tempfile import mkdtemp
 from unittest import TestCase
 from zipfile import ZIP_DEFLATED, ZipFile
@@ -469,7 +466,7 @@ class TestMultiFileReader(TestCase):
 
     def test_read_seek_text(self):
         # also tests StringIO.StringIO on py2
-        r = ioutils.MultiFileReader(StringIO("narf"), io.StringIO("troz"))
+        r = ioutils.MultiFileReader(io.StringIO("narf"), io.StringIO("troz"))
         self.assertEqual(["nar", "ftr", "oz"], list(iter(lambda: r.read(3), "")))
         r.seek(0)
         self.assertEqual("narftroz", r.read())

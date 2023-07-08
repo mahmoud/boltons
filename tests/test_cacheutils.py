@@ -1,5 +1,4 @@
 import string
-import sys
 from abc import ABCMeta, abstractmethod
 
 import pytest

@@ -42,16 +42,11 @@ import sys
 import unicodedata
 import uuid
 import zlib
-from gzip import GzipFile
-
-try:
-    from cStringIO import cStringIO as StringIO
-except ImportError:
-    from io import BytesIO as StringIO
-
 from collections.abc import Mapping
+from gzip import GzipFile
 from html import entities as htmlentitydefs
 from html.parser import HTMLParser
+from io import BytesIO as StringIO
 
 __all__ = [
     "camel2under",

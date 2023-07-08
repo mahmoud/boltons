@@ -32,15 +32,32 @@
 disk contents, and ``fileutils`` collects solutions to some of the
 most commonly-found gaps in the standard library.
 """
-
-
 import errno
 import fnmatch
 import os
 import re
 import stat
-import sys
+import warnings
+from functools import wraps
+from pathlib import Path
 from shutil import Error, copy2, copystat
+
+try:
+    from typing import deprecated as typing_deprecated
+except ImportError:
+    typing_deprecated = None
+
+
+def deprecated(f, msg: str):
+    @wraps(f)
+    def wrapper(*args, **kwargs):
+        warnings.warn(msg, DeprecationWarning)
+        if typing_deprecated:
+            return typing_deprecated(f(*args, **kwargs))
+        return f(*args, **kwargs)
+
+    return wrapper
+
 
 __all__ = [
     "mkdir_p",
@@ -55,10 +72,10 @@ __all__ = [
 FULL_PERMS = 511  # 0777 that both Python 2 and 3 can digest
 RW_PERMS = 438
 _SINGLE_FULL_PERM = 7  # or 07 in Python 2
-unicode = str
 basestring = (str, bytes)
 
 
+@deprecated("Use pathlib.Path.mkdir(parents=True, exist_ok=True")
 def mkdir_p(path):
     """Creates a directory and any parent directories that may need to
     be created along the way, without raising errors for any existing
@@ -66,13 +83,7 @@ def mkdir_p(path):
     command available in Linux/BSD environments, but also works on
     Windows.
     """
-    try:
-        os.makedirs(path)
-    except OSError as exc:
-        if exc.errno == errno.EEXIST and os.path.isdir(path):
-            return
-        raise
-    return
+    Path(path).mkdir(parents=True, exist_ok=True)
 
 
 class FilePerms:
@@ -91,7 +102,7 @@ class FilePerms:
 
     This class assists with computing new permissions, as well as
     working with numeric octal ``777``-style and ``rwx``-style
-    permissions. Currently it only considers the bottom 9 permission
+    permissions. Currently, it only considers the bottom 9 permission
     bits; it does not support sticky bits or more advanced permission
     systems.
 
@@ -277,11 +288,9 @@ def atomic_save(dest_path, **kwargs):
     return AtomicSaver(dest_path, **kwargs)
 
 
+@deprecated("This function only returns the argument")
 def path_to_unicode(path):
-    if isinstance(path, unicode):
-        return path
-    encoding = sys.getfilesystemencoding() or sys.getdefaultencoding()
-    return path.decode(encoding)
+    return path
 
 
 if os.name == "nt":

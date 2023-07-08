@@ -68,18 +68,15 @@ thanks to `Mark Williams`_ for all his help.
 """
 
 from collections.abc import ItemsView, KeysView, ValuesView
+from itertools import zip_longest
 
-try:
-    from itertools import izip_longest
-except ImportError:
-    from itertools import zip_longest as izip_longest
 
-try:
-    from .typeutils import make_sentinel
+class _Sentinel:
+    def __eq__(self, other):
+        return other is self
 
-    _MISSING = make_sentinel(var_name="_MISSING")
-except ImportError:
-    _MISSING = object()
+
+_MISSING = _Sentinel()
 
 
 PREV, NEXT, KEY, VALUE, SPREV, SNEXT = range(6)
@@ -93,12 +90,8 @@ __all__ = [
     "ManyToMany",
     "subdict",
     "FrozenDict",
+    "FrozenHashError",
 ]
-
-try:
-    profile
-except NameError:
-    profile = lambda x: x
 
 
 class OrderedMultiDict(dict):
@@ -367,7 +360,7 @@ class OrderedMultiDict(dict):
         if isinstance(other, OrderedMultiDict):
             selfi = self.iteritems(multi=True)
             otheri = other.iteritems(multi=True)
-            zipped_items = izip_longest(selfi, otheri, fillvalue=(None, None))
+            zipped_items = zip_longest(selfi, otheri, fillvalue=(None, None))
             for (selfk, selfv), (otherk, otherv) in zipped_items:
                 if selfk != otherk or selfv != otherv:
                     return False

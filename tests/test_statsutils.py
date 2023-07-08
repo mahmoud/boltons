@@ -14,7 +14,7 @@ def test_stats_basic():
 def _test_pearson():
     import random
 
-    from statsutils import pearson_type
+    from boltons.statsutils import pearson_type
 
     def get_pt(dist):
         vals = [dist() for x in range(10000)]

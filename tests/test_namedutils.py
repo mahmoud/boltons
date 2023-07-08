@@ -1,7 +1,4 @@
-try:
-    from cPickle import dumps, loads
-except:
-    from pickle import loads, dumps
+from pickle import dumps, loads
 
 from boltons.namedutils import namedlist, namedtuple
 

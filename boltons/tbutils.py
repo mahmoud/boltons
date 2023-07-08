@@ -56,12 +56,6 @@ import sys
 
 # TODO: chaining primitives?  what are real use cases where these help?
 
-# TODO: print_* for backwards compatibility
-# __all__ = ['extract_stack', 'extract_tb', 'format_exception',
-#            'format_exception_only', 'format_list', 'format_stack',
-#            'format_tb', 'print_exc', 'format_exc', 'print_exception',
-#            'print_last', 'print_stack', 'print_tb']
-
 
 __all__ = [
     "ExceptionInfo",
@@ -199,9 +193,6 @@ class _DeferredLine:
 
     def __eq__(self, other):
         return (self.lineno, self.filename) == (other.lineno, other.filename)
-
-    def __ne__(self, other):
-        return not self == other
 
     def __str__(self):
         ret = getattr(self, "_line", None)

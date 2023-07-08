@@ -36,8 +36,6 @@ and instances.
 import sys
 from collections import deque
 
-_issubclass = issubclass
-
 
 def make_sentinel(name="_MISSING", var_name=None):
     """Creates and returns a new **instance** of a new class, suitable for
@@ -125,7 +123,7 @@ def issubclass(subclass, baseclass):
     False
     """
     try:
-        return _issubclass(subclass, baseclass)
+        return issubclass(subclass, baseclass)
     except TypeError:
         return False
 

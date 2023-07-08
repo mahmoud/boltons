@@ -1,10 +1,6 @@
 import json
 import sys
-
-try:
-    from cStringIO import StringIO
-except:
-    from io import StringIO
+from io import StringIO
 
 from boltons.tbutils import (
     ContextualCallpoint,

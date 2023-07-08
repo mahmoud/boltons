@@ -68,12 +68,13 @@ import socket
 import time
 from threading import RLock
 
-try:
-    from .typeutils import make_sentinel
 
-    _UNSET = make_sentinel(var_name="_UNSET")
-except ImportError:
-    _UNSET = object()
+class _Sentinel:
+    def __eq__(self, other):
+        return other is self
+
+
+_UNSET = _Sentinel()
 
 
 DEFAULT_TIMEOUT = 10  # 10 seconds

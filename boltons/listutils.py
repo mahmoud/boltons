@@ -43,15 +43,16 @@ import operator
 from itertools import chain, islice
 from math import log as math_log
 
-try:
-    from .typeutils import make_sentinel
 
-    _MISSING = make_sentinel(var_name="_MISSING")
-except ImportError:
-    _MISSING = object()
+class _Sentinel:
+    def __eq__(self, other):
+        return other is self
 
-# TODO: expose splaylist?
-__all__ = ["BList", "BarrelList"]
+
+_MISSING = _Sentinel()
+
+
+__all__ = ["BList", "BarrelList", "SplayList"]
 
 
 # TODO: comparators

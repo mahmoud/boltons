@@ -47,17 +47,16 @@ import random
 import time
 from collections.abc import ItemsView, Iterable, Mapping, Sequence, Set
 
-try:
-    from .typeutils import make_sentinel
 
-    _UNSET = make_sentinel("_UNSET")
-    _REMAP_EXIT = make_sentinel("_REMAP_EXIT")
-except ImportError:
-    _REMAP_EXIT = object()
-    _UNSET = object()
+class _Sentinel:
+    def __eq__(self, other):
+        return other is self
+
+
+_REMAP_EXIT = _Sentinel()
+_UNSET = _Sentinel()
 
 basestring = (str, bytes)
-izip, xrange = zip, range
 
 
 def is_iterable(obj):
@@ -472,11 +471,11 @@ def windowed_iter(src, size):
     tees = itertools.tee(src, size)
     try:
         for i, t in enumerate(tees):
-            for _ in xrange(i):
+            for _ in range(i):
                 next(t)
     except StopIteration:
-        return izip([])
-    return izip(*tees)
+        return zip([])
+    return zip(*tees)
 
 
 def xfrange(stop, start=None, step=1.0):
@@ -527,7 +526,7 @@ def frange(stop, start=None, step=1.0):
     if not ret:
         return ret
     ret[0] = start
-    for i in xrange(1, count):
+    for i in range(1, count):
         ret[i] = ret[i - 1] + step
     return ret
 

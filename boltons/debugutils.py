@@ -36,16 +36,17 @@ built-in Python debugger.
 
 import sys
 import time
-
-basestring = (str, bytes)
 from reprlib import Repr
 
-try:
-    from .typeutils import make_sentinel
+basestring = (str, bytes)
 
-    _UNSET = make_sentinel(var_name="_UNSET")
-except ImportError:
-    _UNSET = object()
+
+class _Sentinel:
+    def __eq__(self, other):
+        return other is self
+
+
+_UNSET = _Sentinel()
 
 __all__ = ["pdb_on_signal", "pdb_on_exception", "wrap_trace"]
 
@@ -318,7 +319,7 @@ def wrap_trace(obj, hook=trace_print_hook, which=None, events=None, label=None):
 if __name__ == "__main__":
     obj = wrap_trace({})
     obj["hi"] = "hello"
-    obj.fail
+    obj.fail  # TODO: why?
     import pdb
 
     pdb.set_trace()

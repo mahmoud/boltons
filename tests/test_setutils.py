@@ -1,5 +1,3 @@
-import platform
-
 from pytest import raises
 
 from boltons.setutils import _MISSING, IndexedSet, complement
