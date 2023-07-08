@@ -80,13 +80,8 @@ extensions = [
     "sphinx.ext.intersphinx",
     "sphinx.ext.coverage",
     "sphinx.ext.viewcode",
+    "sphinx.ext.napoleon",
 ]
-
-# Read the Docs is version 1.2 as of writing
-if sphinx.version_info[:2] < (1, 3):
-    extensions.append("sphinxcontrib.napoleon")
-else:
-    extensions.append("sphinx.ext.napoleon")
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]
@@ -99,7 +94,7 @@ master_doc = "index"
 
 # General information about the project.
 project = "boltons"
-copyright = "2023, Mahmoud Hashemi"
+copyright = "2013–2023, Mahmoud Hashemi"
 author = "Mahmoud Hashemi"
 
 version = "23.0"

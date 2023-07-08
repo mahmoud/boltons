@@ -1,2 +1,3 @@
-sphinxcontrib-napoleon
+sphinx>=7
+sphinxcontrib-napoleon>=0.7
 # sphinx_rtd_theme  # you'll need sphinx_rtd_theme for local dev
