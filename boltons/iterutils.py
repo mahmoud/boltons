@@ -374,6 +374,30 @@ def chunked_iter(src, size, **kw):
     return
 
 
+def chunked_filter(iterable, predicate, chunk_size):
+    """A version of :func:`filter` which will call predicate with a chunk of the iterable.
+
+    >>> list(chunked_filter(range(10), lambda chunk: (x % 2==0 for x in chunk), 5))
+    [0, 2, 4, 6, 8]
+
+    In the above example the lambda function is called twice: once with values
+    0-4 and then for 5-9.
+
+    Args:
+        iterable (Iterable): Items to filter
+        predicate (Callable): Predicate function
+        chunk_size (int): The maximum size of chunks that will be passed the
+            predicate function.
+    """
+
+    return (
+        item
+        for chunk in chunked_iter(iterable, chunk_size)
+        for item, allow in zip(chunk, predicate(chunk))
+        if allow
+    )
+
+
 def chunk_ranges(input_size, chunk_size, input_offset=0, overlap_size=0, align=False):
     """Generates *chunk_size*-sized chunk ranges for an input with length *input_size*.
     Optionally, a start of the input can be set via *input_offset*, and
