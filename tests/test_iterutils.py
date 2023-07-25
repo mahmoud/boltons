@@ -511,6 +511,26 @@ def test_chunked_bytes():
     assert chunked(b'123', 2) in (['12', '3'], [b'12', b'3'])
 
 
+class TestChunkedFilter(object):
+    def test_not_iterable(self):
+        from boltons.iterutils import chunked_filter
+
+        with pytest.raises(TypeError):
+            chunked_filter(7, lambda chunk: (True for x in chunk), 10)
+
+    def test_size_zero(self):
+        from boltons.iterutils import chunked_filter
+
+        with pytest.raises(ValueError):
+            chunked_filter((1, 2, 3), lambda chunk: (True for x in chunk), 0)
+
+    def test_not_callable(self):
+        from boltons.iterutils import chunked_filter
+
+        with pytest.raises(TypeError):
+            chunked_filter((1, 2, 3), 'allow odd numbers', 10)
+
+
 def test_chunk_ranges():
     from boltons.iterutils import chunk_ranges
 
