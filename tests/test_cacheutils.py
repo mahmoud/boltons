@@ -167,6 +167,31 @@ def test_lru_basic():
     assert second_lru != lru
 
 
+def test_lru_dict_replacement():
+    # see issue #348
+    cache = LRU()
+
+    # Add an entry.
+    cache['a'] = 1
+
+    # Normal __getitem__ access.
+    assert cache['a'] == 1  # passes.
+    # Convert to dict.
+    assert dict(cache) == {'a': 1}  # passes.
+    # Another way to access the only value.
+    assert list(cache.values())[0] == 1  # passes.
+
+    # Replace the existing 'a' entry with a new value.
+    cache['a'] = 200
+
+    # __getitem__ works as expected.
+    assert cache['a'] == 200  # passes.
+
+    # Both dict and accessing via values() return the old entry: 1.
+    assert dict(cache) == {'a': 200}  # fails.
+    assert list(cache.values())[0] == 200
+
+
 def test_lru_with_dupes():
     SIZE = 2
     lru = LRU(max_size=SIZE)
