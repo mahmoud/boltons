@@ -167,9 +167,10 @@ def test_lru_basic():
     assert second_lru != lru
 
 
-def test_lru_dict_replacement():
+@pytest.mark.parametrize("lru_class", [LRU, LRI])
+def test_lru_dict_replacement(lru_class):
     # see issue #348
-    cache = LRU()
+    cache = lru_class()
 
     # Add an entry.
     cache['a'] = 1
