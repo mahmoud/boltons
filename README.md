@@ -72,7 +72,7 @@ my_cache = LRU()
 ```
 
 However, due to the nature of utilities, application developers might
-want to consider other options, including vendorization of individual
+want to consider other options, including vandalization of individual
 modules into a project. Boltons is pure-Python and has no
 dependencies. If the whole project is too big, each module is
 independent, and can be copied directly into a project. See the
