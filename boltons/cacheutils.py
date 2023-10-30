@@ -235,9 +235,10 @@ class LRI(dict):
                 else:
                     evicted = self._set_key_and_evict_last_in_ll(key, value)
                     super(LRI, self).__delitem__(evicted)
-                super(LRI, self).__setitem__(key, value)
             else:
                 link[VALUE] = value
+            super(LRI, self).__setitem__(key, value)
+        return
 
     def __getitem__(self, key):
         with self._lock:

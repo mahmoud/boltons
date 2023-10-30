@@ -25,7 +25,6 @@ jobs:
           - {name: '3.9', python: '3.9', os: ubuntu-latest, tox: py39}
           - {name: '3.8', python: '3.8', os: ubuntu-latest, tox: py38}
           - {name: '3.7', python: '3.7', os: ubuntu-latest, tox: py37}
-          - {name: '2.7', python: '2.7.18', os: ubuntu-latest, tox: py27}
           - {name: 'PyPy3', python: 'pypy-3.9', os: ubuntu-latest, tox: pypy3}
     steps:
       - uses: actions/checkout@v2
@@ -47,3 +46,19 @@ jobs:
           key: pip|${{ runner.os }}|${{ matrix.python }}|${{ hashFiles('setup.py') }}|${{ hashFiles('requirements/*.txt') }}
       - run: pip install tox
       - run: tox -e ${{ matrix.tox }}
+  tests-py27:
+    name: '2.7'
+    runs-on: ubuntu-20.04
+    container:
+      image: python:2.7.18-buster
+    strategy:
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v2
+      - name: update pip
+        run: |
+          pip install -U wheel
+          pip install -U setuptools
+          python -m pip install -U pip
+      - run: pip install tox
+      - run: tox -e py27
