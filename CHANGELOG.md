@@ -6,6 +6,25 @@ for an average of one 33-commit release about every 9 weeks. Versions
 are named according to the [CalVer](https://calver.org) versioning
 scheme (`YY.MINOR.MICRO`).
 
+23.1.0
+------
+*(October 31, 2023)*
+
+* Add `fill`/`end` parameters for [`iterutils.windowed`][iterutils.windowed] and [`iterutils.pairwise`][iterutils.pairwise], respectively ([#350][i350])
+* Fix cache eviction for [`cacheutils.LRU`][cacheutils.LRU] ([#348][i348])
+* Fix OrderedMultiDict (OMD) pickleability under Py3 ([#337][i337])
+* `funcutils.copy_function` maintains kw-only defaults ([#336][i336])
+* Support OMD `ior` ([#341][i341])
+
+[i350]: https://github.com/mahmoud/boltons/issues/350
+[i348]: https://github.com/mahmoud/boltons/issues/348
+[i341]: https://github.com/mahmoud/boltons/issues/341
+[i337]: https://github.com/mahmoud/boltons/issues/337
+[i336]: https://github.com/mahmoud/boltons/issues/336
+[cacheutils.LRU]: http://boltons.readthedocs.org/en/latest/cacheutils.html#boltons.cacheutils.LRU
+[iterutils.windowed]: http://boltons.readthedocs.org/en/latest/iterutils.html#boltons.iterutils.windowed
+[iterutils.pairwise]: http://boltons.readthedocs.org/en/latest/iterutils.html#boltons.iterutils.pairwise
+
 23.0.0
 ------
 *(February 19, 2023)*
