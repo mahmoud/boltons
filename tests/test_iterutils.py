@@ -5,6 +5,10 @@ import pytest
 
 from boltons.dictutils import OMD
 from boltons.iterutils import (first,
+                               pairwise,
+                               pairwise_iter,
+                               windowed,
+                               windowed_iter,
                                remap,
                                research,
                                default_enter,
@@ -551,3 +555,25 @@ def test_strip():
     assert strip([0,0,0,1,0,2,0,3,0,0,0],0) == [1,0,2,0,3]
     assert strip([]) == []
 
+
+def test_pairwise_filled():
+    assert pairwise(range(4)) == [(0, 1), (1, 2), (2, 3)]
+    assert pairwise(range(4), end=None) == [(0, 1), (1, 2), (2, 3), (3, None)]
+
+    assert pairwise([]) == []
+    assert pairwise([1], end=None) == [(1, None)]
+
+    assert list(pairwise_iter(range(4))) == [(0, 1), (1, 2), (2, 3)]
+    assert list(pairwise_iter(range(4), end=None)) == [(0, 1), (1, 2), (2, 3), (3, None)]
+
+
+def test_windowed_filled():
+    assert windowed(range(4), 3) == [(0, 1, 2), (1, 2, 3)]
+    assert windowed(range(4), 3, fill=None) == [(0, 1, 2), (1, 2, 3), (2, 3, None), (3, None, None)]
+
+    assert windowed([], 3) == []
+    assert windowed([], 3, fill=None) == []
+    assert windowed([1, 2], 3, fill=None) == [(1, 2, None), (2, None, None)]
+
+    assert list(windowed_iter(range(4), 3)) == [(0, 1, 2), (1, 2, 3)]
+    assert list(windowed_iter(range(4), 3, fill=None)) == [(0, 1, 2), (1, 2, 3), (2, 3, None), (3, None, None)]

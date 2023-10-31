@@ -64,7 +64,7 @@ except ImportError:
 
 try:
     from future_builtins import filter
-    from itertools import izip
+    from itertools import izip, izip_longest as zip_longest
     _IS_PY3 = False
 except ImportError:
     # Python 3 compat
@@ -72,6 +72,7 @@ except ImportError:
     basestring = (str, bytes)
     unicode = str
     izip, xrange = zip, range
+    from itertools import zip_longest
 
 
 def is_iterable(obj):
@@ -424,7 +425,7 @@ def chunk_ranges(input_size, chunk_size, input_offset=0, overlap_size=0, align=F
             return
 
 
-def pairwise(src):
+def pairwise(src, end=_UNSET):
     """Convenience function for calling :func:`windowed` on *src*, with
     *size* set to 2.
 
@@ -433,14 +434,22 @@ def pairwise(src):
     >>> pairwise([])
     []
 
-    The number of pairs is always one less than the number of elements
-    in the iterable passed in, except on empty inputs, which returns
-    an empty list.
+    Unless *end* is set, the number of pairs is always one less than 
+    the number of elements in the iterable passed in, except on an empty input, 
+    which will return an empty list.
+
+    With *end* set, a number of pairs equal to the length of *src* is returned,
+    with the last item of the last pair being equal to *end*.
+
+    >>> list(pairwise(range(3), end=None))
+    [(0, 1), (1, 2), (2, None)]
+
+    This way, *end* values can be useful as sentinels to signal the end of the iterable.
     """
-    return windowed(src, 2)
+    return windowed(src, 2, fill=end)
 
 
-def pairwise_iter(src):
+def pairwise_iter(src, end=_UNSET):
     """Convenience function for calling :func:`windowed_iter` on *src*,
     with *size* set to 2.
 
@@ -449,43 +458,70 @@ def pairwise_iter(src):
     >>> list(pairwise_iter([]))
     []
 
-    The number of pairs is always one less than the number of elements
-    in the iterable passed in, or zero, when *src* is empty.
+    Unless *end* is set, the number of pairs is always one less 
+    than the number of elements in the iterable passed in, 
+    or zero, when *src* is empty.
 
+    With *end* set, a number of pairs equal to the length of *src* is returned,
+    with the last item of the last pair being equal to *end*. 
+
+    >>> list(pairwise_iter(range(3), end=None))
+    [(0, 1), (1, 2), (2, None)]    
+
+    This way, *end* values can be useful as sentinels to signal the end
+    of the iterable. For infinite iterators, setting *end* has no effect.
     """
-    return windowed_iter(src, 2)
+    return windowed_iter(src, 2, fill=end)
 
 
-def windowed(src, size):
-    """Returns tuples with exactly length *size*. If the iterable is
-    too short to make a window of length *size*, no tuples are
-    returned. See :func:`windowed_iter` for more.
+def windowed(src, size, fill=_UNSET):
+    """Returns tuples with exactly length *size*. If *fill* is unset 
+    and the iterable is too short to make a window of length *size*, 
+    no tuples are returned. See :func:`windowed_iter` for more.
     """
-    return list(windowed_iter(src, size))
+    return list(windowed_iter(src, size, fill=fill))
 
 
-def windowed_iter(src, size):
+def windowed_iter(src, size, fill=_UNSET):
     """Returns tuples with length *size* which represent a sliding
     window over iterable *src*.
 
     >>> list(windowed_iter(range(7), 3))
     [(0, 1, 2), (1, 2, 3), (2, 3, 4), (3, 4, 5), (4, 5, 6)]
 
-    If the iterable is too short to make a window of length *size*,
-    then no window tuples are returned.
+    If *fill* is unset, and the iterable is too short to make a window 
+    of length *size*, then no window tuples are returned.
 
     >>> list(windowed_iter(range(3), 5))
     []
+
+    With *fill* set, the iterator always yields a number of windows
+    equal to the length of the *src* iterable.
+    
+    >>> windowed(range(4), 3, fill=None)
+    [(0, 1, 2), (1, 2, 3), (2, 3, None), (3, None, None)]
+
+    This way, *fill* values can be useful to signal the end of the iterable.
+    For infinite iterators, setting *fill* has no effect.
     """
-    # TODO: lists? (for consistency)
     tees = itertools.tee(src, size)
-    try:
-        for i, t in enumerate(tees):
-            for _ in xrange(i):
+    if fill is _UNSET:
+        try:
+            for i, t in enumerate(tees):
+                for _ in range(i):
+                    next(t)
+        except StopIteration:
+            return zip([])
+        return zip(*tees)
+    
+    for i, t in enumerate(tees):
+        for _ in range(i):  
+            try:
                 next(t)
-    except StopIteration:
-        return izip([])
-    return izip(*tees)
+            except StopIteration:
+                continue
+    return zip_longest(*tees, fillvalue=fill)
+
 
 
 def xfrange(stop, start=None, step=1.0):
