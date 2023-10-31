@@ -558,13 +558,13 @@ def test_strip():
 
 def test_pairwise_filled():
     assert pairwise(range(4)) == [(0, 1), (1, 2), (2, 3)]
-    assert pairwise(range(4), fill=None) == [(0, 1), (1, 2), (2, 3), (3, None)]
+    assert pairwise(range(4), end=None) == [(0, 1), (1, 2), (2, 3), (3, None)]
 
     assert pairwise([]) == []
-    assert pairwise([1], fill=None) == [(1, None)]
+    assert pairwise([1], end=None) == [(1, None)]
 
     assert list(pairwise_iter(range(4))) == [(0, 1), (1, 2), (2, 3)]
-    assert list(pairwise_iter(range(4), fill=None)) == [(0, 1), (1, 2), (2, 3), (3, None)]
+    assert list(pairwise_iter(range(4), end=None)) == [(0, 1), (1, 2), (2, 3), (3, None)]
 
 
 def test_windowed_filled():

@@ -425,7 +425,7 @@ def chunk_ranges(input_size, chunk_size, input_offset=0, overlap_size=0, align=F
             return
 
 
-def pairwise(src, fill=_UNSET):
+def pairwise(src, end=_UNSET):
     """Convenience function for calling :func:`windowed` on *src*, with
     *size* set to 2.
 
@@ -434,22 +434,22 @@ def pairwise(src, fill=_UNSET):
     >>> pairwise([])
     []
 
-    Unless *fill* is set, the number of pairs is always one less than 
+    Unless *end* is set, the number of pairs is always one less than 
     the number of elements in the iterable passed in, except on an empty input, 
     which will return an empty list.
 
-    With *fill* set, a number of pairs equal to the length of *src* is returned,
-    with the last item of the last pair being equal to *fill*.
+    With *end* set, a number of pairs equal to the length of *src* is returned,
+    with the last item of the last pair being equal to *end*.
 
-    >>> list(pairwise(range(3), fill=None))
+    >>> list(pairwise(range(3), end=None))
     [(0, 1), (1, 2), (2, None)]
 
-    This way, *fill* values can be useful to signal the end of the iterable.
+    This way, *end* values can be useful as sentinels to signal the end of the iterable.
     """
-    return windowed(src, 2, fill=fill)
+    return windowed(src, 2, fill=end)
 
 
-def pairwise_iter(src, fill=_UNSET):
+def pairwise_iter(src, end=_UNSET):
     """Convenience function for calling :func:`windowed_iter` on *src*,
     with *size* set to 2.
 
@@ -458,20 +458,20 @@ def pairwise_iter(src, fill=_UNSET):
     >>> list(pairwise_iter([]))
     []
 
-    Unless *fill* is set, the number of pairs is always one less 
+    Unless *end* is set, the number of pairs is always one less 
     than the number of elements in the iterable passed in, 
     or zero, when *src* is empty.
 
-    With *fill* set, a number of pairs equal to the length of *src* is returned,
-    with the last item of the last pair being equal to *fill*. 
+    With *end* set, a number of pairs equal to the length of *src* is returned,
+    with the last item of the last pair being equal to *end*. 
 
-    >>> list(pairwise_iter(range(3), fill=None))
+    >>> list(pairwise_iter(range(3), end=None))
     [(0, 1), (1, 2), (2, None)]    
 
-    This way, *fill* values can be useful to signal the end of the iterable.
-    For infinite iterators, setting *fill* has no effect.
+    This way, *end* values can be useful as sentinels to signal the end
+    of the iterable. For infinite iterators, setting *end* has no effect.
     """
-    return windowed_iter(src, 2, fill=fill)
+    return windowed_iter(src, 2, fill=end)
 
 
 def windowed(src, size, fill=_UNSET):
@@ -497,7 +497,7 @@ def windowed_iter(src, size, fill=_UNSET):
 
     With *fill* set, the iterator always yields a number of windows
     equal to the length of the *src* iterable.
-
+    
     >>> windowed(range(4), 3, fill=None)
     [(0, 1, 2), (1, 2, 3), (2, 3, None), (3, None, None)]
 
