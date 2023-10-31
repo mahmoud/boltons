@@ -41,12 +41,16 @@ shorter-named convenience form that returns a list. Some of the
 following are based on examples in itertools docs.
 """
 
+from __future__ import annotations
+import dataclasses
 import os
 import math
 import time
 import codecs
 import random
 import itertools
+import operator
+from typing import Iterable
 
 try:
     from collections.abc import Mapping, Sequence, Set, ItemsView, Iterable
@@ -1565,3 +1569,145 @@ $ python -m timeit -s "x = [1]" "try: x.split('.')\n except: pass"
 $ python -m timeit -s "x = [1]" "try: x.split('.') \nexcept AttributeError: pass"
 1000000 loops, best of 3: 0.544 usec per loop
 """
+
+
+def _iter_or_num(thing: Union[Iterable[float], float]) -> Iterator[float]:
+    if isinstance(thing, (int, float)):
+        return itertools.repeat(thing)
+    return iter(thing)
+
+
+@dataclasses.dataclass
+class NumIterator:
+
+    """An iterator of numbers.
+    
+    Supports math operations and slicing.
+
+    >>> list(NumIterator(range(3)))
+    [0, 1, 2]
+    >>> list(NumIterator(range(3)) + 1)
+    [1, 2, 3]
+    >>> list(NumIterator(range(3)) * 2)
+    [0, 2, 4]
+    >>> list(NumIterator(x + 1 for x in range(10))[:3])
+    [1, 2, 3]
+    
+    There are also a few helper class methods to generate
+    common iterators.
+    They all generate *infinite* iterators.
+    Convert them to finite iterators using slicing.
+    
+    Counting:
+    
+    >>> list(NumIterator.count()[:5])
+    [0, 1, 2, 3, 4]
+    
+    Constant:
+    
+    >>> list(NumIterator.constant(7)[:2])
+    [7, 7]
+    
+    Fibonacci sequence:
+    
+    >>> list(NumIterator.fib()[:8])
+    [0, 1, 1, 2, 3, 5, 8, 13]
+    
+    Since the iterators support math operations,
+    you can combine them to generate more sophisticated
+    sequences.
+    
+    For example,
+    
+    >>> fib_pow_of_2 = 2 ** NumIterator.count() + NumIterator.fib()
+    >>> list(fib_pow_of_2[:5])
+    [1, 3, 5, 10, 19]
+    """
+
+    _original: Iterable[float]
+
+    @classmethod
+    def count(cls):
+        return cls(itertools.count())
+
+    @classmethod
+    def fib(cls):
+        def inner_fib():
+            a, b = 0, 1
+            yield a
+            while True:
+                yield b
+                a, b = b, a+b
+        return cls(inner_fib())
+
+    @classmethod
+    def constant(cls, num):
+        return cls(itertools.repeat(num))        
+
+    def __iter__(self) -> Iterator[float]:
+        return iter(self._original)
+
+    def apply_operator(self, op: Callable[[float, float], float], other: Union[Iterable[float], float]) -> NumIterator:
+        return NumIterator(map(op, self._original, _iter_or_num(other)))
+
+    def apply_r_operator(self, op: Callable[[float, float], float], other: Union[Iterable[float], float]) -> NumIterator:
+        return NumIterator(map(op, _iter_or_num(other), self._original))
+
+    def __getitem__(self, a_slice: slice)-> NumIterator:
+        if not isinstance(a_slice, slice):
+            raise TypeError(
+                "no random access, can only slice",
+                a_slice,
+            )
+        new_original = itertools.islice(
+            self._original,
+            a_slice.start,
+            a_slice.stop,
+            a_slice.step,
+        )
+        return NumIterator(new_original)
+
+    def __add__(self, other: Union[Iterable[float], float]) -> NumIterator:
+        return self.apply_operator(operator.add, other)
+
+    def __radd__(self, other: Union[Iterable[float], float]) -> NumIterator:
+        return self.apply_r_operator(operator.add, other)
+
+    def __mul__(self, other: Union[Iterable[float], float]) -> NumIterator:
+        return self.apply_operator(operator.mul, other)
+
+    def __rmul__(self, other: Union[Iterable[float], float]) -> NumIterator:
+        return self.apply_r_operator(operator.mul, other)
+
+    def __floordiv__(self, other: Union[Iterable[float], float]) -> NumIterator:
+        return self.apply_operator(operator.floordiv, other)
+
+    def __rfloordiv__(self, other: Union[Iterable[float], float]) -> NumIterator:
+        return self.apply_r_operator(operator.floordiv, other)
+
+    def __truediv__(self, other: Union[Iterable[float], float]) -> NumIterator:
+        return self.apply_operator(operator.truediv, other)
+
+    def __rtruediv__(self, other: Union[Iterable[float], float]) -> NumIterator:
+        return self.apply_r_operator(operator.truediv, other)
+
+    def __sub__(self, other: Union[Iterable[float], float]) -> NumIterator:
+        return self.apply_operator(operator.sub, other)
+
+    def __rsub__(self, other: Union[Iterable[float], float]) -> NumIterator:
+        return self.apply_r_operator(operator.sub, other)
+
+    def __pow__(self, other: Union[Iterable[float], float]) -> NumIterator:
+        return self.apply_operator(operator.pow, other)
+
+    def __rpow__(self, other: Union[Iterable[float], float]) -> NumIterator:
+        return self.apply_r_operator(operator.pow, other)
+
+    def __neg__(self, *args) -> NumIterator:
+        return NumIterator(map(operator.neg, self))
+
+    def __pos__(self, *args) -> NumIterator:
+        return NumIterator(map(operator.pos, self))
+
+    def __round__(self, *args) -> NumIterator:
+        return NumIterator((round(item, *args) for item in self))

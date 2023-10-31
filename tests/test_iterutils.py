@@ -9,7 +9,9 @@ from boltons.iterutils import (first,
                                research,
                                default_enter,
                                default_exit,
-                               get_path)
+                               get_path,
+                               NumIterator,
+                              )
 from boltons.namedutils import namedtuple
 
 CUR_PATH = os.path.abspath(__file__)
@@ -551,3 +553,64 @@ def test_strip():
     assert strip([0,0,0,1,0,2,0,3,0,0,0],0) == [1,0,2,0,3]
     assert strip([]) == []
 
+class TestNumIterator:
+    def test_constant(self):
+        assert list(NumIterator.constant(5)[:3]) == [5, 5, 5]
+
+    def test_fib(self):
+        assert list(NumIterator.fib()[:4]) == [0, 1, 1, 2]
+
+    def test_count(self):
+        assert list(NumIterator.count()[:4]) == [0, 1, 2, 3]
+
+    def test_slice(self):
+        assert list(NumIterator.count()[1:4:2]) == [1, 3]
+
+    def test_no_access(self):
+        with pytest.raises(TypeError):
+            NumIterator.count()[5]
+
+    def test_add(self):
+        assert list(NumIterator.count()[:3] + 1) == [1, 2, 3]
+
+    def test_radd(self):
+        assert list(1 + NumIterator.count()[:3]) == [1, 2, 3]
+
+    def test_sub(self):
+        assert list(NumIterator.count()[:3] - 1) == [-1, 0, 1]
+
+    def test_rsub(self):
+        assert list(2 -  NumIterator.count()[:3]) == [2, 1, 0]
+
+    def test_mul(self):
+        assert list(NumIterator.count()[:3] * 2) == [0, 2, 4]
+
+    def test_rmul(self):
+        assert list(2 * NumIterator.count()[:3]) == [0, 2, 4]
+
+    def test_pow(self):
+        assert list(NumIterator.count()[:3] ** 2) == [0, 1, 4]
+
+    def test_rpow(self):
+        assert list(2 ** NumIterator.count()[:3]) == [1, 2, 4]
+
+    def test_div(self):
+        assert list(NumIterator.count()[:2] / 2) == [0.0, 0.5]
+
+    def test_floordiv(self):
+        assert list(NumIterator.count()[:3] // 2) == [0, 0, 1]
+
+    def test_rdiv(self):
+        assert list(1 / NumIterator.count()[1:3]) == [1.0, 0.5]
+
+    def test_rfloordiv(self):
+        assert list(2 // NumIterator.count()[1:5]) == [2, 1, 0, 0]
+
+    def test_neg(self):
+        assert list(-NumIterator.count()[:3]) == [0, -1, -2]
+
+    def test_pos(self):
+        assert list(+NumIterator.count()[:3]) == [0, +1, +2]
+
+    def test_pos(self):
+        assert list(round(NumIterator.count()[:4] / 3)) == [0, 0, 1, 1]
