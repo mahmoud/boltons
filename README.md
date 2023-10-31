@@ -5,7 +5,7 @@
 <a href="https://boltons.readthedocs.io/en/latest/"><img src="https://img.shields.io/badge/docs-latest-brightgreen.svg?style=flat"></a>
 <a href="https://pypi.python.org/pypi/boltons"><img src="https://img.shields.io/pypi/v/boltons.svg"></a>
 <a href="https://anaconda.org/conda-forge/boltons"><img src="https://img.shields.io/conda/vn/conda-forge/boltons.svg"></a>
-<a href="https://ports.macports.org/port/py-boltons/summary"><img src="https://repology.org/badge/version-for-repo/macports/python:boltons.svg?header=🍎 MacPorts"></a>
+<a href="https://ports.macports.org/port/py-boltons/summary"><img src="https://repology.org/badge/version-for-repo/macports/python:boltons.svg?header=MacPorts"></a>
 <a href="https://pypi.python.org/pypi/boltons"><img src="https://img.shields.io/pypi/pyversions/boltons.svg"></a>
 <a href="http://calver.org"><img src="https://img.shields.io/badge/calver-YY.MINOR.MICRO-22bfda.svg"></a>
 
@@ -25,10 +25,9 @@ in the same spirit as — and yet conspicuously missing from —
 **[Full and extensive docs are available on Read The Docs.][rtd]** See
 what's new [by checking the CHANGELOG][changelog].
 
-Boltons is tested against Python 2.6, 2.7, 3.4, 3.5, 3.6, 3.7, 3.8 and 3.9, as well as CPython
-_nightly_ and PyPy/PyPy3.
+Boltons is tested against Python 3.6-3.11, as well as Python 2.7 and PyPy3.
 
-[stdlib]: https://docs.python.org/2.7/library/index.html
+[stdlib]: https://docs.python.org/3/library/index.html
 [rtd]: https://boltons.readthedocs.org/en/latest/
 [changelog]: https://github.com/mahmoud/boltons/blob/master/CHANGELOG.md
 
