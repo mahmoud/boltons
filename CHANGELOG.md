@@ -6,6 +6,12 @@ for an average of one 33-commit release about every 9 weeks. Versions
 are named according to the [CalVer](https://calver.org) versioning
 scheme (`YY.MINOR.MICRO`).
 
+23.1.1
+------
+*(November 1, 2023)*
+
+Tiny release to include more test files in the sdist (source distribution) on PyPI.
+
 23.1.0
 ------
 *(October 31, 2023)*
