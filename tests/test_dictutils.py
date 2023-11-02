@@ -370,8 +370,10 @@ def test_one_to_one():
     e.inv.setdefault(2)
     ck({1: None, None: 2}, {None: 1, 2: None})
     e.clear()
-    e.update({1:2}, cat="dog")
-    ck({1:2, "cat":"dog"}, {2:1, "dog":"cat"})
+    e.update({})
+    ck({}, {})
+    e.update({1: 2}, cat="dog")
+    ck({1:2, "cat":"dog"}, {2: 1, "dog":"cat"})
 
     # try various overlapping values
     oto = OneToOne({'a': 0, 'b': 0})

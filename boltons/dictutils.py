@@ -890,6 +890,7 @@ class OneToOne(dict):
         return self[key]
 
     def update(self, dict_or_iterable, **kw):
+        keys_vals = []
         if isinstance(dict_or_iterable, dict):
             for val in dict_or_iterable.values():
                 hash(val)
