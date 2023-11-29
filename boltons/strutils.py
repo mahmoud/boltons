@@ -78,7 +78,7 @@ __all__ = ['camel2under', 'under2camel', 'slugify', 'split_punct_ws',
            'bytes2human', 'find_hashtags', 'a10n', 'gzip_bytes', 'gunzip_bytes',
            'iter_splitlines', 'indent', 'escape_shell_args',
            'args2cmd', 'args2sh', 'parse_int_list', 'format_int_list',
-           'int_list_complement', 'int_list_to_int_tuples', 'MultiReplace',
+           'complement_int_list', 'int_ranges_from_int_list', 'MultiReplace',
            'multi_replace', 'unwrap_text']
 
 
