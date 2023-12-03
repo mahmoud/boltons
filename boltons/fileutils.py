@@ -486,7 +486,7 @@ class AtomicSaver:
         return
 
 
-def iter_find_files(directory, patterns, ignored=None, include_dirs=False):
+def iter_find_files(directory, patterns, ignored=None, include_dirs=False, max_depth=None):
     """Returns a generator that yields file paths under a *directory*,
     matching *patterns* using `glob`_ syntax (e.g., ``*.txt``). Also
     supports *ignored* patterns.
@@ -500,6 +500,9 @@ def iter_find_files(directory, patterns, ignored=None, include_dirs=False):
             glob-formatted patterns to ignore.
         include_dirs (bool): Whether to include directories that match
            patterns, as well. Defaults to ``False``.
+        max_depth (int): traverse up to this level of subdirectory.
+           I.e., 0 for the specified *directory* only, 1 for *directory* 
+           and one level of subdirectory.
 
     For example, finding Python files in the current directory:
 
@@ -524,7 +527,10 @@ def iter_find_files(directory, patterns, ignored=None, include_dirs=False):
     elif isinstance(ignored, str):
         ignored = [ignored]
     ign_re = re.compile('|'.join([fnmatch.translate(p) for p in ignored]))
+    start_depth = len(directory.split(os.path.sep))
     for root, dirs, files in os.walk(directory):
+        if max_depth is not None and (len(root.split(os.path.sep)) - start_depth) > max_depth:
+            continue
         if include_dirs:
             for basename in dirs:
                 if pats_re.match(basename):
