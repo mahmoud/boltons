@@ -68,7 +68,7 @@ consider other integration options. See the :ref:`Integration
 <arch_integration>` section of the architecture document for more
 details.
 
-Boltons is tested against Python 3.7-3.11, as well as Python 2.7 and PyPy3.
+Boltons is tested against Python 3.7-3.12, as well as Python 2.7 and PyPy3.
 
 .. _MacPorts: https://ports.macports.org/port/py-boltons/summary
 

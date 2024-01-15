@@ -18,17 +18,18 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - {name: Linux, python: '3.11', os: ubuntu-latest, tox: py311}
-          - {name: Windows, python: '3.11', os: windows-latest, tox: py311}
-          - {name: Mac, python: '3.11', os: macos-latest, tox: py311}
+          - {name: Linux, python: '3.12', os: ubuntu-latest, tox: py312}
+          - {name: Windows, python: '3.12', os: windows-latest, tox: py312}
+          - {name: Mac, python: '3.12', os: macos-latest, tox: py312}
+          - {name: '3.11', python: '3.11', os: ubuntu-latest, tox: py311}
           - {name: '3.10', python: '3.10', os: ubuntu-latest, tox: py310}
           - {name: '3.9', python: '3.9', os: ubuntu-latest, tox: py39}
           - {name: '3.8', python: '3.8', os: ubuntu-latest, tox: py38}
           - {name: '3.7', python: '3.7', os: ubuntu-latest, tox: py37}
           - {name: 'PyPy3', python: 'pypy-3.9', os: ubuntu-latest, tox: pypy3}
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-python@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
       - name: update pip
@@ -40,7 +41,7 @@ jobs:
         id: pip-cache
         run: echo "::set-output name=dir::$(pip cache dir)"
       - name: cache pip
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: ${{ steps.pip-cache.outputs.dir }}
           key: pip|${{ runner.os }}|${{ matrix.python }}|${{ hashFiles('setup.py') }}|${{ hashFiles('requirements/*.txt') }}
@@ -48,13 +49,13 @@ jobs:
       - run: tox -e ${{ matrix.tox }}
   tests-py27:
     name: '2.7'
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     container:
       image: python:2.7.18-buster
     strategy:
       fail-fast: false
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - name: update pip
         run: |
           pip install -U wheel
