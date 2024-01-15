@@ -375,6 +375,54 @@ def chunked_iter(src, size, **kw):
     return
 
 
+def chunked_filter(iterable, predicate, size):
+    """A version of :func:`filter` which will call *key* with a chunk of the *src*.
+
+    >>> list(chunked_filter(range(10), lambda chunk: (x % 2==0 for x in chunk),5))
+    [0, 2, 4, 6, 8]
+
+    In the above example the lambda function is called twice: once with values
+    0-4 and then for 5-9.
+
+    Args:
+        iterable (Iterable): Items to filter
+        predicate (Callable): Bulk predicate function that accepts a list of items
+            and returns an interable of bools
+        size (int): The maximum size of chunks that will be passed the
+            predicate function.
+
+    The intended use case for this function is with external APIs,
+    for all kinds of validations. Since APIs always have limitations,
+    either explicitely for number of passed items, or at least for the request size,
+    it's required to pass large collections in chunks.
+    """
+
+    if not is_iterable(iterable):
+        raise TypeError('expected an iterable')
+    size = _validate_positive_int(size, 'chunk size')
+
+    if not callable(predicate):
+        raise TypeError('expected callable key')
+
+    def predicate_(src_):
+        allow_iter = predicate(src_)
+        if not is_iterable(allow_iter):
+            raise TypeError('expected an iterable from key(src)')
+
+        allow_list = list(allow_iter)
+        if len(allow_list) != len(src_):
+            raise ValueError('expected the iterable from key(src) has the same length as the passed chunk of items')
+
+        return allow_list
+
+    return (
+        item
+        for chunk in chunked_iter(iterable, size)
+        for item, allow in zip(chunk, predicate_(chunk))
+        if allow
+    )
+
+
 def chunk_ranges(input_size, chunk_size, input_offset=0, overlap_size=0, align=False):
     """Generates *chunk_size*-sized chunk ranges for an input with length *input_size*.
     Optionally, a start of the input can be set via *input_offset*, and
