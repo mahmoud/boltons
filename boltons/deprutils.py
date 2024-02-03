@@ -31,12 +31,6 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
-"""
-Note that DeprecationWarnings are ignored by default in Python
-2.7/3.2+, so be sure to either un-ignore them in your code, or run
-Python with the -Wd flag.
-"""
-
 import sys
 from warnings import warn
 

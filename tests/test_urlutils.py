@@ -7,12 +7,6 @@ from boltons import urlutils
 from boltons.urlutils import URL, _URL_RE, find_all_links
 
 
-try:
-    unicode
-except NameError:
-    unicode = str
-
-
 # fully quoted urls that should round trip
 TEST_URLS = [
     'http://googlewebsite.com/e-shops.aspx',
@@ -71,7 +65,7 @@ def test_roundtrip(test_url):
 
 def test_basic():
     u1 = URL('http://googlewebsite.com/e-shops.aspx')
-    assert isinstance(u1.to_text(), unicode)
+    assert isinstance(u1.to_text(), str)
     assert u1.host == 'googlewebsite.com'
 
 

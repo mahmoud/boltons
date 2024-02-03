@@ -50,22 +50,10 @@ skinnier approach, you'll probably have to look to C.
 from __future__ import print_function
 
 import sys as _sys
-try:
-    from collections import OrderedDict
-except ImportError:
-    # backwards compatibility (2.6 has no OrderedDict)
-    OrderedDict = dict
+from collections import OrderedDict
 from keyword import iskeyword as _iskeyword
 from operator import itemgetter as _itemgetter
 
-try:
-    basestring
-    def exec_(code, global_env):
-        exec("exec code in global_env")
-except NameError:
-    basestring = (str, bytes)  # Python 3 compat
-    def exec_(code, global_env):
-        exec(code, global_env)
 
 __all__ = ['namedlist', 'namedtuple']
 
@@ -160,7 +148,7 @@ def namedtuple(typename, field_names, verbose=False, rename=False):
 
     # Validate the field names.  At the user's option, either generate an error
     # message or automatically replace the field name with a valid name.
-    if isinstance(field_names, basestring):
+    if isinstance(field_names, (str, bytes)):
         field_names = field_names.replace(',', ' ').split()
     field_names = [str(x) for x in field_names]
     if rename:
@@ -216,7 +204,7 @@ def namedtuple(typename, field_names, verbose=False, rename=False):
                      _property=property,
                      _tuple=tuple)
     try:
-        exec_(class_definition, namespace)
+        exec(class_definition, namespace)
     except SyntaxError as e:
         raise SyntaxError(e.message + ':\n' + class_definition)
     result = namespace[typename]
@@ -319,7 +307,7 @@ def namedlist(typename, field_names, verbose=False, rename=False):
 
     # Validate the field names.  At the user's option, either generate an error
     # message or automatically replace the field name with a valid name.
-    if isinstance(field_names, basestring):
+    if isinstance(field_names, (str, bytes)):
         field_names = field_names.replace(',', ' ').split()
     field_names = [str(x) for x in field_names]
     if rename:
@@ -381,7 +369,7 @@ def namedlist(typename, field_names, verbose=False, rename=False):
                      _property=property,
                      _list=list)
     try:
-        exec_(class_definition, namespace)
+        exec(class_definition, namespace)
     except SyntaxError as e:
         raise SyntaxError(e.message + ':\n' + class_definition)
     result = namespace[typename]

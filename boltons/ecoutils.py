@@ -151,8 +151,8 @@ and print a profile in JSON format::
 import re
 import os
 import sys
+import json
 import time
-import pprint
 import random
 import socket
 import struct
@@ -162,7 +162,6 @@ import platform
 
 ECO_VERSION = '1.0.1'  # see version history below
 
-PY_GT_2 = sys.version_info[0] > 2
 
 try:
     getrandbits = random.SystemRandom().getrandbits
@@ -206,10 +205,7 @@ except Exception:
 
 
 try:
-    if PY_GT_2:
-        import tkinter
-    else:
-        import Tkinter as tkinter
+    import tkinter
     TKINTER_VERSION = str(tkinter.TkVersion)
 except Exception:
     TKINTER_VERSION = ''
@@ -354,53 +350,10 @@ def get_profile(**kwargs):
     return ret
 
 
-try:
-    import json
-
-    def dumps(val, indent):
-        if indent:
-            return json.dumps(val, sort_keys=True, indent=indent)
-        return json.dumps(val, sort_keys=True)
-
-except ImportError:
-    _real_safe_repr = pprint._safe_repr
-
-    def _fake_json_dumps(val, indent=2):
-        # never do this. this is a hack for Python 2.4. Python 2.5 added
-        # the json module for a reason.
-        def _fake_safe_repr(*a, **kw):
-            res, is_read, is_rec = _real_safe_repr(*a, **kw)
-            if res == 'None':
-                res = 'null'
-            if res == 'True':
-                res = 'true'
-            if res == 'False':
-                res = 'false'
-            if not (res.startswith("'") or res.startswith("u'")):
-                res = res
-            else:
-                if res.startswith('u'):
-                    res = res[1:]
-
-                contents = res[1:-1]
-                contents = contents.replace('"', '').replace(r'\"', '')
-                res = '"' + contents + '"'
-            return res, is_read, is_rec
-
-        pprint._safe_repr = _fake_safe_repr
-        try:
-            ret = pprint.pformat(val, indent=indent)
-        finally:
-            pprint._safe_repr = _real_safe_repr
-
-        return ret
-
-    def dumps(val, indent):
-        ret = _fake_json_dumps(val, indent=indent)
-        if not indent:
-            ret = re.sub(r'\n\s*', ' ', ret)
-        return ret
-
+def dumps(val, indent):
+    if indent:
+        return json.dumps(val, sort_keys=True, indent=indent)
+    return json.dumps(val, sort_keys=True)
 
 
 def get_profile_json(indent=False):

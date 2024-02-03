@@ -984,15 +984,8 @@ def parse_qsl(qs, keep_blank_values=True, encoding=DEFAULT_ENCODING):
 # 20161021, used for the QueryParamDict, toward the bottom.
 """
 
-try:
-    from collections.abc import KeysView, ValuesView, ItemsView
-except ImportError:
-    from collections import KeysView, ValuesView, ItemsView
-
-try:
-    from itertools import izip_longest
-except ImportError:
-    from itertools import zip_longest as izip_longest
+from collections.abc import KeysView, ValuesView, ItemsView
+from itertools import zip_longest
 
 try:
     from .typeutils import make_sentinel
@@ -1247,7 +1240,7 @@ class OrderedMultiDict(dict):
         if isinstance(other, OrderedMultiDict):
             selfi = self.iteritems(multi=True)
             otheri = other.iteritems(multi=True)
-            zipped_items = izip_longest(selfi, otheri, fillvalue=(None, None))
+            zipped_items = zip_longest(selfi, otheri, fillvalue=(None, None))
             for (selfk, selfv), (otherk, otherv) in zipped_items:
                 if selfk != otherk or selfv != otherv:
                     return False

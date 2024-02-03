@@ -49,18 +49,7 @@ from abc import (
 from errno import EINVAL
 from codecs import EncodedFile
 from tempfile import TemporaryFile
-
-try:
-    from itertools import izip_longest as zip_longest # Python 2
-except ImportError:
-    from itertools import zip_longest  # Python 3
-
-try:
-    text_type = unicode  # Python 2
-    binary_type = str
-except NameError:
-    text_type = str      # Python 3
-    binary_type = bytes
+from itertools import zip_longest
 
 READ_CHUNK_SIZE = 21333
 """
@@ -306,7 +295,7 @@ class SpooledBytesIO(SpooledIOBase):
         >>> with ioutils.SpooledBytesIO() as f:
         ...     f.write(b"Happy IO")
         ...     _ = f.seek(0)
-        ...     isinstance(f.getvalue(), ioutils.binary_type)
+        ...     isinstance(f.getvalue(), bytes)
         True
     """
 
@@ -316,9 +305,8 @@ class SpooledBytesIO(SpooledIOBase):
 
     def write(self, s):
         self._checkClosed()
-        if not isinstance(s, binary_type):
-            raise TypeError("{} expected, got {}".format(
-                binary_type.__name__,
+        if not isinstance(s, bytes):
+            raise TypeError("bytes expected, got {}".format(
                 type(s).__name__
             ))
 
@@ -394,7 +382,7 @@ class SpooledStringIO(SpooledIOBase):
         >>> with ioutils.SpooledStringIO() as f:
         ...     f.write(u"\u2014 Hey, an emdash!")
         ...     _ = f.seek(0)
-        ...     isinstance(f.read(), ioutils.text_type)
+        ...     isinstance(f.read(), str)
         True
 
     """
@@ -410,9 +398,8 @@ class SpooledStringIO(SpooledIOBase):
 
     def write(self, s):
         self._checkClosed()
-        if not isinstance(s, text_type):
-            raise TypeError("{} expected, got {}".format(
-                text_type.__name__,
+        if not isinstance(s, str):
+            raise TypeError("str expected, got {}".format(
                 type(s).__name__
             ))
         current_pos = self.tell()
@@ -530,7 +517,7 @@ def is_text_fileobj(fileobj):
         # codecs.open and io.TextIOBase
         return True
     if getattr(fileobj, 'getvalue', False):
-        # StringIO.StringIO / cStringIO.StringIO / io.StringIO
+        # StringIO.StringIO / io.StringIO
         try:
             if isinstance(fileobj.getvalue(), type(u'')):
                 return True

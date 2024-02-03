@@ -63,7 +63,7 @@ Numeric
 -------
 
 Number sequences are an obvious target of Python iteration, such as
-the built-in :func:`range`, :func:`xrange`, and
+the built-in :func:`range`, and
 :func:`itertools.count`. Like the :ref:`iteration` members above,
 these return iterators and lists, but take numeric inputs instead of
 iterables.

@@ -60,22 +60,8 @@ from datetime import tzinfo, timedelta, date, datetime
 
 
 def total_seconds(td):
-    """For those with older versions of Python, a pure-Python
-    implementation of Python 2.7's :meth:`~datetime.timedelta.total_seconds`.
-
-    Args:
-        td (datetime.timedelta): The timedelta to convert to seconds.
-    Returns:
-        float: total number of seconds
-
-    >>> td = timedelta(days=4, seconds=33)
-    >>> total_seconds(td)
-    345633.0
-    """
-    a_milli = 1000000.0
-    td_ds = td.seconds + (td.days * 86400)  # 24 * 60 * 60
-    td_micro = td.microseconds + (td_ds * a_milli)
-    return td_micro / a_milli
+    # For compatibility
+    return timedelta.total_seconds(td)
 
 
 def dt_to_timestamp(dt):
@@ -102,7 +88,7 @@ def dt_to_timestamp(dt):
         td = dt - EPOCH_AWARE
     else:
         td = dt - EPOCH_NAIVE
-    return total_seconds(td)
+    return timedelta.total_seconds(td)
 
 
 _NONDIGIT_RE = re.compile(r'\D')
@@ -239,11 +225,11 @@ def decimal_relative_time(d, other=None, ndigits=0, cardinalize=True):
     if other is None:
         other = datetime.utcnow()
     diff = other - d
-    diff_seconds = total_seconds(diff)
+    diff_seconds = timedelta.total_seconds(diff)
     abs_diff = abs(diff)
     b_idx = bisect.bisect(_BOUND_DELTAS, abs_diff) - 1
     bbound, bunit, bname = _BOUNDS[b_idx]
-    f_diff = diff_seconds / total_seconds(bunit)
+    f_diff = diff_seconds / timedelta.total_seconds(bunit)
     rounded_diff = round(f_diff, ndigits)
     if cardinalize:
         return rounded_diff, _cardinalize_time_unit(bname, abs(rounded_diff))
@@ -420,7 +406,7 @@ class ConstantTZInfo(tzinfo):
 
     @property
     def utcoffset_hours(self):
-        return total_seconds(self.offset) / (60 * 60)
+        return timedelta.total_seconds(self.offset) / (60 * 60)
 
     def utcoffset(self, dt):
         return self.offset

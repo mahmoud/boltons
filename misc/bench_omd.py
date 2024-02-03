@@ -15,16 +15,9 @@ from collections import OrderedDict as OD
 q_sink = lithoxyl.sinks.QuantileSink()
 log = lithoxyl.logger.BaseLogger('bench_stats', sinks=[q_sink])
 
-try:
-    profile
-except NameError:
-    times = 10
-    size = 10000
-    redun = 2
-else:
-    times = 1
-    size = 10000
-    redun = 10
+times = 10
+size = 10000
+redun = 2
 
 _rng = range(size / redun) * redun
 _unique_keys = set(_rng)

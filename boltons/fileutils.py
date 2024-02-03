@@ -50,14 +50,9 @@ __all__ = ['mkdir_p', 'atomic_save', 'AtomicSaver', 'FilePerms',
            'iter_find_files', 'copytree']
 
 
-FULL_PERMS = 511  # 0777 that both Python 2 and 3 can digest
+FULL_PERMS = 511
 RW_PERMS = 438
-_SINGLE_FULL_PERM = 7  # or 07 in Python 2
-try:
-    basestring
-except NameError:
-    unicode = str  # Python 3 compat
-    basestring = (str, bytes)
+_SINGLE_FULL_PERM = 7
 
 
 def mkdir_p(path):
@@ -270,7 +265,7 @@ def atomic_save(dest_path, **kwargs):
 
 
 def path_to_unicode(path):
-    if isinstance(path, unicode):
+    if isinstance(path, str):
         return path
     encoding = sys.getfilesystemencoding() or sys.getdefaultencoding()
     return path.decode(encoding)
@@ -522,13 +517,13 @@ def iter_find_files(directory, patterns, ignored=None, include_dirs=False):
     .. _glob: https://en.wikipedia.org/wiki/Glob_%28programming%29
 
     """
-    if isinstance(patterns, basestring):
+    if isinstance(patterns, (str, bytes)):
         patterns = [patterns]
     pats_re = re.compile('|'.join([fnmatch.translate(p) for p in patterns]))
 
     if not ignored:
         ignored = []
-    elif isinstance(ignored, basestring):
+    elif isinstance(ignored, (str, bytes)):
         ignored = [ignored]
     ign_re = re.compile('|'.join([fnmatch.translate(p) for p in ignored]))
     for root, dirs, files in os.walk(directory):

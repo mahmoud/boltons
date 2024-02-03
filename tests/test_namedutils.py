@@ -1,9 +1,6 @@
 # -*- coding: utf-8 -*-
 
-try:
-    from cPickle import loads, dumps
-except:
-    from pickle import loads, dumps
+from pickle import loads, dumps
 
 from boltons.namedutils import namedlist, namedtuple
 
