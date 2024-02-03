@@ -224,7 +224,7 @@ def _make_quote_map(safe_chars):
         if c in safe_chars:
             ret[c] = ret[v] = c
         else:
-            ret[c] = ret[v] = '%{:02X}'.format(i)
+            ret[c] = ret[v] = f'%{i:02X}'
     return ret
 
 
@@ -418,7 +418,7 @@ class cachedproperty:
 
     def __repr__(self):
         cn = self.__class__.__name__
-        return '<{} func={}>'.format(cn, self.func)
+        return f'<{cn} func={self.func}>'
 
 
 class URL:
@@ -798,7 +798,7 @@ class URL:
 
     def __repr__(self):
         cn = self.__class__.__name__
-        return '{}({!r})'.format(cn, self.to_text())
+        return f'{cn}({self.to_text()!r})'
 
     def __str__(self):
         return self.to_text()
@@ -873,7 +873,7 @@ def parse_host(host):
         try:
             inet_pton(socket.AF_INET6, host)
         except OSError as se:
-            raise URLParseError('invalid IPv6 host: {!r} ({!r})'.format(host, se))
+            raise URLParseError(f'invalid IPv6 host: {host!r} ({se!r})')
         except UnicodeEncodeError:
             pass  # TODO: this can't be a real host right?
         else:
@@ -1512,7 +1512,7 @@ class OrderedMultiDict(dict):
     def __repr__(self):
         cn = self.__class__.__name__
         kvs = ', '.join([repr((k, v)) for k, v in self.iteritems(multi=True)])
-        return '{}([{}])'.format(cn, kvs)
+        return f'{cn}([{kvs}])'
 
     def viewkeys(self):
         "OMD.viewkeys() -> a set-like object providing a view on OMD's keys"

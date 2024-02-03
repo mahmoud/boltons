@@ -626,7 +626,7 @@ class OrderedMultiDict(dict):
     def __repr__(self):
         cn = self.__class__.__name__
         kvs = ', '.join([repr((k, v)) for k, v in self.iteritems(multi=True)])
-        return '{}([{}])'.format(cn, kvs)
+        return f'{cn}([{kvs}])'
 
     def viewkeys(self):
         "OMD.viewkeys() -> a set-like object providing a view on OMD's keys"
@@ -890,7 +890,7 @@ class OneToOne(dict):
     def __repr__(self):
         cn = self.__class__.__name__
         dict_repr = dict.__repr__(self)
-        return "{}({})".format(cn, dict_repr)
+        return f"{cn}({dict_repr})"
 
 
 # marker for the secret handshake used internally to set up the invert ManyToMany
@@ -1014,7 +1014,7 @@ class ManyToMany:
 
     def __repr__(self):
         cn = self.__class__.__name__
-        return '{}({!r})'.format(cn, list(self.iteritems()))
+        return f'{cn}({list(self.iteritems())!r})'
 
 
 def subdict(d, keep=None, drop=None):
@@ -1084,7 +1084,7 @@ class FrozenDict(dict):
 
     def __repr__(self):
         cn = self.__class__.__name__
-        return '{}({})'.format(cn, dict.__repr__(self))
+        return f'{cn}({dict.__repr__(self)})'
 
     def __reduce_ex__(self, protocol):
         return type(self), (dict(self),)

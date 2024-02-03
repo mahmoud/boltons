@@ -129,7 +129,7 @@ def trace_print_hook(event, label, obj, attr_name,
         fargs += (', '.join([brief_repr(a) for a in args]),)
         if kwargs:
             tmpl = '%s %s - %s - %s.%s(%s, %s)'
-            fargs += (', '.join(['{}={}'.format(k, brief_repr(v))
+            fargs += (', '.join([f'{k}={brief_repr(v)}'
                                  for k, v in kwargs.items()]),)
         if result is not _UNSET:
             tmpl += ' -> %s'

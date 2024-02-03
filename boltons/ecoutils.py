@@ -301,7 +301,7 @@ def get_profile(**kwargs):
     """
     scrub = kwargs.pop('scrub', False)
     if kwargs:
-        raise TypeError('unexpected keyword arguments: {!r}'.format(kwargs.keys()))
+        raise TypeError(f'unexpected keyword arguments: {kwargs.keys()!r}')
     ret = {}
     try:
         ret['username'] = getpass.getuser()

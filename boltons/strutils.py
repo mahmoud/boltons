@@ -137,8 +137,8 @@ def unit_len(sized_iterable, unit_noun='item'):  # TODO: len_units()/unitize()?
     count = len(sized_iterable)
     units = cardinalize(unit_noun, count)
     if count:
-        return '{} {}'.format(count, units)
-    return 'No {}'.format(units)
+        return f'{count} {units}'
+    return f'No {units}'
 
 
 _ORDINAL_MAP = {'1': 'st',
@@ -346,7 +346,7 @@ def a10n(string):
     """
     if len(string) < 3:
         return string
-    return '{}{}{}'.format(string[0], len(string[1:-1]), string[-1])
+    return f'{string[0]}{len(string[1:-1])}{string[-1]}'
 
 
 # Based on https://en.wikipedia.org/wiki/ANSI_escape_code#Escape_sequences
@@ -968,7 +968,7 @@ def format_int_list(int_list, delim=',', range_delim='-', delim_space=False):
 
             # Current value is non-contiguous.
             elif delta > 1:
-                output.append('{:d}'.format(contig_range.popleft()))
+                output.append(f'{contig_range.popleft():d}')
                 contig_range.append(x)
 
             # Current value repeated.
@@ -980,7 +980,7 @@ def format_int_list(int_list, delim=',', range_delim='-', delim_space=False):
 
         # Last value is non-contiguous.
         if len(contig_range) == 1:
-            output.append('{:d}'.format(contig_range.popleft()))
+            output.append(f'{contig_range.popleft():d}')
             contig_range.clear()
 
         # Last value is part of contiguous range.
@@ -1193,7 +1193,7 @@ class MultiReplace:
             sub_map = sub_map.items()
 
         for idx, vals in enumerate(sub_map):
-            group_name = 'group{}'.format(idx)
+            group_name = f'group{idx}'
             if isinstance(vals[0], (str, bytes)):
                 # If we're not treating input strings like a regex, escape it
                 if not options['regex']:
@@ -1203,7 +1203,7 @@ class MultiReplace:
             else:
                 exp = vals[0].pattern
 
-            regex_values.append('(?P<{}>{})'.format(group_name, exp))
+            regex_values.append(f'(?P<{group_name}>{exp})')
             self.group_map[group_name] = vals[1]
 
         self.combined_pattern = re.compile(

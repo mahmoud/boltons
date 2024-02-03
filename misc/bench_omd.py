@@ -58,7 +58,7 @@ def bench():
         for action in _all_actions:
             try:
                 best_msecs = q_sink.qas[impl_name][action].min * 1000
-                print('   - {} - {:g} ms'.format(action, best_msecs))
+                print(f'   - {action} - {best_msecs:g} ms')
             except KeyError:
                 pass
         best_msecs = q_sink.qas[impl_name]['total'].min * 1000

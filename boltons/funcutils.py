@@ -317,14 +317,14 @@ def format_invocation(name='', args=(), kwargs=None, **kw):
         kwarg_items = [(k, kwargs[k]) for k in sorted(kwargs)]
     else:
         kwarg_items = kwargs
-    kw_text = ', '.join(['{}={}'.format(k, _repr(v)) for k, v in kwarg_items])
+    kw_text = ', '.join([f'{k}={_repr(v)}' for k, v in kwarg_items])
 
     all_args_text = a_text
     if all_args_text and kw_text:
         all_args_text += ', '
     all_args_text += kw_text
 
-    return '{}({})'.format(name, all_args_text)
+    return f'{name}({all_args_text})'
 
 
 def format_exp_repr(obj, pos_names, req_names=None, opt_names=None, opt_key=None):
@@ -431,7 +431,7 @@ def format_nonexp_repr(obj, req_names=None, opt_names=None, opt_key=None):
     assert callable(opt_key)
 
     items = [(name, getattr(obj, name, None)) for name in all_names]
-    labels = ['{}={!r}'.format(name, val) for name, val in items
+    labels = [f'{name}={val!r}' for name, val in items
               if not (name in opt_names and opt_key(val))]
     if not labels:
         labels = ['id=%s' % id(obj)]
@@ -639,7 +639,7 @@ def _parse_wraps_expected(expected):
                                  ' iterable of (name, default) pairs, or a mapping of '
                                  ' {name: default}, not %r')
         if not isinstance(argname, (str, bytes)):
-            raise ValueError('all "expected" argnames must be strings, not {!r}'.format(argname))
+            raise ValueError(f'all "expected" argnames must be strings, not {argname!r}')
 
         expected_items.append((argname, default))
 
@@ -805,7 +805,7 @@ class FunctionBuilder:
         # TODO: copy_body? gonna need a good signature regex.
         # TODO: might worry about __closure__?
         if not callable(func):
-            raise TypeError('expected callable object, not {!r}'.format(func))
+            raise TypeError(f'expected callable object, not {func!r}')
 
         if isinstance(func, functools.partial):
             kwargs = {'name': func.func.__name__,
@@ -901,9 +901,9 @@ class FunctionBuilder:
         keyword-only argument
         """
         if arg_name in self.args:
-            raise ExistingArgument('arg {!r} already in func {} arg list'.format(arg_name, self.name))
+            raise ExistingArgument(f'arg {arg_name!r} already in func {self.name} arg list')
         if arg_name in self.kwonlyargs:
-            raise ExistingArgument('arg {!r} already in func {} kwonly arg list'.format(arg_name, self.name))
+            raise ExistingArgument(f'arg {arg_name!r} already in func {self.name} kwonly arg list')
         if not kwonly:
             self.args.append(arg_name)
             if default is not NO_DEFAULT:

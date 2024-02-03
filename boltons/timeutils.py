@@ -263,7 +263,7 @@ def relative_time(d, other=None, ndigits=0):
     phrase = 'ago'
     if drt < 0:
         phrase = 'from now'
-    return '{:g} {} {}'.format(abs(drt), unit, phrase)
+    return f'{abs(drt):g} {unit} {phrase}'
 
 
 def strpdate(string, format):
@@ -417,7 +417,7 @@ class ConstantTZInfo(tzinfo):
 
     def __repr__(self):
         cn = self.__class__.__name__
-        return '{}(name={!r}, offset={!r})'.format(cn, self.name, self.offset)
+        return f'{cn}(name={self.name!r}, offset={self.offset!r})'
 
 
 UTC = ConstantTZInfo('UTC')

@@ -79,7 +79,7 @@ def make_sentinel(name='_MISSING', var_name=None):
         def __repr__(self):
             if self.var_name:
                 return self.var_name
-            return '{}({!r})'.format(self.__class__.__name__, self.name)
+            return f'{self.__class__.__name__}({self.name!r})'
 
         if var_name:
             def __reduce__(self):

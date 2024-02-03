@@ -452,7 +452,7 @@ class SpooledStringIO(SpooledIOBase):
             self._tell = dest_position
         else:
             raise ValueError(
-                "Invalid whence ({}, should be 0, 1, or 2)".format(mode)
+                f"Invalid whence ({mode}, should be 0, 1, or 2)"
             )
         return self.tell()
 

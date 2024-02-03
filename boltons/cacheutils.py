@@ -395,7 +395,7 @@ class _HashedKey(list):
         return self.hash_value
 
     def __repr__(self):
-        return '{}({})'.format(self.__class__.__name__, list.__repr__(self))
+        return f'{self.__class__.__name__}({list.__repr__(self)})'
 
 
 def make_cache_key(args, kwargs, typed=False,
@@ -473,7 +473,7 @@ class CachedFunction:
         if self.typed or not self.scoped:
             return ("%s(func=%r, scoped=%r, typed=%r)"
                     % (cn, self.func, self.scoped, self.typed))
-        return "{}(func={!r})".format(cn, self.func)
+        return f"{cn}(func={self.func!r})"
 
 
 class CachedMethod:
@@ -635,7 +635,7 @@ class cachedproperty:
 
     def __repr__(self):
         cn = self.__class__.__name__
-        return '<{} func={}>'.format(cn, self.func)
+        return f'<{cn} func={self.func}>'
 
 
 class ThresholdCounter:
