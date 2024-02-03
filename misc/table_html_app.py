@@ -19,13 +19,6 @@ _CA_PATH = _CUR_PATH + '/_clastic_assets'
 _CSS_PATH = _CA_PATH + '/common.css'
 _STYLE = open(_CSS_PATH).read()
 
-try:
-    basestring     # Python 2
-    unicode
-except NameError:  # Python 3
-    basestring = (str, )
-    unicode = str
-
 
 def fetch_json(url):
     import urllib2
@@ -88,11 +81,8 @@ class BasicRender(object):
         self.autotable_render = AutoTableRenderer()
 
     def render_response(self, request, context, _route):
-        try:
-            from collections.abc import Sized
-        except ImportError:
-            from collections import Sized
-        if isinstance(context, basestring):  # already serialized
+        from collections.abc import Sized
+        if isinstance(context, str):  # already serialized
             if self._guess_json(context):
                 return Response(context, mimetype="application/json")
             elif '<html' in context[:168]:
@@ -103,7 +93,7 @@ class BasicRender(object):
 
         # not serialized yet, time to guess what the requester wants
         if not isinstance(context, Sized):
-            return Response(unicode(context), mimetype="text/plain")
+            return Response(str(context), mimetype="text/plain")
         return self._serialize_to_resp(context, request, _route)
 
     __call__ = render_response
@@ -125,7 +115,7 @@ class BasicRender(object):
             return self.json_render(context)
         elif resp_mime == 'text/html':
             return self.autotable_render(context, _route)
-        return Response(unicode(context), mimetype="text/plain")
+        return Response(str(context), mimetype="text/plain")
 
     @property
     def _mime_format_map(self):

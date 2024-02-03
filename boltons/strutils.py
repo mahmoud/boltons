@@ -38,6 +38,7 @@ provided by ``strutils``.
 
 from __future__ import print_function
 
+import builtins
 import re
 import sys
 import uuid
@@ -45,32 +46,12 @@ import zlib
 import string
 import unicodedata
 import collections
+from collections.abc import Mapping
 from gzip import GzipFile
+from html.parser import HTMLParser
+from html import entities as htmlentitydefs
+from io import BytesIO as StringIO
 
-try:
-    from cStringIO import cStringIO as StringIO
-except ImportError:
-    from io import BytesIO as StringIO
-
-try:
-    from collections.abc import Mapping
-except ImportError:
-    from collections import Mapping
-
-try:
-    unicode, str, bytes, basestring = unicode, str, str, basestring
-    from HTMLParser import HTMLParser
-    import htmlentitydefs
-except NameError:  # basestring not defined in Python 3
-    unicode, str, bytes, basestring = str, bytes, bytes, (str, bytes)
-    unichr = chr
-    from html.parser import HTMLParser
-    from html import entities as htmlentitydefs
-
-try:
-    import __builtin__ as builtins
-except ImportError:
-    import builtins
 
 __all__ = ['camel2under', 'under2camel', 'slugify', 'split_punct_ws',
            'unit_len', 'ordinalize', 'cardinalize', 'pluralize', 'singularize',
@@ -186,7 +167,7 @@ def ordinalize(number, ext_only=False):
     >>> print(ordinalize(1515))
     1515th
     """
-    numstr, ext = unicode(number), ''
+    numstr, ext = str(number), ''
     if numstr and numstr[-1] in string.digits:
         try:
             # first check for teens
@@ -397,7 +378,7 @@ def strip_ansi(text):
     >>> strip_ansi('\x1b[0m\x1b[1;36mart\x1b[46;34m')
     'art'
 
-    Supports unicode, str, bytes and bytearray content as input. Returns the
+    Supports str, bytes and bytearray content as input. Returns the
     same type as the input.
 
     There's a lot of ANSI art available for testing on `sixteencolors.net`_.
@@ -414,8 +395,7 @@ def strip_ansi(text):
     # save input type for later.
     target_type = None
     # Unicode type aliased to str is code-smell for Boltons in Python 3 env.
-    is_py3 = (unicode == builtins.str)
-    if is_py3 and isinstance(text, (bytes, bytearray)):
+    if isinstance(text, (bytes, bytearray)):
         target_type = type(text)
         text = text.decode('utf-8')
 
@@ -438,9 +418,9 @@ def asciify(text, ignore=False):
     **with** unicode, not against it.
 
     Args:
-        text (str or unicode): The string to be asciified.
+        text (str): The string to be asciified.
         ignore (bool): Configures final encoding to ignore remaining
-            unasciified unicode instead of replacing it.
+            unasciified string instead of replacing it.
 
     >>> asciify('Beyoncé') == b'Beyonce'
     True
@@ -462,18 +442,18 @@ def asciify(text, ignore=False):
 
 
 def is_ascii(text):
-    """Check if a unicode or bytestring, *text*, is composed of ascii
+    """Check if a string or bytestring, *text*, is composed of ascii
     characters only. Raises :exc:`ValueError` if argument is not text.
 
     Args:
-        text (str or unicode): The string to be checked.
+        text (str): The string to be checked.
 
     >>> is_ascii('Beyoncé')
     False
     >>> is_ascii('Beyonce')
     True
     """
-    if isinstance(text, unicode):
+    if isinstance(text, str):
         try:
             text.encode('ascii')
         except UnicodeEncodeError:
@@ -495,7 +475,7 @@ class DeaccenterDict(dict):
         if ch is not None:
             return ch
         try:
-            de = unicodedata.decomposition(unichr(key))
+            de = unicodedata.decomposition(chr(key))
             p1, _, p2 = de.rpartition(' ')
             if int(p2, 16) == 0x308:
                 ch = self.get(key)
@@ -505,19 +485,6 @@ class DeaccenterDict(dict):
             ch = self.get(key, key)
         self[key] = ch
         return ch
-
-    try:
-        from collections import defaultdict
-    except ImportError:
-        # no defaultdict means that __missing__ isn't supported in
-        # this version of python, so we define __getitem__
-        def __getitem__(self, key):
-            try:
-                return super(DeaccenterDict, self).__getitem__(key)
-            except KeyError:
-                return self.__missing__(key)
-    else:
-        del defaultdict
 
 
 # http://chmullig.com/2009/12/python-unicode-ascii-ifier/
@@ -620,7 +587,7 @@ class HTMLTextExtractor(HTMLParser):
             codepoint = int(number[1:], 16)
         else:
             codepoint = int(number)
-        self.result.append(unichr(codepoint))
+        self.result.append(chr(codepoint))
 
     def handle_entityref(self, name):
         try:
@@ -628,7 +595,7 @@ class HTMLTextExtractor(HTMLParser):
         except KeyError:
             self.result.append(u'&' + name + u';')
         else:
-            self.result.append(unichr(codepoint))
+            self.result.append(chr(codepoint))
 
     def get_text(self):
         return u''.join(self.result)
@@ -1230,7 +1197,7 @@ class MultiReplace(object):
 
         for idx, vals in enumerate(sub_map):
             group_name = 'group{0}'.format(idx)
-            if isinstance(vals[0], basestring):
+            if isinstance(vals[0], (str, bytes)):
                 # If we're not treating input strings like a regex, escape it
                 if not options['regex']:
                     exp = re.escape(vals[0])

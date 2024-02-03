@@ -44,13 +44,9 @@ characteristics of Python's built-in set implementation.
 from __future__ import print_function
 
 from bisect import bisect_left
+from collections.abc import MutableSet
 from itertools import chain, islice
 import operator
-
-try:
-    from collections.abc import MutableSet
-except ImportError:
-    from collections import MutableSet
 
 try:
     from .typeutils import make_sentinel

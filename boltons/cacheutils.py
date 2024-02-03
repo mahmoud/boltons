@@ -89,13 +89,6 @@ except ImportError:
     _MISSING = object()
     _KWARG_MARK = object()
 
-try:
-    xrange
-except NameError:
-    # py3
-    xrange = range
-    unicode, str, bytes, basestring = str, bytes, bytes, (str, bytes)
-
 PREV, NEXT, KEY, VALUE = range(4)   # names for the link fields
 DEFAULT_MAX_SIZE = 128
 
@@ -492,7 +485,7 @@ class CachedMethod(object):
     def __init__(self, func, cache, scoped=True, typed=False, key=None):
         self.func = func
         self.__isabstractmethod__ = getattr(func, '__isabstractmethod__', False)
-        if isinstance(cache, basestring):
+        if isinstance(cache, (str, bytes)):
             self.get_cache = attrgetter(cache)
         elif callable(cache):
             self.get_cache = cache
@@ -813,7 +806,7 @@ class ThresholdCounter(object):
         if iterable is not None:
             if callable(getattr(iterable, 'iteritems', None)):
                 for key, count in iterable.iteritems():
-                    for i in xrange(count):
+                    for i in range(count):
                         self.add(key)
             else:
                 for key in iterable:

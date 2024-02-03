@@ -52,24 +52,10 @@ For more advanced :class:`Table`-style manipulation check out the
 
 from __future__ import print_function
 
-try:
-    from html import escape as html_escape
-except ImportError:
-    from cgi import escape as html_escape
+from html import escape as html_escape
 import types
 from itertools import islice
-try:
-    from collections.abc import Sequence, Mapping, MutableSequence
-except ImportError:
-    from collections import Sequence, Mapping, MutableSequence
-try:
-    string_types, integer_types = (str, unicode), (int, long)
-    from cgi import escape as html_escape
-except NameError:
-    # Python 3 compat
-    unicode = str
-    string_types, integer_types = (str, bytes), (int,)
-    from html import escape as html_escape
+from collections.abc import Sequence, Mapping, MutableSequence
 
 try:
     from .typeutils import make_sentinel
@@ -100,12 +86,12 @@ __all__ = ['Table']
 
 def to_text(obj, maxlen=None):
     try:
-        text = unicode(obj)
+        text = str(obj)
     except Exception:
         try:
-            text = unicode(repr(obj))
+            text = str(repr(obj))
         except Exception:
-            text = unicode(object.__repr__(obj))
+            text = str(object.__repr__(obj))
     if maxlen and len(text) > maxlen:
         text = text[:maxlen - 3] + '...'
         # TODO: inverse of ljust/rjust/center
@@ -117,10 +103,10 @@ def escape_html(obj, maxlen=None):
     return html_escape(text, quote=True)
 
 
-_DNR = set((type(None), bool, complex, float,
-            type(NotImplemented), slice,
-            types.FunctionType, types.MethodType, types.BuiltinFunctionType,
-            types.GeneratorType) + string_types + integer_types)
+_DNR = {type(None), bool, complex, float, type(NotImplemented), slice,
+        str, bytes, int,
+        types.FunctionType, types.MethodType,
+        types.BuiltinFunctionType, types.GeneratorType}
 
 
 class UnsupportedData(TypeError):

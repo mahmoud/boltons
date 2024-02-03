@@ -105,10 +105,7 @@ def test_clear():
 
 
 def test_types():
-    try:
-        from collections.abc import MutableMapping
-    except ImportError:
-        from collections import MutableMapping
+    from collections.abc import MutableMapping
 
     omd = OMD()
     assert isinstance(omd, dict)
@@ -261,11 +258,8 @@ def test_pop_all():
 
 
 def test_reversed():
-    try:
-        from collections import OrderedDict
-    except:
-        # skip on python 2.6
-        return
+    from collections import OrderedDict
+
     for items in _ITEMSETS:
         omd = OMD(items)
         od = OrderedDict(items)

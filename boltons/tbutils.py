@@ -58,12 +58,6 @@ import sys
 import linecache
 
 
-try:
-    text = unicode  # Python 2
-except NameError:
-    text = str      # Python 3
-
-
 # TODO: chaining primitives?  what are real use cases where these help?
 
 # TODO: print_* for backwards compatibility
@@ -631,11 +625,6 @@ def _some_str(value):
         return str(value)
     except Exception:
         pass
-    try:
-        value = text(value)
-        return value.encode("ascii", "backslashreplace")
-    except Exception:
-        pass
     return '<unprintable %s object>' % type(value).__name__
 
 
@@ -760,7 +749,7 @@ class ParsedException(object):
         Args:
             tb_str (str): The traceback text (:class:`unicode` or UTF-8 bytes)
         """
-        if not isinstance(tb_str, text):
+        if not isinstance(tb_str, str):
             tb_str = tb_str.decode('utf-8')
         tb_lines = tb_str.lstrip().splitlines()
 

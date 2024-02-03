@@ -47,11 +47,8 @@ import time
 import codecs
 import random
 import itertools
-
-try:
-    from collections.abc import Mapping, Sequence, Set, ItemsView, Iterable
-except ImportError:
-    from collections import Mapping, Sequence, Set, ItemsView, Iterable
+from itertools import zip_longest
+from collections.abc import Mapping, Sequence, Set, ItemsView, Iterable
 
 
 try:
@@ -61,18 +58,6 @@ try:
 except ImportError:
     _REMAP_EXIT = object()
     _UNSET = object()
-
-try:
-    from future_builtins import filter
-    from itertools import izip, izip_longest as zip_longest
-    _IS_PY3 = False
-except ImportError:
-    # Python 3 compat
-    _IS_PY3 = True
-    basestring = (str, bytes)
-    unicode = str
-    izip, xrange = zip, range
-    from itertools import zip_longest
 
 
 def is_iterable(obj):
@@ -106,7 +91,7 @@ def is_scalar(obj):
     >>> is_scalar('hello')
     True
     """
-    return not is_iterable(obj) or isinstance(obj, basestring)
+    return not is_iterable(obj) or isinstance(obj, (str, bytes))
 
 
 def is_collection(obj):
@@ -120,7 +105,7 @@ def is_collection(obj):
     >>> is_collection('hello')
     False
     """
-    return is_iterable(obj) and not isinstance(obj, basestring)
+    return is_iterable(obj) and not isinstance(obj, (str, bytes))
 
 
 def split(src, sep=None, maxsplit=None):
@@ -359,9 +344,9 @@ def chunked_iter(src, size, **kw):
     if not src:
         return
     postprocess = lambda chk: chk
-    if isinstance(src, basestring):
+    if isinstance(src, (str, bytes)):
         postprocess = lambda chk, _sep=type(src)(): _sep.join(chk)
-        if _IS_PY3 and isinstance(src, bytes):
+        if isinstance(src, bytes):
             postprocess = lambda chk: bytes(chk)
     src_iter = iter(src)
     while True:
@@ -572,7 +557,7 @@ def frange(stop, start=None, step=1.0):
     if not ret:
         return ret
     ret[0] = start
-    for i in xrange(1, count):
+    for i in range(1, count):
         ret[i] = ret[i - 1] + step
     return ret
 
@@ -743,7 +728,7 @@ def bucketize(src, key=bool, value_transform=None, key_filter=None):
             raise ValueError("key and src have to be the same length")
         src = zip(key, src)
 
-    if isinstance(key, basestring):
+    if isinstance(key, (str, bytes)):
         key_func = lambda x: getattr(x, key, x)
     elif callable(key):
         key_func = key
@@ -828,7 +813,7 @@ def unique_iter(src, key=None):
         key_func = lambda x: x
     elif callable(key):
         key_func = key
-    elif isinstance(key, basestring):
+    elif isinstance(key, (str, bytes)):
         key_func = lambda x: getattr(x, key, x)
     else:
         raise TypeError('"key" expected a string or callable, not %r' % key)
@@ -879,7 +864,7 @@ def redundant(src, key=None, groups=False):
         pass
     elif callable(key):
         key_func = key
-    elif isinstance(key, basestring):
+    elif isinstance(key, (str, bytes)):
         key_func = lambda x: getattr(x, key, x)
     else:
         raise TypeError('"key" expected a string or callable, not %r' % key)
@@ -977,7 +962,7 @@ def flatten_iter(iterable):
     [1, 2, 3, 4, 5]
     """
     for item in iterable:
-        if isinstance(item, Iterable) and not isinstance(item, basestring):
+        if isinstance(item, Iterable) and not isinstance(item, (str, bytes)):
             for subitem in flatten_iter(item):
                 yield subitem
         else:
@@ -1031,7 +1016,7 @@ _orig_default_visit = default_visit
 
 def default_enter(path, key, value):
     # print('enter(%r, %r)' % (key, value))
-    if isinstance(value, basestring):
+    if isinstance(value, (str, bytes)):
         return value, False
     elif isinstance(value, Mapping):
         return value.__class__(), ItemsView(value)
@@ -1288,7 +1273,7 @@ def get_path(root, path, default=_UNSET):
        default: The value to be returned should any
           ``PathAccessError`` exceptions be raised.
     """
-    if isinstance(path, basestring):
+    if isinstance(path, (str, bytes)):
         path = path.split('.')
     cur = root
     try:
@@ -1426,19 +1411,12 @@ class GUIDerator(object):
     def __iter__(self):
         return self
 
-    if _IS_PY3:
-        def __next__(self):
-            if os.getpid() != self.pid:
-                self.reseed()
-            target_bytes = (self.salt + str(next(self.count))).encode('utf8')
-            hash_text = self._sha1(target_bytes).hexdigest()[:self.size]
-            return hash_text
-    else:
-        def __next__(self):
-            if os.getpid() != self.pid:
-                self.reseed()
-            return self._sha1(self.salt +
-                              str(next(self.count))).hexdigest()[:self.size]
+    def __next__(self):
+        if os.getpid() != self.pid:
+            self.reseed()
+        target_bytes = (self.salt + str(next(self.count))).encode('utf8')
+        hash_text = self._sha1(target_bytes).hexdigest()[:self.size]
+        return hash_text
 
     next = __next__
 
@@ -1470,18 +1448,11 @@ class SequentialGUIDerator(GUIDerator):
 
     """
 
-    if _IS_PY3:
-        def reseed(self):
-            super(SequentialGUIDerator, self).reseed()
-            start_str = self._sha1(self.salt.encode('utf8')).hexdigest()
-            self.start = int(start_str[:self.size], 16)
-            self.start |= (1 << ((self.size * 4) - 2))
-    else:
-        def reseed(self):
-            super(SequentialGUIDerator, self).reseed()
-            start_str = self._sha1(self.salt).hexdigest()
-            self.start = int(start_str[:self.size], 16)
-            self.start |= (1 << ((self.size * 4) - 2))
+    def reseed(self):
+        super(SequentialGUIDerator, self).reseed()
+        start_str = self._sha1(self.salt.encode('utf8')).hexdigest()
+        self.start = int(start_str[:self.size], 16)
+        self.start |= (1 << ((self.size * 4) - 2))
 
     def __next__(self):
         if os.getpid() != self.pid:

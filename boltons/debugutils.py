@@ -38,13 +38,7 @@ built-in Python debugger.
 
 import sys
 import time
-
-try:
-    basestring
-    from repr import Repr
-except NameError:
-    basestring = (str, bytes)  # py3
-    from reprlib import Repr
+from reprlib import Repr
 
 try:
     from .typeutils import make_sentinel
@@ -179,7 +173,7 @@ def wrap_trace(obj, hook=trace_print_hook,
     # TODO: test classmethod/staticmethod/property
     # TODO: wrap __dict__ for old-style classes?
 
-    if isinstance(which, basestring):
+    if isinstance(which, (str, bytes)):
         which_func = lambda attr_name, attr_val: attr_name == which
     elif callable(getattr(which, '__contains__', None)):
         which_func = lambda attr_name, attr_val: attr_name in which
@@ -190,7 +184,7 @@ def wrap_trace(obj, hook=trace_print_hook,
 
     label = label or hex(id(obj))
 
-    if isinstance(events, basestring):
+    if isinstance(events, (str, bytes)):
         events = [events]
     do_get = not events or 'get' in events
     do_set = not events or 'set' in events

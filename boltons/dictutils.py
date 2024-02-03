@@ -69,19 +69,8 @@ thanks to `Mark Williams`_ for all his help.
 
 """
 
-try:
-    from collections.abc import KeysView, ValuesView, ItemsView
-    PY3 = True
-except ImportError:
-    from collections import KeysView, ValuesView, ItemsView
-    PY3 = False
-
-import itertools
-
-try:
-    from itertools import izip_longest
-except ImportError:
-    from itertools import zip_longest as izip_longest
+from collections.abc import KeysView, ValuesView, ItemsView
+from itertools import zip_longest
 
 try:
     from .typeutils import make_sentinel
@@ -94,11 +83,6 @@ PREV, NEXT, KEY, VALUE, SPREV, SNEXT = range(6)
 
 
 __all__ = ['MultiDict', 'OMD', 'OrderedMultiDict', 'OneToOne', 'ManyToMany', 'subdict', 'FrozenDict']
-
-try:
-    profile
-except NameError:
-    profile = lambda x: x
 
 
 class OrderedMultiDict(dict):
@@ -191,13 +175,12 @@ class OrderedMultiDict(dict):
         if kwargs:
             self.update(kwargs)
 
-    if PY3:
-        def __getstate__(self):
-            return list(self.iteritems(multi=True))
-        
-        def __setstate__(self, state):
-            self.clear()
-            self.update_extend(state)
+    def __getstate__(self):
+        return list(self.iteritems(multi=True))
+
+    def __setstate__(self, state):
+        self.clear()
+        self.update_extend(state)
 
     def _clear_ll(self):
         try:
@@ -365,7 +348,7 @@ class OrderedMultiDict(dict):
         if isinstance(other, OrderedMultiDict):
             selfi = self.iteritems(multi=True)
             otheri = other.iteritems(multi=True)
-            zipped_items = izip_longest(selfi, otheri, fillvalue=(None, None))
+            zipped_items = zip_longest(selfi, otheri, fillvalue=(None, None))
             for (selfk, selfv), (otherk, otherv) in zipped_items:
                 if selfk != otherk or selfv != otherv:
                     return False

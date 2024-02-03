@@ -4,12 +4,6 @@ import codecs
 import random
 import string
 
-try:
-    from StringIO import StringIO
-except ImportError:
-    # py3
-    StringIO = io.StringIO
-
 from tempfile import mkdtemp
 from unittest import TestCase
 from zipfile import ZipFile, ZIP_DEFLATED
@@ -18,14 +12,6 @@ from zipfile import ZipFile, ZIP_DEFLATED
 from boltons import ioutils
 
 CUR_FILE_PATH = os.path.abspath(__file__)
-
-
-try:
-    text_type = unicode  # Python 2
-    binary_type = str
-except NameError:
-    text_type = str      # Python 3
-    binary_type = bytes
 
 
 class AssertionsMixin(object):
@@ -141,9 +127,9 @@ class BaseTestMixin(object):
     def test_compare_different_instances(self):
         """Make sure two different instance types are not considered equal"""
         a = ioutils.SpooledBytesIO()
-        a.write(binary_type(b"I am equal!"))
+        a.write(b"I am equal!")
         b = ioutils.SpooledStringIO()
-        b.write(text_type("I am equal!"))
+        b.write("I am equal!")
         self.assertNotEqual(a, b)
 
     def test_compare_unequal_instances(self):
@@ -240,7 +226,7 @@ class TestSpooledBytesIO(TestCase, BaseTestMixin, AssertionsMixin):
         self.test_str_lines = (
             "Text with:{0}newlines!".format(os.linesep).encode('ascii')
         )
-        self.data_type = binary_type
+        self.data_type = bytes
 
     def test_compare_not_equal_instances(self):
         """Make sure instances with different values fail == check."""
@@ -325,7 +311,7 @@ class TestSpooledStringIO(TestCase, BaseTestMixin, AssertionsMixin):
         self.spooled_flo = ioutils.SpooledStringIO()
         self.test_str = u"Remember kids, always use an emdash: '\u2014'"
         self.test_str_lines = u"Text with\u2014{0}newlines!".format(os.linesep)
-        self.data_type = text_type
+        self.data_type = str
 
     def test_compare_not_equal_instances(self):
         """Make sure instances with different values fail == check."""
@@ -472,8 +458,7 @@ class TestMultiFileReader(TestCase):
         self.assertEqual(b'narftroz', r.read())
 
     def test_read_seek_text(self):
-        # also tests StringIO.StringIO on py2
-        r = ioutils.MultiFileReader(StringIO(u'narf'),
+        r = ioutils.MultiFileReader(io.StringIO(u'narf'),
                                     io.StringIO(u'troz'))
         self.assertEqual([u'nar', u'ftr', u'oz'],
                          list(iter(lambda: r.read(3), u'')))

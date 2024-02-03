@@ -72,11 +72,6 @@ from __future__ import print_function
 import re
 from string import Formatter
 
-try:
-    unicode        # Python 2
-except NameError:
-    unicode = str  # Python 3
-
 __all__ = ['DeferredValue', 'get_format_args', 'tokenize_format_str',
            'construct_format_field_str', 'infer_positional_format_args',
            'BaseFormatField']
@@ -344,7 +339,7 @@ class DeferredValue(object):
         return str(self.get_value())
 
     def __unicode__(self):
-        return unicode(self.get_value())
+        return str(self.get_value())
 
     def __repr__(self):
         return repr(self.get_value())
