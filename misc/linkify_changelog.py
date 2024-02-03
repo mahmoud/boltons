@@ -13,7 +13,7 @@ def sub_member_match(match):
     full_name = match.group(1)
     mod_name = match.group(2)
     url = BASE_RTD_URL + mod_name + '.html#boltons.' + full_name
-    ret = '[{}][{}]'.format(full_name, full_name)
+    ret = f'[{full_name}][{full_name}]'
     URL_MAP[full_name] = url
     # print ret
     return ret
@@ -24,7 +24,7 @@ def sub_issue_match(match):
     issue_num = match.group(1)
     link_target = 'i%s' % issue_num
     link_url = BASE_ISSUES_URL + issue_num
-    ret = '[{}][{}]'.format(link_text, link_target)
+    ret = f'[{link_text}][{link_target}]'
     URL_MAP[link_target] = link_url
     # print ret
     return ret
@@ -41,7 +41,7 @@ def main():
 
     link_map_lines = []
     for (name, url) in sorted(URL_MAP.items()):
-        link_map_lines.append('[{}]: {}'.format(name, url))
+        link_map_lines.append(f'[{name}]: {url}')
 
     print(ret)
     print()

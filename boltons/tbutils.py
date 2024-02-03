@@ -161,7 +161,7 @@ class Callpoint:
                                                  self.lineno,
                                                  self.func_name)
         if self.line:
-            ret += '    {}\n'.format(str(self.line).strip())
+            ret += f'    {str(self.line).strip()}\n'
         return ret
 
 
@@ -334,11 +334,11 @@ class TracebackInfo:
         cn = self.__class__.__name__
 
         if self.frames:
-            frame_part = ' last={!r}'.format(self.frames[-1])
+            frame_part = f' last={self.frames[-1]!r}'
         else:
             frame_part = ''
 
-        return '<{} frames={}{}>'.format(cn, len(self.frames), frame_part)
+        return f'<{cn} frames={len(self.frames)}{frame_part}>'
 
     def __str__(self):
         return self.get_formatted()
@@ -397,7 +397,7 @@ class ExceptionInfo:
         type_str = exc_type.__name__
         type_mod = exc_type.__module__
         if type_mod not in ("__main__", "__builtin__", "exceptions", "builtins"):
-            type_str = '{}.{}'.format(type_mod, type_str)
+            type_str = f'{type_mod}.{type_str}'
         val_str = _some_str(exc_value)
         tb_info = cls.tb_info_type.from_traceback(traceback)
         return cls(type_str, val_str, tb_info)
@@ -422,7 +422,7 @@ class ExceptionInfo:
         cn = self.__class__.__name__
         try:
             len_frames = len(self.tb_info.frames)
-            last_frame = ', last={!r}'.format(self.tb_info.frames[-1])
+            last_frame = f', last={self.tb_info.frames[-1]!r}'
         except Exception:
             len_frames = 0
             last_frame = ''
@@ -436,10 +436,10 @@ class ExceptionInfo:
         """
         # TODO: add SyntaxError formatting
         tb_str = self.tb_info.get_formatted()
-        return ''.join([tb_str, '{}: {}'.format(self.exc_type, self.exc_msg)])
+        return ''.join([tb_str, f'{self.exc_type}: {self.exc_msg}'])
 
     def get_formatted_exception_only(self):
-        return '{}: {}'.format(self.exc_type, self.exc_msg)
+        return f'{self.exc_type}: {self.exc_msg}'
 
 
 class ContextualCallpoint(Callpoint):
@@ -600,7 +600,7 @@ def format_exception_only(etype, value):
     lines = []
     filename = value.filename or "<string>"
     lineno = str(value.lineno) or '?'
-    lines.append('  File "{}", line {}\n'.format(filename, lineno))
+    lines.append(f'  File "{filename}", line {lineno}\n')
     badline = value.text
     offset = value.offset
     if badline is not None:
@@ -612,7 +612,7 @@ def format_exception_only(etype, value):
             # only three spaces to account for offset1 == pos 0
             lines.append('   %s^\n' % ''.join(caretspace))
     msg = value.msg or "<no detail available>"
-    lines.append("{}: {}\n".format(stype, msg))
+    lines.append(f"{stype}: {msg}\n")
     return lines
 
 
@@ -630,7 +630,7 @@ def _format_final_exc_line(etype, value):
     if value is None or not valuestr:
         line = "%s\n" % etype
     else:
-        line = "{}: {}\n".format(etype, valuestr)
+        line = f"{etype}: {valuestr}\n"
     return line
 
 
@@ -724,11 +724,11 @@ class ParsedException:
                                                            frame['funcname']))
             source_line = frame.get('source_line')
             if source_line:
-                lines.append('    {}'.format(source_line))
+                lines.append(f'    {source_line}')
         if self.exc_msg:
-            lines.append('{}: {}'.format(self.exc_type, self.exc_msg))
+            lines.append(f'{self.exc_type}: {self.exc_msg}')
         else:
-            lines.append('{}'.format(self.exc_type))
+            lines.append(f'{self.exc_type}')
         return '\n'.join(lines)
 
     @classmethod

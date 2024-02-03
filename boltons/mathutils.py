@@ -165,13 +165,13 @@ class Bits:
                     else:
                         val = 0
             if type(val) not in _int_types:
-                raise TypeError('initialized with bad type: {}'.format(type(val).__name__))
+                raise TypeError(f'initialized with bad type: {type(val).__name__}')
         if val < 0:
             raise ValueError('Bits cannot represent negative values')
         if len_ is None:
-            len_ = len('{:b}'.format(val))
+            len_ = len(f'{val:b}')
         if val > 2 ** len_:
-            raise ValueError('value {} cannot be represented with {} bits'.format(val, len_))
+            raise ValueError(f'value {val} cannot be represented with {len_} bits')
         self.val = val  # data is stored internally as integer
         self.len = len_
 
@@ -215,11 +215,11 @@ class Bits:
         return [c == '1' for c in self.as_bin()]
 
     def as_bin(self):
-        return '{{0:0{0}b}}'.format(self.len).format(self.val)
+        return f'{{0:0{self.len}b}}'.format(self.val)
 
     def as_hex(self):
         # make template to pad out to number of bytes necessary to represent bits
-        tmpl = '%0{}X'.format(2 * (self.len // 8 + ((self.len % 8) != 0)))
+        tmpl = f'%0{2 * (self.len // 8 + ((self.len % 8) != 0))}X'
         ret = tmpl % self.val
         return ret
 
@@ -255,4 +255,4 @@ class Bits:
 
     def __repr__(self):
         cn = self.__class__.__name__
-        return "{}('{}')".format(cn, self.as_bin())
+        return f"{cn}('{self.as_bin()}')"

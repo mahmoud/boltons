@@ -296,7 +296,7 @@ class BarrelList(list):
         return
 
     def __repr__(self):
-        return '{}({!r})'.format(self.__class__.__name__, list(self))
+        return f'{self.__class__.__name__}({list(self)!r})'
 
     def sort(self):
         # poor pythonist's mergesort, it's faster than sorted(self)
@@ -327,7 +327,7 @@ class BarrelList(list):
                 return len_accum + rel_idx
             except ValueError:
                 len_accum += len(cur)
-        raise ValueError('{!r} is not in list'.format(item))
+        raise ValueError(f'{item!r} is not in list')
 
 
 BList = BarrelList

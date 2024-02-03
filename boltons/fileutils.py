@@ -295,7 +295,7 @@ if os.name == 'nt':
         res = _ReplaceFile(c_wchar_p(dst), c_wchar_p(src),
                            None, 0, None, None)
         if not res:
-            raise OSError('failed to replace {!r} with {!r}'.format(dst, src))
+            raise OSError(f'failed to replace {dst!r} with {src!r}')
         return
 
     def atomic_rename(src, dst, overwrite=False):
@@ -395,7 +395,7 @@ class AtomicSaver:
         self.text_mode = kwargs.pop('text_mode', False)
         self.buffering = kwargs.pop('buffering', -1)
         if kwargs:
-            raise TypeError('unexpected kwargs: {!r}'.format(kwargs.keys()))
+            raise TypeError(f'unexpected kwargs: {kwargs.keys()!r}')
 
         self.dest_path = os.path.abspath(self.dest_path)
         self.dest_dir = os.path.dirname(self.dest_path)

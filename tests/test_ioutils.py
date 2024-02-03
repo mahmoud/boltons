@@ -202,7 +202,7 @@ class BaseTestMixin:
     def test_instance_check(self):
         """Instance checks against IOBase succeed."""
         if not isinstance(self.spooled_flo, io.IOBase):
-            raise AssertionError('{} is not an instance of IOBase'.format(type(self.spooled_flo)))
+            raise AssertionError(f'{type(self.spooled_flo)} is not an instance of IOBase')
 
     def test_closed_file_method_valueerrors(self):
         """ValueError raised on closed files for certain methods."""
@@ -224,7 +224,7 @@ class TestSpooledBytesIO(TestCase, BaseTestMixin, AssertionsMixin):
         self.spooled_flo = ioutils.SpooledBytesIO()
         self.test_str = b"Armado en los EE, UU. para S. P. Richards co.,"
         self.test_str_lines = (
-            "Text with:{}newlines!".format(os.linesep).encode('ascii')
+            f"Text with:{os.linesep}newlines!".encode('ascii')
         )
         self.data_type = bytes
 
@@ -310,7 +310,7 @@ class TestSpooledStringIO(TestCase, BaseTestMixin, AssertionsMixin):
     def setUp(self):
         self.spooled_flo = ioutils.SpooledStringIO()
         self.test_str = "Remember kids, always use an emdash: '\u2014'"
-        self.test_str_lines = "Text with\u2014{}newlines!".format(os.linesep)
+        self.test_str_lines = f"Text with\u2014{os.linesep}newlines!"
         self.data_type = str
 
     def test_compare_not_equal_instances(self):

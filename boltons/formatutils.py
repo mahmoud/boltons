@@ -131,7 +131,7 @@ def infer_positional_format_args(fstr):
         if group == '{{' or group == '}}':
             ret += group
             continue
-        ret += '{{{}{}'.format(max_anon, group[1:])
+        ret += f'{{{max_anon}{group[1:]}'
         max_anon += 1
     ret += fstr[prev_end:]
     return ret
@@ -269,7 +269,7 @@ class BaseFormatField:
         elif self.fspec != '':
             args.append(self.fspec)
         args_repr = ', '.join([repr(a) for a in args])
-        return '{}({})'.format(cn, args_repr)
+        return f'{cn}({args_repr})'
 
     def __str__(self):
         return self.fstr

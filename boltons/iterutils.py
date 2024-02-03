@@ -1228,7 +1228,7 @@ class PathAccessError(KeyError, IndexError, TypeError):
 
     def __repr__(self):
         cn = self.__class__.__name__
-        return '{}({!r}, {!r}, {!r})'.format(cn, self.exc, self.seg, self.path)
+        return f'{cn}({self.exc!r}, {self.seg!r}, {self.path!r})'
 
     def __str__(self):
         return ('could not access %r from path %r, got error: %r'

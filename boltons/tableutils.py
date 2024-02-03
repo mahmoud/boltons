@@ -420,9 +420,9 @@ class Table:
     def __repr__(self):
         cn = self.__class__.__name__
         if self.headers:
-            return '{}(headers={!r}, data={!r})'.format(cn, self.headers, self._data)
+            return f'{cn}(headers={self.headers!r}, data={self._data!r})'
         else:
-            return '{}({!r})'.format(cn, self._data)
+            return f'{cn}({self._data!r})'
 
     def to_html(self, orientation=None, wrapped=True,
                 with_headers=True, with_newlines=True,

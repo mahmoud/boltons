@@ -404,7 +404,7 @@ class BufferedSocket:
                     raise ConnectionClosed(msg)  # check recv buffer
             except socket.timeout:
                 self.rbuf = b''.join(chunks)
-                msg = 'read {} of {} bytes'.format(total_bytes, size)
+                msg = f'read {total_bytes} of {size} bytes'
                 raise Timeout(timeout, msg)  # check recv buffer
             except Exception:
                 # received data is still buffered in the case of errors
@@ -622,9 +622,9 @@ class MessageTooLong(Error):
     def __init__(self, bytes_read=None, delimiter=None):
         msg = 'message exceeded maximum size'
         if bytes_read is not None:
-            msg += '. {} bytes read'.format(bytes_read)
+            msg += f'. {bytes_read} bytes read'
         if delimiter is not None:
-            msg += '. Delimiter not found: {!r}'.format(delimiter)
+            msg += f'. Delimiter not found: {delimiter!r}'
         super().__init__(msg)
 
 

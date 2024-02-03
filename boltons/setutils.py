@@ -215,7 +215,7 @@ class IndexedSet(MutableSet):
         return (item for item in reversed(item_list) if item is not _MISSING)
 
     def __repr__(self):
-        return '{}({!r})'.format(self.__class__.__name__, list(self))
+        return f'{self.__class__.__name__}({list(self)!r})'
 
     def __eq__(self, other):
         if isinstance(other, IndexedSet):
@@ -462,7 +462,7 @@ class IndexedSet(MutableSet):
             return self._get_apparent_index(self.item_index_map[val])
         except KeyError:
             cn = self.__class__.__name__
-            raise ValueError('{!r} is not in {}'.format(val, cn))
+            raise ValueError(f'{val!r} is not in {cn}')
 
 
 def complement(wrapped):
@@ -591,8 +591,8 @@ class _ComplementSet:
 
     def __repr__(self):
         if self._included is None:
-            return 'complement({})'.format(repr(self._excluded))
-        return 'complement(complement({}))'.format(repr(self._included))
+            return f'complement({repr(self._excluded)})'
+        return f'complement(complement({repr(self._included)}))'
 
     def complemented(self):
         '''return a complement of the current set'''
