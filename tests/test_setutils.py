@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 from pytest import raises
 
 from boltons.setutils import IndexedSet, _MISSING, complement
@@ -9,10 +7,10 @@ def test_indexed_set_basic():
     zero2nine = IndexedSet(range(10))
     five2nine = zero2nine & IndexedSet(range(5, 15))
     x = IndexedSet(five2nine)
-    x |= set([10])
+    x |= {10}
 
     assert list(zero2nine) == [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
-    assert set(zero2nine) == set([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
+    assert set(zero2nine) == {0, 1, 2, 3, 4, 5, 6, 7, 8, 9}
     assert list(five2nine) == [5, 6, 7, 8, 9]
     assert x == IndexedSet([5, 6, 7, 8, 9, 10])
     assert x[-1] == 10
@@ -25,7 +23,7 @@ def test_indexed_set_basic():
 
 def test_indexed_set_rsub():
     "From #252"
-    assert (set('abc') - IndexedSet('bcd')) == set(['a'])
+    assert (set('abc') - IndexedSet('bcd')) == {'a'}
     assert (IndexedSet('abc') - IndexedSet('bcd')) == IndexedSet(['a'])
     assert (frozenset('abc') - IndexedSet('bcd')) == frozenset(['a'])
 
@@ -73,7 +71,7 @@ def big_popper():
         big_set.pop(-rand)
     end_time, end_size = time.time(), len(big_set)
     print()
-    print('popped %s items in %s seconds' % (start_size - end_size,
+    print('popped {} items in {} seconds'.format(start_size - end_size,
                                              end_time - start_time))
 
 
@@ -142,7 +140,7 @@ def test_complement_set():
     ~cab
     cab.complement()
     cab.complemented()
-    class OpOverloader(object):
+    class OpOverloader:
         # tests that operators properly return NotImplemented so they will defer to
         # another class implementation if available
         def __and__(self, other): return self

@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-
-
 import pytest
 
 from boltons import urlutils
@@ -75,19 +72,19 @@ def test_utf8_url():
                  b'\xdb\x8c\xd8\xb4\xdb\x8c')
     url = URL(url_bytes)
     assert url.scheme == 'http'
-    assert url.host == u'مثال.آزمایشی'
+    assert url.host == 'مثال.آزمایشی'
 
 
 def test_idna():
-    u1 = URL(u'http://bücher.ch')
-    assert u1.host == u'bücher.ch'
+    u1 = URL('http://bücher.ch')
+    assert u1.host == 'bücher.ch'
     assert u1.to_text(full_quote=True) == 'http://xn--bcher-kva.ch'
-    assert u1.to_text(full_quote=False) == u'http://bücher.ch'
+    assert u1.to_text(full_quote=False) == 'http://bücher.ch'
 
     u2 = URL('https://xn--bcher-kva.ch')
-    assert u2.host == u'bücher.ch'
+    assert u2.host == 'bücher.ch'
     assert u2.to_text(full_quote=True) == 'https://xn--bcher-kva.ch'
-    assert u2.to_text(full_quote=False) == u'https://bücher.ch'
+    assert u2.to_text(full_quote=False) == 'https://bücher.ch'
 
 
 def test_query_params(test_url):
@@ -99,14 +96,14 @@ def test_query_params(test_url):
 
 
 def test_iri_query():
-    url = URL(u'http://minerals.mountain.ore/?rock=\N{SHAMROCK}')
-    assert url.query_params['rock'] == u'\N{SHAMROCK}'
-    assert url.query_params.to_text(full_quote=True).endswith(u'%E2%98%98')
+    url = URL('http://minerals.mountain.ore/?rock=\N{SHAMROCK}')
+    assert url.query_params['rock'] == '\N{SHAMROCK}'
+    assert url.query_params.to_text(full_quote=True).endswith('%E2%98%98')
 
 
 def test_iri_path():
-    url = URL(u'http://minerals.mountain.ore/rock/\N{SHAMROCK}/')
-    assert url.path == u'/rock/\N{SHAMROCK}/'
+    url = URL('http://minerals.mountain.ore/rock/\N{SHAMROCK}/')
+    assert url.path == '/rock/\N{SHAMROCK}/'
     assert url.to_text(full_quote=True).endswith('%E2%98%98/')
 
 
@@ -131,9 +128,9 @@ def test_invalid_ipv6():
 
 def test_parse_url():
     expected = {'family': 2, 'password': None, 'fragment': None,
-                'authority': u'127.0.0.1:3000', 'port': 3000, 'query': u'a=1',
-                '_netloc_sep': u'//', 'path': u'/', 'scheme': u'http',
-                'host': u'127.0.0.1', 'username': None}
+                'authority': '127.0.0.1:3000', 'port': 3000, 'query': 'a=1',
+                '_netloc_sep': '//', 'path': '/', 'scheme': 'http',
+                'host': '127.0.0.1', 'username': None}
     res = urlutils.parse_url('http://127.0.0.1:3000/?a=1')
     assert res == expected
 
@@ -187,13 +184,13 @@ def test_userinfo():
 
 def test_quoted_userinfo():
     url = URL('http://wikipedia.org')
-    url.username = u'user'
-    url.password = u'p@ss'
+    url.username = 'user'
+    url.password = 'p@ss'
     assert url.to_text(full_quote=True) == 'http://user:p%40ss@wikipedia.org'
 
-    url = URL(u'http://beyonc\xe9:b\xe9b@tmp.com')
+    url = URL('http://beyonc\xe9:b\xe9b@tmp.com')
     # assert url.to_text(full_quote=False) == u'http://beyoncé:b%C3%A9b@tmp.com'
-    assert url.to_text(full_quote=True) == u'http://beyonc%C3%A9:b%C3%A9b@tmp.com'
+    assert url.to_text(full_quote=True) == 'http://beyonc%C3%A9:b%C3%A9b@tmp.com'
 
 
 def test_mailto():
@@ -263,42 +260,42 @@ def test_rel_navigate():
 
 
 def test_navigate():
-    orig_text = u'http://a.b/c/d?e#f'
+    orig_text = 'http://a.b/c/d?e#f'
     orig = URL(orig_text)
     navd = orig.navigate('')
     # fragment removed on empty navigate
-    assert navd.to_text() == u'http://a.b/c/d?e'
+    assert navd.to_text() == 'http://a.b/c/d?e'
 
     # query also removed on non-empty navigate (interp'd as rel path)
     navd = orig.navigate('dd')
-    assert navd.to_text() == u'http://a.b/c/dd'
+    assert navd.to_text() == 'http://a.b/c/dd'
 
     # check trailing slash
     navd = orig.navigate('dd/')
-    assert navd.to_text() == u'http://a.b/c/dd/'
+    assert navd.to_text() == 'http://a.b/c/dd/'
 
     # path removed on absolute path navigate
     navd = orig.navigate('/C')
-    assert navd.to_text() == u'http://a.b/C'
+    assert navd.to_text() == 'http://a.b/C'
 
     # only query string
     navd = orig.navigate('?e=E&ee=EE')
-    assert navd.to_text() == u'http://a.b/c/d?e=E&ee=EE'
+    assert navd.to_text() == 'http://a.b/c/d?e=E&ee=EE'
 
     # only fragment
     navd = orig.navigate('#FFF')
-    assert navd.to_text() == u'http://a.b/c/d?e#FFF'
+    assert navd.to_text() == 'http://a.b/c/d?e#FFF'
 
     # an odd case, bears more consideration perhaps
     navd = orig.navigate('https:')
-    assert navd.to_text() == u'https://a.b/c/d?e'
+    assert navd.to_text() == 'https://a.b/c/d?e'
 
     # another odd one, host only
     navd = orig.navigate('//newhost')
-    assert navd.to_text() == u'http://newhost/c/d?e'
+    assert navd.to_text() == 'http://newhost/c/d?e'
 
     # absolute URLs (with scheme + host) replace everything
-    _dest_text = u'http://hatnote.com'
+    _dest_text = 'http://hatnote.com'
     _dest = URL(_dest_text)
     navd = orig.navigate(_dest)
     assert _dest is not navd  # make sure copies are made
@@ -423,7 +420,7 @@ FAL_TESTS = [("hello http://world.com/!", ["http://world.com/"]),
              ("http://userid:password@example.com:8080", ["http://userid:password@example.com:8080"]),
              ("http://userid@example.com", ["http://userid@example.com"]),
              ("message://%3c330e7f8409726r6a4ba78dkf1fd71420c1bf6ff@mail.gmail.com%3e", ["message://%3C330e7f8409726r6a4ba78dkf1fd71420c1bf6ff@mail.gmail.com%3e"]),
-             (u"http://\u27a1.ws/\u4a39", [u"http://\u27a1.ws/\u4a39"]),
+             ("http://\u27a1.ws/\u4a39", ["http://\u27a1.ws/\u4a39"]),
              ("<tag>http://example.com</tag>", ["http://example.com"]),
              ("Just a www.example.com link.", ["https://www.example.com"]),
              ("www.a-link.com", ["https://www.a-link.com"]),
@@ -465,14 +462,14 @@ def test_find_all_links():
 
 
 def test_unicodey():
-    unicodey = (u'http://\N{LATIN SMALL LETTER E WITH ACUTE}.com/'
-                u'\N{LATIN SMALL LETTER E}\N{COMBINING ACUTE ACCENT}'
-                u'?\N{LATIN SMALL LETTER A}\N{COMBINING ACUTE ACCENT}='
-                u'\N{LATIN SMALL LETTER I}\N{COMBINING ACUTE ACCENT}'
-                u'#\N{LATIN SMALL LETTER U}\N{COMBINING ACUTE ACCENT}')
+    unicodey = ('http://\N{LATIN SMALL LETTER E WITH ACUTE}.com/'
+                '\N{LATIN SMALL LETTER E}\N{COMBINING ACUTE ACCENT}'
+                '?\N{LATIN SMALL LETTER A}\N{COMBINING ACUTE ACCENT}='
+                '\N{LATIN SMALL LETTER I}\N{COMBINING ACUTE ACCENT}'
+                '#\N{LATIN SMALL LETTER U}\N{COMBINING ACUTE ACCENT}')
     url = URL(unicodey)
-    assert url.host == u'é.com'
-    assert url.path_parts[1] == u'\N{LATIN SMALL LETTER E}\N{COMBINING ACUTE ACCENT}'
+    assert url.host == 'é.com'
+    assert url.path_parts[1] == '\N{LATIN SMALL LETTER E}\N{COMBINING ACUTE ACCENT}'
     assert url.to_text(full_quote=False) == unicodey
     fully_quoted = 'http://xn--9ca.com/%C3%A9?%C3%A1=%C3%AD#%C3%BA'
     assert url.to_text(full_quote=True) == fully_quoted

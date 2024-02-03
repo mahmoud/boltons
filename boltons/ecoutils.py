@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # Copyright (c) 2013, Mahmoud Hashemi
 #
 # Redistribution and use in source and binary forms, with or without
@@ -303,7 +301,7 @@ def get_profile(**kwargs):
     """
     scrub = kwargs.pop('scrub', False)
     if kwargs:
-        raise TypeError('unexpected keyword arguments: %r' % (kwargs.keys(),))
+        raise TypeError('unexpected keyword arguments: {!r}'.format(kwargs.keys()))
     ret = {}
     try:
         ret['username'] = getpass.getuser()

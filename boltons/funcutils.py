@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # Copyright (c) 2013, Mahmoud Hashemi
 #
 # Redistribution and use in source and binary forms, with or without
@@ -35,7 +33,6 @@ utilities on top of Python's first-class function
 support. ``funcutils`` generally stays in the same vein, adding to and
 correcting Python's standard metaprogramming facilities.
 """
-from __future__ import print_function
 
 import sys
 import re
@@ -343,14 +340,14 @@ def format_invocation(name='', args=(), kwargs=None, **kw):
         kwarg_items = [(k, kwargs[k]) for k in sorted(kwargs)]
     else:
         kwarg_items = kwargs
-    kw_text = ', '.join(['%s=%s' % (k, _repr(v)) for k, v in kwarg_items])
+    kw_text = ', '.join(['{}={}'.format(k, _repr(v)) for k, v in kwarg_items])
 
     all_args_text = a_text
     if all_args_text and kw_text:
         all_args_text += ', '
     all_args_text += kw_text
 
-    return '%s(%s)' % (name, all_args_text)
+    return '{}({})'.format(name, all_args_text)
 
 
 def format_exp_repr(obj, pos_names, req_names=None, opt_names=None, opt_key=None):
@@ -457,11 +454,11 @@ def format_nonexp_repr(obj, req_names=None, opt_names=None, opt_key=None):
     assert callable(opt_key)
 
     items = [(name, getattr(obj, name, None)) for name in all_names]
-    labels = ['%s=%r' % (name, val) for name, val in items
+    labels = ['{}={!r}'.format(name, val) for name, val in items
               if not (name in opt_names and opt_key(val))]
     if not labels:
         labels = ['id=%s' % id(obj)]
-    ret = '<%s %s>' % (cn, ' '.join(labels))
+    ret = '<{} {}>'.format(cn, ' '.join(labels))
     return ret
 
 
@@ -665,14 +662,14 @@ def _parse_wraps_expected(expected):
                                  ' iterable of (name, default) pairs, or a mapping of '
                                  ' {name: default}, not %r')
         if not isinstance(argname, (str, bytes)):
-            raise ValueError('all "expected" argnames must be strings, not %r' % (argname,))
+            raise ValueError('all "expected" argnames must be strings, not {!r}'.format(argname))
 
         expected_items.append((argname, default))
 
     return expected_items
 
 
-class FunctionBuilder(object):
+class FunctionBuilder:
     """The FunctionBuilder type provides an interface for programmatically
     creating new functions, either based on existing functions or from
     scratch.
@@ -747,8 +744,8 @@ class FunctionBuilder(object):
     @classmethod
     def _argspec_to_dict(cls, f):
         argspec = inspect.getfullargspec(f)
-        return dict((attr, getattr(argspec, attr))
-                    for attr in cls._argspec_defaults)
+        return {attr: getattr(argspec, attr)
+                    for attr in cls._argspec_defaults}
 
     _defaults = {'doc': str,
                  'dict': dict,
@@ -807,8 +804,8 @@ class FunctionBuilder(object):
         kwonly_pairs = None
         formatters = {}
         if self.kwonlyargs:
-            kwonly_pairs = dict((arg, arg)
-                                for arg in self.kwonlyargs)
+            kwonly_pairs = {arg: arg
+                                for arg in self.kwonlyargs}
             formatters['formatvalue'] = lambda value: '=' + value
 
         sig = inspect_formatargspec(self.args,
@@ -831,7 +828,7 @@ class FunctionBuilder(object):
         # TODO: copy_body? gonna need a good signature regex.
         # TODO: might worry about __closure__?
         if not callable(func):
-            raise TypeError('expected callable object, not %r' % (func,))
+            raise TypeError('expected callable object, not {!r}'.format(func))
 
         if isinstance(func, functools.partial):
             kwargs = {'name': func.func.__name__,
@@ -927,9 +924,9 @@ class FunctionBuilder(object):
         keyword-only argument
         """
         if arg_name in self.args:
-            raise ExistingArgument('arg %r already in func %s arg list' % (arg_name, self.name))
+            raise ExistingArgument('arg {!r} already in func {} arg list'.format(arg_name, self.name))
         if arg_name in self.kwonlyargs:
-            raise ExistingArgument('arg %r already in func %s kwonly arg list' % (arg_name, self.name))
+            raise ExistingArgument('arg {!r} already in func {} kwonly arg list'.format(arg_name, self.name))
         if not kwonly:
             self.args.append(arg_name)
             if default is not NO_DEFAULT:

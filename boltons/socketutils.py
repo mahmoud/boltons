@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # Copyright (c) 2013, Mahmoud Hashemi
 #
 # Redistribution and use in source and binary forms, with or without
@@ -72,7 +70,7 @@ import socket
 try:
     from threading import RLock
 except Exception:
-    class RLock(object):
+    class RLock:
         'Dummy reentrant lock for builds without threads'
         def __enter__(self):
             pass
@@ -93,7 +91,7 @@ DEFAULT_MAXSIZE = 32 * 1024  # 32kb
 _RECV_LARGE_MAXSIZE = 1024 ** 5  # 1PB
 
 
-class BufferedSocket(object):
+class BufferedSocket:
     """Mainly provides recv_until and recv_size. recv, send, sendall, and
     peek all function as similarly as possible to the built-in socket
     API.
@@ -406,7 +404,7 @@ class BufferedSocket(object):
                     raise ConnectionClosed(msg)  # check recv buffer
             except socket.timeout:
                 self.rbuf = b''.join(chunks)
-                msg = 'read %s of %s bytes' % (total_bytes, size)
+                msg = 'read {} of {} bytes'.format(total_bytes, size)
                 raise Timeout(timeout, msg)  # check recv buffer
             except Exception:
                 # received data is still buffered in the case of errors
@@ -624,10 +622,10 @@ class MessageTooLong(Error):
     def __init__(self, bytes_read=None, delimiter=None):
         msg = 'message exceeded maximum size'
         if bytes_read is not None:
-            msg += '. %s bytes read' % (bytes_read,)
+            msg += '. {} bytes read'.format(bytes_read)
         if delimiter is not None:
-            msg += '. Delimiter not found: %r' % (delimiter,)
-        super(MessageTooLong, self).__init__(msg)
+            msg += '. Delimiter not found: {!r}'.format(delimiter)
+        super().__init__(msg)
 
 
 class Timeout(socket.timeout, Error):
@@ -642,10 +640,10 @@ class Timeout(socket.timeout, Error):
             msg += ' after %sms.' % (timeout * 1000)
         if extra:
             msg += ' ' + extra
-        super(Timeout, self).__init__(msg)
+        super().__init__(msg)
 
 
-class NetstringSocket(object):
+class NetstringSocket:
     """
     Reads and writes using the netstring protocol.
 
@@ -724,7 +722,7 @@ class NetstringInvalidSize(NetstringProtocolError):
     this exception.
     """
     def __init__(self, msg):
-        super(NetstringInvalidSize, self).__init__(msg)
+        super().__init__(msg)
 
 
 class NetstringMessageTooLong(NetstringProtocolError):
@@ -738,7 +736,7 @@ class NetstringMessageTooLong(NetstringProtocolError):
     def __init__(self, size, maxsize):
         msg = ('netstring message length exceeds configured maxsize: %s > %s'
                % (size, maxsize))
-        super(NetstringMessageTooLong, self).__init__(msg)
+        super().__init__(msg)
 
 
 """

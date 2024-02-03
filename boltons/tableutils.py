@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # Copyright (c) 2013, Mahmoud Hashemi
 #
 # Redistribution and use in source and binary forms, with or without
@@ -50,7 +48,6 @@ For more advanced :class:`Table`-style manipulation check out the
 
 """
 
-from __future__ import print_function
 
 from html import escape as html_escape
 import types
@@ -113,7 +110,7 @@ class UnsupportedData(TypeError):
     pass
 
 
-class InputType(object):
+class InputType:
     def __init__(self, *a, **kw):
         pass
 
@@ -209,7 +206,7 @@ class NamedTupleInputType(InputType):
         return [[getattr(obj, h, None) for h in headers] for obj in obj_seq]
 
 
-class Table(object):
+class Table:
     """
     This Table class is meant to be simple, low-overhead, and extensible. Its
     most common use would be for translation between in-memory data
@@ -423,9 +420,9 @@ class Table(object):
     def __repr__(self):
         cn = self.__class__.__name__
         if self.headers:
-            return '%s(headers=%r, data=%r)' % (cn, self.headers, self._data)
+            return '{}(headers={!r}, data={!r})'.format(cn, self.headers, self._data)
         else:
-            return '%s(%r)' % (cn, self._data)
+            return '{}({!r})'.format(cn, self._data)
 
     def to_html(self, orientation=None, wrapped=True,
                 with_headers=True, with_newlines=True,

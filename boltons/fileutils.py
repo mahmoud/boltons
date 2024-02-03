@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # Copyright (c) 2013, Mahmoud Hashemi
 #
 # Redistribution and use in source and binary forms, with or without
@@ -35,7 +33,6 @@ disk contents, and ``fileutils`` collects solutions to some of the
 most commonly-found gaps in the standard library.
 """
 
-from __future__ import print_function
 
 import os
 import re
@@ -71,7 +68,7 @@ def mkdir_p(path):
     return
 
 
-class FilePerms(object):
+class FilePerms:
     """The :class:`FilePerms` type is used to represent standard POSIX
     filesystem permissions:
 
@@ -113,7 +110,7 @@ class FilePerms(object):
     ways to construct :class:`FilePerms` objects.
     """
     # TODO: consider more than the lower 9 bits
-    class _FilePermProperty(object):
+    class _FilePermProperty:
         _perm_chars = 'rwx'
         _perm_set = frozenset('rwx')
         _perm_val = {'r': 4, 'w': 2, 'x': 1}  # for sorting
@@ -239,7 +236,7 @@ else:
         """
         try:
             flags = fcntl.fcntl(fd, fcntl.F_GETFD, 0)
-        except IOError:
+        except OSError:
             pass
         else:
             # flags read successfully, modify
@@ -287,7 +284,7 @@ if os.name == 'nt':
             # first try to rename it into position
             os.rename(src, dst)
             return
-        except WindowsError as we:
+        except OSError as we:
             if we.errno == errno.EEXIST:
                 pass  # continue with the ReplaceFile logic below
             else:
@@ -298,7 +295,7 @@ if os.name == 'nt':
         res = _ReplaceFile(c_wchar_p(dst), c_wchar_p(src),
                            None, 0, None, None)
         if not res:
-            raise OSError('failed to replace %r with %r' % (dst, src))
+            raise OSError('failed to replace {!r} with {!r}'.format(dst, src))
         return
 
     def atomic_rename(src, dst, overwrite=False):
@@ -335,7 +332,7 @@ possible atomicity on a range of filesystems.
 """
 
 
-class AtomicSaver(object):
+class AtomicSaver:
     """``AtomicSaver`` is a configurable `context manager`_ that provides
     a writable :class:`file` which will be moved into place as long as
     no exceptions are raised within the context manager's block. These
@@ -398,7 +395,7 @@ class AtomicSaver(object):
         self.text_mode = kwargs.pop('text_mode', False)
         self.buffering = kwargs.pop('buffering', -1)
         if kwargs:
-            raise TypeError('unexpected kwargs: %r' % (kwargs.keys(),))
+            raise TypeError('unexpected kwargs: {!r}'.format(kwargs.keys()))
 
         self.dest_path = os.path.abspath(self.dest_path)
         self.dest_dir = os.path.dirname(self.dest_path)
@@ -419,7 +416,7 @@ class AtomicSaver(object):
                 # try to copy from file being replaced
                 stat_res = os.stat(self.dest_path)
                 file_perms = stat.S_IMODE(stat_res.st_mode)
-            except (OSError, IOError):
+            except OSError:
                 # default if no destination file exists
                 file_perms = self._default_file_perms
                 do_chmod = False  # respect the umask
@@ -433,7 +430,7 @@ class AtomicSaver(object):
         if do_chmod:
             try:
                 os.chmod(self.part_path, file_perms)
-            except (OSError, IOError):
+            except OSError:
                 self.part_file.close()
                 raise
         return
@@ -591,7 +588,7 @@ def copy_tree(src, dst, symlinks=False, ignore=None):
         # continue with other files
         except Error as e:
             errors.extend(e.args[0])
-        except EnvironmentError as why:
+        except OSError as why:
             errors.append((srcname, dstname, str(why)))
     try:
         copystat(src, dst)

@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # Copyright (c) 2013, Mahmoud Hashemi
 #
 # Redistribution and use in source and binary forms, with or without
@@ -33,7 +31,6 @@
 """This module provides useful math functions on top of Python's
 built-in :mod:`math` module.
 """
-from __future__ import division
 
 from math import ceil as _ceil, floor as _floor
 import bisect
@@ -133,7 +130,7 @@ except NameError:
     unicode = str
 
 
-class Bits(object):
+class Bits:
     '''
     An immutable bit-string or bit-array object.
     Provides list-like access to bits as bools,
@@ -168,13 +165,13 @@ class Bits(object):
                     else:
                         val = 0
             if type(val) not in _int_types:
-                raise TypeError('initialized with bad type: {0}'.format(type(val).__name__))
+                raise TypeError('initialized with bad type: {}'.format(type(val).__name__))
         if val < 0:
             raise ValueError('Bits cannot represent negative values')
         if len_ is None:
-            len_ = len('{0:b}'.format(val))
+            len_ = len('{:b}'.format(val))
         if val > 2 ** len_:
-            raise ValueError('value {0} cannot be represented with {1} bits'.format(val, len_))
+            raise ValueError('value {} cannot be represented with {} bits'.format(val, len_))
         self.val = val  # data is stored internally as integer
         self.len = len_
 
@@ -222,7 +219,7 @@ class Bits(object):
 
     def as_hex(self):
         # make template to pad out to number of bytes necessary to represent bits
-        tmpl = '%0{0}X'.format(2 * (self.len // 8 + ((self.len % 8) != 0)))
+        tmpl = '%0{}X'.format(2 * (self.len // 8 + ((self.len % 8) != 0)))
         ret = tmpl % self.val
         return ret
 
@@ -258,4 +255,4 @@ class Bits(object):
 
     def __repr__(self):
         cn = self.__class__.__name__
-        return "{0}('{1}')".format(cn, self.as_bin())
+        return "{}('{}')".format(cn, self.as_bin())

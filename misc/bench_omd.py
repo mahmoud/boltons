@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-
-from __future__ import print_function
 import string
 import sys
 sys.path.append('/home/mahmoud/projects/lithoxyl/')
@@ -61,7 +58,7 @@ def bench():
         for action in _all_actions:
             try:
                 best_msecs = q_sink.qas[impl_name][action].min * 1000
-                print('   - %s - %g ms' % (action, best_msecs))
+                print('   - {} - {:g} ms'.format(action, best_msecs))
             except KeyError:
                 pass
         best_msecs = q_sink.qas[impl_name]['total'].min * 1000

@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 import sys
 import time
 
@@ -10,7 +8,7 @@ if '__pypy__' not in sys.builtin_module_names:
     from boltons.gcutils import get_all, toggle_gc_postcollect
 
     def test_get_all():
-        class TestType(object):
+        class TestType:
             pass
 
         tt = TestType()

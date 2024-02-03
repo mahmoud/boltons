@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # Copyright (c) 2013, Mahmoud Hashemi
 #
 # Redistribution and use in source and binary forms, with or without
@@ -133,8 +131,8 @@ _BOUND_DELTAS = [b[0] for b in _BOUNDS]
 
 _FLOAT_PATTERN = r'[+-]?\ *(\d+(\.\d*)?|\.\d+)([eE][+-]?\d+)?'
 _PARSE_TD_RE = re.compile(r"((?P<value>%s)\s*(?P<unit>\w)\w*)" % _FLOAT_PATTERN)
-_PARSE_TD_KW_MAP = dict([(unit[0], unit + 's')
-                         for _, _, unit in reversed(_BOUNDS[:-2])])
+_PARSE_TD_KW_MAP = {unit[0]: unit + 's'
+                         for _, _, unit in reversed(_BOUNDS[:-2])}
 
 
 def parse_timedelta(text):
@@ -265,7 +263,7 @@ def relative_time(d, other=None, ndigits=0):
     phrase = 'ago'
     if drt < 0:
         phrase = 'from now'
-    return '%g %s %s' % (abs(drt), unit, phrase)
+    return '{:g} {} {}'.format(abs(drt), unit, phrase)
 
 
 def strpdate(string, format):
@@ -419,7 +417,7 @@ class ConstantTZInfo(tzinfo):
 
     def __repr__(self):
         cn = self.__class__.__name__
-        return '%s(name=%r, offset=%r)' % (cn, self.name, self.offset)
+        return '{}(name={!r}, offset={!r})'.format(cn, self.name, self.offset)
 
 
 UTC = ConstantTZInfo('UTC')

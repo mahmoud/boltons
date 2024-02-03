@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # Copyright (c) 2013, Mahmoud Hashemi
 #
 # Redistribution and use in source and binary forms, with or without
@@ -73,7 +71,7 @@ def make_sentinel(name='_MISSING', var_name=None):
       False
 
     """
-    class Sentinel(object):
+    class Sentinel:
         def __init__(self):
             self.name = name
             self.var_name = var_name
@@ -81,7 +79,7 @@ def make_sentinel(name='_MISSING', var_name=None):
         def __repr__(self):
             if self.var_name:
                 return self.var_name
-            return '%s(%r)' % (self.__class__.__name__, self.name)
+            return '{}({!r})'.format(self.__class__.__name__, self.name)
 
         if var_name:
             def __reduce__(self):
@@ -165,7 +163,7 @@ def get_all_subclasses(cls):
     return ret
 
 
-class classproperty(object):
+class classproperty:
     """Much like a :class:`property`, but the wrapped get function is a
     class method.  For simplicity, only read-only properties are
     implemented.

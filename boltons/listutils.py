@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # Copyright (c) 2013, Mahmoud Hashemi
 #
 # Redistribution and use in source and binary forms, with or without
@@ -40,7 +38,6 @@ For utilities for working with iterables and lists, check out
 :class:`collections.namedtuple`, check out :mod:`namedutils`.
 """
 
-from __future__ import print_function, division
 
 import operator
 from math import log as math_log
@@ -299,7 +296,7 @@ class BarrelList(list):
         return
 
     def __repr__(self):
-        return '%s(%r)' % (self.__class__.__name__, list(self))
+        return '{}({!r})'.format(self.__class__.__name__, list(self))
 
     def sort(self):
         # poor pythonist's mergesort, it's faster than sorted(self)
@@ -330,7 +327,7 @@ class BarrelList(list):
                 return len_accum + rel_idx
             except ValueError:
                 len_accum += len(cur)
-        raise ValueError('%r is not in list' % (item,))
+        raise ValueError('{!r} is not in list'.format(item))
 
 
 BList = BarrelList

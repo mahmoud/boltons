@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # Copyright (c) 2013, Mahmoud Hashemi
 #
 # Redistribution and use in source and binary forms, with or without
@@ -57,7 +55,7 @@ import socket
 import string
 from unicodedata import normalize
 
-unicode = type(u'')
+unicode = str
 try:
     unichr
 except NameError:
@@ -75,9 +73,9 @@ _URL_RE = re.compile(r'^((?P<scheme>[^:/?#]+):)?'
                      r'(#(?P<fragment>.*))?')
 
 
-_HEX_CHAR_MAP = dict([((a + b).encode('ascii'),
-                       unichr(int(a + b, 16)).encode('charmap'))
-                      for a in string.hexdigits for b in string.hexdigits])
+_HEX_CHAR_MAP = {(a + b).encode('ascii'):
+                       unichr(int(a + b, 16)).encode('charmap')
+                      for a in string.hexdigits for b in string.hexdigits}
 _ASCII_RE = re.compile('([\x00-\x7f]+)')
 
 
@@ -98,23 +96,23 @@ SCHEME_PORT_MAP = {'acap': 674, 'afp': 548, 'dict': 2628, 'dns': 53,
                    'wais': 210, 'ws': 80, 'wss': 443, 'xmpp': None}
 
 # This list of schemes that don't use authorities is also from the link above.
-NO_NETLOC_SCHEMES = set(['urn', 'about', 'bitcoin', 'blob', 'data', 'geo',
+NO_NETLOC_SCHEMES = {'urn', 'about', 'bitcoin', 'blob', 'data', 'geo',
                          'magnet', 'mailto', 'news', 'pkcs11',
-                         'sip', 'sips', 'tel'])
+                         'sip', 'sips', 'tel'}
 # As of Mar 11, 2017, there were 44 netloc schemes, and 13 non-netloc
 
 # RFC 3986 section 2.2, Reserved Characters
-_GEN_DELIMS = frozenset(u':/?#[]@')
-_SUB_DELIMS = frozenset(u"!$&'()*+,;=")
+_GEN_DELIMS = frozenset(':/?#[]@')
+_SUB_DELIMS = frozenset("!$&'()*+,;=")
 _ALL_DELIMS = _GEN_DELIMS | _SUB_DELIMS
 
 _USERINFO_SAFE = _UNRESERVED_CHARS | _SUB_DELIMS
 _USERINFO_DELIMS = _ALL_DELIMS - _USERINFO_SAFE
-_PATH_SAFE = _UNRESERVED_CHARS | _SUB_DELIMS | set(u':@')
+_PATH_SAFE = _UNRESERVED_CHARS | _SUB_DELIMS | set(':@')
 _PATH_DELIMS = _ALL_DELIMS - _PATH_SAFE
-_FRAGMENT_SAFE = _UNRESERVED_CHARS | _PATH_SAFE | set(u'/?')
+_FRAGMENT_SAFE = _UNRESERVED_CHARS | _PATH_SAFE | set('/?')
 _FRAGMENT_DELIMS = _ALL_DELIMS - _FRAGMENT_SAFE
-_QUERY_SAFE = _UNRESERVED_CHARS | _FRAGMENT_SAFE - set(u'&=+')
+_QUERY_SAFE = _UNRESERVED_CHARS | _FRAGMENT_SAFE - set('&=+')
 _QUERY_DELIMS = _ALL_DELIMS - _QUERY_SAFE
 
 
@@ -226,7 +224,7 @@ def _make_quote_map(safe_chars):
         if c in safe_chars:
             ret[c] = ret[v] = c
         else:
-            ret[c] = ret[v] = '%{0:02X}'.format(i)
+            ret[c] = ret[v] = '%{:02X}'.format(i)
     return ret
 
 
@@ -242,8 +240,8 @@ def quote_path_part(text, full_quote=True):
     """
     if full_quote:
         bytestr = normalize('NFC', to_unicode(text)).encode('utf8')
-        return u''.join([_PATH_PART_QUOTE_MAP[b] for b in bytestr])
-    return u''.join([_PATH_PART_QUOTE_MAP[t] if t in _PATH_DELIMS else t
+        return ''.join([_PATH_PART_QUOTE_MAP[b] for b in bytestr])
+    return ''.join([_PATH_PART_QUOTE_MAP[t] if t in _PATH_DELIMS else t
                      for t in text])
 
 
@@ -253,8 +251,8 @@ def quote_query_part(text, full_quote=True):
     """
     if full_quote:
         bytestr = normalize('NFC', to_unicode(text)).encode('utf8')
-        return u''.join([_QUERY_PART_QUOTE_MAP[b] for b in bytestr])
-    return u''.join([_QUERY_PART_QUOTE_MAP[t] if t in _QUERY_DELIMS else t
+        return ''.join([_QUERY_PART_QUOTE_MAP[b] for b in bytestr])
+    return ''.join([_QUERY_PART_QUOTE_MAP[t] if t in _QUERY_DELIMS else t
                      for t in text])
 
 
@@ -264,8 +262,8 @@ def quote_fragment_part(text, full_quote=True):
     """
     if full_quote:
         bytestr = normalize('NFC', to_unicode(text)).encode('utf8')
-        return u''.join([_FRAGMENT_QUOTE_MAP[b] for b in bytestr])
-    return u''.join([_FRAGMENT_QUOTE_MAP[t] if t in _FRAGMENT_DELIMS else t
+        return ''.join([_FRAGMENT_QUOTE_MAP[b] for b in bytestr])
+    return ''.join([_FRAGMENT_QUOTE_MAP[t] if t in _FRAGMENT_DELIMS else t
                      for t in text])
 
 
@@ -277,8 +275,8 @@ def quote_userinfo_part(text, full_quote=True):
     """
     if full_quote:
         bytestr = normalize('NFC', to_unicode(text)).encode('utf8')
-        return u''.join([_USERINFO_PART_QUOTE_MAP[b] for b in bytestr])
-    return u''.join([_USERINFO_PART_QUOTE_MAP[t] if t in _USERINFO_DELIMS
+        return ''.join([_USERINFO_PART_QUOTE_MAP[b] for b in bytestr])
+    return ''.join([_USERINFO_PART_QUOTE_MAP[t] if t in _USERINFO_DELIMS
                      else t for t in text])
 
 
@@ -384,21 +382,21 @@ def resolve_path_parts(path_parts):
     ret = []
 
     for part in path_parts:
-        if part == u'.':
+        if part == '.':
             pass
-        elif part == u'..':
+        elif part == '..':
             if ret and (len(ret) > 1 or ret[0]):  # prevent unrooting
                 ret.pop()
         else:
             ret.append(part)
 
-    if list(path_parts[-1:]) in ([u'.'], [u'..']):
-        ret.append(u'')
+    if list(path_parts[-1:]) in (['.'], ['..']):
+        ret.append('')
 
     return ret
 
 
-class cachedproperty(object):
+class cachedproperty:
     """The ``cachedproperty`` is used similar to :class:`property`, except
     that the wrapped method is only called once. This is commonly used
     to implement lazy attributes.
@@ -420,10 +418,10 @@ class cachedproperty(object):
 
     def __repr__(self):
         cn = self.__class__.__name__
-        return '<%s func=%s>' % (cn, self.func)
+        return '<{} func={}>'.format(cn, self.func)
 
 
-class URL(object):
+class URL:
     r"""The URL is one of the most ubiquitous data structures in the
     virtual and physical landscape. From blogs to billboards, URLs are
     so common, that it's easy to overlook their complexity and
@@ -497,7 +495,7 @@ class URL(object):
                                         % (DEFAULT_ENCODING, ude))
             ud = parse_url(url)
 
-        _e = u''
+        _e = ''
         self.scheme = ud['scheme'] or _e
         self._netloc_sep = ud['_netloc_sep'] or _e
         self.username = (unquote(ud['username'])
@@ -518,7 +516,7 @@ class URL(object):
 
         self.port = ud['port']
         self.path_parts = tuple([unquote(p) if '%' in p else p for p
-                                 in (ud['path'] or _e).split(u'/')])
+                                 in (ud['path'] or _e).split('/')])
         self._query = ud['query'] or _e
         self.fragment = (unquote(ud['fragment'])
                          if '%' in (ud['fragment'] or _e) else ud['fragment'] or _e)
@@ -527,7 +525,7 @@ class URL(object):
 
     @classmethod
     def from_parts(cls, scheme=None, host=None, path_parts=(), query_params=(),
-                   fragment=u'', port=None, username=None, password=None):
+                   fragment='', port=None, username=None, password=None):
         """Build a new URL from parts. Note that the respective arguments are
         not in the order they would appear in a URL:
 
@@ -553,7 +551,7 @@ class URL(object):
 
         ret.scheme = scheme
         ret.host = host
-        ret.path_parts = tuple(path_parts) or (u'',)
+        ret.path_parts = tuple(path_parts) or ('',)
         ret.query_params.update(query_params)
         ret.fragment = fragment
         ret.port = port
@@ -579,13 +577,13 @@ class URL(object):
     @property
     def path(self):
         "The URL's path, in text form."
-        return u'/'.join([quote_path_part(p, full_quote=False)
+        return '/'.join([quote_path_part(p, full_quote=False)
                           for p in self.path_parts])
 
     @path.setter
     def path(self, path_text):
         self.path_parts = tuple([unquote(p) if '%' in p else p
-                                 for p in to_unicode(path_text).split(u'/')])
+                                 for p in to_unicode(path_text).split('/')])
         return
 
     @property
@@ -682,7 +680,7 @@ class URL(object):
         query_params = dest.query_params
 
         if dest.path:
-            if dest.path.startswith(u'/'):   # absolute path
+            if dest.path.startswith('/'):   # absolute path
                 new_path_parts = list(dest.path_parts)
             else:  # relative path
                 new_path_parts = list(self.path_parts[:-1]) \
@@ -748,7 +746,7 @@ class URL(object):
             if self.port and self.port != self.default_port:
                 _add(':')
                 _add(unicode(self.port))
-        return u''.join(parts)
+        return ''.join(parts)
 
     def to_text(self, full_quote=False):
         """Render a string representing the current state of the URL
@@ -767,7 +765,7 @@ class URL(object):
         and generally necessary for sending over the network.
         """
         scheme = self.scheme
-        path = u'/'.join([quote_path_part(p, full_quote=full_quote)
+        path = '/'.join([quote_path_part(p, full_quote=full_quote)
                           for p in self.path_parts])
         authority = self.get_authority(full_quote=full_quote,
                                        with_userinfo=True)
@@ -796,11 +794,11 @@ class URL(object):
         if fragment:
             _add('#')
             _add(fragment)
-        return u''.join(parts)
+        return ''.join(parts)
 
     def __repr__(self):
         cn = self.__class__.__name__
-        return u'%s(%r)' % (cn, self.to_text())
+        return '{}({!r})'.format(cn, self.to_text())
 
     def __str__(self):
         return self.to_text()
@@ -841,13 +839,13 @@ except ImportError:
         addr_size = ctypes.c_int(ctypes.sizeof(addr))
 
         if WSAStringToAddressA(ip_string, address_family, None, ctypes.byref(addr), ctypes.byref(addr_size)) != 0:
-            raise socket.error(ctypes.FormatError())
+            raise OSError(ctypes.FormatError())
 
         if address_family == socket.AF_INET:
             return ctypes.string_at(addr.ipv4_addr, 4)
         if address_family == socket.AF_INET6:
             return ctypes.string_at(addr.ipv6_addr, 16)
-        raise socket.error('unknown address family')
+        raise OSError('unknown address family')
 
 
 def parse_host(host):
@@ -869,13 +867,13 @@ def parse_host(host):
 
     """
     if not host:
-        return None, u''
-    if u':' in host and u'[' == host[0] and u']' == host[-1]:
+        return None, ''
+    if ':' in host and '[' == host[0] and ']' == host[-1]:
         host = host[1:-1]
         try:
             inet_pton(socket.AF_INET6, host)
-        except socket.error as se:
-            raise URLParseError('invalid IPv6 host: %r (%r)' % (host, se))
+        except OSError as se:
+            raise URLParseError('invalid IPv6 host: {!r} ({!r})'.format(host, se))
         except UnicodeEncodeError:
             pass  # TODO: this can't be a real host right?
         else:
@@ -883,7 +881,7 @@ def parse_host(host):
             return family, host
     try:
         inet_pton(socket.AF_INET, host)
-    except (socket.error, UnicodeEncodeError):
+    except (OSError, UnicodeEncodeError):
         family = None  # not an IP
     else:
         family = socket.AF_INET
@@ -928,12 +926,12 @@ def parse_url(url_text):
 
     host, port = None, None
     if hostinfo:
-        host, sep, port_str = hostinfo.partition(u':')
+        host, sep, port_str = hostinfo.partition(':')
         if sep:
-            if host and host[0] == u'[' and u']' in port_str:
-                host_right, _, port_str = port_str.partition(u']')
-                host = host + u':' + host_right + u']'
-                if port_str and port_str[0] == u':':
+            if host and host[0] == '[' and ']' in port_str:
+                host_right, _, port_str = port_str.partition(']')
+                host = host + ':' + host_right + ']'
+                if port_str and port_str[0] == ':':
                     port_str = port_str[1:]
 
             try:
@@ -1068,7 +1066,7 @@ class OrderedMultiDict(dict):
         if len(args) > 1:
             raise TypeError('%s expected at most 1 argument, got %s'
                             % (self.__class__.__name__, len(args)))
-        super(OrderedMultiDict, self).__init__()
+        super().__init__()
 
         self._clear_ll()
         if args:
@@ -1097,7 +1095,7 @@ class OrderedMultiDict(dict):
         """Add a single value *v* under a key *k*. Existing values under *k*
         are preserved.
         """
-        values = super(OrderedMultiDict, self).setdefault(k, [])
+        values = super().setdefault(k, [])
         self._insert(k, v)
         values.append(v)
 
@@ -1114,7 +1112,7 @@ class OrderedMultiDict(dict):
         tuples and other sequences and iterables work.
         """
         self_insert = self._insert
-        values = super(OrderedMultiDict, self).setdefault(k, [])
+        values = super().setdefault(k, [])
         for subv in v:
             self_insert(k, subv)
         values.extend(v)
@@ -1126,7 +1124,7 @@ class OrderedMultiDict(dict):
 
         To get all values under a key, use :meth:`OrderedMultiDict.getlist`.
         """
-        return super(OrderedMultiDict, self).get(k, [default])[-1]
+        return super().get(k, [default])[-1]
 
     def getlist(self, k, default=_MISSING):
         """Get all values for key *k* as a list, if *k* is in the
@@ -1135,7 +1133,7 @@ class OrderedMultiDict(dict):
         :class:`list` is returned.
         """
         try:
-            return super(OrderedMultiDict, self).__getitem__(k)[:]
+            return super().__getitem__(k)[:]
         except KeyError:
             if default is _MISSING:
                 return []
@@ -1143,7 +1141,7 @@ class OrderedMultiDict(dict):
 
     def clear(self):
         "Empty the dictionary."
-        super(OrderedMultiDict, self).clear()
+        super().clear()
         self._clear_ll()
 
     def setdefault(self, k, default=_MISSING):
@@ -1152,7 +1150,7 @@ class OrderedMultiDict(dict):
         defaults to ``None``. See :meth:`dict.setdefault` for more
         information.
         """
-        if not super(OrderedMultiDict, self).__contains__(k):
+        if not super().__contains__(k):
             self[k] = None if default is _MISSING else default
         return self[k]
 
@@ -1217,16 +1215,16 @@ class OrderedMultiDict(dict):
             self_add(k, v)
 
     def __setitem__(self, k, v):
-        if super(OrderedMultiDict, self).__contains__(k):
+        if super().__contains__(k):
             self._remove_all(k)
         self._insert(k, v)
-        super(OrderedMultiDict, self).__setitem__(k, [v])
+        super().__setitem__(k, [v])
 
     def __getitem__(self, k):
-        return super(OrderedMultiDict, self).__getitem__(k)[-1]
+        return super().__getitem__(k)[-1]
 
     def __delitem__(self, k):
-        super(OrderedMultiDict, self).__delitem__(k)
+        super().__delitem__(k)
         self._remove_all(k)
 
     def __eq__(self, other):
@@ -1278,7 +1276,7 @@ class OrderedMultiDict(dict):
         a list. Raises :exc:`KeyError` if the key is not present and no
         *default* is provided.
         """
-        super_self = super(OrderedMultiDict, self)
+        super_self = super()
         if super_self.__contains__(k):
             self._remove_all(k)
         if default is _MISSING:
@@ -1303,10 +1301,10 @@ class OrderedMultiDict(dict):
             if default is _MISSING:
                 raise KeyError(k)
             return default
-        values = super(OrderedMultiDict, self).__getitem__(k)
+        values = super().__getitem__(k)
         v = values.pop()
         if not values:
-            super(OrderedMultiDict, self).__delitem__(k)
+            super().__delitem__(k)
         return v
 
     def _remove(self, k):
@@ -1379,8 +1377,8 @@ class OrderedMultiDict(dict):
         value lists are copies that can be safely mutated.
         """
         if multi:
-            return dict([(k, self.getlist(k)) for k in self])
-        return dict([(k, self[k]) for k in self])
+            return {k: self.getlist(k) for k in self}
+        return {k: self[k] for k in self}
 
     def sorted(self, key=None, reverse=False):
         """Similar to the built-in :func:`sorted`, except this method returns
@@ -1438,12 +1436,12 @@ class OrderedMultiDict(dict):
         retained. Only value order changes.
         """
         try:
-            superself_iteritems = super(OrderedMultiDict, self).iteritems()
+            superself_iteritems = super().iteritems()
         except AttributeError:
-            superself_iteritems = super(OrderedMultiDict, self).items()
+            superself_iteritems = super().items()
         # (not reverse) because they pop off in reverse order for reinsertion
-        sorted_val_map = dict([(k, sorted(v, key=key, reverse=(not reverse)))
-                               for k, v in superself_iteritems])
+        sorted_val_map = {k: sorted(v, key=key, reverse=(not reverse))
+                               for k, v in superself_iteritems}
         ret = self.__class__()
         for k in self.iterkeys(multi=True):
             ret.add(k, sorted_val_map[k].pop())
@@ -1473,7 +1471,7 @@ class OrderedMultiDict(dict):
         """
         # Returns an OMD because Counter/OrderedDict may not be
         # available, and neither Counter nor dict maintain order.
-        super_getitem = super(OrderedMultiDict, self).__getitem__
+        super_getitem = super().__getitem__
         return self.__class__((k, len(super_getitem(k))) for k in self)
 
     def keys(self, multi=False):
@@ -1502,7 +1500,7 @@ class OrderedMultiDict(dict):
         curr = root[PREV]
         lengths = {}
         lengths_sd = lengths.setdefault
-        get_values = super(OrderedMultiDict, self).__getitem__
+        get_values = super().__getitem__
         while curr is not root:
             k = curr[KEY]
             vals = get_values(k)
@@ -1514,7 +1512,7 @@ class OrderedMultiDict(dict):
     def __repr__(self):
         cn = self.__class__.__name__
         kvs = ', '.join([repr((k, v)) for k, v in self.iteritems(multi=True)])
-        return '%s([%s])' % (cn, kvs)
+        return '{}([{}])'.format(cn, kvs)
 
     def viewkeys(self):
         "OMD.viewkeys() -> a set-like object providing a view on OMD's keys"
@@ -1581,8 +1579,8 @@ class QueryParamDict(OrderedMultiDict):
                 ret_list.append(key)
             else:
                 val = quote_query_part(to_unicode(v), full_quote=full_quote)
-                ret_list.append(u'='.join((key, val)))
-        return u'&'.join(ret_list)
+                ret_list.append('='.join((key, val)))
+        return '&'.join(ret_list)
 
 # TODO: cleanup OMD/cachedproperty etc.?
 

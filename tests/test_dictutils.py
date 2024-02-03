@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 import sys
 import pytest
 
@@ -313,7 +311,7 @@ def test_ior():
 import string
 
 def test_subdict():
-    cap_map = dict([(x, x.upper()) for x in string.hexdigits])
+    cap_map = {x: x.upper() for x in string.hexdigits}
     assert len(cap_map) == 22
     assert len(subdict(cap_map, drop=['a'])) == 21
     assert 'a' not in subdict(cap_map, drop=['a'])
@@ -403,7 +401,7 @@ def test_many_to_many():
     del m2m.inv['b']
     assert 1 not in m2m
     m2m[1] = ('a', 'b')
-    assert set(m2m.iteritems()) == set([(1, 'a'), (1, 'b')])
+    assert set(m2m.iteritems()) == {(1, 'a'), (1, 'b')}
     m2m.remove(1, 'a')
     m2m.remove(1, 'b')
     assert 1 not in m2m

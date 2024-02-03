@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # Copyright (c) 2013, Mahmoud Hashemi
 #
 # Redistribution and use in source and binary forms, with or without
@@ -41,7 +39,6 @@ issues without compromising on the excellent complexity
 characteristics of Python's built-in set implementation.
 """
 
-from __future__ import print_function
 
 from bisect import bisect_left
 from collections.abc import MutableSet
@@ -218,7 +215,7 @@ class IndexedSet(MutableSet):
         return (item for item in reversed(item_list) if item is not _MISSING)
 
     def __repr__(self):
-        return '%s(%r)' % (self.__class__.__name__, list(self))
+        return '{}({!r})'.format(self.__class__.__name__, list(self))
 
     def __eq__(self, other):
         if isinstance(other, IndexedSet):
@@ -465,7 +462,7 @@ class IndexedSet(MutableSet):
             return self._get_apparent_index(self.item_index_map[val])
         except KeyError:
             cn = self.__class__.__name__
-            raise ValueError('%r is not in %s' % (val, cn))
+            raise ValueError('{!r} is not in {}'.format(val, cn))
 
 
 def complement(wrapped):
@@ -577,7 +574,7 @@ def _norm_args_notimplemented(other):
     return inc, exc
 
 
-class _ComplementSet(object):
+class _ComplementSet:
     """
     helper class for complement() that implements the set methods
     """
@@ -594,8 +591,8 @@ class _ComplementSet(object):
 
     def __repr__(self):
         if self._included is None:
-            return 'complement({0})'.format(repr(self._excluded))
-        return 'complement(complement({0}))'.format(repr(self._included))
+            return 'complement({})'.format(repr(self._excluded))
+        return 'complement(complement({}))'.format(repr(self._included))
 
     def complemented(self):
         '''return a complement of the current set'''
