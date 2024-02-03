@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 from pickle import loads, dumps
 
 from boltons.namedutils import namedlist, namedtuple

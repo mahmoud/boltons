@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # Copyright (c) 2013, Mahmoud Hashemi
 #
 # Redistribution and use in source and binary forms, with or without
@@ -127,13 +125,12 @@ system instrumentation package.
 
 """
 
-from __future__ import print_function
 
 import bisect
 from math import floor, ceil
 
 
-class _StatsProperty(object):
+class _StatsProperty:
     def __init__(self, name, func):
         self.name = name
         self.func = func
@@ -155,7 +152,7 @@ class _StatsProperty(object):
             return getattr(obj, self.internal_name)
 
 
-class Stats(object):
+class Stats:
     """The ``Stats`` type is used to represent a group of unordered
     statistical datapoints for calculations such as mean, median, and
     variance.
@@ -725,7 +722,7 @@ class Stats(object):
         elif format == 'list':
             ret = items
         elif format == 'text':
-            ret = '\n'.join(['%s%s' % ((label + ':').ljust(10), val)
+            ret = '\n'.join(['{}{}'.format((label + ':').ljust(10), val)
                              for label, val in items])
         return ret
 
@@ -803,7 +800,7 @@ def format_histogram_counts(bin_counts, width=None, format_bin=None):
 
     labels = ['%s' % format_bin(b) for b in bins]
     label_cols = max([len(l) for l in labels])
-    tmp_line = '%s: %s #' % ('x' * label_cols, count_max)
+    tmp_line = '{}: {} #'.format('x' * label_cols, count_max)
 
     bar_cols = max(width - len(tmp_line), 3)
     line_k = float(bar_cols) / count_max

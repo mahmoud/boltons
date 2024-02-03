@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # Copyright (c) 2013, Mahmoud Hashemi
 #
 # Redistribution and use in source and binary forms, with or without
@@ -69,7 +67,7 @@ class ExceptionCauseMixin(Exception):
         cause = None
         if args and isinstance(args[0], Exception):
             cause, args = args[0], args[1:]
-        ret = super(ExceptionCauseMixin, cls).__new__(cls, *args, **kw)
+        ret = super().__new__(cls, *args, **kw)
         ret.cause = cause
         if cause is None:
             return ret
@@ -125,7 +123,7 @@ class ExceptionCauseMixin(Exception):
 
     def _get_trace_str(self):
         if not self.cause:
-            return super(ExceptionCauseMixin, self).__repr__()
+            return super().__repr__()
         if self.full_trace:
             return ''.join(traceback.format_list(self.full_trace))
         return ''
@@ -144,7 +142,7 @@ class ExceptionCauseMixin(Exception):
 
     def __str__(self):
         if not self.cause:
-            return super(ExceptionCauseMixin, self).__str__()
+            return super().__str__()
         trace_str = self._get_trace_str()
         ret = []
         if trace_str:
@@ -171,18 +169,18 @@ _BaseTBItem = namedtuple('_BaseTBItem', 'filename, lineno, name, line')
 
 class _TBItem(_BaseTBItem):
     def __repr__(self):
-        ret = super(_TBItem, self).__repr__()
+        ret = super().__repr__()
         ret += ' <%r>' % self.frame_id
         return ret
 
 
-class _DeferredLine(object):
+class _DeferredLine:
     def __init__(self, filename, lineno, module_globals=None):
         self.filename = filename
         self.lineno = lineno
         module_globals = module_globals or {}
-        self.module_globals = dict([(k, v) for k, v in module_globals.items()
-                                    if k in ('__name__', '__loader__')])
+        self.module_globals = {k: v for k, v in module_globals.items()
+                                    if k in ('__name__', '__loader__')}
 
     def __eq__(self, other):
         return (self.lineno, self.filename) == (other.lineno, other.filename)

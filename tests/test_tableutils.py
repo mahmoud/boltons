@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 from boltons.tableutils import Table
 
 
@@ -8,7 +6,7 @@ def test_table_lists():
                   [1, 'John Doe'],
                   [2, 'Dale Simmons']]
     t1 = Table(data_lists)
-    assert set(t1.headers) == set(['id', 'name'])
+    assert set(t1.headers) == {'id', 'name'}
     assert len(t1) == 2
     assert 'John Doe' in repr(t1)
 
@@ -37,7 +35,7 @@ def test_table_dicts():
     t3 = Table.from_dict(data_dicts)
     t3.extend([[3, 'Kurt Rose'], [4]])
 
-    assert set(t2.headers) == set(['id', 'name'])
+    assert set(t2.headers) == {'id', 'name'}
     assert len(t2) == 1
     # the sorted() stuff handles ordering differences between versions
     # TODO: should maybe change Table to sort the headers of dicts and such?
@@ -47,7 +45,7 @@ def test_table_dicts():
 
 
 def test_table_obj():
-    class TestType(object):
+    class TestType:
         def __init__(self):
             self.greeting = 'hi'
 

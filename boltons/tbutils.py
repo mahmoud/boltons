@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # Copyright (c) 2013, Mahmoud Hashemi
 #
 # Redistribution and use in source and binary forms, with or without
@@ -51,7 +49,6 @@ frame of the callstack, including values of locals and neighboring
 lines of code.
 """
 
-from __future__ import print_function
 
 import re
 import sys
@@ -72,7 +69,7 @@ __all__ = ['ExceptionInfo', 'TracebackInfo', 'Callpoint',
            'ContextualCallpoint', 'print_exception', 'ParsedException']
 
 
-class Callpoint(object):
+class Callpoint:
     """The Callpoint is a lightweight object used to represent a single
     entry in the code of a call stack. It stores the code-related
     metadata of a given frame. Available attributes are the same as
@@ -150,9 +147,9 @@ class Callpoint(object):
         cn = self.__class__.__name__
         args = [getattr(self, s, None) for s in self.__slots__]
         if not any(args):
-            return super(Callpoint, self).__repr__()
+            return super().__repr__()
         else:
-            return '%s(%s)' % (cn, ', '.join([repr(a) for a in args]))
+            return '{}({})'.format(cn, ', '.join([repr(a) for a in args]))
 
     def tb_frame_str(self):
         """Render the Callpoint as it would appear in a standard printed
@@ -160,15 +157,15 @@ class Callpoint(object):
         function name, and the actual code line of the error on up to
         two lines.
         """
-        ret = '  File "%s", line %s, in %s\n' % (self.module_path,
+        ret = '  File "{}", line {}, in {}\n'.format(self.module_path,
                                                  self.lineno,
                                                  self.func_name)
         if self.line:
-            ret += '    %s\n' % (str(self.line).strip(),)
+            ret += '    {}\n'.format(str(self.line).strip())
         return ret
 
 
-class _DeferredLine(object):
+class _DeferredLine:
     """The _DeferredLine type allows Callpoints and TracebackInfos to be
     constructed without potentially hitting the filesystem, as is the
     normal behavior of the standard Python :mod:`traceback` and
@@ -227,7 +224,7 @@ class _DeferredLine(object):
 
 
 # TODO: dedup frames, look at __eq__ on _DeferredLine
-class TracebackInfo(object):
+class TracebackInfo:
     """The TracebackInfo class provides a basic representation of a stack
     trace, be it from an exception being handled or just part of
     normal execution. It is basically a wrapper around a list of
@@ -337,11 +334,11 @@ class TracebackInfo(object):
         cn = self.__class__.__name__
 
         if self.frames:
-            frame_part = ' last=%r' % (self.frames[-1],)
+            frame_part = ' last={!r}'.format(self.frames[-1])
         else:
             frame_part = ''
 
-        return '<%s frames=%s%s>' % (cn, len(self.frames), frame_part)
+        return '<{} frames={}{}>'.format(cn, len(self.frames), frame_part)
 
     def __str__(self):
         return self.get_formatted()
@@ -357,7 +354,7 @@ class TracebackInfo(object):
         return ret
 
 
-class ExceptionInfo(object):
+class ExceptionInfo:
     """An ExceptionInfo object ties together three main fields suitable
     for representing an instance of an exception: The exception type
     name, a string representation of the exception itself (the
@@ -400,7 +397,7 @@ class ExceptionInfo(object):
         type_str = exc_type.__name__
         type_mod = exc_type.__module__
         if type_mod not in ("__main__", "__builtin__", "exceptions", "builtins"):
-            type_str = '%s.%s' % (type_mod, type_str)
+            type_str = '{}.{}'.format(type_mod, type_str)
         val_str = _some_str(exc_value)
         tb_info = cls.tb_info_type.from_traceback(traceback)
         return cls(type_str, val_str, tb_info)
@@ -425,7 +422,7 @@ class ExceptionInfo(object):
         cn = self.__class__.__name__
         try:
             len_frames = len(self.tb_info.frames)
-            last_frame = ', last=%r' % (self.tb_info.frames[-1],)
+            last_frame = ', last={!r}'.format(self.tb_info.frames[-1])
         except Exception:
             len_frames = 0
             last_frame = ''
@@ -439,10 +436,10 @@ class ExceptionInfo(object):
         """
         # TODO: add SyntaxError formatting
         tb_str = self.tb_info.get_formatted()
-        return ''.join([tb_str, '%s: %s' % (self.exc_type, self.exc_msg)])
+        return ''.join([tb_str, '{}: {}'.format(self.exc_type, self.exc_msg)])
 
     def get_formatted_exception_only(self):
-        return '%s: %s' % (self.exc_type, self.exc_msg)
+        return '{}: {}'.format(self.exc_type, self.exc_msg)
 
 
 class ContextualCallpoint(Callpoint):
@@ -458,12 +455,12 @@ class ContextualCallpoint(Callpoint):
         self.local_reprs = kw.pop('local_reprs', {})
         self.pre_lines = kw.pop('pre_lines', [])
         self.post_lines = kw.pop('post_lines', [])
-        super(ContextualCallpoint, self).__init__(*a, **kw)
+        super().__init__(*a, **kw)
 
     @classmethod
     def from_frame(cls, frame):
         "Identical to :meth:`Callpoint.from_frame`"
-        ret = super(ContextualCallpoint, cls).from_frame(frame)
+        ret = super().from_frame(frame)
         ret._populate_local_reprs(frame.f_locals)
         ret._populate_context_lines()
         return ret
@@ -471,7 +468,7 @@ class ContextualCallpoint(Callpoint):
     @classmethod
     def from_tb(cls, tb):
         "Identical to :meth:`Callpoint.from_tb`"
-        ret = super(ContextualCallpoint, cls).from_tb(tb)
+        ret = super().from_tb(tb)
         ret._populate_local_reprs(tb.tb_frame.f_locals)
         ret._populate_context_lines()
         return ret
@@ -520,7 +517,7 @@ class ContextualCallpoint(Callpoint):
         The locals dictionary and line lists are copies and can be mutated
         freely.
         """
-        ret = super(ContextualCallpoint, self).to_dict()
+        ret = super().to_dict()
         ret['locals'] = dict(self.local_reprs)
 
         # get the line numbers and textual lines
@@ -603,7 +600,7 @@ def format_exception_only(etype, value):
     lines = []
     filename = value.filename or "<string>"
     lineno = str(value.lineno) or '?'
-    lines.append('  File "%s", line %s\n' % (filename, lineno))
+    lines.append('  File "{}", line {}\n'.format(filename, lineno))
     badline = value.text
     offset = value.offset
     if badline is not None:
@@ -615,7 +612,7 @@ def format_exception_only(etype, value):
             # only three spaces to account for offset1 == pos 0
             lines.append('   %s^\n' % ''.join(caretspace))
     msg = value.msg or "<no detail available>"
-    lines.append("%s: %s\n" % (stype, msg))
+    lines.append("{}: {}\n".format(stype, msg))
     return lines
 
 
@@ -633,7 +630,7 @@ def _format_final_exc_line(etype, value):
     if value is None or not valuestr:
         line = "%s\n" % etype
     else:
-        line = "%s: %s\n" % (etype, valuestr)
+        line = "{}: {}\n".format(etype, valuestr)
     return line
 
 
@@ -675,7 +672,7 @@ _underline_re = re.compile(r'^[~^ ]*$')
 
 # TODO: ParsedException generator over large bodies of text
 
-class ParsedException(object):
+class ParsedException:
     """Stores a parsed traceback and exception as would be typically
     output by :func:`sys.excepthook` or
     :func:`traceback.print_exception`.
@@ -719,20 +716,20 @@ class ParsedException(object):
         ``ParsedException.from_string(text).to_string()`` should yield
         ``text``.
         """
-        lines = [u'Traceback (most recent call last):']
+        lines = ['Traceback (most recent call last):']
 
         for frame in self.frames:
-            lines.append(u'  File "%s", line %s, in %s' % (frame['filepath'],
+            lines.append('  File "{}", line {}, in {}'.format(frame['filepath'],
                                                            frame['lineno'],
                                                            frame['funcname']))
             source_line = frame.get('source_line')
             if source_line:
-                lines.append(u'    %s' % (source_line,))
+                lines.append('    {}'.format(source_line))
         if self.exc_msg:
-            lines.append(u'%s: %s' % (self.exc_type, self.exc_msg))
+            lines.append('{}: {}'.format(self.exc_type, self.exc_msg))
         else:
-            lines.append(u'%s' % (self.exc_type,))
-        return u'\n'.join(lines)
+            lines.append('{}'.format(self.exc_type))
+        return '\n'.join(lines)
 
     @classmethod
     def from_string(cls, tb_str):

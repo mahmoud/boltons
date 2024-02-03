@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # Copyright (c) 2013, Mahmoud Hashemi
 #
 # Redistribution and use in source and binary forms, with or without
@@ -257,8 +255,7 @@ def rstrip_iter(iterable, strip_value=None):
                     break
             if not broken: # Return to caller here because the end of the
                 return     # iterator has been reached
-            for t in cache:
-                yield t
+            yield from cache
         yield i
 
 
@@ -963,8 +960,7 @@ def flatten_iter(iterable):
     """
     for item in iterable:
         if isinstance(item, Iterable) and not isinstance(item, (str, bytes)):
-            for subitem in flatten_iter(item):
-                yield subitem
+            yield from flatten_iter(item)
         else:
             yield item
 
@@ -1232,7 +1228,7 @@ class PathAccessError(KeyError, IndexError, TypeError):
 
     def __repr__(self):
         cn = self.__class__.__name__
-        return '%s(%r, %r, %r)' % (cn, self.exc, self.seg, self.path)
+        return '{}({!r}, {!r}, {!r})'.format(cn, self.exc, self.seg, self.path)
 
     def __str__(self):
         return ('could not access %r from path %r, got error: %r'
@@ -1367,7 +1363,7 @@ def research(root, query=lambda p, k, v: True, reraise=False):
 
 # GUID iterators: 10x faster and somewhat more compact than uuid.
 
-class GUIDerator(object):
+class GUIDerator:
     """The GUIDerator is an iterator that yields a globally-unique
     identifier (GUID) on every iteration. The GUIDs produced are
     hexadecimal strings.
@@ -1449,7 +1445,7 @@ class SequentialGUIDerator(GUIDerator):
     """
 
     def reseed(self):
-        super(SequentialGUIDerator, self).reseed()
+        super().reseed()
         start_str = self._sha1(self.salt.encode('utf8')).hexdigest()
         self.start = int(start_str[:self.size], 16)
         self.start |= (1 << ((self.size * 4) - 2))
@@ -1530,7 +1526,7 @@ def untyped_sorted(iterable, key=None, reverse=False):
        explicitly unorderable objects.
 
     """
-    class _Wrapper(object):
+    class _Wrapper:
         slots = ('obj',)
 
         def __init__(self, obj):

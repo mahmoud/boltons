@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # Copyright (c) 2013, Mahmoud Hashemi
 #
 # Redistribution and use in source and binary forms, with or without
@@ -160,7 +158,7 @@ class OrderedMultiDict(dict):
 
     """
     def __new__(cls, *a, **kw):
-        ret = super(OrderedMultiDict, cls).__new__(cls)
+        ret = super().__new__(cls)
         ret._clear_ll()
         return ret 
     
@@ -168,7 +166,7 @@ class OrderedMultiDict(dict):
         if len(args) > 1:
             raise TypeError('%s expected at most 1 argument, got %s'
                             % (self.__class__.__name__, len(args)))
-        super(OrderedMultiDict, self).__init__()
+        super().__init__()
 
         if args:
             self.update_extend(args[0])
@@ -203,7 +201,7 @@ class OrderedMultiDict(dict):
         """Add a single value *v* under a key *k*. Existing values under *k*
         are preserved.
         """
-        values = super(OrderedMultiDict, self).setdefault(k, [])
+        values = super().setdefault(k, [])
         self._insert(k, v)
         values.append(v)
 
@@ -222,7 +220,7 @@ class OrderedMultiDict(dict):
         if not v:
             return
         self_insert = self._insert
-        values = super(OrderedMultiDict, self).setdefault(k, [])
+        values = super().setdefault(k, [])
         for subv in v:
             self_insert(k, subv)
         values.extend(v)
@@ -234,7 +232,7 @@ class OrderedMultiDict(dict):
 
         To get all values under a key, use :meth:`OrderedMultiDict.getlist`.
         """
-        return super(OrderedMultiDict, self).get(k, [default])[-1]
+        return super().get(k, [default])[-1]
 
     def getlist(self, k, default=_MISSING):
         """Get all values for key *k* as a list, if *k* is in the
@@ -243,7 +241,7 @@ class OrderedMultiDict(dict):
         :class:`list` is returned.
         """
         try:
-            return super(OrderedMultiDict, self).__getitem__(k)[:]
+            return super().__getitem__(k)[:]
         except KeyError:
             if default is _MISSING:
                 return []
@@ -251,7 +249,7 @@ class OrderedMultiDict(dict):
 
     def clear(self):
         "Empty the dictionary."
-        super(OrderedMultiDict, self).clear()
+        super().clear()
         self._clear_ll()
 
     def setdefault(self, k, default=_MISSING):
@@ -260,7 +258,7 @@ class OrderedMultiDict(dict):
         defaults to ``None``. See :meth:`dict.setdefault` for more
         information.
         """
-        if not super(OrderedMultiDict, self).__contains__(k):
+        if not super().__contains__(k):
             self[k] = None if default is _MISSING else default
         return self[k]
 
@@ -325,16 +323,16 @@ class OrderedMultiDict(dict):
             self_add(k, v)
 
     def __setitem__(self, k, v):
-        if super(OrderedMultiDict, self).__contains__(k):
+        if super().__contains__(k):
             self._remove_all(k)
         self._insert(k, v)
-        super(OrderedMultiDict, self).__setitem__(k, [v])
+        super().__setitem__(k, [v])
 
     def __getitem__(self, k):
-        return super(OrderedMultiDict, self).__getitem__(k)[-1]
+        return super().__getitem__(k)[-1]
 
     def __delitem__(self, k):
-        super(OrderedMultiDict, self).__delitem__(k)
+        super().__delitem__(k)
         self._remove_all(k)
 
     def __eq__(self, other):
@@ -390,7 +388,7 @@ class OrderedMultiDict(dict):
         a list. Raises :exc:`KeyError` if the key is not present and no
         *default* is provided.
         """
-        super_self = super(OrderedMultiDict, self)
+        super_self = super()
         if super_self.__contains__(k):
             self._remove_all(k)
         if default is _MISSING:
@@ -417,10 +415,10 @@ class OrderedMultiDict(dict):
             if default is _MISSING:
                 raise KeyError(k)
             return default
-        values = super(OrderedMultiDict, self).__getitem__(k)
+        values = super().__getitem__(k)
         v = values.pop()
         if not values:
-            super(OrderedMultiDict, self).__delitem__(k)
+            super().__delitem__(k)
         return v
 
     def _remove(self, k):
@@ -493,8 +491,8 @@ class OrderedMultiDict(dict):
         value lists are copies that can be safely mutated.
         """
         if multi:
-            return dict([(k, self.getlist(k)) for k in self])
-        return dict([(k, self[k]) for k in self])
+            return {k: self.getlist(k) for k in self}
+        return {k: self[k] for k in self}
 
     def sorted(self, key=None, reverse=False):
         """Similar to the built-in :func:`sorted`, except this method returns
@@ -552,12 +550,12 @@ class OrderedMultiDict(dict):
         retained. Only value order changes.
         """
         try:
-            superself_iteritems = super(OrderedMultiDict, self).iteritems()
+            superself_iteritems = super().iteritems()
         except AttributeError:
-            superself_iteritems = super(OrderedMultiDict, self).items()
+            superself_iteritems = super().items()
         # (not reverse) because they pop off in reverse order for reinsertion
-        sorted_val_map = dict([(k, sorted(v, key=key, reverse=(not reverse)))
-                               for k, v in superself_iteritems])
+        sorted_val_map = {k: sorted(v, key=key, reverse=(not reverse))
+                               for k, v in superself_iteritems}
         ret = self.__class__()
         for k in self.iterkeys(multi=True):
             ret.add(k, sorted_val_map[k].pop())
@@ -587,7 +585,7 @@ class OrderedMultiDict(dict):
         """
         # Returns an OMD because Counter/OrderedDict may not be
         # available, and neither Counter nor dict maintain order.
-        super_getitem = super(OrderedMultiDict, self).__getitem__
+        super_getitem = super().__getitem__
         return self.__class__((k, len(super_getitem(k))) for k in self)
 
     def keys(self, multi=False):
@@ -616,7 +614,7 @@ class OrderedMultiDict(dict):
         curr = root[PREV]
         lengths = {}
         lengths_sd = lengths.setdefault
-        get_values = super(OrderedMultiDict, self).__getitem__
+        get_values = super().__getitem__
         while curr is not root:
             k = curr[KEY]
             vals = get_values(k)
@@ -628,7 +626,7 @@ class OrderedMultiDict(dict):
     def __repr__(self):
         cn = self.__class__.__name__
         kvs = ', '.join([repr((k, v)) for k, v in self.iteritems(multi=True)])
-        return '%s([%s])' % (cn, kvs)
+        return '{}([{}])'.format(cn, kvs)
 
     def viewkeys(self):
         "OMD.viewkeys() -> a set-like object providing a view on OMD's keys"
@@ -808,8 +806,8 @@ class OneToOne(dict):
         for k, v in self.items():
             val_multidict.setdefault(v, []).append(k)
 
-        dupes = dict([(v, k_list) for v, k_list in
-                      val_multidict.items() if len(k_list) > 1])
+        dupes = {v: k_list for v, k_list in
+                      val_multidict.items() if len(k_list) > 1}
 
         raise ValueError('expected unique values, got multiple keys for'
                          ' the following values: %r' % dupes)
@@ -892,14 +890,14 @@ class OneToOne(dict):
     def __repr__(self):
         cn = self.__class__.__name__
         dict_repr = dict.__repr__(self)
-        return "%s(%s)" % (cn, dict_repr)
+        return "{}({})".format(cn, dict_repr)
 
 
 # marker for the secret handshake used internally to set up the invert ManyToMany
 _PAIRING = object()
 
 
-class ManyToMany(object):
+class ManyToMany:
     """
     a dict-like entity that represents a many-to-many relationship
     between two groups of objects
@@ -1016,7 +1014,7 @@ class ManyToMany(object):
 
     def __repr__(self):
         cn = self.__class__.__name__
-        return '%s(%r)' % (cn, list(self.iteritems()))
+        return '{}({!r})'.format(cn, list(self.iteritems()))
 
 
 def subdict(d, keep=None, drop=None):
@@ -1086,7 +1084,7 @@ class FrozenDict(dict):
 
     def __repr__(self):
         cn = self.__class__.__name__
-        return '%s(%s)' % (cn, dict.__repr__(self))
+        return '{}({})'.format(cn, dict.__repr__(self))
 
     def __reduce_ex__(self, protocol):
         return type(self), (dict(self),)
