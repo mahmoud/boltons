@@ -39,16 +39,10 @@ import re
 import inspect
 import functools
 import itertools
+from inspect import formatannotation
 from types import MethodType, FunctionType
 
 make_method = lambda desc, obj, obj_type: MethodType(desc, obj)
-
-
-try:
-    _inspect_iscoroutinefunction = inspect.iscoroutinefunction
-except AttributeError:
-    # Python 3.4
-    _inspect_iscoroutinefunction = lambda func: False
 
 
 try:
@@ -58,64 +52,53 @@ except ImportError:
     NO_DEFAULT = object()
 
 
+def inspect_formatargspec(
+        args, varargs=None, varkw=None, defaults=None,
+        kwonlyargs=(), kwonlydefaults={}, annotations={},
+        formatarg=str,
+        formatvarargs=lambda name: '*' + name,
+        formatvarkw=lambda name: '**' + name,
+        formatvalue=lambda value: '=' + repr(value),
+        formatreturns=lambda text: ' -> ' + text,
+        formatannotation=formatannotation):
+    """Copy formatargspec from python 3.7 standard library.
+    Python 3 has deprecated formatargspec and requested that Signature
+    be used instead, however this requires a full reimplementation
+    of formatargspec() in terms of creating Parameter objects and such.
+    Instead of introducing all the object-creation overhead and having
+    to reinvent from scratch, just copy their compatibility routine.
+    """
 
-_IS_PY35 = sys.version_info >= (3, 5)
-if not _IS_PY35:
-    # py35+ wants you to use signature instead, but
-    # inspect_formatargspec is way simpler for what it is. Copied the
-    # vendoring approach from alembic:
-    # https://github.com/sqlalchemy/alembic/blob/4cdad6aec32b4b5573a2009cc356cb4b144bd359/alembic/util/compat.py#L92
-    from inspect import formatargspec as inspect_formatargspec
-else:
-    from inspect import formatannotation
-
-    def inspect_formatargspec(
-            args, varargs=None, varkw=None, defaults=None,
-            kwonlyargs=(), kwonlydefaults={}, annotations={},
-            formatarg=str,
-            formatvarargs=lambda name: '*' + name,
-            formatvarkw=lambda name: '**' + name,
-            formatvalue=lambda value: '=' + repr(value),
-            formatreturns=lambda text: ' -> ' + text,
-            formatannotation=formatannotation):
-        """Copy formatargspec from python 3.7 standard library.
-        Python 3 has deprecated formatargspec and requested that Signature
-        be used instead, however this requires a full reimplementation
-        of formatargspec() in terms of creating Parameter objects and such.
-        Instead of introducing all the object-creation overhead and having
-        to reinvent from scratch, just copy their compatibility routine.
-        """
-
-        def formatargandannotation(arg):
-            result = formatarg(arg)
-            if arg in annotations:
-                result += ': ' + formatannotation(annotations[arg])
-            return result
-        specs = []
-        if defaults:
-            firstdefault = len(args) - len(defaults)
-        for i, arg in enumerate(args):
-            spec = formatargandannotation(arg)
-            if defaults and i >= firstdefault:
-                spec = spec + formatvalue(defaults[i - firstdefault])
-            specs.append(spec)
-        if varargs is not None:
-            specs.append(formatvarargs(formatargandannotation(varargs)))
-        else:
-            if kwonlyargs:
-                specs.append('*')
-        if kwonlyargs:
-            for kwonlyarg in kwonlyargs:
-                spec = formatargandannotation(kwonlyarg)
-                if kwonlydefaults and kwonlyarg in kwonlydefaults:
-                    spec += formatvalue(kwonlydefaults[kwonlyarg])
-                specs.append(spec)
-        if varkw is not None:
-            specs.append(formatvarkw(formatargandannotation(varkw)))
-        result = '(' + ', '.join(specs) + ')'
-        if 'return' in annotations:
-            result += formatreturns(formatannotation(annotations['return']))
+    def formatargandannotation(arg):
+        result = formatarg(arg)
+        if arg in annotations:
+            result += ': ' + formatannotation(annotations[arg])
         return result
+    specs = []
+    if defaults:
+        firstdefault = len(args) - len(defaults)
+    for i, arg in enumerate(args):
+        spec = formatargandannotation(arg)
+        if defaults and i >= firstdefault:
+            spec = spec + formatvalue(defaults[i - firstdefault])
+        specs.append(spec)
+    if varargs is not None:
+        specs.append(formatvarargs(formatargandannotation(varargs)))
+    else:
+        if kwonlyargs:
+            specs.append('*')
+    if kwonlyargs:
+        for kwonlyarg in kwonlyargs:
+            spec = formatargandannotation(kwonlyarg)
+            if kwonlydefaults and kwonlyarg in kwonlydefaults:
+                spec += formatvalue(kwonlydefaults[kwonlyarg])
+            specs.append(spec)
+    if varkw is not None:
+        specs.append(formatvarkw(formatargandannotation(varkw)))
+    result = '(' + ', '.join(specs) + ')'
+    if 'return' in annotations:
+        result += formatreturns(formatannotation(annotations['return']))
+    return result
 
 
 def get_module_callables(mod, ignore=None):
@@ -287,9 +270,8 @@ class CachedInstancePartial(functools.partial):
     def _partialmethod(self):
         return functools.partialmethod(self.func, *self.args, **self.keywords)
 
-    if sys.version_info >= (3, 6):
-        def __set_name__(self, obj_type, name):
-            self.__name__ = name
+    def __set_name__(self, obj_type, name):
+        self.__name__ = name
 
     def __get__(self, obj, obj_type):
         # These assignments could've been in __init__, but there was
@@ -300,11 +282,6 @@ class CachedInstancePartial(functools.partial):
 
         name = self.__name__
 
-        # if you're on python 3.6+, name will never be `None` bc `__set_name__` sets it when descriptor getting assigned
-        if name is None:
-            for k, v in mro_items(obj_type):
-                if v is self:
-                    self.__name__ = name = k
         if obj is None:
             return make_method(self, obj, obj_type)
         try:
@@ -845,7 +822,7 @@ class FunctionBuilder:
 
         kwargs.update(cls._argspec_to_dict(func))
 
-        if _inspect_iscoroutinefunction(func):
+        if inspect.iscoroutinefunction(func):
             kwargs['is_async'] = True
 
         return cls(**kwargs)
