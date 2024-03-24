@@ -1262,8 +1262,8 @@ def get_path(root, path, default=_UNSET):
     >>> get_path(root, ('a', 'b', 'c', 2, 0))
     3
 
-    The path format is intentionally consistent with that of
-    :func:`remap`.
+    The path tuple format is intentionally consistent with that of
+    :func:`remap`, but a single dotted string can also be passed.
 
     One of get_path's chief aims is improved error messaging. EAFP is
     great, but the error messages are not.
@@ -1282,8 +1282,9 @@ def get_path(root, path, default=_UNSET):
     Args:
        root: The target nesting of dictionaries, lists, or other
           objects supporting ``__getitem__``.
-       path (tuple): A list of strings and integers to be successively
-          looked up within *root*.
+       path (tuple): A sequence of strings and integers to be successively
+          looked up within *root*. A dot-separated (``a.b``) string may 
+          also be passed.
        default: The value to be returned should any
           ``PathAccessError`` exceptions be raised.
     """
