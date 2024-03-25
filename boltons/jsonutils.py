@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # Copyright (c) 2013, Mahmoud Hashemi
 #
 # Redistribution and use in source and binary forms, with or without
@@ -38,7 +36,6 @@ of working with `JSON Lines`_-formatted files.
 
 """
 
-from __future__ import print_function
 
 import io
 import os
@@ -90,7 +87,7 @@ def reverse_iter_lines(file_obj, blocksize=DEFAULT_BLOCKSIZE, preseek=True, enco
     except (AttributeError, io.UnsupportedOperation):
         pass
 
-    empty_bytes, newline_bytes, empty_text = b'', b'\n', u''
+    empty_bytes, newline_bytes, empty_text = b'', b'\n', ''
 
     if preseek:
         file_obj.seek(0, os.SEEK_END)
@@ -123,7 +120,7 @@ json.load(fp[, encoding[, cls[, object_hook[, parse_float[, parse_int[, parse_co
 """
 
 
-class JSONLIterator(object):
+class JSONLIterator:
     """The ``JSONLIterator`` is used to iterate over JSON-encoded objects
     stored in the `JSON Lines format`_ (one object per line).
 

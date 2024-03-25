@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 import sys
 
 from boltons.listutils import SplayList, BarrelList
@@ -26,7 +24,7 @@ def test_barrel_list():
     assert list(bl) == [0, 1]
     bl.insert(0, -1)
     assert list(bl) == [-1, 0, 1]
-    bl.extend((range(int(1e5))))
+    bl.extend(range(int(1e5)))
     assert len(bl) == (1e5 + 3)
     bl._balance_list(0)
     assert len(bl) == (1e5 + 3)

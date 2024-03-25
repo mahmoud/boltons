@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import string
 import sys
 from abc import abstractmethod, ABCMeta
@@ -8,7 +7,7 @@ import pytest
 from boltons.cacheutils import LRU, LRI, cached, cachedmethod, cachedproperty, MinIDMap, ThresholdCounter
 
 
-class CountingCallable(object):
+class CountingCallable:
     def __init__(self):
         self.call_count = 0
 
@@ -301,7 +300,7 @@ def test_callable_cached_dec():
 
 
 def test_cachedmethod():
-    class Car(object):
+    class Car:
         def __init__(self, cache=None):
             self.h_cache = LRI() if cache is None else cache
             self.door_count = 0
@@ -378,7 +377,7 @@ def test_cachedmethod_maintains_func_abstraction():
 
 
 def test_cachedproperty():
-    class Proper(object):
+    class Proper:
         def __init__(self):
             self.expensive_func = CountingCallable()
 
@@ -430,7 +429,7 @@ def test_min_id_map():
 
     midm = MinIDMap()
 
-    class Foo(object):
+    class Foo:
         def __init__(self, val):
             self.val = val
 

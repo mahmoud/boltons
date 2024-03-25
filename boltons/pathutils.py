@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # Copyright (c) 2013, Mahmoud Hashemi
 #
 # Redistribution and use in source and binary forms, with or without
@@ -42,7 +40,6 @@ together.
 
 The :func:`shrinkuser` function replaces your home directory with a tilde.
 """
-from __future__ import print_function
 
 from os.path import (expanduser, expandvars, join, normpath, split, splitext)
 import os

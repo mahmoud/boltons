@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # Copyright (c) 2013, Mahmoud Hashemi
 #
 # Redistribution and use in source and binary forms, with or without
@@ -38,13 +36,7 @@ built-in Python debugger.
 
 import sys
 import time
-
-try:
-    basestring
-    from repr import Repr
-except NameError:
-    basestring = (str, bytes)  # py3
-    from reprlib import Repr
+from reprlib import Repr
 
 try:
     from .typeutils import make_sentinel
@@ -137,7 +129,7 @@ def trace_print_hook(event, label, obj, attr_name,
         fargs += (', '.join([brief_repr(a) for a in args]),)
         if kwargs:
             tmpl = '%s %s - %s - %s.%s(%s, %s)'
-            fargs += (', '.join(['%s=%s' % (k, brief_repr(v))
+            fargs += (', '.join([f'{k}={brief_repr(v)}'
                                  for k, v in kwargs.items()]),)
         if result is not _UNSET:
             tmpl += ' -> %s'
@@ -179,7 +171,7 @@ def wrap_trace(obj, hook=trace_print_hook,
     # TODO: test classmethod/staticmethod/property
     # TODO: wrap __dict__ for old-style classes?
 
-    if isinstance(which, basestring):
+    if isinstance(which, (str, bytes)):
         which_func = lambda attr_name, attr_val: attr_name == which
     elif callable(getattr(which, '__contains__', None)):
         which_func = lambda attr_name, attr_val: attr_name in which
@@ -190,7 +182,7 @@ def wrap_trace(obj, hook=trace_print_hook,
 
     label = label or hex(id(obj))
 
-    if isinstance(events, basestring):
+    if isinstance(events, (str, bytes)):
         events = [events]
     do_get = not events or 'get' in events
     do_set = not events or 'set' in events

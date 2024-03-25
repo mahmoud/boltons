@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # Copyright (c) 2013, Mahmoud Hashemi
 #
 # Redistribution and use in source and binary forms, with or without
@@ -31,12 +29,6 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
-"""
-Note that DeprecationWarnings are ignored by default in Python
-2.7/3.2+, so be sure to either un-ignore them in your code, or run
-Python with the -Wd flag.
-"""
-
 import sys
 from warnings import warn
 
@@ -48,11 +40,11 @@ ModuleType = type(sys)
 class DeprecatableModule(ModuleType):
     def __init__(self, module):
         name = module.__name__
-        super(DeprecatableModule, self).__init__(name=name)
+        super().__init__(name=name)
         self.__dict__.update(module.__dict__)
 
     def __getattribute__(self, name):
-        get_attribute = super(DeprecatableModule, self).__getattribute__
+        get_attribute = super().__getattribute__
         try:
             depros = get_attribute('_deprecated_members')
         except AttributeError:

@@ -1,4 +1,3 @@
-
 from collections import namedtuple
 
 from pytest import raises
@@ -27,7 +26,7 @@ def test_trace_dict():
 
 
 def test_trace_bytes():
-    target = u'Hello'.encode('ascii')
+    target = b'Hello'
 
     wrapped = wrap_trace(target)
 
@@ -35,7 +34,7 @@ def test_trace_bytes():
     assert isinstance(wrapped, bytes)
 
     assert len(wrapped) == len(target)
-    assert wrapped.decode('utf-8') == u'Hello'
+    assert wrapped.decode('utf-8') == 'Hello'
     assert wrapped.lower() == target.lower()
 
 
@@ -53,7 +52,7 @@ def test_trace_exc():
 
 
 def test_trace_which():
-    class Config(object):
+    class Config:
         def __init__(self, value):
             self.value = value
 

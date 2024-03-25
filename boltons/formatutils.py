@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # Copyright (c) 2013, Mahmoud Hashemi
 #
 # Redistribution and use in source and binary forms, with or without
@@ -67,15 +65,9 @@ format strings:
 # TODO: also include percent-formatting utils?
 # TODO: include lithoxyl.formatters.Formatter (or some adaptation)?
 
-from __future__ import print_function
 
 import re
 from string import Formatter
-
-try:
-    unicode        # Python 2
-except NameError:
-    unicode = str  # Python 3
 
 __all__ = ['DeferredValue', 'get_format_args', 'tokenize_format_str',
            'construct_format_field_str', 'infer_positional_format_args',
@@ -139,7 +131,7 @@ def infer_positional_format_args(fstr):
         if group == '{{' or group == '}}':
             ret += group
             continue
-        ret += '{%s%s' % (max_anon, group[1:])
+        ret += f'{{{max_anon}{group[1:]}'
         max_anon += 1
     ret += fstr[prev_end:]
     return ret
@@ -220,7 +212,7 @@ def tokenize_format_str(fstr, resolve_pos=True):
     return ret
 
 
-class BaseFormatField(object):
+class BaseFormatField:
     """A class representing a reference to an argument inside of a
     bracket-style format string. For instance, in ``"{greeting},
     world!"``, there is a field named "greeting".
@@ -277,7 +269,7 @@ class BaseFormatField(object):
         elif self.fspec != '':
             args.append(self.fspec)
         args_repr = ', '.join([repr(a) for a in args])
-        return '%s(%s)' % (cn, args_repr)
+        return f'{cn}({args_repr})'
 
     def __str__(self):
         return self.fstr
@@ -286,7 +278,7 @@ class BaseFormatField(object):
 _UNSET = object()
 
 
-class DeferredValue(object):
+class DeferredValue:
     """:class:`DeferredValue` is a wrapper type, used to defer computing
     values which would otherwise be expensive to stringify and
     format. This is most valuable in areas like logging, where one
@@ -344,7 +336,7 @@ class DeferredValue(object):
         return str(self.get_value())
 
     def __unicode__(self):
-        return unicode(self.get_value())
+        return str(self.get_value())
 
     def __repr__(self):
         return repr(self.get_value())

@@ -34,7 +34,7 @@ what's new by `checking the CHANGELOG`_.
 .. counts are appx 50, 75, and 23, respectively, as of initial docs writing
 .. in mid 2016, the counts are now 62, 112, and 25, respectively
 
-.. _the standard library: https://docs.python.org/2.7/library/index.html
+.. _the standard library: https://docs.python.org/3/library/index.html
 .. _checking the CHANGELOG: https://github.com/mahmoud/boltons/blob/master/CHANGELOG.md
 
 .. |release| image:: https://img.shields.io/pypi/v/boltons.svg
@@ -68,7 +68,7 @@ consider other integration options. See the :ref:`Integration
 <arch_integration>` section of the architecture document for more
 details.
 
-Boltons is tested against Python 3.7-3.12, as well as Python 2.7 and PyPy3.
+Boltons is tested against Python 3.7-3.12, as well as PyPy3.
 
 .. _MacPorts: https://ports.macports.org/port/py-boltons/summary
 

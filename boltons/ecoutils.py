@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # Copyright (c) 2013, Mahmoud Hashemi
 #
 # Redistribution and use in source and binary forms, with or without
@@ -41,7 +39,7 @@ know what you're working with.
 Some basic variations that are common among development machines:
 
 * **Executable runtime**: CPython, PyPy, Jython, etc., plus build date and compiler
-* **Language version**: 2.4, 2.5, 2.6, 2.7... 3.4, 3.5, 3.6
+* **Language version**: 2.7 through 3.12
 * **Host operating system**: Windows, OS X, Ubuntu, Debian, CentOS, RHEL, etc.
 * **Features**: 64-bit, IPv6, Unicode character support (UCS-2/UCS-4)
 * **Built-in library support**: OpenSSL, threading, SQLite, zlib
@@ -75,13 +73,18 @@ following information is deemed not dense enough, and thus omitted:
 Compatibility
 -------------
 
-So far ecoutils has has been tested on Python 2.4, 2.5, 2.6, 2.7, 3.4,
-3.5, and PyPy. Various versions have been tested on Ubuntu, Debian,
+So far ecoutils has has been tested on Python 3.7+ and PyPy3. 
+Various versions have been tested on Ubuntu, Debian,
 RHEL, OS X, FreeBSD, and Windows 7.
 
-.. note:: Boltons typically only support back to Python 2.6, but due
-    to its nature, ecoutils extends backwards compatibility to Python
-    2.4 and 2.5.
+.. note:: 
+
+   ``boltons.ecoutils`` historically supported back to Python 2.4, but in 2024, 
+    due to increasing testing burden, ecoutils support tracks the same 
+    versions of Python as the rest of the boltons package. 
+    For older Pythons, see `this version`_ from boltons 23.0.0.
+
+.. _this version: https://github.com/mahmoud/boltons/blob/4b1d728f31a8378b193be9c966c853be0a57527d/boltons/ecoutils.py
 
 Profile generation
 ------------------
@@ -151,8 +154,8 @@ and print a profile in JSON format::
 import re
 import os
 import sys
+import json
 import time
-import pprint
 import random
 import socket
 import struct
@@ -160,9 +163,8 @@ import getpass
 import datetime
 import platform
 
-ECO_VERSION = '1.0.1'  # see version history below
+ECO_VERSION = '1.1.0'  # see version history below
 
-PY_GT_2 = sys.version_info[0] > 2
 
 try:
     getrandbits = random.SystemRandom().getrandbits
@@ -206,10 +208,7 @@ except Exception:
 
 
 try:
-    if PY_GT_2:
-        import tkinter
-    else:
-        import Tkinter as tkinter
+    import tkinter
     TKINTER_VERSION = str(tkinter.TkVersion)
 except Exception:
     TKINTER_VERSION = ''
@@ -255,7 +254,14 @@ except Exception:
     RLIMIT_FDS_SOFT, RLIMIT_FDS_HARD = 0, 0
 
 
-START_TIME_INFO = {'time_utc': str(datetime.datetime.utcnow()),
+def _get_utc_now():
+    try:
+        return datetime.datetime.utcnow()
+    except Exception:
+        return datetime.datetime.now(datetime.UTC)
+
+
+START_TIME_INFO = {'time_utc': str(_get_utc_now()),
                    'time_utc_offset': -time.timezone / 3600.0}
 
 
@@ -307,7 +313,7 @@ def get_profile(**kwargs):
     """
     scrub = kwargs.pop('scrub', False)
     if kwargs:
-        raise TypeError('unexpected keyword arguments: %r' % (kwargs.keys(),))
+        raise TypeError(f'unexpected keyword arguments: {kwargs.keys()!r}')
     ret = {}
     try:
         ret['username'] = getpass.getuser()
@@ -324,7 +330,8 @@ def get_profile(**kwargs):
                     'machine': uname[4],
                     'processor': uname[5]}
     try:
-        linux_dist = platform.linux_distribution()
+        # TODO: removed in 3.7, replaced with freedesktop_os_release in 3.10
+        linux_dist = platform.linux_distribution()  
     except Exception:
         linux_dist = ('', '', '')
     ret['linux_dist_name'] = linux_dist[0]
@@ -354,53 +361,10 @@ def get_profile(**kwargs):
     return ret
 
 
-try:
-    import json
-
-    def dumps(val, indent):
-        if indent:
-            return json.dumps(val, sort_keys=True, indent=indent)
-        return json.dumps(val, sort_keys=True)
-
-except ImportError:
-    _real_safe_repr = pprint._safe_repr
-
-    def _fake_json_dumps(val, indent=2):
-        # never do this. this is a hack for Python 2.4. Python 2.5 added
-        # the json module for a reason.
-        def _fake_safe_repr(*a, **kw):
-            res, is_read, is_rec = _real_safe_repr(*a, **kw)
-            if res == 'None':
-                res = 'null'
-            if res == 'True':
-                res = 'true'
-            if res == 'False':
-                res = 'false'
-            if not (res.startswith("'") or res.startswith("u'")):
-                res = res
-            else:
-                if res.startswith('u'):
-                    res = res[1:]
-
-                contents = res[1:-1]
-                contents = contents.replace('"', '').replace(r'\"', '')
-                res = '"' + contents + '"'
-            return res, is_read, is_rec
-
-        pprint._safe_repr = _fake_safe_repr
-        try:
-            ret = pprint.pformat(val, indent=indent)
-        finally:
-            pprint._safe_repr = _real_safe_repr
-
-        return ret
-
-    def dumps(val, indent):
-        ret = _fake_json_dumps(val, indent=indent)
-        if not indent:
-            ret = re.sub(r'\n\s*', ' ', ret)
-        return ret
-
+def dumps(val, indent):
+    if indent:
+        return json.dumps(val, sort_keys=True, indent=indent)
+    return json.dumps(val, sort_keys=True)
 
 
 def get_profile_json(indent=False):
@@ -515,6 +479,7 @@ ecoutils protocol version history
 The version is ECO_VERSION module-level constant, and _eco_version key
 in the dictionary returned from ecoutils.get_profile().
 
+1.1.0 - (boltons version 24.0.0+) Drop Python <=3.6 compat
 1.0.1 - (boltons version 16.3.2+) Remove uuid dependency and add HAVE_URANDOM
 1.0.0 - (boltons version 16.3.0-16.3.1) Initial release
 

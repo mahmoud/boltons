@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # Copyright (c) 2013, Mahmoud Hashemi
 #
 # Redistribution and use in source and binary forms, with or without
@@ -36,8 +34,8 @@ common capabilities missing from the standard library, several of them
 provided by ``strutils``.
 """
 
-from __future__ import print_function
 
+import builtins
 import re
 import sys
 import uuid
@@ -45,32 +43,12 @@ import zlib
 import string
 import unicodedata
 import collections
+from collections.abc import Mapping
 from gzip import GzipFile
+from html.parser import HTMLParser
+from html import entities as htmlentitydefs
+from io import BytesIO as StringIO
 
-try:
-    from cStringIO import cStringIO as StringIO
-except ImportError:
-    from io import BytesIO as StringIO
-
-try:
-    from collections.abc import Mapping
-except ImportError:
-    from collections import Mapping
-
-try:
-    unicode, str, bytes, basestring = unicode, str, str, basestring
-    from HTMLParser import HTMLParser
-    import htmlentitydefs
-except NameError:  # basestring not defined in Python 3
-    unicode, str, bytes, basestring = str, bytes, bytes, (str, bytes)
-    unichr = chr
-    from html.parser import HTMLParser
-    from html import entities as htmlentitydefs
-
-try:
-    import __builtin__ as builtins
-except ImportError:
-    import builtins
 
 __all__ = ['camel2under', 'under2camel', 'slugify', 'split_punct_ws',
            'unit_len', 'ordinalize', 'cardinalize', 'pluralize', 'singularize',
@@ -159,8 +137,8 @@ def unit_len(sized_iterable, unit_noun='item'):  # TODO: len_units()/unitize()?
     count = len(sized_iterable)
     units = cardinalize(unit_noun, count)
     if count:
-        return u'%s %s' % (count, units)
-    return u'No %s' % (units,)
+        return f'{count} {units}'
+    return f'No {units}'
 
 
 _ORDINAL_MAP = {'1': 'st',
@@ -186,7 +164,7 @@ def ordinalize(number, ext_only=False):
     >>> print(ordinalize(1515))
     1515th
     """
-    numstr, ext = unicode(number), ''
+    numstr, ext = str(number), ''
     if numstr and numstr[-1] in string.digits:
         try:
             # first check for teens
@@ -330,7 +308,7 @@ _IRR_S2P = {'addendum': 'addenda', 'alga': 'algae', 'alumna': 'alumnae',
 
 
 # Reverse index of the above
-_IRR_P2S = dict([(v, k) for k, v in _IRR_S2P.items()])
+_IRR_P2S = {v: k for k, v in _IRR_S2P.items()}
 
 HASHTAG_RE = re.compile(r"(?:^|\s)[＃#]{1}(\w+)", re.UNICODE)
 
@@ -368,7 +346,7 @@ def a10n(string):
     """
     if len(string) < 3:
         return string
-    return '%s%s%s' % (string[0], len(string[1:-1]), string[-1])
+    return f'{string[0]}{len(string[1:-1])}{string[-1]}'
 
 
 # Based on https://en.wikipedia.org/wiki/ANSI_escape_code#Escape_sequences
@@ -397,7 +375,7 @@ def strip_ansi(text):
     >>> strip_ansi('\x1b[0m\x1b[1;36mart\x1b[46;34m')
     'art'
 
-    Supports unicode, str, bytes and bytearray content as input. Returns the
+    Supports str, bytes and bytearray content as input. Returns the
     same type as the input.
 
     There's a lot of ANSI art available for testing on `sixteencolors.net`_.
@@ -414,8 +392,7 @@ def strip_ansi(text):
     # save input type for later.
     target_type = None
     # Unicode type aliased to str is code-smell for Boltons in Python 3 env.
-    is_py3 = (unicode == builtins.str)
-    if is_py3 and isinstance(text, (bytes, bytearray)):
+    if isinstance(text, (bytes, bytearray)):
         target_type = type(text)
         text = text.decode('utf-8')
 
@@ -438,9 +415,9 @@ def asciify(text, ignore=False):
     **with** unicode, not against it.
 
     Args:
-        text (str or unicode): The string to be asciified.
+        text (str): The string to be asciified.
         ignore (bool): Configures final encoding to ignore remaining
-            unasciified unicode instead of replacing it.
+            unasciified string instead of replacing it.
 
     >>> asciify('Beyoncé') == b'Beyonce'
     True
@@ -462,18 +439,18 @@ def asciify(text, ignore=False):
 
 
 def is_ascii(text):
-    """Check if a unicode or bytestring, *text*, is composed of ascii
+    """Check if a string or bytestring, *text*, is composed of ascii
     characters only. Raises :exc:`ValueError` if argument is not text.
 
     Args:
-        text (str or unicode): The string to be checked.
+        text (str): The string to be checked.
 
     >>> is_ascii('Beyoncé')
     False
     >>> is_ascii('Beyonce')
     True
     """
-    if isinstance(text, unicode):
+    if isinstance(text, str):
         try:
             text.encode('ascii')
         except UnicodeEncodeError:
@@ -495,7 +472,7 @@ class DeaccenterDict(dict):
         if ch is not None:
             return ch
         try:
-            de = unicodedata.decomposition(unichr(key))
+            de = unicodedata.decomposition(chr(key))
             p1, _, p2 = de.rpartition(' ')
             if int(p2, 16) == 0x308:
                 ch = self.get(key)
@@ -506,72 +483,59 @@ class DeaccenterDict(dict):
         self[key] = ch
         return ch
 
-    try:
-        from collections import defaultdict
-    except ImportError:
-        # no defaultdict means that __missing__ isn't supported in
-        # this version of python, so we define __getitem__
-        def __getitem__(self, key):
-            try:
-                return super(DeaccenterDict, self).__getitem__(key)
-            except KeyError:
-                return self.__missing__(key)
-    else:
-        del defaultdict
-
 
 # http://chmullig.com/2009/12/python-unicode-ascii-ifier/
 # For something more complete, investigate the unidecode
 # or isounidecode packages, which are capable of performing
 # crude transliteration.
 _BASE_DEACCENT_MAP = {
-    0xc6: u"AE", # Æ LATIN CAPITAL LETTER AE
-    0xd0: u"D",  # Ð LATIN CAPITAL LETTER ETH
-    0xd8: u"OE", # Ø LATIN CAPITAL LETTER O WITH STROKE
-    0xde: u"Th", # Þ LATIN CAPITAL LETTER THORN
-    0xc4: u'Ae', # Ä LATIN CAPITAL LETTER A WITH DIAERESIS
-    0xd6: u'Oe', # Ö LATIN CAPITAL LETTER O WITH DIAERESIS
-    0xdc: u'Ue', # Ü LATIN CAPITAL LETTER U WITH DIAERESIS
-    0xc0: u"A",  # À LATIN CAPITAL LETTER A WITH GRAVE
-    0xc1: u"A",  # Á LATIN CAPITAL LETTER A WITH ACUTE
-    0xc3: u"A",  # Ã LATIN CAPITAL LETTER A WITH TILDE
-    0xc7: u"C",  # Ç LATIN CAPITAL LETTER C WITH CEDILLA
-    0xc8: u"E",  # È LATIN CAPITAL LETTER E WITH GRAVE
-    0xc9: u"E",  # É LATIN CAPITAL LETTER E WITH ACUTE
-    0xca: u"E",  # Ê LATIN CAPITAL LETTER E WITH CIRCUMFLEX
-    0xcc: u"I",  # Ì LATIN CAPITAL LETTER I WITH GRAVE
-    0xcd: u"I",  # Í LATIN CAPITAL LETTER I WITH ACUTE
-    0xd2: u"O",  # Ò LATIN CAPITAL LETTER O WITH GRAVE
-    0xd3: u"O",  # Ó LATIN CAPITAL LETTER O WITH ACUTE
-    0xd5: u"O",  # Õ LATIN CAPITAL LETTER O WITH TILDE
-    0xd9: u"U",  # Ù LATIN CAPITAL LETTER U WITH GRAVE
-    0xda: u"U",  # Ú LATIN CAPITAL LETTER U WITH ACUTE
-    0xdf: u"ss", # ß LATIN SMALL LETTER SHARP S
-    0xe6: u"ae", # æ LATIN SMALL LETTER AE
-    0xf0: u"d",  # ð LATIN SMALL LETTER ETH
-    0xf8: u"oe", # ø LATIN SMALL LETTER O WITH STROKE
-    0xfe: u"th", # þ LATIN SMALL LETTER THORN,
-    0xe4: u'ae', # ä LATIN SMALL LETTER A WITH DIAERESIS
-    0xf6: u'oe', # ö LATIN SMALL LETTER O WITH DIAERESIS
-    0xfc: u'ue', # ü LATIN SMALL LETTER U WITH DIAERESIS
-    0xe0: u"a",  # à LATIN SMALL LETTER A WITH GRAVE
-    0xe1: u"a",  # á LATIN SMALL LETTER A WITH ACUTE
-    0xe3: u"a",  # ã LATIN SMALL LETTER A WITH TILDE
-    0xe7: u"c",  # ç LATIN SMALL LETTER C WITH CEDILLA
-    0xe8: u"e",  # è LATIN SMALL LETTER E WITH GRAVE
-    0xe9: u"e",  # é LATIN SMALL LETTER E WITH ACUTE
-    0xea: u"e",  # ê LATIN SMALL LETTER E WITH CIRCUMFLEX
-    0xec: u"i",  # ì LATIN SMALL LETTER I WITH GRAVE
-    0xed: u"i",  # í LATIN SMALL LETTER I WITH ACUTE
-    0xf2: u"o",  # ò LATIN SMALL LETTER O WITH GRAVE
-    0xf3: u"o",  # ó LATIN SMALL LETTER O WITH ACUTE
-    0xf5: u"o",  # õ LATIN SMALL LETTER O WITH TILDE
-    0xf9: u"u",  # ù LATIN SMALL LETTER U WITH GRAVE
-    0xfa: u"u",  # ú LATIN SMALL LETTER U WITH ACUTE
-    0x2018: u"'",  # ‘ LEFT SINGLE QUOTATION MARK
-    0x2019: u"'",  # ’ RIGHT SINGLE QUOTATION MARK
-    0x201c: u'"',  # “ LEFT DOUBLE QUOTATION MARK
-    0x201d: u'"',  # ” RIGHT DOUBLE QUOTATION MARK
+    0xc6: "AE", # Æ LATIN CAPITAL LETTER AE
+    0xd0: "D",  # Ð LATIN CAPITAL LETTER ETH
+    0xd8: "OE", # Ø LATIN CAPITAL LETTER O WITH STROKE
+    0xde: "Th", # Þ LATIN CAPITAL LETTER THORN
+    0xc4: 'Ae', # Ä LATIN CAPITAL LETTER A WITH DIAERESIS
+    0xd6: 'Oe', # Ö LATIN CAPITAL LETTER O WITH DIAERESIS
+    0xdc: 'Ue', # Ü LATIN CAPITAL LETTER U WITH DIAERESIS
+    0xc0: "A",  # À LATIN CAPITAL LETTER A WITH GRAVE
+    0xc1: "A",  # Á LATIN CAPITAL LETTER A WITH ACUTE
+    0xc3: "A",  # Ã LATIN CAPITAL LETTER A WITH TILDE
+    0xc7: "C",  # Ç LATIN CAPITAL LETTER C WITH CEDILLA
+    0xc8: "E",  # È LATIN CAPITAL LETTER E WITH GRAVE
+    0xc9: "E",  # É LATIN CAPITAL LETTER E WITH ACUTE
+    0xca: "E",  # Ê LATIN CAPITAL LETTER E WITH CIRCUMFLEX
+    0xcc: "I",  # Ì LATIN CAPITAL LETTER I WITH GRAVE
+    0xcd: "I",  # Í LATIN CAPITAL LETTER I WITH ACUTE
+    0xd2: "O",  # Ò LATIN CAPITAL LETTER O WITH GRAVE
+    0xd3: "O",  # Ó LATIN CAPITAL LETTER O WITH ACUTE
+    0xd5: "O",  # Õ LATIN CAPITAL LETTER O WITH TILDE
+    0xd9: "U",  # Ù LATIN CAPITAL LETTER U WITH GRAVE
+    0xda: "U",  # Ú LATIN CAPITAL LETTER U WITH ACUTE
+    0xdf: "ss", # ß LATIN SMALL LETTER SHARP S
+    0xe6: "ae", # æ LATIN SMALL LETTER AE
+    0xf0: "d",  # ð LATIN SMALL LETTER ETH
+    0xf8: "oe", # ø LATIN SMALL LETTER O WITH STROKE
+    0xfe: "th", # þ LATIN SMALL LETTER THORN,
+    0xe4: 'ae', # ä LATIN SMALL LETTER A WITH DIAERESIS
+    0xf6: 'oe', # ö LATIN SMALL LETTER O WITH DIAERESIS
+    0xfc: 'ue', # ü LATIN SMALL LETTER U WITH DIAERESIS
+    0xe0: "a",  # à LATIN SMALL LETTER A WITH GRAVE
+    0xe1: "a",  # á LATIN SMALL LETTER A WITH ACUTE
+    0xe3: "a",  # ã LATIN SMALL LETTER A WITH TILDE
+    0xe7: "c",  # ç LATIN SMALL LETTER C WITH CEDILLA
+    0xe8: "e",  # è LATIN SMALL LETTER E WITH GRAVE
+    0xe9: "e",  # é LATIN SMALL LETTER E WITH ACUTE
+    0xea: "e",  # ê LATIN SMALL LETTER E WITH CIRCUMFLEX
+    0xec: "i",  # ì LATIN SMALL LETTER I WITH GRAVE
+    0xed: "i",  # í LATIN SMALL LETTER I WITH ACUTE
+    0xf2: "o",  # ò LATIN SMALL LETTER O WITH GRAVE
+    0xf3: "o",  # ó LATIN SMALL LETTER O WITH ACUTE
+    0xf5: "o",  # õ LATIN SMALL LETTER O WITH TILDE
+    0xf9: "u",  # ù LATIN SMALL LETTER U WITH GRAVE
+    0xfa: "u",  # ú LATIN SMALL LETTER U WITH ACUTE
+    0x2018: "'",  # ‘ LEFT SINGLE QUOTATION MARK
+    0x2019: "'",  # ’ RIGHT SINGLE QUOTATION MARK
+    0x201c: '"',  # “ LEFT DOUBLE QUOTATION MARK
+    0x201d: '"',  # ” RIGHT DOUBLE QUOTATION MARK
     }
 
 
@@ -616,22 +580,22 @@ class HTMLTextExtractor(HTMLParser):
         self.result.append(d)
 
     def handle_charref(self, number):
-        if number[0] == u'x' or number[0] == u'X':
+        if number[0] == 'x' or number[0] == 'X':
             codepoint = int(number[1:], 16)
         else:
             codepoint = int(number)
-        self.result.append(unichr(codepoint))
+        self.result.append(chr(codepoint))
 
     def handle_entityref(self, name):
         try:
             codepoint = htmlentitydefs.name2codepoint[name]
         except KeyError:
-            self.result.append(u'&' + name + u';')
+            self.result.append('&' + name + ';')
         else:
-            self.result.append(unichr(codepoint))
+            self.result.append(chr(codepoint))
 
     def get_text(self):
-        return u''.join(self.result)
+        return ''.join(self.result)
 
 
 def html2text(html):
@@ -983,7 +947,7 @@ def format_int_list(int_list, delim=',', range_delim='-', delim_space=False):
 
             # Current value is non-contiguous.
             elif delta > 1:
-                range_substr = '{0:d}{1}{2:d}'.format(min(contig_range),
+                range_substr = '{:d}{}{:d}'.format(min(contig_range),
                                                       range_delim,
                                                       max(contig_range))
                 output.append(range_substr)
@@ -1004,7 +968,7 @@ def format_int_list(int_list, delim=',', range_delim='-', delim_space=False):
 
             # Current value is non-contiguous.
             elif delta > 1:
-                output.append('{0:d}'.format(contig_range.popleft()))
+                output.append(f'{contig_range.popleft():d}')
                 contig_range.append(x)
 
             # Current value repeated.
@@ -1016,12 +980,12 @@ def format_int_list(int_list, delim=',', range_delim='-', delim_space=False):
 
         # Last value is non-contiguous.
         if len(contig_range) == 1:
-            output.append('{0:d}'.format(contig_range.popleft()))
+            output.append(f'{contig_range.popleft():d}')
             contig_range.clear()
 
         # Last value is part of contiguous range.
         elif len(contig_range) > 1:
-            range_substr = '{0:d}{1}{2:d}'.format(min(contig_range),
+            range_substr = '{:d}{}{:d}'.format(min(contig_range),
                                                   range_delim,
                                                   max(contig_range))
             output.append(range_substr)
@@ -1158,7 +1122,7 @@ def int_ranges_from_int_list(range_string, delim=',', range_delim='-'):
     return tuple(int_tuples)
 
 
-class MultiReplace(object):
+class MultiReplace:
     """
     MultiReplace is a tool for doing multiple find/replace actions in one pass.
 
@@ -1229,8 +1193,8 @@ class MultiReplace(object):
             sub_map = sub_map.items()
 
         for idx, vals in enumerate(sub_map):
-            group_name = 'group{0}'.format(idx)
-            if isinstance(vals[0], basestring):
+            group_name = f'group{idx}'
+            if isinstance(vals[0], (str, bytes)):
                 # If we're not treating input strings like a regex, escape it
                 if not options['regex']:
                     exp = re.escape(vals[0])
@@ -1239,7 +1203,7 @@ class MultiReplace(object):
             else:
                 exp = vals[0].pattern
 
-            regex_values.append('(?P<{}>{})'.format(group_name, exp))
+            regex_values.append(f'(?P<{group_name}>{exp})')
             self.group_map[group_name] = vals[1]
 
         self.combined_pattern = re.compile(

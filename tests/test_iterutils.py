@@ -1,4 +1,3 @@
-
 import os
 
 import pytest
@@ -25,7 +24,7 @@ even = lambda x: isint(x) and x % 2 == 0
 is_meaning_of_life = lambda x: x == 42
 
 
-class TestFirst(object):
+class TestFirst:
     def test_empty_iterables(self):
         """
         Empty iterables return None.
@@ -61,7 +60,7 @@ class TestFirst(object):
         assert first(l, key=is_meaning_of_life) is None
 
 
-class TestRemap(object):
+class TestRemap:
     # TODO: test namedtuples and other immutable containers
 
     def test_basic_clone(self):
@@ -283,8 +282,8 @@ class TestRemap(object):
                  'dads': [{'name': 'Kurt',
                            'interests': ['python', 'recursion']}]}]
 
-        ref = set(['python', 'recursion', 'biking', 'museums',
-                   'pears', 'theater', 'manga'])
+        ref = {'python', 'recursion', 'biking', 'museums',
+                   'pears', 'theater', 'manga'}
 
         remap(orig, enter=enter)
         assert all_interests == ref
@@ -341,7 +340,7 @@ class TestRemap(object):
 
     def test_remap_set(self):
         # explicit test for sets to make sure #84 is covered
-        s = set([1, 2, 3])
+        s = {1, 2, 3}
         assert remap(s) == s
 
         fs = frozenset([1, 2, 3])
@@ -360,7 +359,7 @@ class TestRemap(object):
         return
 
 
-class TestGetPath(object):
+class TestGetPath:
     def test_depth_one(self):
         root = ['test']
         assert get_path(root, (0,)) == 'test'

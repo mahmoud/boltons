@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 from boltons.queueutils import SortedPriorityQueue, HeapPriorityQueue
 
 

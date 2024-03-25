@@ -31,6 +31,7 @@ setup(name='boltons',
       zip_safe=False,
       license=__license__,
       platforms='any',
+      python_requires='>=3.7',
       classifiers=[
           # See: https://pypi.python.org/pypi?:action=list_classifiers
           'Topic :: Utilities',
@@ -41,8 +42,6 @@ setup(name='boltons',
           'Operating System :: OS Independent',
           # List of python versions and their support status:
           # https://en.wikipedia.org/wiki/CPython#Version_history
-          'Programming Language :: Python :: 2',
-          'Programming Language :: Python :: 2.7',
           'Programming Language :: Python :: 3',
           'Programming Language :: Python :: 3.7',
           'Programming Language :: Python :: 3.8',
@@ -50,6 +49,7 @@ setup(name='boltons',
           'Programming Language :: Python :: 3.10',
           'Programming Language :: Python :: 3.11',
           'Programming Language :: Python :: 3.12',
+          'Programming Language :: Python :: 3 :: Only',
           'Programming Language :: Python :: Implementation :: CPython',
           'Programming Language :: Python :: Implementation :: PyPy', ]
       )

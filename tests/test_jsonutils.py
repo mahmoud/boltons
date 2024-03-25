@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 import os
 
 from boltons.jsonutils import (JSONLIterator,
@@ -35,7 +33,7 @@ def test_reverse_iter_lines():
 
 
 def test_jsonl_iterator():
-    ref = [{u'4': 4}, {u'3': 3}, {u'2': 2}, {u'1': 1}, {}]
+    ref = [{'4': 4}, {'3': 3}, {'2': 2}, {'1': 1}, {}]
     jsonl_iter = JSONLIterator(open(JSONL_DATA_PATH), reverse=True)
     jsonl_list = list(jsonl_iter)
     assert jsonl_list == ref

@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 import sys
 import time
 import errno
@@ -105,9 +103,7 @@ def test_buffers():
 
     return
 
-IS_PYPY_2 = ('__pypy__' in sys.builtin_module_names
-             and sys.version_info[0] == 2)
-@pytest.mark.xfail(IS_PYPY_2, reason="pypy2 bug, fixed in 7.2. unmark when this test stops failing on travis (when they upgrade from 7.1)")
+
 def test_client_disconnecting():
     def get_bs_pair():
         x, y = socket.socketpair()
@@ -127,7 +123,7 @@ def test_client_disconnecting():
 
     try:
         bx.recv(1)
-    except socket.error:
+    except OSError:
         pass
     else:
         assert False, 'expected socket.error on closed recv'
@@ -138,7 +134,7 @@ def test_client_disconnecting():
     assert by.getsendbuffer()
     try:
         by.flush()
-    except socket.error:
+    except OSError:
         assert by.getsendbuffer() == b'123'
     else:
         if sys.platform != 'win32':  # Windows socketpairs are kind of bad
@@ -146,7 +142,7 @@ def test_client_disconnecting():
 
     try:
         by.shutdown(socket.SHUT_RDWR)
-    except socket.error:
+    except OSError:
         # Mac sockets are already shut down at this point. See #71.
         if sys.platform != 'darwin':
             raise
@@ -156,7 +152,7 @@ def test_client_disconnecting():
 
     try:
         by.send(b'123')
-    except socket.error:
+    except OSError:
         pass
     else:
         assert False, 'expected socket.error on closed send'
@@ -193,7 +189,7 @@ def test_basic_nonblocking():
 
     try:
         bs.recv_until(delim, timeout=0)
-    except socket.error as se:
+    except OSError as se:
         assert se.errno == errno.EWOULDBLOCK
     y.sendall(delim)  # sending an empty message, effectively
     assert bs.recv_until(delim) == b''
@@ -204,7 +200,7 @@ def test_basic_nonblocking():
 
     try:
         bs.recv_until(delim)
-    except socket.error as se:
+    except OSError as se:
         assert se.errno == errno.EWOULDBLOCK
     y.sendall(delim)
     assert bs.recv_until(delim) == b''
@@ -216,7 +212,7 @@ def test_basic_nonblocking():
 
     try:
         bs.recv_until(delim)
-    except socket.error as se:
+    except OSError as se:
         assert se.errno == errno.EWOULDBLOCK
     y.sendall(delim)
     assert bs.recv_until(delim) == b''
@@ -268,7 +264,7 @@ def netstring_server(server_socket):
                     client.write_ns(b'huge' * 32 * 1024)  # 128kb
                     client.setmaxsize(32768)  # back to default
     except Exception as e:
-        print(u'netstring_server exiting with error: %r' % e)
+        print('netstring_server exiting with error: %r' % e)
         raise
 
 
@@ -393,7 +389,7 @@ def netstring_server_timeout_override(server_socket):
                 elif request == b'ping':
                     client.write_ns(b'pong')
     except Exception as e:
-        print(u'netstring_server exiting with error: %r' % e)
+        print('netstring_server exiting with error: %r' % e)
         raise
 
 

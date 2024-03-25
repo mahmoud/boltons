@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # Copyright (c) 2013, Mahmoud Hashemi
 #
 # Redistribution and use in source and binary forms, with or without
@@ -40,7 +38,6 @@ For utilities for working with iterables and lists, check out
 :class:`collections.namedtuple`, check out :mod:`namedutils`.
 """
 
-from __future__ import print_function, division
 
 import operator
 from math import log as math_log
@@ -51,12 +48,6 @@ try:
     _MISSING = make_sentinel(var_name='_MISSING')
 except ImportError:
     _MISSING = object()
-
-try:
-    xrange
-except NameError:
-    # Python 3 compat
-    xrange = range
 
 # TODO: expose splaylist?
 __all__ = ['BList', 'BarrelList']
@@ -82,7 +73,7 @@ class BarrelList(list):
     Args:
         iterable: An optional iterable of initial values for the list.
 
-    >>> blist = BList(xrange(100000))
+    >>> blist = BList(range(100000))
     >>> blist.pop(50000)
     50000
     >>> len(blist)
@@ -305,7 +296,7 @@ class BarrelList(list):
         return
 
     def __repr__(self):
-        return '%s(%r)' % (self.__class__.__name__, list(self))
+        return f'{self.__class__.__name__}({list(self)!r})'
 
     def sort(self):
         # poor pythonist's mergesort, it's faster than sorted(self)
@@ -336,7 +327,7 @@ class BarrelList(list):
                 return len_accum + rel_idx
             except ValueError:
                 len_accum += len(cur)
-        raise ValueError('%r is not in list' % (item,))
+        raise ValueError(f'{item!r} is not in list')
 
 
 BList = BarrelList

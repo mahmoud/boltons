@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 import re
 import uuid
 from unittest import TestCase
@@ -11,20 +9,20 @@ def test_strip_ansi():
     assert strutils.strip_ansi(
         '\x1b[0m\x1b[1;36mart\x1b[46;34m\xdc') == 'art\xdc'
     assert strutils.strip_ansi(
-        u'\x1b[0m\x1b[1;36mart\x1b[46;34m\xdc') == u'artÜ'
+        '\x1b[0m\x1b[1;36mart\x1b[46;34m\xdc') == 'artÜ'
     assert strutils.strip_ansi(
-        u'╒══════╕\n│ \x1b[1mCell\x1b[0m │\n╘══════╛') == (
-            u'╒══════╕\n'
-            u'│ Cell │\n'
-            u'╘══════╛')
+        '╒══════╕\n│ \x1b[1mCell\x1b[0m │\n╘══════╛') == (
+            '╒══════╕\n'
+            '│ Cell │\n'
+            '╘══════╛')
     assert strutils.strip_ansi(
-        u'ls\r\n\x1B[00m\x1b[01;31mfile.zip\x1b[00m\r\n\x1b[01;31m') == \
-        u'ls\r\nfile.zip\r\n'
+        'ls\r\n\x1B[00m\x1b[01;31mfile.zip\x1b[00m\r\n\x1b[01;31m') == \
+        'ls\r\nfile.zip\r\n'
     assert strutils.strip_ansi(
-        u'\t\u001b[0;35mIP\u001b[0m\t\u001b[0;36m192.1.0.2\u001b[0m') == \
-        u'\tIP\t192.1.0.2'
-    assert strutils.strip_ansi(u'(╯°□°)╯︵ \x1b[1m┻━┻\x1b[0m') == (
-        u'(╯°□°)╯︵ ┻━┻')
+        '\t\u001b[0;35mIP\u001b[0m\t\u001b[0;36m192.1.0.2\u001b[0m') == \
+        '\tIP\t192.1.0.2'
+    assert strutils.strip_ansi('(╯°□°)╯︵ \x1b[1m┻━┻\x1b[0m') == (
+        '(╯°□°)╯︵ ┻━┻')
     assert strutils.strip_ansi('(╯°□°)╯︵ \x1b[1m┻━┻\x1b[0m') == (
         '(╯°□°)╯︵ ┻━┻')
     assert strutils.strip_ansi(
@@ -33,14 +31,14 @@ def test_strip_ansi():
             b'(\xe2\x95\xaf\xc2\xb0\xe2\x96\xa1\xc2\xb0)\xe2\x95\xaf\xef\xb8'
             b'\xb5 \xe2\x94\xbb\xe2\x94\x81\xe2\x94\xbb')
     assert strutils.strip_ansi(
-        bytearray(u'(╯°□°)╯︵ \x1b[1m┻━┻\x1b[0m', 'utf-8')) == \
+        bytearray('(╯°□°)╯︵ \x1b[1m┻━┻\x1b[0m', 'utf-8')) == \
         bytearray(
             b'(\xe2\x95\xaf\xc2\xb0\xe2\x96\xa1\xc2\xb0)\xe2\x95\xaf\xef\xb8'
             b'\xb5 \xe2\x94\xbb\xe2\x94\x81\xe2\x94\xbb')
 
 
 def test_asciify():
-    ref = u'Beyoncé'
+    ref = 'Beyoncé'
     b = strutils.asciify(ref)
     assert len(b) == len(b)
     assert b[-1:].decode('ascii') == 'e'

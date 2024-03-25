@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # Copyright (c) 2013, Mahmoud Hashemi
 #
 # Redistribution and use in source and binary forms, with or without
@@ -60,7 +58,6 @@ further.
 """
 # TODO: type survey
 
-from __future__ import print_function
 
 import gc
 import sys
@@ -125,7 +122,7 @@ if _IS_PYPY:
     del get_all
 
 
-class GCToggler(object):
+class GCToggler:
     """The ``GCToggler`` is a context-manager that allows one to safely
     take more control of your garbage collection schedule. Anecdotal
     experience says certain object-creation-heavy tasks see speedups

@@ -1,4 +1,3 @@
-
 import pickle
 
 from boltons.typeutils import make_sentinel

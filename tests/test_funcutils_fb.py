@@ -164,7 +164,7 @@ def test_wraps_wrappers():
         return appender
 
     with pytest.raises(TypeError):
-        class Num(object):
+        class Num:
             def __init__(self, num):
                 self.num = num
 

@@ -1,4 +1,3 @@
-
 from pytest import raises
 from boltons.mathutils import clamp, ceil, floor, Bits
 import math
