@@ -47,7 +47,7 @@ __all__ = ['mkdir_p', 'atomic_save', 'AtomicSaver', 'FilePerms',
            'iter_find_files', 'copytree']
 
 
-FULL_PERMS = 511
+FULL_PERMS = 0o777
 RW_PERMS = 438
 _SINGLE_FULL_PERM = 7
 
