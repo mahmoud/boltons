@@ -1194,7 +1194,7 @@ class MultiReplace:
 
         for idx, vals in enumerate(sub_map):
             group_name = f'group{idx}'
-            if isinstance(vals[0], (str, bytes)):
+            if isinstance(vals[0], str):
                 # If we're not treating input strings like a regex, escape it
                 if not options['regex']:
                     exp = re.escape(vals[0])
