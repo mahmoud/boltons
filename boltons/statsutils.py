@@ -128,6 +128,7 @@ system instrumentation package.
 
 import bisect
 from math import floor, ceil
+from collections import Counter
 
 
 class _StatsProperty:
@@ -595,12 +596,7 @@ class Stats:
         bins = sorted(set(bins))
 
         idxs = [bisect.bisect(bins, d) - 1 for d in self.data]
-        count_map = {}  # would have used Counter, but py26 support
-        for idx in idxs:
-            try:
-                count_map[idx] += 1
-            except KeyError:
-                count_map[idx] = 1
+        count_map = Counter(idxs)
 
         bin_counts = [(b, count_map.get(i, 0)) for i, b in enumerate(bins)]
 

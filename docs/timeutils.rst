@@ -28,10 +28,17 @@ working with them:
 
 .. _UTC: https://en.wikipedia.org/wiki/Coordinated_Universal_Time
 
+.. note::
+
+    These days, Python has a `built-in UTC`_, and the UTC tzinfo here, 
+    while equivalent, is just for backwards compat.
+
 .. autoattribute:: boltons.timeutils.UTC
 .. autodata:: boltons.timeutils.LocalTZ
 
 .. autoclass:: boltons.timeutils.ConstantTZInfo
+
+.. _built-in UTC: https://docs.python.org/3/library/datetime.html#datetime.timezone.utc
 
 US timezones
 ------------
