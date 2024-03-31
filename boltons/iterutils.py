@@ -1395,7 +1395,7 @@ class GUIDerator:
         import socket
         self.pid = os.getpid()
         self.salt = '-'.join([str(self.pid),
-                              socket.gethostname() or b'<nohostname>',
+                              socket.gethostname() or '<nohostname>',
                               str(time.time()),
                               codecs.encode(os.urandom(6),
                                             'hex_codec').decode('ascii')])
