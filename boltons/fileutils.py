@@ -464,7 +464,8 @@ class AtomicSaver:
         return self.part_file
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        self.part_file.close()
+        if self.part_file:
+            self.part_file.close()
         if exc_type:
             if self.rm_part_on_exc:
                 try:
@@ -514,13 +515,13 @@ def iter_find_files(directory, patterns, ignored=None, include_dirs=False):
     .. _glob: https://en.wikipedia.org/wiki/Glob_%28programming%29
 
     """
-    if isinstance(patterns, (str, bytes)):
+    if isinstance(patterns, str):
         patterns = [patterns]
     pats_re = re.compile('|'.join([fnmatch.translate(p) for p in patterns]))
 
     if not ignored:
         ignored = []
-    elif isinstance(ignored, (str, bytes)):
+    elif isinstance(ignored, str):
         ignored = [ignored]
     ign_re = re.compile('|'.join([fnmatch.translate(p) for p in ignored]))
     for root, dirs, files in os.walk(directory):
@@ -593,11 +594,7 @@ def copy_tree(src, dst, symlinks=False, ignore=None):
     try:
         copystat(src, dst)
     except OSError as why:
-        if WindowsError is not None and isinstance(why, WindowsError):
-            # Copying file access times may fail on Windows
-            pass
-        else:
-            errors.append((src, dst, str(why)))
+        errors.append((src, dst, str(why)))
     if errors:
         raise Error(errors)
 
@@ -605,14 +602,8 @@ def copy_tree(src, dst, symlinks=False, ignore=None):
 copytree = copy_tree  # alias for drop-in replacement of shutil
 
 
-try:
-    file
-except NameError:
-    file = object
-
-
 # like open(os.devnull) but with even fewer side effects
-class DummyFile(file):
+class DummyFile:
     # TODO: raise ValueErrors on closed for all methods?
     # TODO: enforce read/write
     def __init__(self, path, mode='r', buffering=None):
@@ -690,8 +681,3 @@ class DummyFile(file):
     def __exit__(self, exc_type, exc_val, exc_tb):
         return
 
-
-if __name__ == '__main__':
-    with atomic_save('/tmp/final.txt') as f:
-        f.write('rofl')
-        f.write('\n')
