@@ -725,7 +725,7 @@ def bucketize(src, key=bool, value_transform=None, key_filter=None):
             raise ValueError("key and src have to be the same length")
         src = zip(key, src)
 
-    if isinstance(key, (str, bytes)):
+    if isinstance(key, str):
         key_func = lambda x: getattr(x, key, x)
     elif callable(key):
         key_func = key
@@ -810,7 +810,7 @@ def unique_iter(src, key=None):
         key_func = lambda x: x
     elif callable(key):
         key_func = key
-    elif isinstance(key, (str, bytes)):
+    elif isinstance(key, str):
         key_func = lambda x: getattr(x, key, x)
     else:
         raise TypeError('"key" expected a string or callable, not %r' % key)
@@ -1268,7 +1268,7 @@ def get_path(root, path, default=_UNSET):
        default: The value to be returned should any
           ``PathAccessError`` exceptions be raised.
     """
-    if isinstance(path, (str, bytes)):
+    if isinstance(path, str):
         path = path.split('.')
     cur = root
     try:

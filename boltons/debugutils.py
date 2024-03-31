@@ -171,7 +171,7 @@ def wrap_trace(obj, hook=trace_print_hook,
     # TODO: test classmethod/staticmethod/property
     # TODO: wrap __dict__ for old-style classes?
 
-    if isinstance(which, (str, bytes)):
+    if isinstance(which, str):
         which_func = lambda attr_name, attr_val: attr_name == which
     elif callable(getattr(which, '__contains__', None)):
         which_func = lambda attr_name, attr_val: attr_name in which
@@ -182,7 +182,7 @@ def wrap_trace(obj, hook=trace_print_hook,
 
     label = label or hex(id(obj))
 
-    if isinstance(events, (str, bytes)):
+    if isinstance(events, str):
         events = [events]
     do_get = not events or 'get' in events
     do_set = not events or 'set' in events
@@ -200,7 +200,7 @@ def wrap_trace(obj, hook=trace_print_hook,
             if do_raise:
                 try:
                     ret = func(*a, **kw)
-                except:
+                except Exception:
                     if not hook(event='raise', label=_label, obj=obj,
                                 attr_name=attr_name, args=a, kwargs=kw,
                                 result=sys.exc_info()):
@@ -290,8 +290,3 @@ def wrap_trace(obj, hook=trace_print_hook,
                     % (obj.__class__, obj))
 
 
-if __name__ == '__main__':
-    obj = wrap_trace({})
-    obj['hi'] = 'hello'
-    obj.fail
-    import pdb;pdb.set_trace()

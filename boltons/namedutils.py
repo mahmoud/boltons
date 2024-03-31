@@ -145,7 +145,7 @@ def namedtuple(typename, field_names, verbose=False, rename=False):
 
     # Validate the field names.  At the user's option, either generate an error
     # message or automatically replace the field name with a valid name.
-    if isinstance(field_names, (str, bytes)):
+    if isinstance(field_names, str):
         field_names = field_names.replace(',', ' ').split()
     field_names = [str(x) for x in field_names]
     if rename:
@@ -304,7 +304,7 @@ def namedlist(typename, field_names, verbose=False, rename=False):
 
     # Validate the field names.  At the user's option, either generate an error
     # message or automatically replace the field name with a valid name.
-    if isinstance(field_names, (str, bytes)):
+    if isinstance(field_names, str):
         field_names = field_names.replace(',', ' ').split()
     field_names = [str(x) for x in field_names]
     if rename:

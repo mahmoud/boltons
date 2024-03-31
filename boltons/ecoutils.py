@@ -258,7 +258,7 @@ def _get_utc_now():
     try:
         return datetime.datetime.utcnow()
     except Exception:
-        return datetime.datetime.now(datetime.UTC)
+        return datetime.datetime.now(datetime.timezone.utc)
 
 
 START_TIME_INFO = {'time_utc': str(_get_utc_now()),

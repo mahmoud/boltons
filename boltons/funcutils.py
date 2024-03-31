@@ -107,7 +107,7 @@ def get_module_callables(mod, ignore=None):
     callable. *mod* can be a string name of a module in
     :data:`sys.modules` or the module instance itself.
     """
-    if isinstance(mod, (str, bytes)):
+    if isinstance(mod, str):
         mod = sys.modules[mod]
     types, funcs = {}, {}
     for attr_name in dir(mod):
@@ -555,7 +555,7 @@ def update_wrapper(wrapper, func, injected=None, expected=None, build_from=None,
     """
     if injected is None:
         injected = []
-    elif isinstance(injected, (str, bytes)):
+    elif isinstance(injected, str):
         injected = [injected]
     else:
         injected = list(injected)
@@ -613,7 +613,7 @@ def _parse_wraps_expected(expected):
     # you look
     if expected is None:
         expected = []
-    elif isinstance(expected, (str, bytes)):
+    elif isinstance(expected, str):
         expected = [(expected, NO_DEFAULT)]
 
     expected_items = []
@@ -624,7 +624,7 @@ def _parse_wraps_expected(expected):
                          ' iterable of (name, default) pairs, or a mapping of '
                          ' {name: default}, not %r (got: %r)' % (expected, e))
     for argname in expected_iter:
-        if isinstance(argname, (str, bytes)):
+        if isinstance(argname, str):
             # dict keys and bare strings
             try:
                 default = expected[argname]
@@ -638,7 +638,7 @@ def _parse_wraps_expected(expected):
                 raise ValueError('"expected" takes string name, sequence of string names,'
                                  ' iterable of (name, default) pairs, or a mapping of '
                                  ' {name: default}, not %r')
-        if not isinstance(argname, (str, bytes)):
+        if not isinstance(argname, str):
             raise ValueError(f'all "expected" argnames must be strings, not {argname!r}')
 
         expected_items.append((argname, default))
