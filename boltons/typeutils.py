@@ -85,10 +85,8 @@ def make_sentinel(name='_MISSING', var_name=None):
             def __reduce__(self):
                 return self.var_name
 
-        def __nonzero__(self):
+        def __bool__(self):
             return False
-
-        __bool__ = __nonzero__
 
     if var_name:
         frame = sys._getframe(1)

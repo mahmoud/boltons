@@ -203,7 +203,7 @@ def namedtuple(typename, field_names, verbose=False, rename=False):
     try:
         exec(class_definition, namespace)
     except SyntaxError as e:
-        raise SyntaxError(e.message + ':\n' + class_definition)
+        raise SyntaxError(e.msg + ':\n' + class_definition)
     result = namespace[typename]
 
     # For pickling to work, the __module__ variable needs to be set to the frame
@@ -368,7 +368,7 @@ def namedlist(typename, field_names, verbose=False, rename=False):
     try:
         exec(class_definition, namespace)
     except SyntaxError as e:
-        raise SyntaxError(e.message + ':\n' + class_definition)
+        raise SyntaxError(e.msg + ':\n' + class_definition)
     result = namespace[typename]
 
     # For pickling to work, the __module__ variable needs to be set to

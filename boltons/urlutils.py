@@ -56,10 +56,6 @@ import string
 from unicodedata import normalize
 
 unicode = str
-try:
-    unichr
-except NameError:
-    unichr = chr
 
 # The unreserved URI characters (per RFC 3986 Section 2.3)
 _UNRESERVED_CHARS = frozenset('~-._0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'
@@ -74,8 +70,8 @@ _URL_RE = re.compile(r'^((?P<scheme>[^:/?#]+):)?'
 
 
 _HEX_CHAR_MAP = {(a + b).encode('ascii'):
-                       unichr(int(a + b, 16)).encode('charmap')
-                      for a in string.hexdigits for b in string.hexdigits}
+                 chr(int(a + b, 16)).encode('charmap')
+                 for a in string.hexdigits for b in string.hexdigits}
 _ASCII_RE = re.compile('([\x00-\x7f]+)')
 
 
@@ -136,7 +132,7 @@ def to_unicode(obj):
 # regex from gruber via tornado
 # doesn't support ipv6
 # doesn't support mailto (netloc-less schemes)
-_FIND_ALL_URL_RE = re.compile(to_unicode(r"""\b((?:([\w-]+):(/{1,3})|www[.])(?:(?:(?:[^\s&()<>]|&amp;|&quot;)*(?:[^!"#$%'()*+,.:;<=>?@\[\]^`{|}~\s]))|(?:\((?:[^\s&()]|&amp;|&quot;)*\)))+)"""))
+_FIND_ALL_URL_RE = re.compile(r"""\b((?:([\w-]+):(/{1,3})|www[.])(?:(?:(?:[^\s&()<>]|&amp;|&quot;)*(?:[^!"#$%'()*+,.:;<=>?@\[\]^`{|}~\s]))|(?:\((?:[^\s&()]|&amp;|&quot;)*\)))+)""")
 
 
 def find_all_links(text, with_text=False, default_scheme='https', schemes=()):
@@ -1005,7 +1001,7 @@ class OrderedMultiDict(dict):
       * stacking data from multiple dictionaries in a non-destructive way
 
     The OrderedMultiDict constructor is identical to the built-in
-    :class:`dict`, and overall the API is constitutes an intuitive
+    :class:`dict`, and overall the API constitutes an intuitive
     superset of the built-in type:
 
     >>> omd = OrderedMultiDict()
@@ -1038,17 +1034,11 @@ class OrderedMultiDict(dict):
     >>> omd
     OrderedMultiDict([('b', 2)])
 
-    Note that calling :func:`dict` on an OMD results in a dict of keys
-    to *lists* of values:
+    If you want a safe-to-modify or flat dictionary, use
+    :meth:`OrderedMultiDict.todict()`.
 
-    >>> from pprint import pprint as pp  # ensuring proper key ordering
+    >>> from pprint import pprint as pp  # preserve printed ordering
     >>> omd = OrderedMultiDict([('a', 1), ('b', 2), ('a', 3)])
-    >>> pp(dict(omd))
-    {'a': 3, 'b': 2}
-
-    Note that modifying those lists will modify the OMD. If you want a
-    safe-to-modify or flat dictionary, use :meth:`OrderedMultiDict.todict()`.
-
     >>> pp(omd.todict())
     {'a': 3, 'b': 2}
     >>> pp(omd.todict(multi=True))
@@ -1061,18 +1051,42 @@ class OrderedMultiDict(dict):
     >>> OrderedMultiDict([('a', 1), ('b', 2), ('a', 3)]).items(multi=False)
     [('a', 3), ('b', 2)]
 
+    .. warning::
+
+       ``dict(omd)`` changed behavior `in Python 3.7
+       <https://bugs.python.org/issue34320>`_ due to changes made to
+       support the transition from :class:`collections.OrderedDict` to
+       the built-in dictionary being ordered. Before 3.7, the result
+       would be a new dictionary, with values that were lists, similar
+       to ``omd.todict(multi=True)`` (but only shallow-copy; the lists
+       were direct references to OMD internal structures). From 3.7
+       onward, the values became singular, like
+       ``omd.todict(multi=False)``. For reliable cross-version
+       behavior, just use :meth:`~OrderedMultiDict.todict()`.
+
     """
+    def __new__(cls, *a, **kw):
+        ret = super().__new__(cls)
+        ret._clear_ll()
+        return ret 
+    
     def __init__(self, *args, **kwargs):
         if len(args) > 1:
             raise TypeError('%s expected at most 1 argument, got %s'
                             % (self.__class__.__name__, len(args)))
         super().__init__()
 
-        self._clear_ll()
         if args:
             self.update_extend(args[0])
         if kwargs:
             self.update(kwargs)
+
+    def __getstate__(self):
+        return list(self.iteritems(multi=True))
+
+    def __setstate__(self, state):
+        self.clear()
+        self.update_extend(state)
 
     def _clear_ll(self):
         try:
@@ -1111,6 +1125,8 @@ class OrderedMultiDict(dict):
         Called ``addlist`` for consistency with :meth:`getlist`, but
         tuples and other sequences and iterables work.
         """
+        if not v:
+            return
         self_insert = self._insert
         values = super().setdefault(k, [])
         for subv in v:
@@ -1180,7 +1196,7 @@ class OrderedMultiDict(dict):
                     del self[k]
             for k, v in E.iteritems(multi=True):
                 self_add(k, v)
-        elif hasattr(E, 'keys'):
+        elif callable(getattr(E, 'keys', None)):
             for k in E.keys():
                 self[k] = E[k]
         else:
@@ -1259,6 +1275,10 @@ class OrderedMultiDict(dict):
     def __ne__(self, other):
         return not (self == other)
 
+    def __ior__(self, other):
+        self.update(other)
+        return self
+
     def pop(self, k, default=_MISSING):
         """Remove all values under key *k*, returning the most-recently
         inserted value. Raises :exc:`KeyError` if the key is not
@@ -1294,7 +1314,9 @@ class OrderedMultiDict(dict):
             if self:
                 k = self.root[PREV][KEY]
             else:
-                raise KeyError('empty %r' % type(self))
+                if default is _MISSING:
+                    raise KeyError('empty %r' % type(self))
+                return default
         try:
             self._remove(k)
         except KeyError:
@@ -1403,7 +1425,7 @@ class OrderedMultiDict(dict):
         OrderedMultiDict([('o', 'd'), ('l', 'l'), ('e', 'o'), ('l', 'r'), ('h', 'w')])
         """
         cls = self.__class__
-        return cls(sorted(self.iteritems(), key=key, reverse=reverse))
+        return cls(sorted(self.iteritems(multi=True), key=key, reverse=reverse))
 
     def sortedvalues(self, key=None, reverse=False):
         """Returns a copy of the :class:`OrderedMultiDict` with the same keys
@@ -1527,6 +1549,7 @@ class OrderedMultiDict(dict):
         return ItemsView(self)
 
 
+
 try:
     # try to import the built-in one anyways
     from .dictutils import OrderedMultiDict
@@ -1581,7 +1604,5 @@ class QueryParamDict(OrderedMultiDict):
                 val = quote_query_part(to_unicode(v), full_quote=full_quote)
                 ret_list.append('='.join((key, val)))
         return '&'.join(ret_list)
-
-# TODO: cleanup OMD/cachedproperty etc.?
 
 # end urlutils.py

@@ -477,7 +477,7 @@ class ContextualCallpoint(Callpoint):
         DL, lineno = _DeferredLine, self.lineno
         try:
             module_globals = self.line.module_globals
-        except Exception:
+        except AttributeError:
             module_globals = None
         start_line = max(0, lineno - pivot)
         pre_lines = [DL(self.module_path, ln, module_globals)
