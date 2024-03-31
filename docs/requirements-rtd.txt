@@ -1,2 +1,2 @@
 sphinxcontrib-napoleon
-# sphinx_rtd_theme  # you'll need sphinx_rtd_theme for local dev
+sphinx-rtd-theme
