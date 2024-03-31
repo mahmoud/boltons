@@ -220,7 +220,10 @@ class IndexedSet(MutableSet):
     def __eq__(self, other):
         if isinstance(other, IndexedSet):
             return len(self) == len(other) and list(self) == list(other)
-        return set(self) == set(other)
+        try:
+            return set(self) == set(other)
+        except TypeError:
+            return False
 
     @classmethod
     def from_iterable(cls, it):
@@ -964,4 +967,3 @@ class _ComplementSet:
             return bool(self._included)
         return True
 
-    __nonzero__ = __bool__  # py2 compat

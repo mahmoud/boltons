@@ -277,8 +277,6 @@ class SpooledIOBase(IOBase):
         except Exception:
             pass
 
-    __nonzero__ = __bool__
-
 
 class SpooledBytesIO(SpooledIOBase):
     """
