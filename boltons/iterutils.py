@@ -1398,10 +1398,7 @@ class GUIDerator:
         self.salt = '-'.join([str(self.pid),
                               socket.gethostname() or '<nohostname>',
                               str(time.time()),
-                              codecs.encode(os.urandom(6),
-                                            'hex_codec').decode('ascii')])
-        # that codecs trick is the best/only way to get a bytes to
-        # hexbytes in py2/3
+                              os.urandom(6).hex()])
         return
 
     def __iter__(self):

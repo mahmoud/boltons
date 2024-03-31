@@ -14,6 +14,6 @@ def test_fileperms():
 
     assert repr(up) == "FilePerms(user='rwx', group='rwx', other='')"
     assert up.user == 'rwx'
-    assert oct(int(up)).endswith('770')  # 0770 on py2 and 0o770 on py3
+    assert oct(int(up)) == '0o770'
 
     assert int(FilePerms()) == 0

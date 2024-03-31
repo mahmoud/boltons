@@ -932,7 +932,7 @@ class FunctionBuilder:
             try:
                 self.kwonlyargs.remove(arg_name)
             except (AttributeError, ValueError):
-                # py2, or py3 and missing from both
+                # missing from both
                 exc = MissingArgument('arg %r not found in %s argument list:'
                                       ' %r' % (arg_name, self.name, args))
                 exc.arg_name = arg_name
