@@ -483,7 +483,7 @@ class CachedMethod:
     def __init__(self, func, cache, scoped=True, typed=False, key=None):
         self.func = func
         self.__isabstractmethod__ = getattr(func, '__isabstractmethod__', False)
-        if isinstance(cache, (str, bytes)):
+        if isinstance(cache, str):
             self.get_cache = attrgetter(cache)
         elif callable(cache):
             self.get_cache = cache
@@ -726,7 +726,7 @@ class ThresholdCounter:
         """Get the top *n* keys and counts as tuples. If *n* is omitted,
         returns all the pairs.
         """
-        if n <= 0:
+        if not n or n <= 0:
             return []
         ret = sorted(self.iteritems(), key=lambda x: x[1], reverse=True)
         if n is None or n >= len(ret):
