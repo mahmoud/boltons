@@ -55,8 +55,6 @@ import socket
 import string
 from unicodedata import normalize
 
-unicode = str
-
 # The unreserved URI characters (per RFC 3986 Section 2.3)
 _UNRESERVED_CHARS = frozenset('~-._0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'
                               'abcdefghijklmnopqrstuvwxyz')
@@ -124,9 +122,9 @@ DEFAULT_ENCODING = 'utf8'
 
 def to_unicode(obj):
     try:
-        return unicode(obj)
+        return str(obj)
     except UnicodeDecodeError:
-        return unicode(obj, encoding=DEFAULT_ENCODING)
+        return str(obj, encoding=DEFAULT_ENCODING)
 
 
 # regex from gruber via tornado
@@ -174,7 +172,7 @@ def find_all_links(text, with_text=False, default_scheme='https', schemes=()):
     _add = ret.append
 
     def _add_text(t):
-        if ret and isinstance(ret[-1], unicode):
+        if ret and isinstance(ret[-1], str):
             ret[-1] += t
         else:
             _add(t)
@@ -311,7 +309,7 @@ def unquote_to_bytes(string):
         # Is it a string-like object?
         string.split
         return b''
-    if isinstance(string, unicode):
+    if isinstance(string, str):
         string = string.encode('utf-8')
     bits = string.split(b'%')
     if len(bits) == 1:
@@ -741,7 +739,7 @@ class URL:
             # TODO: 0 port?
             if self.port and self.port != self.default_port:
                 _add(':')
-                _add(unicode(self.port))
+                _add(str(self.port))
         return ''.join(parts)
 
     def to_text(self, full_quote=False):
@@ -903,7 +901,7 @@ def parse_url(url_text):
     >>> sorted(res.keys())  # res is a basic dictionary
     ['_netloc_sep', 'authority', 'family', 'fragment', 'host', 'password', 'path', 'port', 'query', 'scheme', 'username']
     """
-    url_text = unicode(url_text)
+    url_text = str(url_text)
     # raise TypeError('parse_url expected text, not %r' % url_str)
     um = _URL_RE.match(url_text)
     try:
