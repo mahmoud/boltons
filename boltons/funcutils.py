@@ -40,10 +40,11 @@ import inspect
 import functools
 import itertools
 from inspect import formatannotation
-from types import MethodType, FunctionType
+from types import FunctionType, MethodType
 
-make_method = lambda desc, obj, obj_type: MethodType(desc, obj)
-
+# For legacy compatibility.
+# boltons used to offer an implementation of total_ordering for Python <2.7
+from functools import total_ordering as total_ordering
 
 try:
     from .typeutils import make_sentinel
@@ -252,7 +253,7 @@ class InstancePartial(functools.partial):
         return functools.partialmethod(self.func, *self.args, **self.keywords)
 
     def __get__(self, obj, obj_type):
-        return make_method(self, obj, obj_type)
+        return MethodType(self, obj)
 
 
 
@@ -283,13 +284,13 @@ class CachedInstancePartial(functools.partial):
         name = self.__name__
 
         if obj is None:
-            return make_method(self, obj, obj_type)
+            return MethodType(self, obj)
         try:
             # since this is a data descriptor, this block
             # is probably only hit once (per object)
             return obj.__dict__[name]
         except KeyError:
-            obj.__dict__[name] = ret = make_method(self, obj, obj_type)
+            obj.__dict__[name] = ret = MethodType(self, obj)
             return ret
 
 
@@ -969,9 +970,6 @@ def _indent(text, margin, newline='\n', key=bool):
     indented_lines = [(margin + line if key(line) else line)
                       for line in text.splitlines()]
     return newline.join(indented_lines)
-
-
-from functools import total_ordering
 
 
 def noop(*args, **kwargs):

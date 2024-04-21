@@ -57,10 +57,9 @@ import operator
 from datetime import tzinfo, timedelta, date, datetime
 
 
-def total_seconds(td):
-    # For legacy compatibility.
-    # boltons used to offer an implementation of total_seconds for Python <2.7
-    return timedelta.total_seconds(td)
+# For legacy compatibility.
+# boltons used to offer an implementation of total_seconds for Python <2.7
+total_seconds = timedelta.total_seconds
 
 
 def dt_to_timestamp(dt):

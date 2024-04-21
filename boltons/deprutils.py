@@ -30,9 +30,8 @@
 
 
 import sys
+from types import ModuleType
 from warnings import warn
-
-ModuleType = type(sys)
 
 # todo: only warn once
 
