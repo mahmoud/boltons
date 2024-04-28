@@ -1,4 +1,4 @@
 coverage==6.5.0
 pytest==7.2.0
 pytest-cov==4.0.0
-tox<3.0
+tox==4.8.0
