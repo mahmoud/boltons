@@ -1134,6 +1134,9 @@ def remap(root, visit=default_visit, enter=default_enter, exit=default_exit,
             callable. When set to ``False``, remap ignores any errors
             raised by the *visit* callback. Items causing exceptions
             are kept. See examples for more details.
+        trace (bool): Pass ``trace=True`` to print out the entire
+            traversal. Or pass a tuple of ``'visit'``, ``'enter'``,
+            or ``'exit'`` to print only the selected events.
 
     remap is designed to cover the majority of cases with just the
     *visit* callable. While passing in multiple callables is very
@@ -1162,6 +1165,15 @@ def remap(root, visit=default_visit, enter=default_enter, exit=default_exit,
     if not callable(exit):
         raise TypeError('exit expected callable, not: %r' % exit)
     reraise_visit = kwargs.pop('reraise_visit', True)
+    trace = kwargs.pop('trace', ())
+    if trace is True:
+        trace = ('visit', 'enter', 'exit')
+    elif isinstance(trace, str):
+        trace = (trace,)
+    if not isinstance(trace, (tuple, list, set)):
+        raise TypeError('trace expected tuple of event names, not: %r' % trace)
+    trace_enter, trace_exit, trace_visit = 'enter' in trace, 'exit' in trace, 'visit' in trace
+
     if kwargs:
         raise TypeError('unexpected keyword arguments: %r' % kwargs.keys())
 
@@ -1174,14 +1186,23 @@ def remap(root, visit=default_visit, enter=default_enter, exit=default_exit,
             key, new_parent, old_parent = value
             id_value = id(old_parent)
             path, new_items = new_items_stack.pop()
+            if trace_exit:
+                print(' .. remap exit:', path, '-', key, '-',
+                      old_parent, '-', new_parent, '-', new_items)
             value = exit(path, key, old_parent, new_parent, new_items)
+            if trace_exit:
+                print(' .. remap exit result:', value)
             registry[id_value] = value
             if not new_items_stack:
                 continue
         elif id_value in registry:
             value = registry[id_value]
         else:
+            if trace_enter:
+                print(' .. remap enter:', path, '-', key, '-', value)
             res = enter(path, key, value)
+            if trace_enter:
+                print(' .. remap enter result:', res)
             try:
                 new_parent, new_items = res
             except TypeError:
@@ -1197,21 +1218,29 @@ def remap(root, visit=default_visit, enter=default_enter, exit=default_exit,
                 stack.append((_REMAP_EXIT, (key, new_parent, value)))
                 if new_items:
                     stack.extend(reversed(list(new_items)))
+                if trace_enter:
+                    print(' .. remap stack size now:', len(stack))
                 continue
         if visit is _orig_default_visit:
             # avoid function call overhead by inlining identity operation
             visited_item = (key, value)
         else:
             try:
+                if trace_visit:
+                    print(' .. remap visit:', path, '-', key, '-', value)
                 visited_item = visit(path, key, value)
             except Exception:
                 if reraise_visit:
                     raise
                 visited_item = True
             if visited_item is False:
+                if trace_visit:
+                    print(' .. remap visit result: <drop>')
                 continue  # drop
             elif visited_item is True:
                 visited_item = (key, value)
+            if trace_visit:
+                print(' .. remap visit result:', visited_item)
             # TODO: typecheck?
             #    raise TypeError('expected (key, value) from visit(),'
             #                    ' not: %r' % visited_item)
