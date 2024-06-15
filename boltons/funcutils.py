@@ -269,6 +269,11 @@ class CachedInstancePartial(functools.partial):
     @property
     def _partialmethod(self):
         return functools.partialmethod(self.func, *self.args, **self.keywords)
+    
+    @property
+    def __partialmethod__(self):
+        # py3.13 switched from _partialmethod to __partialmethod__
+        return self._partialmethod
 
     def __set_name__(self, obj_type, name):
         self.__name__ = name
