@@ -27,7 +27,7 @@ def test_exception_info():
     try:
         test()
     except:
-        _, _, exc_traceback = sys.exc_info()
+        exc, _, exc_traceback = sys.exc_info()
         tbi = TracebackInfo.from_traceback(exc_traceback)
         exc_info = ExceptionInfo.from_exc_info(*sys.exc_info())
         exc_info2 = ExceptionInfo.from_current()
@@ -53,7 +53,10 @@ def test_exception_info():
     assert "ValueError('yay fun')" in new_exc_hook_res
     assert len(new_exc_hook_res) > len(tbi_str)
 
-    assert new_exc_hook_res == builtin_exc_hook_res
+    if sys.version_info <= (3, 12):
+        # output diverges with Python 3.13+, see https://github.com/mahmoud/boltons/issues/365
+        # TLDR tbutils only has minimal handling for anchors (e.g., ~~~~^^)
+        assert new_exc_hook_res == builtin_exc_hook_res
 
 
 def test_contextual():

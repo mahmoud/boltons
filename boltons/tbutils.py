@@ -184,8 +184,6 @@ class _DeferredLine:
     def __init__(self, filename, lineno, module_globals=None):
         self.filename = filename
         self.lineno = lineno
-        # TODO: this is going away when we fix linecache
-        # TODO: (mark) read about loader
         if module_globals is None:
             self._mod_name = None
             self._mod_loader = None
@@ -660,7 +658,7 @@ def fix_print_exception():
     """
     Sets the default exception hook :func:`sys.excepthook` to the
     :func:`tbutils.print_exception` that uses all the ``tbutils``
-    facilities to provide slightly more correct output behavior.
+    facilities to provide a consistent output behavior.
     """
     sys.excepthook = print_exception
 
@@ -715,6 +713,12 @@ class ParsedException:
 
         ``ParsedException.from_string(text).to_string()`` should yield
         ``text``.
+
+        .. note::
+
+           Note that this method does not output "anchors" (e.g.,
+           ``~~~~~^^``), as were added in Python 3.13. See the built-in
+           ``traceback`` module if these are necessary.
         """
         lines = ['Traceback (most recent call last):']
 
