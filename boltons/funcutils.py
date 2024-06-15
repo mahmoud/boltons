@@ -249,6 +249,11 @@ class InstancePartial(functools.partial):
     """
     @property
     def _partialmethod(self):
+        # py3.13 switched from _partialmethod to __partialmethod__, this is kept for backwards compat <=py3.12
+        return self.__partialmethod__
+    
+    @property
+    def __partialmethod__(self):
         return functools.partialmethod(self.func, *self.args, **self.keywords)
 
     def __get__(self, obj, obj_type):
@@ -268,12 +273,12 @@ class CachedInstancePartial(functools.partial):
     """
     @property
     def _partialmethod(self):
-        return functools.partialmethod(self.func, *self.args, **self.keywords)
+        # py3.13 switched from _partialmethod to __partialmethod__, this is kept for backwards compat <=py3.12
+        return self.__partialmethod__
     
     @property
     def __partialmethod__(self):
-        # py3.13 switched from _partialmethod to __partialmethod__
-        return self._partialmethod
+        return functools.partialmethod(self.func, *self.args, **self.keywords)
 
     def __set_name__(self, obj_type, name):
         self.__name__ = name
