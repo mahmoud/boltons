@@ -54,7 +54,7 @@ import re
 import time
 import bisect
 import operator
-from datetime import tzinfo, timedelta, date, datetime
+from datetime import tzinfo, timedelta, date, datetime, timezone
 
 
 def total_seconds(td):
@@ -70,7 +70,9 @@ def dt_to_timestamp(dt):
 
     .. _Epoch-based timestamps: https://en.wikipedia.org/wiki/Unix_time
 
-    >>> abs(round(time.time() - dt_to_timestamp(datetime.utcnow()), 2))
+    >>> timestamp = int(time.time())
+    >>> utc_dt = datetime.fromtimestamp(timestamp, timezone.utc)
+    >>> timestamp - dt_to_timestamp(utc_dt)
     0.0
 
     ``dt_to_timestamp`` supports both timezone-aware and naïve
@@ -86,7 +88,7 @@ def dt_to_timestamp(dt):
     if dt.tzinfo:
         td = dt - EPOCH_AWARE
     else:
-        td = dt - EPOCH_NAIVE
+        td = dt.replace(tzinfo=timezone.utc) - EPOCH_AWARE
     return timedelta.total_seconds(td)
 
 
@@ -423,7 +425,6 @@ class ConstantTZInfo(tzinfo):
 
 UTC = ConstantTZInfo('UTC')
 EPOCH_AWARE = datetime.fromtimestamp(0, UTC)
-EPOCH_NAIVE = datetime.utcfromtimestamp(0)
 
 
 class LocalTZInfo(tzinfo):
