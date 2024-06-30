@@ -396,6 +396,28 @@ def test_research():
     assert research(root, broken_query) == []
 
 
+def test_research_custom_enter():
+    # see #368
+    from types import SimpleNamespace as NS
+    root = NS(
+        a='a',
+        b='b',
+        c=NS(aa='aa') )
+
+    def query(path, key, value):
+        return value.startswith('a')
+    
+    def custom_enter(path, key, value):
+        if isinstance(value, NS):
+            return [], value.__dict__.items()
+        return default_enter(path, key, value)
+
+    with pytest.raises(TypeError):
+        research(root, query)
+    assert research(root, query, enter=custom_enter) == [(('a',), 'a'), (('c', 'aa'), 'aa')]
+
+
+
 def test_backoff_basic():
     from boltons.iterutils import backoff
 
