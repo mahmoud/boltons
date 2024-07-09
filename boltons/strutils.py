@@ -1140,8 +1140,8 @@ class MultiReplace:
 
     Dictionary Usage::
 
-        from boltons import stringutils
-        s = stringutils.MultiReplace({
+        from boltons import strutils
+        s = strutils.MultiReplace({
             'foo': 'zoo',
             'cat': 'hat',
             'bat': 'kraken'
@@ -1151,8 +1151,8 @@ class MultiReplace:
 
     Iterable Usage::
 
-        from boltons import stringutils
-        s = stringutils.MultiReplace([
+        from boltons import strutils
+        s = strutils.MultiReplace([
             ('foo', 'zoo'),
             ('cat', 'hat'),
             ('bat', 'kraken)'
@@ -1233,7 +1233,7 @@ def multi_replace(text, sub_map, **kwargs):
 
     Example Usage::
 
-        from boltons.stringutils import multi_replace
+        from boltons.strutils import multi_replace
         new = multi_replace(
             'The foo bar cat ate a bat',
             {'foo': 'zoo', 'cat': 'hat', 'bat': 'kraken'}
