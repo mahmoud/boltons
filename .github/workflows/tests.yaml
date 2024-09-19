@@ -39,7 +39,7 @@ jobs:
           python -m pip install -U pip
       - name: get pip cache dir
         id: pip-cache
-        run: echo "::set-output name=dir::$(pip cache dir)"
+        run: echo "dir=$(pip cache dir)" >> $GITHUB_OUTPUT
       - name: cache pip
         uses: actions/cache@v4
         with:
