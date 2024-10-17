@@ -1,3 +1,4 @@
+import copy
 import pickle
 
 from boltons.typeutils import make_sentinel
@@ -10,3 +11,8 @@ def test_sentinel_falsiness():
 
 def test_sentinel_pickle():
     assert pickle.dumps(NOT_SET)
+
+def test_sentinel_copy():
+    test = make_sentinel('test')
+    assert test is copy.copy(test)
+    assert test is copy.deepcopy(test)
