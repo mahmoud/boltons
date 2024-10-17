@@ -88,6 +88,12 @@ def make_sentinel(name='_MISSING', var_name=None):
         def __bool__(self):
             return False
 
+        def __copy__(self):
+            return self
+
+        def __deepcopy__(self):
+            return self
+
     if var_name:
         frame = sys._getframe(1)
         module = frame.f_globals.get('__name__')
