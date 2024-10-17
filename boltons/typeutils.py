@@ -91,7 +91,7 @@ def make_sentinel(name='_MISSING', var_name=None):
         def __copy__(self):
             return self
 
-        def __deepcopy__(self):
+        def __deepcopy__(self, _memo):
             return self
 
     if var_name:
