@@ -2,14 +2,14 @@ name: Tests
 on:
   push:
     paths-ignore:
-      - 'docs/**'
-      - '*.md'
-      - '*.rst'
+      - "docs/**"
+      - "*.md"
+      - "*.rst"
   pull_request:
     paths-ignore:
-      - 'docs/**'
-      - '*.md'
-      - '*.rst'
+      - "docs/**"
+      - "*.md"
+      - "*.rst"
 jobs:
   tests:
     name: ${{ matrix.name }}
@@ -18,15 +18,15 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - {name: Linux, python: '3.12', os: ubuntu-latest, tox: py312}
-          - {name: Windows, python: '3.12', os: windows-latest, tox: py312}
-          - {name: Mac, python: '3.12', os: macos-latest, tox: py312}
-          - {name: '3.11', python: '3.11', os: ubuntu-latest, tox: py311}
-          - {name: '3.10', python: '3.10', os: ubuntu-latest, tox: py310}
-          - {name: '3.9', python: '3.9', os: ubuntu-latest, tox: py39}
-          - {name: '3.8', python: '3.8', os: ubuntu-latest, tox: py38}
-          - {name: '3.7', python: '3.7', os: ubuntu-latest, tox: py37}
-          - {name: 'PyPy3', python: 'pypy-3.9', os: ubuntu-latest, tox: pypy3}
+          - { name: Linux, python: "3.12", os: ubuntu-latest, tox: py312 }
+          - { name: Windows, python: "3.12", os: windows-latest, tox: py312 }
+          - { name: Mac, python: "3.12", os: macos-latest, tox: py312 }
+          - { name: "3.11", python: "3.11", os: ubuntu-latest, tox: py311 }
+          - { name: "3.10", python: "3.10", os: ubuntu-latest, tox: py310 }
+          - { name: "3.9", python: "3.9", os: ubuntu-latest, tox: py39 }
+          - { name: "3.8", python: "3.8", os: ubuntu-latest, tox: py38 }
+          - { name: "3.7", python: "3.7", os: ubuntu-latest, tox: py37 }
+          - { name: "PyPy3", python: "pypy-3.9", os: ubuntu-latest, tox: pypy3 }
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -39,7 +39,9 @@ jobs:
           python -m pip install -U pip
       - name: get pip cache dir
         id: pip-cache
-        run: echo "dir=$(pip cache dir)" >> $GITHUB_OUTPUT
+        shell: bash
+        run: |
+          echo "dir=$(pip cache dir)" >> "$GITHUB_OUTPUT"
       - name: cache pip
         uses: actions/cache@v4
         with:
