@@ -5,6 +5,19 @@ for an average of one 33-commit release about every 9 weeks. Versions
 are named according to the [CalVer](https://calver.org) versioning
 scheme (`YY.MINOR.MICRO`).
 
+## 24.1.0
+
+_(November 1, 2024)_
+
+- Added `max_depth` parameter to [`fileutils.iter_find_files`][fileutils.iter_find_files]
+- Added `enter` parameter to [`iterutils.research`][iterutils.research] to support traversing custom data types
+- Add optional print tracing for [`iterutils.remap`][iterutils.remap] for easier debugging
+- Fixed [`typeutils.Sentinel`][typeutils.make_sentinel] copy behavior to return self
+- Tentative Python 3.13 support ([#365][i365], [#366][i366])
+
+[i365]: https://github.com/mahmoud/boltons/issues/365
+[i366]: https://github.com/mahmoud/boltons/issues/366
+
 ## 24.0.0
 
 Per the RFC in issue [#365][i339], boltons is now **Python 3 only**. 3.7+ for now.
