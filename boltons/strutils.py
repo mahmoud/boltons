@@ -257,6 +257,37 @@ def pluralize(word):
     return _match_case(orig_word, plural)
 
 
+def natural_enumerate(sized_iterable, last_sep=' and ', sep=", ", wrap_item_with=""):
+    """
+    Return a string with a natural enumeration of the given items.
+
+    >>> natural_enumerate(['a', 'b', 'c', 'd'])
+    'a, b, c and d'
+    >>> natural_enumerate(['a', 'b', 'c'], ' or ')
+    'a, b or c'
+    >>> natural_enumerate(['a', 'b', 'c'], ', ')
+    'a, b, c'
+    >>> natural_enumerate(['a', 'b'], ' or ')
+    'a or b'
+    >>> natural_enumerate(['a'])
+    'a'
+    >>> natural_enumerate([])
+    ''
+    >>> natural_enumerate(['a', 'b'], wrap_item_with="`")
+    '`a` and `b`'
+    >>> natural_enumerate(['a', 'b', 'c', 'd'], " = ", sep=" + ")
+    'a + b + c = d'
+    """
+    if len(sized_iterable) == 0:
+        return ""
+    if wrap_item_with:
+        sized_iterable = [f"{wrap_item_with}{item}{wrap_item_with}" for item in sized_iterable] 
+    if len(sized_iterable) == 1:
+        return sized_iterable[0]
+    all_but_last = sep.join(i for i in sized_iterable[:-1])
+    return f"{all_but_last}{last_sep}{sized_iterable[-1]}"
+
+
 def _match_case(master, disciple):
     if not master.strip():
         return disciple
