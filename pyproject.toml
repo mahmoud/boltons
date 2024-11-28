@@ -1,0 +1,66 @@
+[project]
+name = "boltons"
+version = "24.1.1dev"
+description = "When they're not builtins, they're boltons."
+readme = "README.md"
+authors = [{ name = "Mahmoud Hashemi", email = "mahmoud@hatnote.com" }]
+classifiers = [
+    # See: https://pypi.python.org/pypi?:action=list_classifiers
+    "Topic :: Utilities",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: BSD License",
+    "Topic :: Software Development :: Libraries",
+    "Development Status :: 5 - Production/Stable",
+    "Operating System :: OS Independent",
+    # List of python versions and their support status:
+    # https://en.wikipedia.org/wiki/CPython#Version_history
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "Programming Language :: Python :: Implementation :: PyPy",
+]
+requires-python = ">=3.7"
+license = { file = "LICENSE" }
+
+[project.urls]
+Homepage = "https://github.com/mahmoud/boltons"
+
+[tool.flit.sdist]
+include = ["doc/", "tests/", "CHANGELOG.md", "tox.ini"]
+exclude = ["doc/_build"]
+
+[tool.pytest.ini_options]
+doctest_optionflags = [
+    "ALLOW_UNICODE",
+    "ELLIPSIS",
+    "IGNORE_EXCEPTION_DETAIL",
+    "NORMALIZE_WHITESPACE",
+]
+
+[build-system]
+requires = ["flit_core >=3.2,<4"]
+build-backend = "flit_core.buildapi"
+
+# A brief checklist for release:
+# * tox
+# * git commit (if applicable)
+# * Bump pyproject.toml version off of -dev
+# * git commit -a -m "bump version for x.y.z release"
+# * rm -rf dist/*
+# * python -m build
+# * twine upload dist/*
+# * bump docs/conf.py version
+# * git commit
+# * git tag -a x.y.z -m "brief summary"
+# * write CHANGELOG
+# * git commit
+# * bump pyproject.toml version onto n+1 dev
+# * git commit
+# * git push
