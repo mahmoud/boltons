@@ -138,7 +138,7 @@ class FilePerms:
                                  ' or one or more of %r'
                                  % (invalid_chars, value, self._perm_chars))
 
-            sort_key = lambda c: self._perm_val[c]
+            def sort_key(c): return self._perm_val[c]
             new_value = ''.join(sorted(set(value),
                                        key=sort_key, reverse=True))
             setattr(fp_obj, self.attribute, new_value)
@@ -687,3 +687,38 @@ class DummyFile:
     def __exit__(self, exc_type, exc_val, exc_tb):
         return
 
+
+def rotate_file(filename, *, keep: int = 5):
+    """
+    If *filename.ext* exists, it will be moved to *filename.1.ext*, 
+    with all conflicting filenames being moved up by one, dropping any files beyond *keep*.
+
+    After rotation, *filename* will be available for creation as a new file.
+
+    Fails if *filename* is not a file or if *keep* is not > 0.
+    """
+    if keep < 1:
+        raise ValueError(f'expected "keep" to be >=1, not {keep}')
+    if not os.path.exists(filename):
+        return
+    if not os.path.isfile(filename):
+        raise ValueError(f'expected {filename} to be a file')
+
+    fn_root, fn_ext = os.path.splitext(filename)
+    kept_names = []
+    for i in range(1, keep + 1):
+        if fn_ext:
+            kept_names.append(f'{fn_root}.{i}{fn_ext}')
+        else:
+            kept_names.append(f'{fn_root}.{i}')
+
+    fns = [filename] + kept_names
+    for orig_name, kept_name in reversed(list(zip(fns, fns[1:]))):
+        if not os.path.exists(orig_name):
+            continue
+        os.rename(orig_name, kept_name)
+
+    if os.path.exists(kept_names[-1]):
+        os.remove(kept_names[-1])
+
+    return
