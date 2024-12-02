@@ -98,14 +98,14 @@ def isoparse(iso_str):
     """Parses the limited subset of `ISO8601-formatted time`_ strings as
     returned by :meth:`datetime.datetime.isoformat`.
 
-    >>> epoch_dt = datetime.utcfromtimestamp(0)
+    >>> epoch_dt = datetime.fromtimestamp(0, timezone.utc).replace(tzinfo=None)
     >>> iso_str = epoch_dt.isoformat()
     >>> print(iso_str)
     1970-01-01T00:00:00
     >>> isoparse(iso_str)
     datetime.datetime(1970, 1, 1, 0, 0)
 
-    >>> utcnow = datetime.utcnow()
+    >>> utcnow = datetime.now(timezone.utc).replace(tzinfo=None)
     >>> utcnow == isoparse(utcnow.isoformat())
     True
 
@@ -213,7 +213,7 @@ def decimal_relative_time(d, other=None, ndigits=0, cardinalize=True):
     localization into other languages and custom phrasing and
     formatting.
 
-    >>> now = datetime.utcnow()
+    >>> now = datetime.now(timezone.utc).replace(tzinfo=None)
     >>> decimal_relative_time(now - timedelta(days=1, seconds=3600), now)
     (1.0, 'day')
     >>> decimal_relative_time(now - timedelta(seconds=0.002), now, ndigits=5)
@@ -223,7 +223,7 @@ def decimal_relative_time(d, other=None, ndigits=0, cardinalize=True):
 
     """
     if other is None:
-        other = datetime.utcnow()
+        other = datetime.now(timezone.utc).replace(tzinfo=None)
     diff = other - d
     diff_seconds = timedelta.total_seconds(diff)
     abs_diff = abs(diff)
@@ -252,7 +252,7 @@ def relative_time(d, other=None, ndigits=0):
     Returns:
         A short English-language string.
 
-    >>> now = datetime.utcnow()
+    >>> now = datetime.now(timezone.utc).replace(tzinfo=None)
     >>> relative_time(now, ndigits=1)
     '0 seconds ago'
     >>> relative_time(now - timedelta(days=1, seconds=36000), ndigits=1)
