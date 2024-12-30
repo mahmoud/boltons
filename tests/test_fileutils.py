@@ -9,7 +9,6 @@ from boltons.fileutils import FilePerms, iter_find_files
 from boltons.strutils import removeprefix
 
 
-# Directory of boltons source files (not ending with '/').
 BOLTONS_PATH = os.path.dirname(os.path.abspath(fileutils.__file__))
 
 
