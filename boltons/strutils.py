@@ -57,7 +57,7 @@ __all__ = ['camel2under', 'under2camel', 'slugify', 'split_punct_ws',
            'iter_splitlines', 'indent', 'escape_shell_args',
            'args2cmd', 'args2sh', 'parse_int_list', 'format_int_list',
            'complement_int_list', 'int_ranges_from_int_list', 'MultiReplace',
-           'multi_replace', 'unwrap_text']
+           'multi_replace', 'unwrap_text', 'removeprefix']
 
 
 _punct_ws_str = string.punctuation + string.whitespace
@@ -1273,3 +1273,17 @@ def unwrap_text(text, ending='\n\n'):
     if ending is None:
         return all_grafs
     return ending.join(all_grafs)
+
+def removeprefix(text: str, prefix: str) -> str:
+    r"""
+    Remove `prefix` from start of `text` if present.
+
+    Backport of `str.removeprefix` for Python versions less than 3.9.
+
+    Args:
+        text: A string to remove the prefix from.
+        prefix: The string to remove from the beginning of `text`.
+    """
+    if text.startswith(prefix):
+        return text[len(prefix):]
+    return text
