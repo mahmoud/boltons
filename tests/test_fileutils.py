@@ -6,6 +6,7 @@ import os.path
 
 from boltons import fileutils
 from boltons.fileutils import FilePerms, iter_find_files
+from boltons.strutils import removeprefix
 
 
 # Directory of boltons source files (not ending with '/').
@@ -32,13 +33,13 @@ def test_fileperms():
 
 def test_iter_find_files():
     def _to_baseless_list(paths):
-        return [p.removeprefix(BOLTONS_PATH) for p in paths]
+        return [removeprefix(p, BOLTONS_PATH).lstrip(os.path.sep) for p in paths]
 
-    assert '/fileutils.py' in _to_baseless_list(iter_find_files(BOLTONS_PATH, patterns=['*.py']))
+    assert 'fileutils.py' in _to_baseless_list(iter_find_files(BOLTONS_PATH, patterns=['*.py']))
 
     boltons_parent = os.path.dirname(BOLTONS_PATH)
-    assert '/fileutils.py' in _to_baseless_list(iter_find_files(boltons_parent, patterns=['*.py']))
-    assert '/fileutils.py' not in _to_baseless_list(iter_find_files(boltons_parent, patterns=['*.py'], max_depth=0))
+    assert 'fileutils.py' in _to_baseless_list(iter_find_files(boltons_parent, patterns=['*.py']))
+    assert 'fileutils.py' not in _to_baseless_list(iter_find_files(boltons_parent, patterns=['*.py'], max_depth=0))
 
 
 def test_rotate_file_no_rotation(tmp_path):
