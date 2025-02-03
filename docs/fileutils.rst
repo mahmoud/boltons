@@ -16,6 +16,8 @@ close a few remaining gaps.
 
 .. autofunction:: boltons.fileutils.copytree
 
+.. autofunction:: boltons.fileutils.rotate_file
+
 
 Atomic File Saving
 ------------------

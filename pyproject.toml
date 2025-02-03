@@ -54,7 +54,7 @@ build-backend = "flit_core.buildapi"
 # * Bump pyproject.toml version off of -dev
 # * git commit -a -m "bump version for x.y.z release"
 # * rm -rf dist/*
-# * python -m build
+# * flit build
 # * twine upload dist/*
 # * bump docs/conf.py version
 # * git commit

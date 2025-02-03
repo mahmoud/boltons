@@ -5,6 +5,15 @@ for an average of one 33-commit release about every 9 weeks. Versions
 are named according to the [CalVer](https://calver.org) versioning
 scheme (`YY.MINOR.MICRO`).
 
+## 25.0.0
+
+_(February 2, 2025)_
+
+- Added Python 3.13 support
+- Replace deprecated `utcnow()`
+- Add fsync to [`fileutils.atomic_save`][fileutils.atomic_save]
+- Add [`fileutils.rotate_file`][fileutils.rotate_file]
+
 ## 24.1.0
 
 _(November 1, 2024)_
@@ -1064,6 +1073,7 @@ added in this release.
 [excutils.ParsedException]: http://boltons.readthedocs.org/en/latest/excutils.html#boltons.excutils.ParsedException
 [fileutils]: http://boltons.readthedocs.org/en/latest/fileutils.html
 [fileutils.replace]: http://boltons.readthedocs.org/en/latest/fileutils.html#boltons.fileutils.replace
+[fileutils.rotate_file]: http://boltons.readthedocs.org/en/latest/fileutils.html#boltons.fileutils.rotate_file
 [fileutils.atomic_rename]: http://boltons.readthedocs.org/en/latest/fileutils.html#boltons.fileutils.atomic_rename
 [fileutils.atomic_save]: http://boltons.readthedocs.org/en/latest/fileutils.html#boltons.fileutils.atomic_save
 [fileutils.AtomicSaver]: http://boltons.readthedocs.org/en/latest/fileutils.html#boltons.fileutils.AtomicSaver
