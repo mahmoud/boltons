@@ -55,7 +55,7 @@ build-backend = "flit_core.buildapi"
 # * git commit -a -m "bump version for x.y.z release"
 # * rm -rf dist/*
 # * flit build
-# * twine upload dist/*
+# * flit publish
 # * bump docs/conf.py version
 # * git commit
 # * git tag -a x.y.z -m "brief summary"
