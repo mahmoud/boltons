@@ -1,6 +1,6 @@
 [project]
 name = "boltons"
-version = "25.0.0"
+version = "25.0.1dev"
 description = "When they're not builtins, they're boltons."
 readme = "README.md"
 authors = [{ name = "Mahmoud Hashemi", email = "mahmoud@hatnote.com" }]
