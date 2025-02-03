@@ -3,6 +3,7 @@ tmp.py
 htmlcov/
 venv/
 *.py[cod]
+venv-rtd/
 
 # emacs
 *~
