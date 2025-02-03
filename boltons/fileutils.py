@@ -465,6 +465,9 @@ class AtomicSaver:
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         if self.part_file:
+            # Ensure data is flushed and synced to disk before closing
+            self.part_file.flush()
+            os.fsync(self.part_file.fileno())
             self.part_file.close()
         if exc_type:
             if self.rm_part_on_exc:
