@@ -569,7 +569,7 @@ class Table:
         text_data = [[to_text(cell, maxlen=maxlen) for cell in row]
                      for row in self._data]
         for idx in range(self._width):
-            cur_widths = [len(cur) for cur in text_data]
+            cur_widths = [len(row[idx]) for row in text_data]
             if with_headers:
                 cur_widths.append(len(to_text(headers[idx], maxlen=maxlen)))
             widths.append(max(cur_widths))
