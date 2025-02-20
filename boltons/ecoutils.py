@@ -150,6 +150,7 @@ and print a profile in JSON format::
 ``pip install boltons`` and try it yourself!
 
 """
+from __future__ import annotations
 
 import re
 import os
@@ -162,6 +163,7 @@ import struct
 import getpass
 import datetime
 import platform
+from typing import Any
 
 ECO_VERSION = '1.1.0'  # see version history below
 
@@ -258,7 +260,7 @@ START_TIME_INFO = {'time_utc': str(datetime.datetime.now(datetime.timezone.utc))
                    'time_utc_offset': -time.timezone / 3600.0}
 
 
-def get_python_info():
+def get_python_info() -> dict[str, Any]:
     ret = {}
     ret['argv'] = _escape_shell_args(sys.argv)
     ret['bin'] = sys.executable
@@ -287,7 +289,7 @@ def get_python_info():
     return ret
 
 
-def get_profile(**kwargs):
+def get_profile(**kwargs) -> dict[str, Any]:
     """The main entrypoint to ecoutils. Calling this will return a
     JSON-serializable dictionary of information about the current
     process.
@@ -354,13 +356,13 @@ def get_profile(**kwargs):
     return ret
 
 
-def dumps(val, indent):
+def dumps(val: object, indent: int) -> str:
     if indent:
         return json.dumps(val, sort_keys=True, indent=indent)
     return json.dumps(val, sort_keys=True)
 
 
-def get_profile_json(indent=False):
+def get_profile_json(indent: bool = False) -> str:
     if indent:
         indent = 2
     else:
@@ -370,7 +372,7 @@ def get_profile_json(indent=False):
     return dumps(data_dict, indent)
 
 
-def main():
+def main() -> None:
     print(get_profile_json(indent=True))
 
 #############################################

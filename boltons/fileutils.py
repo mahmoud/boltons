@@ -33,7 +33,9 @@ disk contents, and ``fileutils`` collects solutions to some of the
 most commonly-found gaps in the standard library.
 """
 
+from __future__ import annotations
 
+from collections.abc import Callable, Iterable
 import os
 import re
 import sys
@@ -41,7 +43,14 @@ import stat
 import errno
 import fnmatch
 from shutil import copy2, copystat, Error
+from types import TracebackType
+from typing import IO, TYPE_CHECKING, Generator, NoReturn, TypeVar, overload
 
+if TYPE_CHECKING:
+    from _typeshed import BytesPath, FileDescriptorOrPath, StrPath, StrOrBytesPath
+    from typing_extensions import Self
+    _StrPathT = TypeVar("_StrPathT", bound=StrPath)
+    _BytesPathT = TypeVar("_BytesPathT", bound=BytesPath)
 
 __all__ = ['mkdir_p', 'atomic_save', 'AtomicSaver', 'FilePerms',
            'iter_find_files', 'copytree']
@@ -52,7 +61,7 @@ RW_PERMS = 438
 _SINGLE_FULL_PERM = 7
 
 
-def mkdir_p(path):
+def mkdir_p(path: StrOrBytesPath) -> None:
     """Creates a directory and any parent directories that may need to
     be created along the way, without raising errors for any existing
     directories. This function mimics the behavior of the ``mkdir -p``
@@ -152,7 +161,7 @@ class FilePerms:
                 mode |= (bit << (self.offset * 3))
             fp_obj._integer |= mode
 
-    def __init__(self, user='', group='', other=''):
+    def __init__(self, user: str = '', group: str = '', other: str = ''):
         self._user, self._group, self._other = '', '', ''
         self._integer = 0
         self.user = user
@@ -160,7 +169,7 @@ class FilePerms:
         self.other = other
 
     @classmethod
-    def from_int(cls, i):
+    def from_int(cls, i: int) -> Self:
         """Create a :class:`FilePerms` object from an integer.
 
         >>> FilePerms.from_int(0o644)  # note the leading zero-oh for octal
@@ -176,7 +185,7 @@ class FilePerms:
         return cls(*parts)
 
     @classmethod
-    def from_path(cls, path):
+    def from_path(cls, path: FileDescriptorOrPath) -> Self:
         """Make a new :class:`FilePerms` object based on the permissions
         assigned to the file or directory at *path*.
 
@@ -192,7 +201,7 @@ class FilePerms:
         stat_res = os.stat(path)
         return cls.from_int(stat.S_IMODE(stat_res.st_mode))
 
-    def __int__(self):
+    def __int__(self) -> int:
         return self._integer
 
     # Sphinx tip: attribute docstrings come after the attribute
@@ -216,7 +225,7 @@ if hasattr(os, 'O_NOINHERIT'):
     _TEXT_OPENFLAGS |= os.O_NOINHERIT
 if hasattr(os, 'O_NOFOLLOW'):
     _TEXT_OPENFLAGS |= os.O_NOFOLLOW
-_BIN_OPENFLAGS = _TEXT_OPENFLAGS
+_BIN_OPENFLAGS: int = _TEXT_OPENFLAGS
 if hasattr(os, 'O_BINARY'):
     _BIN_OPENFLAGS |= os.O_BINARY
 
@@ -245,7 +254,7 @@ else:
         return
 
 
-def atomic_save(dest_path, **kwargs):
+def atomic_save(dest_path: str, **kwargs) -> AtomicSaver:
     """A convenient interface to the :class:`AtomicSaver` type. Example:
 
     >>> try:
@@ -385,15 +394,15 @@ class AtomicSaver:
     _default_file_perms = RW_PERMS
 
     # TODO: option to abort if target file modify date has changed since start?
-    def __init__(self, dest_path, **kwargs):
+    def __init__(self, dest_path: str, **kwargs):
         self.dest_path = dest_path
-        self.overwrite = kwargs.pop('overwrite', True)
-        self.file_perms = kwargs.pop('file_perms', None)
-        self.overwrite_part = kwargs.pop('overwrite_part', False)
-        self.part_filename = kwargs.pop('part_file', None)
-        self.rm_part_on_exc = kwargs.pop('rm_part_on_exc', True)
-        self.text_mode = kwargs.pop('text_mode', False)
-        self.buffering = kwargs.pop('buffering', -1)
+        self.overwrite: bool = kwargs.pop('overwrite', True)
+        self.file_perms: int | None = kwargs.pop('file_perms', None)
+        self.overwrite_part: bool = kwargs.pop('overwrite_part', False)
+        self.part_filename: str | None = kwargs.pop('part_file', None)
+        self.rm_part_on_exc: bool = kwargs.pop('rm_part_on_exc', True)
+        self.text_mode: bool = kwargs.pop('text_mode', False)
+        self.buffering: int = kwargs.pop('buffering', -1)
         if kwargs:
             raise TypeError(f'unexpected kwargs: {kwargs.keys()!r}')
 
@@ -435,7 +444,7 @@ class AtomicSaver:
                 raise
         return
 
-    def setup(self):
+    def setup(self) -> None:
         """Called on context manager entry (the :keyword:`with` statement),
         the ``setup()`` method creates the temporary file in the same
         directory as the destination file.
@@ -459,11 +468,11 @@ class AtomicSaver:
         self._open_part_file()
         return
 
-    def __enter__(self):
+    def __enter__(self) -> IO | None:
         self.setup()
         return self.part_file
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
+    def __exit__(self, exc_type: type[BaseException] | None, exc_val: BaseException | None, exc_tb: TracebackType | None) -> None:
         if self.part_file:
             # Ensure data is flushed and synced to disk before closing
             self.part_file.flush()
@@ -489,7 +498,7 @@ class AtomicSaver:
         return
 
 
-def iter_find_files(directory, patterns, ignored=None, include_dirs=False, max_depth=None):
+def iter_find_files(directory: str, patterns: str | Iterable[str], ignored: str | Iterable[str] | None = None, include_dirs: bool = False, max_depth: int | None = None) -> Generator[str]:
     """Returns a generator that yields file paths under a *directory*,
     matching *patterns* using `glob`_ syntax (e.g., ``*.txt``). Also
     supports *ignored* patterns.
@@ -550,8 +559,11 @@ def iter_find_files(directory, patterns, ignored=None, include_dirs=False, max_d
                 yield filename
     return
 
-
-def copy_tree(src, dst, symlinks=False, ignore=None):
+@overload
+def copy_tree(src: _StrPathT, dst: _StrPathT, symlinks: bool = False, ignore: Callable[[_StrPathT, list[str]], Iterable[str]] | None = None) -> None: ...
+@overload
+def copy_tree(src: _BytesPathT, dst: _BytesPathT, symlinks: bool = False, ignore: Callable[[_BytesPathT, list[bytes]], Iterable[bytes]] | None = None) -> None: ...
+def copy_tree(src: _StrPathT | _BytesPathT, dst: _StrPathT | _BytesPathT, symlinks: bool = False, ignore: Callable[[_StrPathT, list[str]], Iterable[str]] | Callable[[_BytesPathT, list[bytes]], Iterable[bytes]] | None = None) -> None:
     """The ``copy_tree`` function is an exact copy of the built-in
     :func:`shutil.copytree`, with one key difference: it will not
     raise an exception if part of the tree already exists. It achieves
@@ -607,7 +619,6 @@ def copy_tree(src, dst, symlinks=False, ignore=None):
     if errors:
         raise Error(errors)
 
-
 copytree = copy_tree  # alias for drop-in replacement of shutil
 
 
@@ -615,7 +626,7 @@ copytree = copy_tree  # alias for drop-in replacement of shutil
 class DummyFile:
     # TODO: raise ValueErrors on closed for all methods?
     # TODO: enforce read/write
-    def __init__(self, path, mode='r', buffering=None):
+    def __init__(self, path: StrOrBytesPath, mode: str = "r", buffering: int | None = None):
         self.name = path
         self.mode = mode
         self.closed = False
@@ -625,73 +636,73 @@ class DummyFile:
         self.newlines = None
         self.softspace = 0
 
-    def close(self):
+    def close(self) -> None:
         self.closed = True
 
-    def fileno(self):
+    def fileno(self) -> int:
         return -1
 
-    def flush(self):
+    def flush(self) -> None:
         if self.closed:
             raise ValueError('I/O operation on a closed file')
         return
 
-    def next(self):
+    def next(self) -> NoReturn:
         raise StopIteration()
 
-    def read(self, size=0):
+    def read(self, size: int = 0) -> str:
         if self.closed:
             raise ValueError('I/O operation on a closed file')
         return ''
 
-    def readline(self, size=0):
+    def readline(self, size: int = 0) -> str:
         if self.closed:
             raise ValueError('I/O operation on a closed file')
         return ''
 
-    def readlines(self, size=0):
+    def readlines(self, size: int = 0) -> list[str]:
         if self.closed:
             raise ValueError('I/O operation on a closed file')
         return []
 
-    def seek(self):
+    def seek(self) -> None:
         if self.closed:
             raise ValueError('I/O operation on a closed file')
         return
 
-    def tell(self):
+    def tell(self) -> int:
         if self.closed:
             raise ValueError('I/O operation on a closed file')
         return 0
 
-    def truncate(self):
+    def truncate(self) -> None:
         if self.closed:
             raise ValueError('I/O operation on a closed file')
         return
 
-    def write(self, string):
+    def write(self, string: str) -> None:
         if self.closed:
             raise ValueError('I/O operation on a closed file')
         return
 
-    def writelines(self, list_of_strings):
+    def writelines(self, list_of_strings: list[str]) -> None:
         if self.closed:
             raise ValueError('I/O operation on a closed file')
         return
 
-    def __next__(self):
+    def __next__(self) -> NoReturn:
         raise StopIteration()
 
-    def __enter__(self):
+    def __enter__(self) -> None:
         if self.closed:
             raise ValueError('I/O operation on a closed file')
         return
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
+    def __exit__(self, exc_type, exc_val, exc_tb) -> None:
         return
 
 
-def rotate_file(filename, *, keep: int = 5):
+def rotate_file(filename: StrPath, *, keep: int = 5) -> None:
     """
     If *filename.ext* exists, it will be moved to *filename.1.ext*, 
     with all conflicting filenames being moved up by one, dropping any files beyond *keep*.

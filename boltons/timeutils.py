@@ -50,6 +50,9 @@ degree of accuracy in corner cases, check out `pytz`_ and `dateutil`_.
 .. _dateutil: https://dateutil.readthedocs.io/en/stable/index.html
 """
 
+from __future__ import annotations
+
+from collections.abc import Generator
 import re
 import time
 import bisect
@@ -62,7 +65,7 @@ from datetime import tzinfo, timedelta, date, datetime, timezone
 total_seconds = timedelta.total_seconds
 
 
-def dt_to_timestamp(dt):
+def dt_to_timestamp(dt: datetime) -> float:
     """Converts from a :class:`~datetime.datetime` object to an integer
     timestamp, suitable interoperation with :func:`time.time` and
     other `Epoch-based timestamps`.
@@ -94,7 +97,7 @@ def dt_to_timestamp(dt):
 _NONDIGIT_RE = re.compile(r'\D')
 
 
-def isoparse(iso_str):
+def isoparse(iso_str: str) -> datetime:
     """Parses the limited subset of `ISO8601-formatted time`_ strings as
     returned by :meth:`datetime.datetime.isoformat`.
 
@@ -137,7 +140,7 @@ _PARSE_TD_KW_MAP = {unit[0]: unit + 's'
                          for _, _, unit in reversed(_BOUNDS[:-2])}
 
 
-def parse_timedelta(text):
+def parse_timedelta(text: str) -> timedelta:
     """Robustly parses a short text description of a time period into a
     :class:`datetime.timedelta`. Supports weeks, days, hours, minutes,
     and seconds, with or without decimal points:
@@ -190,7 +193,7 @@ def _cardinalize_time_unit(unit, value):
     return unit + 's'
 
 
-def decimal_relative_time(d, other=None, ndigits=0, cardinalize=True):
+def decimal_relative_time(d: datetime, other: datetime | None = None, ndigits: int = 0, cardinalize: bool = True) -> tuple[float, str]:
     """Get a tuple representing the relative time difference between two
     :class:`~datetime.datetime` objects or one
     :class:`~datetime.datetime` and now.
@@ -236,7 +239,7 @@ def decimal_relative_time(d, other=None, ndigits=0, cardinalize=True):
     return rounded_diff, bname
 
 
-def relative_time(d, other=None, ndigits=0):
+def relative_time(d: datetime, other: datetime | None = None, ndigits: int = 0) -> str:
     """Get a string representation of the difference between two
     :class:`~datetime.datetime` objects or one
     :class:`~datetime.datetime` and the current time. Handles past and
@@ -268,7 +271,7 @@ def relative_time(d, other=None, ndigits=0):
     return f'{abs(drt):g} {unit} {phrase}'
 
 
-def strpdate(string, format):
+def strpdate(string: str, format: str) -> date:
     """Parse the date string according to the format in `format`.  Returns a
     :class:`date` object.  Internally, :meth:`datetime.strptime` is used to
     parse the string and thus conversion specifiers for time fields (e.g. `%H`)
@@ -295,7 +298,7 @@ def strpdate(string, format):
     return whence.date()
 
 
-def daterange(start, stop, step=1, inclusive=False):
+def daterange(start: date, stop: date, step: int = 1, inclusive: bool = False) -> Generator[date]:
     """In the spirit of :func:`range` and :func:`xrange`, the `daterange`
     generator that yields a sequence of :class:`~datetime.date`
     objects, starting at *start*, incrementing by *step*, until *stop*
@@ -400,21 +403,21 @@ class ConstantTZInfo(tzinfo):
         name (str): Name of the timezone.
         offset (datetime.timedelta): Offset of the timezone.
     """
-    def __init__(self, name="ConstantTZ", offset=ZERO):
+    def __init__(self, name: str = "ConstantTZ", offset: timedelta = ZERO):
         self.name = name
         self.offset = offset
 
     @property
-    def utcoffset_hours(self):
+    def utcoffset_hours(self) -> float:
         return timedelta.total_seconds(self.offset) / (60 * 60)
 
-    def utcoffset(self, dt):
+    def utcoffset(self, dt: datetime | None) -> timedelta:
         return self.offset
 
-    def tzname(self, dt):
+    def tzname(self, dt: datetime | None) -> str:
         return self.name
 
-    def dst(self, dt):
+    def dst(self, dt: datetime | None) -> timedelta:
         return ZERO
 
     def __repr__(self):
@@ -446,23 +449,23 @@ class LocalTZInfo(tzinfo):
     if time.daylight:
         _dst_offset = timedelta(seconds=-time.altzone)
 
-    def is_dst(self, dt):
+    def is_dst(self, dt: datetime) -> bool:
         dt_t = (dt.year, dt.month, dt.day, dt.hour, dt.minute,
                 dt.second, dt.weekday(), 0, -1)
         local_t = time.localtime(time.mktime(dt_t))
         return local_t.tm_isdst > 0
 
-    def utcoffset(self, dt):
+    def utcoffset(self, dt: datetime) -> timedelta:
         if self.is_dst(dt):
             return self._dst_offset
         return self._std_offset
 
-    def dst(self, dt):
+    def dst(self, dt: datetime) -> timedelta:
         if self.is_dst(dt):
             return self._dst_offset - self._std_offset
         return ZERO
 
-    def tzname(self, dt):
+    def tzname(self, dt: datetime) -> str:
         return time.tzname[self.is_dst(dt)]
 
     def __repr__(self):
@@ -511,7 +514,7 @@ class USTimeZone(tzinfo):
     :data:`Eastern`, :data:`Central`, :data:`Mountain`, and
     :data:`Pacific` tzinfo types.
     """
-    def __init__(self, hours, reprname, stdname, dstname):
+    def __init__(self, hours: int, reprname: str, stdname: str, dstname: str):
         self.stdoffset = timedelta(hours=hours)
         self.reprname = reprname
         self.stdname = stdname
@@ -520,16 +523,16 @@ class USTimeZone(tzinfo):
     def __repr__(self):
         return self.reprname
 
-    def tzname(self, dt):
+    def tzname(self, dt: datetime | None) -> str:
         if self.dst(dt):
             return self.dstname
         else:
             return self.stdname
 
-    def utcoffset(self, dt):
+    def utcoffset(self, dt: datetime | None) -> timedelta:
         return self.stdoffset + self.dst(dt)
 
-    def dst(self, dt):
+    def dst(self, dt: datetime | None) -> timedelta:
         if dt is None or dt.tzinfo is None:
             # An exception may be sensible here, in one or both cases.
             # It depends on how you want to treat them.  The default

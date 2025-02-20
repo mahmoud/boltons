@@ -39,11 +39,23 @@ issues without compromising on the excellent complexity
 characteristics of Python's built-in set implementation.
 """
 
+from __future__ import annotations
 
-from bisect import bisect_left
-from collections.abc import MutableSet
-from itertools import chain, islice
 import operator
+from bisect import bisect_left
+from collections.abc import (
+    Collection,
+    Container,
+    Generator,
+    Iterator,
+    MutableSet,
+)
+from itertools import chain, islice
+import sys
+from typing import TYPE_CHECKING, TypeVar, overload, Iterable
+
+if TYPE_CHECKING:
+    from typing_extensions import Self, Literal, SupportsIndex
 
 try:
     from .typeutils import make_sentinel
@@ -64,6 +76,11 @@ _COMPACTION_FACTOR = 8
 # order of the 'other' inputs and put self last (to try and maintain
 # insertion order)
 
+_T_co = TypeVar("_T_co", covariant=True)
+if sys.version_info >= (3, 8):
+    from typing import Protocol
+    class _RSub(Iterable[_T_co], Protocol):
+        def __new__(cls: type[_RSub[_T_co]], __param: list[_T_co]) -> _RSub[_T_co]: ...
 
 class IndexedSet(MutableSet):
     """``IndexedSet`` is a :class:`collections.MutableSet` that maintains
@@ -108,7 +125,7 @@ class IndexedSet(MutableSet):
     Otherwise, the API strives to be as complete a union of the
     :class:`list` and :class:`set` APIs as possible.
     """
-    def __init__(self, other=None):
+    def __init__(self, other: Iterable | None = None):
         self.item_index_map = dict()
         self.item_list = []
         self.dead_indices = []
@@ -201,16 +218,16 @@ class IndexedSet(MutableSet):
         return
 
     # common operations (shared by set and list)
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self.item_index_map)
 
-    def __contains__(self, item):
+    def __contains__(self, item: object) -> bool:
         return item in self.item_index_map
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator:
         return (item for item in self.item_list if item is not _MISSING)
 
-    def __reversed__(self):
+    def __reversed__(self) -> Generator:
         item_list = self.item_list
         return (item for item in reversed(item_list) if item is not _MISSING)
 
@@ -226,18 +243,18 @@ class IndexedSet(MutableSet):
             return False
 
     @classmethod
-    def from_iterable(cls, it):
+    def from_iterable(cls, it: Iterable) -> Self:
         "from_iterable(it) -> create a set from an iterable"
         return cls(it)
 
     # set operations
-    def add(self, item):
+    def add(self, item) -> None:
         "add(item) -> add item to the set"
         if item not in self.item_index_map:
             self.item_index_map[item] = len(self.item_list)
             self.item_list.append(item)
 
-    def remove(self, item):
+    def remove(self, item) -> None:
         "remove(item) -> remove item from the set, raises if not present"
         try:
             didx = self.item_index_map.pop(item)
@@ -247,20 +264,20 @@ class IndexedSet(MutableSet):
         self._add_dead(didx)
         self._cull()
 
-    def discard(self, item):
+    def discard(self, item) -> None:
         "discard(item) -> discard item from the set (does not raise)"
         try:
             self.remove(item)
         except KeyError:
             pass
 
-    def clear(self):
+    def clear(self) -> None:
         "clear() -> empty the set"
         del self.item_list[:]
         del self.dead_indices[:]
         self.item_index_map.clear()
 
-    def isdisjoint(self, other):
+    def isdisjoint(self, other: Iterable) -> bool:
         "isdisjoint(other) -> return True if no overlap with other"
         iim = self.item_index_map
         for k in other:
@@ -268,7 +285,7 @@ class IndexedSet(MutableSet):
                 return False
         return True
 
-    def issubset(self, other):
+    def issubset(self, other: Collection) -> bool:
         "issubset(other) -> return True if other contains this set"
         if len(other) < len(self):
             return False
@@ -277,7 +294,7 @@ class IndexedSet(MutableSet):
                 return False
         return True
 
-    def issuperset(self, other):
+    def issuperset(self, other: Collection) -> bool:
         "issuperset(other) -> return True if set contains other"
         if len(other) > len(self):
             return False
@@ -287,11 +304,11 @@ class IndexedSet(MutableSet):
                 return False
         return True
 
-    def union(self, *others):
+    def union(self, *others) -> Self:
         "union(*others) -> return a new set containing this set and others"
         return self.from_iterable(chain(self, *others))
 
-    def iter_intersection(self, *others):
+    def iter_intersection(self, *others: Container) -> Generator:
         "iter_intersection(*others) -> iterate over elements also in others"
         for k in self:
             for other in others:
@@ -301,14 +318,14 @@ class IndexedSet(MutableSet):
                 yield k
         return
 
-    def intersection(self, *others):
+    def intersection(self, *others: Container) -> Self:
         "intersection(*others) -> get a set with overlap of this and others"
         if len(others) == 1:
             other = others[0]
             return self.from_iterable(k for k in self if k in other)
         return self.from_iterable(self.iter_intersection(*others))
 
-    def iter_difference(self, *others):
+    def iter_difference(self, *others: Iterable) -> Generator:
         "iter_difference(*others) -> iterate over elements not in others"
         for k in self:
             for other in others:
@@ -318,14 +335,14 @@ class IndexedSet(MutableSet):
                 yield k
         return
 
-    def difference(self, *others):
+    def difference(self, *others: Iterable) -> Self:
         "difference(*others) -> get a new set with elements not in others"
         if len(others) == 1:
             other = others[0]
             return self.from_iterable(k for k in self if k not in other)
         return self.from_iterable(self.iter_difference(*others))
 
-    def symmetric_difference(self, *others):
+    def symmetric_difference(self, *others: Container) -> Self:
         "symmetric_difference(*others) -> XOR set of this and others"
         ret = self.union(*others)
         return ret.difference(self.intersection(*others))
@@ -335,12 +352,12 @@ class IndexedSet(MutableSet):
     __sub__ = difference
     __xor__ = __rxor__ = symmetric_difference
 
-    def __rsub__(self, other):
+    def __rsub__(self, other: _RSub[_T_co]) -> _RSub[_T_co]:
         vals = [x for x in other if x not in self]
         return type(other)(vals)
 
     # in-place set operations
-    def update(self, *others):
+    def update(self, *others: Iterable) -> None:
         "update(*others) -> add values from one or more iterables"
         if not others:
             return  # raise?
@@ -351,19 +368,19 @@ class IndexedSet(MutableSet):
         for o in other:
             self.add(o)
 
-    def intersection_update(self, *others):
+    def intersection_update(self, *others: Iterable) -> None:
         "intersection_update(*others) -> discard self.difference(*others)"
         for val in self.difference(*others):
             self.discard(val)
 
-    def difference_update(self, *others):
+    def difference_update(self, *others: Container) -> None:
         "difference_update(*others) -> discard self.intersection(*others)"
         if self in others:
             self.clear()
         for val in self.intersection(*others):
             self.discard(val)
 
-    def symmetric_difference_update(self, other):  # note singular 'other'
+    def symmetric_difference_update(self, other: Iterable) -> None:  # note singular 'other'
         "symmetric_difference_update(other) -> in-place XOR with other"
         if self is other:
             self.clear()
@@ -389,7 +406,7 @@ class IndexedSet(MutableSet):
         self.symmetric_difference_update(*others)
         return self
 
-    def iter_slice(self, start, stop, step=None):
+    def iter_slice(self, start: int | None, stop: int | None, step: int | None = None) -> islice:
         "iterate over a slice of the set"
         iterable = self
         if start is not None:
@@ -402,7 +419,11 @@ class IndexedSet(MutableSet):
         return islice(iterable, start, stop, step)
 
     # list operations
-    def __getitem__(self, index):
+    @overload
+    def __getitem__(self, index: slice) -> Self: ...
+    @overload
+    def __getitem__(self, index: SupportsIndex): ...
+    def __getitem__(self, index: slice | SupportsIndex):
         try:
             start, stop, step = index.start, index.stop, index.step
         except AttributeError:
@@ -419,7 +440,7 @@ class IndexedSet(MutableSet):
             raise IndexError('IndexedSet index out of range')
         return ret
 
-    def pop(self, index=None):
+    def pop(self, index: int | None = None):
         "pop(index) -> remove the item at a given index (-1 by default)"
         item_index_map = self.item_index_map
         len_self = len(item_index_map)
@@ -435,13 +456,13 @@ class IndexedSet(MutableSet):
         self._cull()
         return ret
 
-    def count(self, val):
+    def count(self, val) -> Literal[0, 1]:
         "count(val) -> count number of instances of value (0 or 1)"
         if val in self.item_index_map:
             return 1
         return 0
 
-    def reverse(self):
+    def reverse(self) -> None:
         "reverse() -> reverse the contents of the set in-place"
         reversed_list = list(reversed(self))
         self.item_list[:] = reversed_list
@@ -449,7 +470,7 @@ class IndexedSet(MutableSet):
             self.item_index_map[item] = i
         del self.dead_indices[:]
 
-    def sort(self, **kwargs):
+    def sort(self, **kwargs) -> None:
         "sort() -> sort the contents of the set in-place"
         sorted_list = sorted(self, **kwargs)
         if sorted_list == self.item_list:
@@ -459,7 +480,7 @@ class IndexedSet(MutableSet):
             self.item_index_map[item] = i
         del self.dead_indices[:]
 
-    def index(self, val):
+    def index(self, val) -> int:
         "index(val) -> get the index of a value, raises if not present"
         try:
             return self._get_apparent_index(self.item_index_map[val])
@@ -468,7 +489,7 @@ class IndexedSet(MutableSet):
             raise ValueError(f'{val!r} is not in {cn}')
 
 
-def complement(wrapped):
+def complement(wrapped: Iterable) -> _ComplementSet:
     """Given a :class:`set`, convert it to a **complement set**.
 
     Whereas a :class:`set` keeps track of what it contains, a
@@ -583,7 +604,7 @@ class _ComplementSet:
     """
     __slots__ = ('_included', '_excluded')
 
-    def __init__(self, included=None, excluded=None):
+    def __init__(self, included: set | frozenset | None = None, excluded: set | frozenset | None = None):
         if included is None:
             assert type(excluded) in (set, frozenset)
         elif excluded is None:
@@ -597,7 +618,7 @@ class _ComplementSet:
             return f'complement({repr(self._excluded)})'
         return f'complement(complement({repr(self._included)}))'
 
-    def complemented(self):
+    def complemented(self) -> _ComplementSet:
         '''return a complement of the current set'''
         if type(self._included) is frozenset or type(self._excluded) is frozenset:
             return _ComplementSet(included=self._excluded, excluded=self._included)
@@ -607,23 +628,23 @@ class _ComplementSet:
 
     __invert__ = complemented
 
-    def complement(self):
+    def complement(self) -> None:
         '''convert the current set to its complement in-place'''
         self._included, self._excluded = self._excluded, self._included
 
-    def __contains__(self, item):
+    def __contains__(self, item) -> bool:
         if self._included is None:
-            return not item in self._excluded
+            return item not in self._excluded
         return item in self._included
 
-    def add(self, item):
+    def add(self, item) -> None:
         if self._included is None:
             if item in self._excluded:
                 self._excluded.remove(item)
         else:
             self._included.add(item)
 
-    def remove(self, item):
+    def remove(self, item) -> None:
         if self._included is None:
             self._excluded.add(item)
         else:
@@ -634,13 +655,13 @@ class _ComplementSet:
             raise NotImplementedError  # self.missing.add(random.choice(gc.objects()))
         return self._included.pop()
 
-    def intersection(self, other):
+    def intersection(self, other: set | frozenset | _ComplementSet) -> _ComplementSet:
         try:
             return self & other
         except NotImplementedError:
             raise TypeError('argument must be another set or complement(set)')
 
-    def __and__(self, other):
+    def __and__(self, other: set | frozenset | _ComplementSet) -> _ComplementSet:
         inc, exc = _norm_args_notimplemented(other)
         if inc is NotImplemented:
             return NotImplemented
@@ -657,7 +678,7 @@ class _ComplementSet:
 
     __rand__ = __and__
 
-    def __iand__(self, other):
+    def __iand__(self, other: set | frozenset | _ComplementSet) -> Self:
         inc, exc = _norm_args_notimplemented(other)
         if inc is NotImplemented:
             return NotImplemented
@@ -674,13 +695,13 @@ class _ComplementSet:
                 self._included &= inc
         return self
 
-    def union(self, other):
+    def union(self, other: set | frozenset | _ComplementSet) -> _ComplementSet:
         try:
             return self | other
         except NotImplementedError:
             raise TypeError('argument must be another set or complement(set)')
 
-    def __or__(self, other):
+    def __or__(self, other: set | frozenset | _ComplementSet) -> _ComplementSet:
         inc, exc = _norm_args_notimplemented(other)
         if inc is NotImplemented:
             return NotImplemented
@@ -697,7 +718,7 @@ class _ComplementSet:
 
     __ror__ = __or__
 
-    def __ior__(self, other):
+    def __ior__(self, other: set | frozenset | _ComplementSet) -> Self:
         inc, exc = _norm_args_notimplemented(other)
         if inc is NotImplemented:
             return NotImplemented
@@ -713,7 +734,7 @@ class _ComplementSet:
                 self._included |= inc
         return self
 
-    def update(self, items):
+    def update(self, items: Iterable) -> None:
         if type(items) in (set, frozenset):
             inc, exc = items, None
         elif type(items) is _ComplementSet:
@@ -732,7 +753,7 @@ class _ComplementSet:
             else:  # + +
                 self._included.update(inc)
 
-    def discard(self, items):
+    def discard(self, items: Iterable) -> None:
         if type(items) in (set, frozenset):
             inc, exc = items, None
         elif type(items) is _ComplementSet:
@@ -750,13 +771,13 @@ class _ComplementSet:
             else:  # + +
                 self._included.discard(inc)
 
-    def symmetric_difference(self, other):
+    def symmetric_difference(self, other: set | frozenset | _ComplementSet) -> _ComplementSet:
         try:
             return self ^ other
         except NotImplementedError:
             raise TypeError('argument must be another set or complement(set)')
 
-    def __xor__(self, other):
+    def __xor__(self, other: set | frozenset | _ComplementSet) -> _ComplementSet:
         inc, exc = _norm_args_notimplemented(other)
         if inc is NotImplemented:
             return NotImplemented
@@ -775,7 +796,7 @@ class _ComplementSet:
 
     __rxor__ = __xor__
 
-    def symmetric_difference_update(self, other):
+    def symmetric_difference_update(self, other: set | frozenset | _ComplementSet) -> None:
         inc, exc = _norm_args_typeerror(other)
         if self._included is None:
             if exc is None:  # - +
@@ -790,7 +811,7 @@ class _ComplementSet:
             else:  # + +
                 self._included.symmetric_difference_update(inc)
 
-    def isdisjoint(self, other):
+    def isdisjoint(self, other: set | frozenset | _ComplementSet) ->  bool:
         inc, exc = _norm_args_typeerror(other)
         if inc is NotImplemented:
             return NotImplemented
@@ -805,14 +826,14 @@ class _ComplementSet:
             else:  # + +
                 return self._included.isdisjoint(inc)
 
-    def issubset(self, other):
+    def issubset(self, other: set | frozenset | _ComplementSet) -> bool:
         '''everything missing from other is also missing from self'''
         try:
             return self <= other
         except NotImplementedError:
             raise TypeError('argument must be another set or complement(set)')
 
-    def __le__(self, other):
+    def __le__(self, other: set | frozenset | _ComplementSet) -> bool:
         inc, exc = _norm_args_notimplemented(other)
         if inc is NotImplemented:
             return NotImplemented
@@ -829,7 +850,7 @@ class _ComplementSet:
             else:  # + +
                 return self._included.issubset(inc)
 
-    def __lt__(self, other):
+    def __lt__(self, other: set | frozenset | _ComplementSet) -> bool:
         inc, exc = _norm_args_notimplemented(other)
         if inc is NotImplemented:
             return NotImplemented
@@ -846,14 +867,14 @@ class _ComplementSet:
             else:  # + +
                 return self._included < inc
 
-    def issuperset(self, other):
+    def issuperset(self, other: set | frozenset | _ComplementSet) -> bool:
         '''everything missing from self is also missing from super'''
         try:
             return self >= other
         except NotImplementedError:
             raise TypeError('argument must be another set or complement(set)')
 
-    def __ge__(self, other):
+    def __ge__(self, other: set | frozenset | _ComplementSet) -> bool:
         inc, exc = _norm_args_notimplemented(other)
         if inc is NotImplemented:
             return NotImplemented
@@ -868,7 +889,7 @@ class _ComplementSet:
             else:  # + +
                 return self._included.issupserset(inc)
 
-    def __gt__(self, other):
+    def __gt__(self, other: set | frozenset | _ComplementSet) -> bool:
         inc, exc = _norm_args_notimplemented(other)
         if inc is NotImplemented:
             return NotImplemented
@@ -883,13 +904,13 @@ class _ComplementSet:
             else:  # + +
                 return self._included > inc
 
-    def difference(self, other):
+    def difference(self, other: set | frozenset | _ComplementSet) -> _ComplementSet:
         try:
             return self - other
         except NotImplementedError:
             raise TypeError('argument must be another set or complement(set)')
 
-    def __sub__(self, other):
+    def __sub__(self, other: set | frozenset | _ComplementSet) -> _ComplementSet:
         inc, exc = _norm_args_notimplemented(other)
         if inc is NotImplemented:
             return NotImplemented
@@ -904,7 +925,7 @@ class _ComplementSet:
             else:  # + +
                 return _ComplementSet(included=self._included.difference(inc))
 
-    def __rsub__(self, other):
+    def __rsub__(self, other: set | frozenset | _ComplementSet) -> _ComplementSet:
         inc, exc = _norm_args_notimplemented(other)
         if inc is NotImplemented:
             return NotImplemented
@@ -920,13 +941,13 @@ class _ComplementSet:
             else:  # + +
                 return _ComplementSet(included=inc.difference(self._included))
 
-    def difference_update(self, other):
+    def difference_update(self, other: set | frozenset | _ComplementSet) -> None:
         try:
             self -= other
         except NotImplementedError:
             raise TypeError('argument must be another set or complement(set)')
 
-    def __isub__(self, other):
+    def __isub__(self, other: set | frozenset | _ComplementSet) -> Self:
         inc, exc = _norm_args_notimplemented(other)
         if inc is NotImplemented:
             return NotImplemented
@@ -952,17 +973,17 @@ class _ComplementSet:
     def __hash__(self):
         return hash(self._included) ^ hash(self._excluded)
 
-    def __len__(self):
+    def __len__(self) -> int:
         if self._included is not None:
             return len(self._included)
         raise NotImplementedError('complemented sets have undefined length')
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator:
         if self._included is not None:
             return iter(self._included)
         raise NotImplementedError('complemented sets have undefined contents')
 
-    def __bool__(self):
+    def __bool__(self) -> bool:
         if self._included is not None:
             return bool(self._included)
         return True

@@ -38,16 +38,24 @@ For utilities for working with iterables and lists, check out
 :class:`collections.namedtuple`, check out :mod:`namedutils`.
 """
 
+from __future__ import annotations
 
+from collections.abc import Iterable
 import operator
 from math import log as math_log
 from itertools import chain, islice
+from typing import TYPE_CHECKING, List, TypeVar
+
+if TYPE_CHECKING:
+    from typing_extensions import Self, SupportsIndex
 
 try:
     from .typeutils import make_sentinel
     _MISSING = make_sentinel(var_name='_MISSING')
 except ImportError:
     _MISSING = object()
+
+_T = TypeVar("_T")
 
 # TODO: expose splaylist?
 __all__ = ['BList', 'BarrelList']
@@ -57,7 +65,7 @@ __all__ = ['BList', 'BarrelList']
 # TODO: keep track of list lengths and bisect to the right list for
 # faster getitem (and slightly slower setitem and delitem ops)
 
-class BarrelList(list):
+class BarrelList(List[_T]):
     """The ``BarrelList`` is a :class:`list` subtype backed by many
     dynamically-scaled sublists, to provide better scaling and random
     insertion/deletion characteristics. It is a subtype of the builtin
@@ -95,8 +103,8 @@ class BarrelList(list):
     _size_factor = 1520
     "This size factor is the result of tuning using the tune() function below."
 
-    def __init__(self, iterable=None):
-        self.lists = [[]]
+    def __init__(self, iterable: Iterable[_T] | None = None):
+        self.lists: list[list[_T]] = [[]]
         if iterable:
             self.extend(iterable)
 
@@ -132,7 +140,7 @@ class BarrelList(list):
             return True
         return False
 
-    def insert(self, index, item):
+    def insert(self, index: SupportsIndex, item: _T) -> None:
         if len(self.lists) == 1:
             self.lists[0].insert(index, item)
             self._balance_list(0)
@@ -144,13 +152,13 @@ class BarrelList(list):
             self._balance_list(list_idx)
         return
 
-    def append(self, item):
+    def append(self, item: _T) -> None:
         self.lists[-1].append(item)
 
-    def extend(self, iterable):
+    def extend(self, iterable: Iterable[_T]) -> None:
         self.lists[-1].extend(iterable)
 
-    def pop(self, *a):
+    def pop(self, *a) -> _T:
         lists = self.lists
         if len(lists) == 1 and not a:
             return self.lists[0].pop()
@@ -167,7 +175,7 @@ class BarrelList(list):
             self._balance_list(list_idx)
         return ret
 
-    def iter_slice(self, start, stop, step=None):
+    def iter_slice(self, start: int | None, stop: int | None, step: int | None = None) -> islice[_T]:
         iterable = self  # TODO: optimization opportunities abound
         # start_list_idx, stop_list_idx = 0, len(self.lists)
         if start is None:
@@ -186,7 +194,7 @@ class BarrelList(list):
             # stop_list_idx, stop_rel_idx = self._translate_index(stop)
         return islice(iterable, start, stop, step)
 
-    def del_slice(self, start, stop, step=None):
+    def del_slice(self, start: int | None, stop: int | None, step: int | None = None) -> None:
         if step is not None and abs(step) > 1:  # punt
             new_list = chain(self.iter_slice(0, start, step),
                              self.iter_slice(stop, None, step))
@@ -217,7 +225,7 @@ class BarrelList(list):
     __delslice__ = del_slice
 
     @classmethod
-    def from_iterable(cls, it):
+    def from_iterable(cls, it: Iterable[_T]) -> Self:
         return cls(it)
 
     def __iter__(self):
@@ -281,11 +289,11 @@ class BarrelList(list):
             raise IndexError()
         self.lists[list_idx][rel_idx] = item
 
-    def __getslice__(self, start, stop):
+    def __getslice__(self, start: int, stop: int):
         iter_slice = self.iter_slice(start, stop, 1)
         return self.from_iterable(iter_slice)
 
-    def __setslice__(self, start, stop, sequence):
+    def __setslice__(self, start: SupportsIndex, stop: SupportsIndex, sequence: Iterable[_T]) -> None:
         if len(self.lists) == 1:
             self.lists[0][start:stop] = sequence
         else:
@@ -298,7 +306,7 @@ class BarrelList(list):
     def __repr__(self):
         return f'{self.__class__.__name__}({list(self)!r})'
 
-    def sort(self):
+    def sort(self) -> None:
         # poor pythonist's mergesort, it's faster than sorted(self)
         # when the lists' average length is greater than 512.
         if len(self.lists) == 1:
@@ -311,12 +319,12 @@ class BarrelList(list):
             self.lists[0] = tmp_sorted
             self._balance_list(0)
 
-    def reverse(self):
+    def reverse(self) -> None:
         for cur in self.lists:
             cur.reverse()
         self.lists.reverse()
 
-    def count(self, item):
+    def count(self, item: _T) -> int:
         return sum([cur.count(item) for cur in self.lists])
 
     def index(self, item):
@@ -333,18 +341,19 @@ class BarrelList(list):
 BList = BarrelList
 
 
-class SplayList(list):
+class SplayList(List[_T]):
     """Like a `splay tree`_, the SplayList facilitates moving higher
     utility items closer to the front of the list for faster access.
 
     .. _splay tree: https://en.wikipedia.org/wiki/Splay_tree
     """
 
-    def shift(self, item_index, dest_index=0):
+    def shift(self, item_index: SupportsIndex, dest_index: SupportsIndex = 0) -> None:
         if item_index == dest_index:
             return
         item = self.pop(item_index)
         self.insert(dest_index, item)
 
-    def swap(self, item_index, dest_index):
+    def swap(self, item_index: SupportsIndex, dest_index: SupportsIndex) -> None:
+        self.__getitem__
         self[dest_index], self[item_index] = self[item_index], self[dest_index]
