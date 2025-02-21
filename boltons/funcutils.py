@@ -281,7 +281,7 @@ class CachedInstancePartial(functools.partial):
     def __partialmethod__(self):
         return functools.partialmethod(self.func, *self.args, **self.keywords)
 
-    def __set_name__(self, obj_type, name):
+    def __set_name__(self, obj_type, name) -> None:
         self.__name__ = name
 
     def __get__(self, obj, obj_type):

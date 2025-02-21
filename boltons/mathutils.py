@@ -32,12 +32,16 @@
 built-in :mod:`math` module.
 """
 
+from __future__ import annotations
+
+from collections.abc import Iterable
 from math import ceil as _ceil, floor as _floor
 import bisect
 import binascii
+from typing import overload
 
 
-def clamp(x, lower=float('-inf'), upper=float('inf')):
+def clamp(x: float, lower: float = float('-inf'), upper: float = float('inf')) -> float:
     """Limit a value to a given range.
 
     Args:
@@ -68,8 +72,11 @@ def clamp(x, lower=float('-inf'), upper=float('inf')):
                          % (upper, lower))
     return min(max(x, lower), upper)
 
-
-def ceil(x, options=None):
+@overload
+def ceil(x: float, options: None = None) -> int: ...
+@overload
+def ceil(x: float, options: Iterable[float]) -> float: ...
+def ceil(x: float, options: Iterable[float] | None = None) -> float:
     """Return the ceiling of *x*. If *options* is set, return the smallest
     integer or float from *options* that is greater than or equal to
     *x*.
@@ -94,7 +101,11 @@ def ceil(x, options=None):
     return options[i]
 
 
-def floor(x, options=None):
+@overload
+def floor(x: float, options: None = None) -> int: ...
+@overload
+def floor(x: float, options: Iterable[float]) -> float: ...
+def floor(x: float, options: Iterable[float] | None = None) -> float:
     """Return the floor of *x*. If *options* is set, return the largest
     integer or float from *options* that is less than or equal to
     *x*.
@@ -137,7 +148,7 @@ class Bits:
     '''
     __slots__ = ('val', 'len')
 
-    def __init__(self, val=0, len_=None):
+    def __init__(self, val: int | list[bool] | bytes | str = 0, len_: int | None = None):
         if type(val) is not int:
             if type(val) is list:
                 val = ''.join(['1' if e else '0' for e in val])
@@ -166,7 +177,7 @@ class Bits:
         self.val = val  # data is stored internally as integer
         self.len = len_
 
-    def __getitem__(self, k):
+    def __getitem__(self, k) -> Bits | bool:
         if type(k) is slice:
             return Bits(self.as_bin()[k])
         if type(k) is int:
@@ -175,49 +186,49 @@ class Bits:
             return bool((1 << (self.len - k - 1)) & self.val)
         raise TypeError(type(k))
 
-    def __len__(self):
+    def __len__(self) -> int:
         return self.len
 
-    def __eq__(self, other):
+    def __eq__(self, other) -> bool:
         if type(self) is not type(other):
             return NotImplemented
         return self.val == other.val and self.len == other.len
 
-    def __or__(self, other):
+    def __or__(self, other: Bits) -> Bits:
         if type(self) is not type(other):
             return NotImplemented
         return Bits(self.val | other.val, max(self.len, other.len))
 
-    def __and__(self, other):
+    def __and__(self, other: Bits) -> Bits:
         if type(self) is not type(other):
             return NotImplemented
         return Bits(self.val & other.val, max(self.len, other.len))
 
-    def __lshift__(self, other):
+    def __lshift__(self, other: int) -> Bits:
         return Bits(self.val << other, self.len + other)
 
-    def __rshift__(self, other):
+    def __rshift__(self, other: int) -> Bits:
         return Bits(self.val >> other, self.len - other)
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash(self.val)
 
-    def as_list(self):
+    def as_list(self) -> list[bool]:
         return [c == '1' for c in self.as_bin()]
 
-    def as_bin(self):
+    def as_bin(self) -> str:
         return f'{{0:0{self.len}b}}'.format(self.val)
 
-    def as_hex(self):
+    def as_hex(self) -> str:
         # make template to pad out to number of bytes necessary to represent bits
         tmpl = f'%0{2 * (self.len // 8 + ((self.len % 8) != 0))}X'
         ret = tmpl % self.val
         return ret
 
-    def as_int(self):
+    def as_int(self) -> int:
         return self.val
 
-    def as_bytes(self):
+    def as_bytes(self) -> bytes:
         return binascii.unhexlify(self.as_hex())
 
     @classmethod
@@ -237,7 +248,7 @@ class Bits:
         return cls(hex)
 
     @classmethod
-    def from_int(cls, int_, len_=None):
+    def from_int(cls, int_, len_: int | None = None):
         return cls(int_, len_)
 
     @classmethod

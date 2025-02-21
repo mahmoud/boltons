@@ -34,9 +34,15 @@ mailboxes. Credit to Mark Williams for these.
 .. _mbox: https://en.wikipedia.org/wiki/Mbox
 """
 
+from __future__ import annotations
+
+from collections.abc import Callable
 import mailbox
 import tempfile
+from typing import IO, TYPE_CHECKING
 
+if TYPE_CHECKING:
+    from _typeshed import StrPath
 
 DEFAULT_MAXMEM = 4 * 1024 * 1024  # 4MB
 
@@ -67,11 +73,11 @@ class mbox_readonlydir(mailbox.mbox):
 
     .. _Heirloom mailx: http://heirloom.sourceforge.net/mailx.html
     """
-    def __init__(self, path, factory=None, create=True, maxmem=1024 * 1024):
+    def __init__(self, path: StrPath, factory: Callable[[IO], mailbox.mboxMessage] | None = None, create: bool = True, maxmem: int = 1024 * 1024):
         mailbox.mbox.__init__(self, path, factory, create)
         self.maxmem = maxmem
 
-    def flush(self):
+    def flush(self) -> None:
         """Write any pending changes to disk. This is called on mailbox
         close and is usually not called explicitly.
 

@@ -58,14 +58,18 @@ further.
 """
 # TODO: type survey
 
+from __future__ import annotations
 
 import gc
 import sys
+from typing import TypeVar
+
+_T = TypeVar("_T")
 
 __all__ = ['get_all', 'GCToggler', 'toggle_gc', 'toggle_gc_postcollect']
 
 
-def get_all(type_obj, include_subtypes=True):
+def get_all(type_obj: type[_T], include_subtypes: bool = True) -> list[_T]:
     """Get a list containing all instances of a given type.  This will
     work for the vast majority of types out there.
 
@@ -142,13 +146,13 @@ class GCToggler:
     Between those two instances, the ``GCToggler`` type probably won't
     be used much directly, but is documented for inheritance purposes.
     """
-    def __init__(self, postcollect=False):
+    def __init__(self, postcollect: bool = False):
         self.postcollect = postcollect
 
-    def __enter__(self):
+    def __enter__(self) -> None:
         gc.disable()
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
+    def __exit__(self, exc_type, exc_val, exc_tb) -> None:
         gc.enable()
         if self.postcollect:
             gc.collect()
