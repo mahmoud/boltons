@@ -1,5 +1,5 @@
 coverage==7.2.7
-mypy[faster-cache]==1.14.1; python_version >= "3.8" # mypy isn't tested on 3.7
+mypy[faster-cache]==1.14.1; implementation_name != "pypy"; python_version >= "3.8" # mypy isn't tested on 3.7
 pytest==7.4.4; python_version < "3.8"
 pytest==8.3.4; python_version >= "3.8"
 pytest-cov==4.1.0
