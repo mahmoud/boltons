@@ -49,4 +49,4 @@ jobs:
           path: ${{ steps.pip-cache.outputs.dir }}
           key: pip|${{ runner.os }}|${{ matrix.python }}|${{ hashFiles('pyproject.toml') }}|${{ hashFiles('requirements/*.txt') }}
       - run: pip install tox
-      - run: tox -e ${{ matrix.tox }}
+      - run: tox -e ${{ matrix.tox }},mypy

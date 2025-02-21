@@ -616,11 +616,11 @@ def cachedmethod(cache: Mapping | Callable, scoped: bool = True, typed: bool = F
             values to be used as the key in the cache.
 
     >>> class Lowerer(object):
-    ...     def __init__(self):
+    ...     def __init__(self) -> None:
     ...         self.cache = LRI()
     ...
     ...     @cachedmethod('cache')
-    ...     def lower(self, text):
+    ...     def lower(self, text) -> str:
     ...         return text.lower()
     ...
     >>> lowerer = Lowerer()
@@ -850,9 +850,9 @@ class MinIDMap(Generic[_KT]):
 
     Based on https://gist.github.com/kurtbrose/25b48114de216a5e55df
     """
-    def __init__(self):
-        self.mapping: weakref.WeakKeyDictionary[_KT, int] = weakref.WeakKeyDictionary()
-        self.ref_map: dict[_T, int] = {}
+    def __init__(self) -> None:
+        self.mapping: weakref.WeakKeyDictionary[_KT, tuple[int, weakref.ReferenceType[_KT]]] = weakref.WeakKeyDictionary()
+        self.ref_map: dict[weakref.ReferenceType[_KT], int] = {}
         self.free: list[int] = []
 
     def get(self, a: _KT) -> int:

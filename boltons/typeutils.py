@@ -75,7 +75,7 @@ def make_sentinel(name: str = "_MISSING", var_name: str | None = None) -> object
 
     """
     class Sentinel:
-        def __init__(self):
+        def __init__(self) -> None:
             self.name = name
             self.var_name = var_name
 

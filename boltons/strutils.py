@@ -578,7 +578,7 @@ def bytes2human(nbytes: int, ndigits: int = 0) -> str:
 
 
 class HTMLTextExtractor(HTMLParser):
-    def __init__(self):
+    def __init__(self) -> None:
         self.reset()
         self.strict = False
         self.convert_charrefs = True

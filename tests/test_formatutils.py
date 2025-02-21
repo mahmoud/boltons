@@ -1,5 +1,5 @@
 import re
-from collections import namedtuple
+from typing import NamedTuple, Tuple
 
 from boltons.formatutils import (get_format_args,
                                  split_format_str,
@@ -7,8 +7,11 @@ from boltons.formatutils import (get_format_args,
                                  infer_positional_format_args,
                                  DeferredValue as DV)
 
-
-PFAT = namedtuple("PositionalFormatArgTest", "fstr arg_vals res")
+class PFAT(NamedTuple):
+    fstr: str
+    arg_vals: Tuple[object, ...]
+    res: str
+PFAT.__name__ = "PositionalFormatArgTest"
 
 _PFATS = [PFAT('{} {} {}', ('hi', 'hello', 'bye'), "hi hello bye"),
           PFAT('{:d} {}', (1, 2), "1 2"),
