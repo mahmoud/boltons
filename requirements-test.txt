@@ -1,5 +1,6 @@
 coverage==7.2.7
-mypy==1.8.0
+mypy==1.4.1; python_version < "3.8"
+mypy[faster-cache]==1.14.1; python_version >= "3.8" # Last mypy version to run on Python 3.8
 pytest==7.4.4; python_version < "3.8"
 pytest==8.3.4; python_version >= "3.8"
 pytest-cov==4.1.0
