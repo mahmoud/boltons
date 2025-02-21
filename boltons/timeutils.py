@@ -298,7 +298,7 @@ def strpdate(string: str, format: str) -> date:
     return whence.date()
 
 
-def daterange(start: date, stop: date, step: int = 1, inclusive: bool = False) -> Generator[date]:
+def daterange(start: date, stop: date, step: int = 1, inclusive: bool = False) -> Generator[date, None, None]:
     """In the spirit of :func:`range` and :func:`xrange`, the `daterange`
     generator that yields a sequence of :class:`~datetime.date`
     objects, starting at *start*, incrementing by *step*, until *stop*

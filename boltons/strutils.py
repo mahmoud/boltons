@@ -666,7 +666,7 @@ _line_ending_re = re.compile(r'(\r\n|\n|\x0b|\f|\r|\x85|\x2028|\x2029)',
                              re.UNICODE)
 
 
-def iter_splitlines(text: str) -> Generator[str]:
+def iter_splitlines(text: str) -> Generator[str, None, None]:
     r"""Like :meth:`str.splitlines`, but returns an iterator of lines
     instead of a list. Also similar to :meth:`file.next`, as that also
     lazily reads and yields lines from a file.

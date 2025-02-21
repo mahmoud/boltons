@@ -498,7 +498,7 @@ class AtomicSaver:
         return
 
 
-def iter_find_files(directory: str, patterns: str | Iterable[str], ignored: str | Iterable[str] | None = None, include_dirs: bool = False, max_depth: int | None = None) -> Generator[str]:
+def iter_find_files(directory: str, patterns: str | Iterable[str], ignored: str | Iterable[str] | None = None, include_dirs: bool = False, max_depth: int | None = None) -> Generator[str, None, None]:
     """Returns a generator that yields file paths under a *directory*,
     matching *patterns* using `glob`_ syntax (e.g., ``*.txt``). Also
     supports *ignored* patterns.

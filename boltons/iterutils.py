@@ -359,7 +359,7 @@ def chunked_iter(src, size, **kw) -> Generator:
     return
 
 
-def chunk_ranges(input_size: int, chunk_size: int, input_offset: int = 0, overlap_size: int = 0, align: bool = False) -> Generator[tuple[int, int]]:
+def chunk_ranges(input_size: int, chunk_size: int, input_offset: int = 0, overlap_size: int = 0, align: bool = False) -> Generator[tuple[int, int], None, None]:
     """Generates *chunk_size*-sized chunk ranges for an input with length *input_size*.
     Optionally, a start of the input can be set via *input_offset*, and
     and overlap between the chunks may be specified via *overlap_size*.
@@ -1315,7 +1315,7 @@ def get_path(root, path, default=_UNSET):
                 cur = cur[seg]
             except (KeyError, IndexError) as exc:
                 raise PathAccessError(exc, seg, path)
-            except TypeError as exc:
+            except TypeError:
                 # either string index in a list, or a parent that
                 # doesn't support indexing
                 try:

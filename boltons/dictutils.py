@@ -462,7 +462,7 @@ class OrderedMultiDict(Dict[_KT, _VT]):
             cell[PREV][NEXT], cell[NEXT][PREV] = cell[NEXT], cell[PREV]
         del self._map[k]
 
-    def iteritems(self, multi: bool = False) -> Generator[tuple[_KT, _VT]]:
+    def iteritems(self, multi: bool = False) -> Generator[tuple[_KT, _VT], None, None]:
         """Iterate over the OMD's items in insertion order. By default,
         yields only the most-recently inserted value for each key. Set
         *multi* to ``True`` to get all inserted items.
@@ -477,7 +477,7 @@ class OrderedMultiDict(Dict[_KT, _VT]):
             for key in self.iterkeys():
                 yield key, self[key]
 
-    def iterkeys(self, multi: bool = False) -> Generator[_KT]:
+    def iterkeys(self, multi: bool = False) -> Generator[_KT, None, None]:
         """Iterate over the OMD's keys in insertion order. By default, yields
         each key once, according to the most recent insertion. Set
         *multi* to ``True`` to get all keys, including duplicates, in
@@ -499,7 +499,7 @@ class OrderedMultiDict(Dict[_KT, _VT]):
                     yield k
                 curr = curr[NEXT]
 
-    def itervalues(self, multi: bool = False) -> Generator[_VT]:
+    def itervalues(self, multi: bool = False) -> Generator[_VT, None, None]:
         """Iterate over the OMD's values in insertion order. By default,
         yields the most-recently inserted value per unique key.  Set
         *multi* to ``True`` to get all values according to insertion
@@ -742,7 +742,7 @@ class FastIterOrderedMultiDict(OrderedMultiDict[_KT, _VT]):
             cell[PREV][NEXT], cell[NEXT][PREV] = cell[NEXT], cell[PREV]
         cell[PREV][SNEXT] = cell[SNEXT]
 
-    def iteritems(self, multi: bool = False) -> Generator[tuple[_KT, _VT]]:
+    def iteritems(self, multi: bool = False) -> Generator[tuple[_KT, _VT], None, None]:
         next_link = NEXT if multi else SNEXT
         root = self.root
         curr = root[next_link]
@@ -750,7 +750,7 @@ class FastIterOrderedMultiDict(OrderedMultiDict[_KT, _VT]):
             yield curr[KEY], curr[VALUE]
             curr = curr[next_link]
 
-    def iterkeys(self, multi: bool = False) -> Generator[_KT]:
+    def iterkeys(self, multi: bool = False) -> Generator[_KT, None, None]:
         next_link = NEXT if multi else SNEXT
         root = self.root
         curr = root[next_link]
@@ -1017,7 +1017,7 @@ class ManyToMany(Dict[_KT, FrozenSet[_VT]]):
             revset.remove(key)
             revset.add(newkey)
 
-    def iteritems(self) -> Generator[tuple[_KT, _VT]]:
+    def iteritems(self) -> Generator[tuple[_KT, _VT], None, None]:
         for key in self.data:
             for val in self.data[key]:
                 yield key, val

@@ -798,7 +798,7 @@ class ThresholdCounter(Generic[_KT]):
     def keys(self) -> list[_KT]:
         return list(self.iterkeys())
 
-    def itervalues(self) -> Generator[int]:
+    def itervalues(self) -> Generator[int, None, None]:
         count_map = self._count_map
         for k in count_map:
             yield count_map[k][0]
@@ -806,7 +806,7 @@ class ThresholdCounter(Generic[_KT]):
     def values(self) -> list[int]:
         return list(self.itervalues())
 
-    def iteritems(self) -> Generator[tuple[_KT, int]]:
+    def iteritems(self) -> Generator[tuple[_KT, int], None, None]:
         count_map = self._count_map
         for k in count_map:
             yield (k, count_map[k][0])
