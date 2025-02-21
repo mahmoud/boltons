@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import TYPE_CHECKING
 from boltons.statsutils import Stats
 
@@ -27,7 +29,7 @@ LAYER_RANGE_DATA = (list(range(100))
                     + list(range(20, 80))
                     + list(range(40, 60)))
 
-EMPTY_DATA: "list[Never]" = []
+EMPTY_DATA: list[Never] = []
 
 ALL_DATASETS = [EMPTY_DATA, LAYER_RANGE_DATA, SIMPLE_RANGE_DATA, NORM_DATA]
 
