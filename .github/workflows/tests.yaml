@@ -18,14 +18,14 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - { name: Linux, python: "3.13", os: ubuntu-latest, tox: py313 }
           - { name: Windows, python: "3.13", os: windows-latest, tox: py313 }
           - { name: Mac, python: "3.13", os: macos-latest, tox: py313 }
-          - { name: "3.12", python: "3.12", os: ubuntu-latest, tox: py312 }
-          - { name: "3.11", python: "3.11", os: ubuntu-latest, tox: py311 }
-          - { name: "3.10", python: "3.10", os: ubuntu-latest, tox: py310 }
-          - { name: "3.9", python: "3.9", os: ubuntu-latest, tox: py39 }
-          - { name: "3.8", python: "3.8", os: ubuntu-latest, tox: py38 }
+          - { name: Linux, python: "3.13", os: ubuntu-latest, tox: "py313,mypy" }
+          - { name: "3.12", python: "3.12", os: ubuntu-latest, tox: "py312,mypy" }
+          - { name: "3.11", python: "3.11", os: ubuntu-latest, tox: "py311,mypy" }
+          - { name: "3.10", python: "3.10", os: ubuntu-latest, tox: "py310,mypy" }
+          - { name: "3.9", python: "3.9", os: ubuntu-latest, tox: "py39,mypy" }
+          - { name: "3.8", python: "3.8", os: ubuntu-latest, tox: "py38,mypy" }
           - { name: "3.7", python: "3.7", os: ubuntu-22.04, tox: py37 }
           - { name: "PyPy3", python: "pypy-3.9", os: ubuntu-latest, tox: pypy3 }
     steps:
@@ -49,4 +49,4 @@ jobs:
           path: ${{ steps.pip-cache.outputs.dir }}
           key: pip|${{ runner.os }}|${{ matrix.python }}|${{ hashFiles('pyproject.toml') }}|${{ hashFiles('requirements/*.txt') }}
       - run: pip install tox
-      - run: tox -e ${{ matrix.tox }},mypy
+      - run: tox -e ${{ matrix.tox }}
