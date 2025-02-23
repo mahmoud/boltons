@@ -1,11 +1,8 @@
 import os.path
-
-
-
-
+import pytest
 
 from boltons import fileutils
-from boltons.fileutils import FilePerms, iter_find_files
+from boltons.fileutils import FilePerms, iter_find_files, DummyFile
 from boltons.strutils import removeprefix
 
 
@@ -90,4 +87,90 @@ def test_rotate_file_full_rotation_no_ext(tmp_path):
         assert cur_path.read_text() == f'test content {i-1}'
 
     assert not (tmp_path / 'test_file.5').exists()
+
+def test_dummy_file_text_mode():
+    df = DummyFile('/dev/null', 'w')
+    
+    # Test basic operations
+    assert df.mode == 'w'
+    assert not df.closed
+    
+    # Test text operations
+    df.write('test')
+    df.writelines(['line1\n', 'line2\n'])
+    
+    # Test read operations return empty strings
+    assert df.read() == ''
+    assert df.readline() == ''
+    assert df.readlines() == []
+    
+    # Test type checking
+    with pytest.raises(TypeError):
+        df.write(b'bytes not allowed in text mode')
+    with pytest.raises(TypeError):
+        df.writelines([b'bytes not allowed\n'])
+
+def test_dummy_file_binary_mode():
+    df = DummyFile('/dev/null', 'wb')
+    
+    # Test basic operations
+    assert df.mode == 'wb'
+    assert not df.closed
+    
+    # Test binary operations
+    df.write(b'test')
+    df.writelines([b'line1\n', b'line2\n'])
+    
+    # Test read operations return empty bytes
+    assert df.read() == b''
+    assert df.readline() == b''
+    assert df.readlines() == []
+    
+    # Test type checking
+    with pytest.raises(TypeError):
+        df.write('text not allowed in binary mode')
+    with pytest.raises(TypeError):
+        df.writelines(['text not allowed\n'])
+
+def test_dummy_file_closed():
+    df = DummyFile('/dev/null')
+    df.close()
+    assert df.closed
+    
+    # All operations should raise ValueError when closed
+    with pytest.raises(ValueError):
+        df.read()
+    with pytest.raises(ValueError):
+        df.write('test')
+    with pytest.raises(ValueError):
+        df.writelines(['test'])
+    with pytest.raises(ValueError):
+        df.seek()
+    with pytest.raises(ValueError):
+        df.tell()
+    with pytest.raises(ValueError):
+        df.flush()
+    with pytest.raises(ValueError):
+        df.truncate()
+
+def test_dummy_file_context_manager():
+    with DummyFile('/dev/null', 'w') as df:
+        df.write('test')
+        assert not df.closed
+    
+    # File should be usable after context exit
+    assert not df.closed
+    df.write('more text')
+
+def test_dummy_file_iteration():
+    df = DummyFile('/dev/null')
+    
+    # Test iteration methods
+    with pytest.raises(StopIteration):
+        next(df)
+    with pytest.raises(StopIteration):
+        df.__next__()
+    
+    # Test as iterator
+    assert list(df) == []
 

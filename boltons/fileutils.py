@@ -44,7 +44,7 @@ import errno
 import fnmatch
 from shutil import copy2, copystat, Error
 from types import TracebackType
-from typing import IO, TYPE_CHECKING, Generator, NoReturn, TypeVar, overload
+from typing import IO, TYPE_CHECKING, Generator, NoReturn, TypeVar, overload, Union
 
 if TYPE_CHECKING:
     from _typeshed import BytesPath, FileDescriptorOrPath, StrPath, StrOrBytesPath
@@ -650,20 +650,32 @@ class DummyFile:
     def next(self) -> NoReturn:
         raise StopIteration()
 
-    def read(self, size: int = 0) -> str:
+    @overload
+    def read(self, size: int = 0) -> str: ...
+    @overload
+    def read(self, size: int = 0) -> bytes: ...
+    def read(self, size: int = 0) -> Union[str, bytes]:
         if self.closed:
             raise ValueError('I/O operation on a closed file')
-        return ''
+        return b'' if 'b' in self.mode else ''
 
-    def readline(self, size: int = 0) -> str:
+    @overload
+    def readline(self, size: int = 0) -> str: ...
+    @overload
+    def readline(self, size: int = 0) -> bytes: ...
+    def readline(self, size: int = 0) -> Union[str, bytes]:
         if self.closed:
             raise ValueError('I/O operation on a closed file')
-        return ''
+        return b'' if 'b' in self.mode else ''
 
-    def readlines(self, size: int = 0) -> list[str]:
+    @overload
+    def readlines(self, size: int = 0) -> list[str]: ...
+    @overload
+    def readlines(self, size: int = 0) -> list[bytes]: ...
+    def readlines(self, size: int = 0) -> Union[list[str], list[bytes]]:
         if self.closed:
             raise ValueError('I/O operation on a closed file')
-        return []
+        return [] if 'b' not in self.mode else []
 
     def seek(self) -> None:
         if self.closed:
@@ -680,26 +692,45 @@ class DummyFile:
             raise ValueError('I/O operation on a closed file')
         return
 
-    def write(self, string: str) -> None:
+    @overload
+    def write(self, data: str) -> None: ...
+    @overload
+    def write(self, data: bytes) -> None: ...
+    def write(self, data: Union[str, bytes]) -> None:
         if self.closed:
             raise ValueError('I/O operation on a closed file')
+        if 'b' in self.mode and not isinstance(data, bytes):
+            raise TypeError('write() argument must be bytes')
+        if 'b' not in self.mode and not isinstance(data, str):
+            raise TypeError('write() argument must be str')
         return
 
-    def writelines(self, list_of_strings: list[str]) -> None:
+    @overload
+    def writelines(self, lines: list[str]) -> None: ...
+    @overload
+    def writelines(self, lines: list[bytes]) -> None: ...
+    def writelines(self, lines: Union[list[str], list[bytes]]) -> None:
         if self.closed:
             raise ValueError('I/O operation on a closed file')
+        if 'b' in self.mode and not all(isinstance(line, bytes) for line in lines):
+            raise TypeError('writelines() argument must be a list of bytes')
+        if 'b' not in self.mode and not all(isinstance(line, str) for line in lines):
+            raise TypeError('writelines() argument must be a list of str')
         return
 
-    def __next__(self) -> NoReturn:
-        raise StopIteration()
-
-    def __enter__(self) -> None:
+    def __enter__(self) -> 'DummyFile':
         if self.closed:
             raise ValueError('I/O operation on a closed file')
-        return
+        return self
 
     def __exit__(self, exc_type, exc_val, exc_tb) -> None:
         return
+
+    def __iter__(self):
+        return self
+
+    def __next__(self) -> NoReturn:
+        raise StopIteration()
 
 
 def rotate_file(filename: StrPath, *, keep: int = 5) -> None:
