@@ -742,12 +742,12 @@ class ThresholdCounter(Generic[_KT]):
             self._cur_bucket += 1
         return
 
-    def elements(self) -> itertools.chain[_T]:
+    def elements(self) -> itertools.chain[_KT]:
         """Return an iterator of all the common elements tracked by the
         counter. Yields each key as many times as it has been seen.
         """
         repeaters = itertools.starmap(itertools.repeat, self.iteritems())
-        return itertools.chain.from_iterable(repeaters)
+        return itertools.chain.from_iterable(repeaters)  # type: ignore
 
     def most_common(self, n: int | None = None) -> list[tuple[_KT, int]]:
         """Get the top *n* keys and counts as tuples. If *n* is omitted,
@@ -821,7 +821,7 @@ class ThresholdCounter(Generic[_KT]):
         except KeyError:
             return default
 
-    def update(self, iterable: Iterable[_KT] | Mapping[_KT, int], **kwargs: Iterable[_KT] | Mapping[_KT, int]) -> None:
+    def update(self, iterable: Iterable[_KT] | Mapping[_KT, int], **kwargs: Mapping[_KT, int]) -> None:
         """Like dict.update() but add counts instead of replacing them, used
         to add multiple items in one call.
 
