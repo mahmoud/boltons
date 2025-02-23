@@ -78,7 +78,7 @@ from collections.abc import (
     ValuesView,
 )
 from itertools import zip_longest
-from typing import TYPE_CHECKING, Dict, FrozenSet, NoReturn, TypeVar, overload
+from typing import TYPE_CHECKING, Dict, FrozenSet, NoReturn, TypeVar, overload, Any
 
 if TYPE_CHECKING:
     from _typeshed import SupportsKeysAndGetItem
@@ -294,7 +294,7 @@ class OrderedMultiDict(Dict[_KT, _VT]):
         return self.__class__(self.iteritems(multi=True))
 
     @classmethod
-    def fromkeys(cls, keys: _KT, default: _VT | None = None) -> Self:
+    def fromkeys(cls, keys: Iterable[_KT], default: _VT | None = None) -> Self:
         """Create a dictionary from a list of keys, with all the values
         set to *default*, or ``None`` if *default* is not set.
         """
@@ -521,7 +521,7 @@ class OrderedMultiDict(Dict[_KT, _VT]):
             return {k: self.getlist(k) for k in self}
         return {k: self[k] for k in self}
 
-    def sorted(self, key: _KT | None = None, reverse: bool = False) -> Self:
+    def sorted(self, key: Callable[[_KT, _VT], Any] | None = None, reverse: bool = False) -> Self:
         """Similar to the built-in :func:`sorted`, except this method returns
         a new :class:`OrderedMultiDict` sorted by the provided key
         function, optionally reversed.
@@ -546,7 +546,7 @@ class OrderedMultiDict(Dict[_KT, _VT]):
         cls = self.__class__
         return cls(sorted(self.iteritems(multi=True), key=key, reverse=reverse))
 
-    def sortedvalues(self, key: _KT | None = None, reverse: bool = False) -> Self:
+    def sortedvalues(self, key: Callable[[_VT], Any] | None = None, reverse: bool = False) -> Self:
         """Returns a copy of the :class:`OrderedMultiDict` with the same keys
         in the same order as the original OMD, but the values within
         each keyspace have been sorted according to *key* and
@@ -554,8 +554,8 @@ class OrderedMultiDict(Dict[_KT, _VT]):
 
         Args:
             key (callable): A single-argument callable to determine
-              the sort key of each element. The callable should expect
-              an **item** (key-value pair tuple).
+              the sort key of each value. The callable should expect 
+              a value.
             reverse (bool): Set to ``True`` to reverse the ordering.
 
         >>> omd = OrderedMultiDict()
