@@ -954,6 +954,28 @@ def first(iterable, default=None, key=None):
     return next(filter(key, iterable), default)
 
 
+def coalesce(*args):
+    """Get first non-none value
+
+    It behaves like `a_value if a_value is not None else default` allowing
+    `a_value` to be 0, empty string or any other falsy value.
+
+    >>> data = {"name": "Alice", "limit": 0, "value": ""}
+    >>> coalesce(data.get("name"), "Unknown")
+    'Alice'
+    >>> coalesce(data.get("limit"), 1)
+    0
+    >>> coalesce(data.get("value"), "default value")
+    ''
+    >>> coalesce(data.get("search"), {})
+    {}
+    >>> coalesce(data.get("search")) is None
+    True
+
+    """
+    return next((item for item in args if item is not None), None)
+
+
 def flatten_iter(iterable):
     """``flatten_iter()`` yields all the elements from *iterable* while
     collapsing any nested iterables.

@@ -12,7 +12,8 @@ from boltons.iterutils import (first,
                                research,
                                default_enter,
                                default_exit,
-                               get_path)
+                               get_path,
+                               coalesce)
 from boltons.namedutils import namedtuple
 
 CUR_PATH = os.path.abspath(__file__)
@@ -598,3 +599,26 @@ def test_windowed_filled():
 
     assert list(windowed_iter(range(4), 3)) == [(0, 1, 2), (1, 2, 3)]
     assert list(windowed_iter(range(4), 3, fill=None)) == [(0, 1, 2), (1, 2, 3), (2, 3, None), (3, None, None)]
+
+
+a_dict = {"account_id": 1234, "a_string": "", "is_true": False, "a_number": 0, "a_none": None}
+
+
+@pytest.mark.parametrize(
+    "args, expected_output",
+    [
+        [(), None],
+        [(None,), None],
+        [(None, None), None],
+        [(None, 0), 0],
+        [(a_dict.get("account_id"), 0), 1234],
+        [(a_dict.get("a_string"), "default"), ""],
+        [(a_dict.get("is_true"), True), False],
+        [(a_dict.get("a_number"), 1), 0],
+        [(a_dict.get("a_none"), "default value"), "default value"],
+        [(a_dict.get("non_exitent"), "default value"), "default value"],
+    ],
+)
+def test_coalesce(args, expected_output):
+    actual = coalesce(*args)
+    assert actual == expected_output
