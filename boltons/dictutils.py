@@ -1130,4 +1130,131 @@ class FrozenDict(dict):
     del _raise_frozen_typeerror
 
 
+class DotDict(dict):
+    """Dictionary subclass that allows dot notation access to keys.
+
+    Nested dictionaries are automatically converted to DotDict instances.
+    Brainchild of Chris Mahoney.
+
+    >>> from boltons.dictutils import DotDict
+    >>> dot_dict = DotDict({"a": 1, "b": {"c": 2}})
+
+    Accessing values with dot notation:
+
+    >>> print(dot_dict.a)
+    1
+    >>> print(dot_dict.b.c)
+    2
+
+    Setting values with dot notation:
+
+    >>> dot_dict.d = 3
+    >>> print(dot_dict.d)
+    3
+
+    Updating nested values with dot notation:
+
+    >>> dot_dict.b.e = 4
+    >>> print(dot_dict.b.e)
+    4
+
+    Deleting values with dot notation:
+
+    >>> del dot_dict.b.c
+    >>> print(dot_dict.b)
+    {'e': 4}
+
+    Converting back to regular dict:
+
+    >>> regular_dict = dot_dict.to_dict()
+    >>> print(regular_dict)
+    {'a': 1, 'b': {'c': 2, 'e': 4}, 'd': 3}
+    """
+
+    def __init__(self, *args, **kwargs) -> None:
+        dict.__init__(self)
+        d = dict(*args, **kwargs)
+        for key, value in d.items():
+            self[key] = self._convert_value(value)
+
+    def _convert_value(self, value):
+        """Convert dictionary values recursively."""
+        if isinstance(value, dict):
+            return DotDict(value)
+        elif isinstance(value, list):
+            return list(self._convert_value(item) for item in value)
+        elif isinstance(value, tuple):
+            return tuple(self._convert_value(item) for item in value)
+        elif isinstance(value, set):
+            return set(self._convert_value(item) for item in value)
+        return value
+
+    def __getattr__(self, key):
+        """Allow dictionary keys to be accessed as attributes."""
+        try:
+            return self[key]
+        except KeyError as e:
+            raise AttributeError(f"Key not found: '{key}'") from e
+
+    def __setattr__(self, key, value) -> None:
+        """Allow setting dictionary keys via attributes."""
+        self[key] = value
+
+    def __setitem__(self, key, value) -> None:
+        """Intercept item setting to convert dictionaries."""
+        dict.__setitem__(self, key, self._convert_value(value))
+
+    def __delitem__(self, key) -> None:
+        """Intercept item deletion to remove keys."""
+        try:
+            dict.__delitem__(self, key)
+        except KeyError as e:
+            raise KeyError(f"Key not found: '{key}'.") from e
+
+    def __delattr__(self, key) -> None:
+        """Allow deleting dictionary keys via attributes."""
+        try:
+            del self[key]
+        except KeyError as e:
+            raise AttributeError(f"Key not found: '{key}'") from e
+
+    def update(self, *args, **kwargs) -> None:
+        """Override update to convert new values.
+
+        This function does not return a value. It updates the dictionary with new key-value pairs.
+
+        >>> dot_dict = DotDict({"a": 1, "b": 2})
+        >>> dot_dict.update({"c": 3, "d": {"e": 4}})
+        >>> print(dot_dict)
+        {'a': 1, 'b': 2, 'c': 3, 'd': {'e': 4}}
+        """
+
+        for k, v in dict(*args, **kwargs).items():
+            self[k] = v
+
+    def to_dict(self):
+        """Convert back to regular dictionary.
+
+        The original dictionary structure, with all nested `#!py DotDict` instances converted back to regular dictionaries.
+
+        >>> dot_dict = DotDict({"a": 1, "b": {"c": 2}})
+        >>> regular_dict = dot_dict.to_dict()
+        >>> print(regular_dict)
+        {'a': 1, 'b': {'c': 2}}
+        """
+
+        def _convert_back(obj):
+            if isinstance(obj, DotDict):
+                return {k: _convert_back(v) for k, v in obj.items()}
+            elif isinstance(obj, list):
+                return list(_convert_back(item) for item in obj)
+            elif isinstance(obj, tuple):
+                return tuple(_convert_back(item) for item in obj)
+            elif isinstance(obj, set):
+                return set(_convert_back(item) for item in obj)
+            return obj
+
+        return _convert_back(self)
+
+
 # end dictutils.py
