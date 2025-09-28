@@ -36,19 +36,19 @@ provided by ``strutils``.
 
 
 import builtins
+import collections
 import re
+import string
 import sys
+import typing
+import unicodedata
 import uuid
 import zlib
-import string
-import unicodedata
-import collections
 from collections.abc import Mapping
 from gzip import GzipFile
-from html.parser import HTMLParser
 from html import entities as htmlentitydefs
+from html.parser import HTMLParser
 from io import BytesIO as StringIO
-
 
 __all__ = ['camel2under', 'under2camel', 'slugify', 'split_punct_ws',
            'unit_len', 'ordinalize', 'cardinalize', 'pluralize', 'singularize',
@@ -1287,3 +1287,32 @@ def removeprefix(text: str, prefix: str) -> str:
     if text.startswith(prefix):
         return text[len(prefix):]
     return text
+
+def human_readable_list(items: typing.Sequence[str], delimiter: str = ',', conjunction: str = 'and', *, oxford: bool = True) -> str:
+    """
+    Given a list of strings, return a human readable string with
+    appropriate delimiters and the conjunction word.
+
+    Args:
+        items: The list of strings to join.
+        delimiter (optional): The delimiter to use between items.
+        conjunction (optional): The word to use before the last item.
+        oxford (optional): Whether to use the Oxford comma/delimiter before
+            the conjunction in lists of 3+ items.
+
+    Returns:
+        str: The human readable string.
+    """
+    if not items:
+        return ''
+
+    delimiter = f'{delimiter.strip()} '
+    conjunction = conjunction.strip()
+
+    if len(items) == 1:
+        return items[0]
+
+    if len(items) == 2:
+        return f'{items[0]} {conjunction} {items[1]}'
+
+    return f'{delimiter.join(items[:-1])}{delimiter if oxford else ' '}{conjunction} {items[-1]}'
