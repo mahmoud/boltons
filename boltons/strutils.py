@@ -1304,7 +1304,7 @@ def human_readable_list(items: typing.Sequence[str], delimiter: str = ',', conju
     if not items:
         return ''
 
-    delimiter = f'{delimiter.strip()} '
+    delimiter = delimiter and delimiter.strip() + ' '
     conjunction = conjunction.strip()
 
     if len(items) == 1:
@@ -1313,4 +1313,4 @@ def human_readable_list(items: typing.Sequence[str], delimiter: str = ',', conju
     if len(items) == 2:
         return f'{items[0]} {conjunction} {items[1]}'
 
-    return f'{delimiter.join(items[:-1])}{delimiter if oxford else ' '}{conjunction} {items[-1]}'
+    return f'{delimiter.join(items[:-1])}{delimiter if oxford else " "}{conjunction} {items[-1]}'
