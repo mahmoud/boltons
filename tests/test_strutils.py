@@ -142,6 +142,111 @@ class TestMultiReplace(TestCase):
         self.assertEqual(m.sub('The cat.+ is purple'), 'The kedi is mor')
 
 
+def test_human_readable_list():
+    """Test the human_readable_list function with various inputs."""
+    
+    # Test empty list
+    assert strutils.human_readable_list([]) == ''
+    
+    # Test single item
+    assert strutils.human_readable_list(['apple']) == 'apple'
+    
+    # Test two items (no Oxford comma applies)
+    assert strutils.human_readable_list(['apple', 'banana']) == 'apple and banana'
+    
+    # Test three items with Oxford comma (default)
+    assert strutils.human_readable_list(['apple', 'banana', 'cherry']) == 'apple, banana, and cherry'
+    
+    # Test three items without Oxford comma
+    assert strutils.human_readable_list(['apple', 'banana', 'cherry'], oxford=False) == 'apple, banana and cherry'
+    
+    # Test four items with Oxford comma
+    assert strutils.human_readable_list(['apple', 'banana', 'cherry', 'date']) == 'apple, banana, cherry, and date'
+    
+    # Test four items without Oxford comma
+    assert strutils.human_readable_list(['apple', 'banana', 'cherry', 'date'], oxford=False) == 'apple, banana, cherry and date'
+    
+    # Test custom delimiter
+    assert strutils.human_readable_list(['apple', 'banana', 'cherry'], delimiter=';') == 'apple; banana; and cherry'
+    
+    # Test custom conjunction
+    assert strutils.human_readable_list(['apple', 'banana', 'cherry'], conjunction='or') == 'apple, banana, or cherry'
+    
+    # Test custom delimiter and conjunction
+    assert strutils.human_readable_list(['apple', 'banana', 'cherry'], delimiter='|', conjunction='plus') == 'apple| banana| plus cherry'
+    
+    # Test custom conjunction without Oxford comma
+    assert strutils.human_readable_list(['apple', 'banana', 'cherry'], conjunction='or', oxford=False) == 'apple, banana or cherry'
+    
+    # Test delimiter with extra spaces (should be stripped)
+    assert strutils.human_readable_list(['apple', 'banana', 'cherry'], delimiter=' , ') == 'apple, banana, and cherry'
+    
+    # Test conjunction with extra spaces (should be stripped)
+    assert strutils.human_readable_list(['apple', 'banana', 'cherry'], conjunction=' or ') == 'apple, banana, or cherry'
+    
+    # Test with empty strings in the list
+    assert strutils.human_readable_list(['apple', '', 'cherry']) == 'apple, , and cherry'
+    
+    # Test with whitespace strings
+    assert strutils.human_readable_list(['apple', '  ', 'cherry']) == 'apple,   , and cherry'
+    
+    # Test with special characters
+    assert strutils.human_readable_list(['apple & pear', 'banana/plantain', 'cherry-bomb']) == 'apple & pear, banana/plantain, and cherry-bomb'
+    
+    # Test with unicode characters
+    assert strutils.human_readable_list(['🍎', '🍌', '🍒']) == '🍎, 🍌, and 🍒'
+    
+    # Test with numbers as strings
+    assert strutils.human_readable_list(['1', '2', '3']) == '1, 2, and 3'
+    
+    # Test edge case with only delimiter character as items
+    assert strutils.human_readable_list([',', ',', ',']) == ',, ,, and ,'
+    
+    # Test long list to ensure pattern consistency
+    long_list = ['a', 'b', 'c', 'd', 'e', 'f']
+    assert strutils.human_readable_list(long_list) == 'a, b, c, d, e, and f'
+    assert strutils.human_readable_list(long_list, oxford=False) == 'a, b, c, d, e and f'
+
+    # Edge cases
+    # Test with empty delimiter
+    assert strutils.human_readable_list(['apple', 'banana', 'cherry'], delimiter='') == 'applebananaand cherry'
+    
+    # Test with empty conjunction
+    assert strutils.human_readable_list(['apple', 'banana', 'cherry'], conjunction='') == 'apple, banana,  cherry'
+    
+    # Test two items with custom delimiter and conjunction
+    assert strutils.human_readable_list(['apple', 'banana'], delimiter=';', conjunction='or') == 'apple or banana'
+    
+    # Test single item with custom parameters (should ignore them)
+    assert strutils.human_readable_list(['apple'], delimiter='|', conjunction='plus', oxford=False) == 'apple'
+    
+    # Test very long strings
+    long_item1 = 'a' * 100
+    long_item2 = 'b' * 100
+    result = strutils.human_readable_list([long_item1, long_item2])
+    assert result == f'{long_item1} and {long_item2}'
+
+
+def test_human_readable_list_type_annotations():
+    """Test that the function works with different sequence types."""
+    
+    # Test with tuple
+    assert strutils.human_readable_list(('apple', 'banana', 'cherry')) == 'apple, banana, and cherry'
+    
+    # Test with list (already tested above, but for completeness)
+    assert strutils.human_readable_list(['apple', 'banana', 'cherry']) == 'apple, banana, and cherry'
+    
+    # Test with generator (converted to list for the test)
+    def fruit_generator():
+        yield 'apple'
+        yield 'banana' 
+        yield 'cherry'
+    
+    # Convert generator to list since the function expects a Sequence
+    fruits = list(fruit_generator())
+    assert strutils.human_readable_list(fruits) == 'apple, banana, and cherry'
+
+
 def test_roundzip():
     aaa = b'a' * 10000
     assert strutils.gunzip_bytes(strutils.gzip_bytes(aaa)) == aaa
