@@ -754,10 +754,15 @@ def bucketize(src, key=bool, value_transform=None, key_filter=None):
     return ret
 
 
-def partition(src, key=bool):
+def partition(src, key=bool, *keys):
     """No relation to :meth:`str.partition`, ``partition`` is like
-    :func:`bucketize`, but for added convenience returns a tuple of
-    ``(truthy_values, falsy_values)``.
+    :func:`bucketize`, but for added convenience returns a collection for
+    each predicate passed.
+
+    ``partition`` now accepts multiple *key* functions and will return
+    ``N + 1`` lists for ``N`` predicates. Each value from *src* is placed
+    into the first list whose predicate evaluates to ``True`` with values
+    that match none of the predicates placed in the last list.
 
     >>> nonempty, empty = partition(['', '', 'hi', '', 'bye'])
     >>> nonempty
@@ -772,9 +777,37 @@ def partition(src, key=bool):
     >>> decimal_digits, hexletters = partition(string.hexdigits, is_digit)
     >>> ''.join(decimal_digits), ''.join(hexletters)
     ('0123456789', 'abcdefABCDEF')
+
+    Multiple predicates may be supplied to divide into more buckets:
+
+    >>> positive, negative, zero = partition(range(-1, 2),
+    ...                                     lambda i: i > 0,
+    ...                                     lambda i: i < 0)
+    >>> positive, negative, zero
+    ([1], [-1], [0])
     """
-    bucketized = bucketize(src, key)
-    return bucketized.get(True, []), bucketized.get(False, [])
+    if not is_iterable(src):
+        raise TypeError('expected an iterable')
+
+    def _make_key_func(k):
+        if isinstance(k, str):
+            return lambda x, k=k: getattr(x, k, False)
+        if callable(k):
+            return k
+        raise TypeError('expected key to be callable or a string')
+
+    key_funcs = [_make_key_func(key)] + [_make_key_func(k) for k in keys]
+    parts = [[] for _ in range(len(key_funcs) + 1)]
+
+    for val in src:
+        for idx, func in enumerate(key_funcs):
+            if func(val):
+                parts[idx].append(val)
+                break
+        else:
+            parts[-1].append(val)
+
+    return tuple(parts)
 
 
 def unique(src, key=None):

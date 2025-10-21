@@ -598,3 +598,22 @@ def test_windowed_filled():
 
     assert list(windowed_iter(range(4), 3)) == [(0, 1, 2), (1, 2, 3)]
     assert list(windowed_iter(range(4), 3, fill=None)) == [(0, 1, 2), (1, 2, 3), (2, 3, None), (3, None, None)]
+# Tests for partition
+
+def test_partition_default():
+    from boltons.iterutils import partition
+
+    nonempty, empty = partition(['', '', 'hi', '', 'bye'])
+    assert nonempty == ['hi', 'bye']
+    assert empty == ["", "", ""]
+
+
+def test_partition_multiple():
+    from boltons.iterutils import partition
+
+    items = [2, -1, 0, 3, -2]
+    positive, negative, zero = partition(items, lambda i: i > 0, lambda i: i < 0)
+    assert positive == [2, 3]
+    assert negative == [-1, -2]
+    assert zero == [0]
+
