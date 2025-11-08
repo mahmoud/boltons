@@ -1,7 +1,7 @@
 import sys
 import pytest
 
-from boltons.dictutils import OMD, OneToOne, ManyToMany, FrozenDict, subdict, FrozenHashError
+from boltons.dictutils import OMD, OneToOne, ManyToMany, FrozenDict, subdict, FrozenHashError, FrozenOneToOne
 
 
 _ITEMSETS = [[],
@@ -542,3 +542,161 @@ def test_frozendict_api():
 
     import copy
     assert copy.copy(fd) is fd
+
+
+def test_frozen_one_to_one():
+    """Test FrozenOneToOne basic functionality."""
+    # Empty initialization
+    efoto = FrozenOneToOne()
+    assert len(efoto) == 0
+    assert not efoto
+    assert isinstance(efoto, dict)
+    
+    # Basic initialization and access
+    foto = FrozenOneToOne({'a': 1, 'b': 2})
+    assert len(foto) == 2
+    assert foto['a'] == 1
+    assert foto['b'] == 2
+    assert foto.inv[1] == 'a'
+    assert foto.inv[2] == 'b'
+    
+    # Test contains
+    assert 'a' in foto
+    assert 'c' not in foto
+    assert 1 in foto.inv
+    assert 3 not in foto.inv
+    
+    # Test iteration
+    assert sorted(foto.keys()) == ['a', 'b']
+    assert sorted(foto.values()) == [1, 2]
+    assert sorted(foto.items()) == [('a', 1), ('b', 2)]
+    
+    # Test hashability
+    assert hash(foto)
+    foto_map = {foto: 'value'}
+    assert foto_map[foto] == 'value'
+    
+    # Test that two FrozenOneToOne with same content have same hash
+    foto2 = FrozenOneToOne({'a': 1, 'b': 2})
+    assert hash(foto) == hash(foto2)
+    assert foto == foto2
+    
+    # Test immutability
+    with pytest.raises(TypeError):
+        foto['c'] = 3
+    with pytest.raises(TypeError):
+        del foto['a']
+    with pytest.raises(TypeError):
+        foto.clear()
+    with pytest.raises(TypeError):
+        foto.pop('a')
+    with pytest.raises(TypeError):
+        foto.popitem()
+    with pytest.raises(TypeError):
+        foto.setdefault('c', 3)
+    with pytest.raises(TypeError):
+        foto.update({'c': 3})
+    
+    # Test inverse immutability
+    with pytest.raises(TypeError):
+        foto.inv[3] = 'c'
+    with pytest.raises(TypeError):
+        del foto.inv[1]
+    
+    # Test updated() method
+    foto3 = foto.updated({'c': 3})
+    assert len(foto3) == 3
+    assert foto3['c'] == 3
+    assert foto3.inv[3] == 'c'
+    assert len(foto) == 2  # original unchanged
+    assert 'c' not in foto
+    
+    # Test updated() with overlapping key
+    foto4 = foto.updated({'a': 10})
+    assert foto4['a'] == 10
+    assert foto4.inv[10] == 'a'
+    assert 1 not in foto4.inv
+    assert foto['a'] == 1  # original unchanged
+    
+    # Test copy returns self
+    assert foto.copy() is foto
+    
+    import copy
+    assert copy.copy(foto) is foto
+    
+    # Test repr
+    assert repr(foto).startswith('FrozenOneToOne(')
+    
+    # Test pickle
+    import pickle
+    foto_pickled = pickle.dumps(foto)
+    foto_unpickled = pickle.loads(foto_pickled)
+    assert foto == foto_unpickled
+    assert foto.inv == foto_unpickled.inv
+    
+    # Test fromkeys - should fail with duplicate values
+    with pytest.raises(ValueError):
+        FrozenOneToOne.fromkeys(['x', 'y'], 0)  # Both keys would map to 0
+    
+    # Test duplicate value detection
+    with pytest.raises(ValueError):
+        FrozenOneToOne({'a': 1, 'b': 1})
+    
+    # Test with unhashable values should fail
+    with pytest.raises(TypeError):
+        FrozenOneToOne({'a': [1, 2]})
+    
+    return
+
+
+def test_frozen_one_to_one_hash_error():
+    """Test FrozenOneToOne with unhashable values."""
+    # This should raise during construction since we validate values
+    with pytest.raises(TypeError):
+        FrozenOneToOne({'a': {'nested': 'dict'}})
+
+
+def test_frozen_one_to_one_updated_variations():
+    """Test various update patterns."""
+    foto = FrozenOneToOne({'a': 1, 'b': 2})
+    
+    # Update from dict
+    foto2 = foto.updated({'c': 3, 'd': 4})
+    assert len(foto2) == 4
+    assert foto2['c'] == 3
+    
+    # Update from iterable
+    foto3 = foto.updated([('e', 5), ('f', 6)])
+    assert len(foto3) == 4
+    assert foto3['e'] == 5
+    
+    # Update with kwargs
+    foto4 = foto.updated(g=7, h=8)
+    assert len(foto4) == 4
+    assert foto4['g'] == 7
+    
+    # Update with both
+    foto5 = foto.updated({'i': 9}, j=10)
+    assert len(foto5) == 4
+    assert foto5['i'] == 9
+    assert foto5['j'] == 10
+    
+    # Test too many positional args
+    with pytest.raises(TypeError):
+        foto.updated({'a': 1}, {'b': 2})
+
+
+def test_frozen_one_to_one_inverse():
+    """Test that inverse mapping works correctly."""
+    foto = FrozenOneToOne({'a': 1, 'b': 2, 'c': 3})
+    
+    # Check inverse is also FrozenOneToOne
+    assert isinstance(foto.inv, FrozenOneToOne)
+    
+    # Check inverse of inverse is original
+    assert foto.inv.inv is foto
+    
+    # Check all mappings
+    for key, val in foto.items():
+        assert foto.inv[val] == key
+        assert foto.inv.inv[key] == val

@@ -80,7 +80,7 @@ except ImportError:
 PREV, NEXT, KEY, VALUE, SPREV, SNEXT = range(6)
 
 
-__all__ = ['MultiDict', 'OMD', 'OrderedMultiDict', 'OneToOne', 'ManyToMany', 'subdict', 'FrozenDict']
+__all__ = ['MultiDict', 'OMD', 'OrderedMultiDict', 'OneToOne', 'ManyToMany', 'subdict', 'FrozenDict', 'FrozenOneToOne']
 
 
 class OrderedMultiDict(dict):
@@ -1109,6 +1109,150 @@ class FrozenDict(dict):
     # block everything else
     def _raise_frozen_typeerror(self, *a, **kw):
         "raises a TypeError, because FrozenDicts are immutable"
+        raise TypeError('%s object is immutable' % self.__class__.__name__)
+
+    __ior__ = __setitem__ = __delitem__ = update = _raise_frozen_typeerror
+    setdefault = pop = popitem = clear = _raise_frozen_typeerror
+
+    del _raise_frozen_typeerror
+
+
+_FOTO_INV_MARKER = object()
+
+
+class FrozenOneToOne(dict):
+    """An immutable one-to-one mapping dictionary that is hashable and can
+    itself be used as a :class:`dict` key or :class:`set` entry. This is to
+    :class:`OneToOne` what :class:`FrozenDict` is to :class:`dict`.
+
+    Like :class:`OneToOne`, all values are automatically available as keys
+    on a reverse mapping via the `inv` attribute, maintaining distinct key
+    and value namespaces.
+
+    Basic operations work as expected:
+
+    >>> foto = FrozenOneToOne({'a': 1, 'b': 2})
+    >>> print(foto['a'])
+    1
+    >>> print(foto.inv[1])
+    a
+    >>> len(foto)
+    2
+    >>> hash(foto)  # doctest: +SKIP
+    -1234567890
+
+    Because FrozenOneToOne is immutable, all mutating operations raise
+    :exc:`TypeError`:
+
+    >>> foto['c'] = 3  # doctest: +SKIP
+    Traceback (most recent call last):
+    ...
+    TypeError: FrozenOneToOne object is immutable
+
+    To create a modified version, use the :meth:`updated` method:
+
+    >>> foto2 = foto.updated({'c': 3})
+    >>> foto2['c']
+    3
+    >>> 'c' in foto  # original unchanged
+    False
+    """
+    __slots__ = ('inv', '_hash')
+
+    def __init__(self, *a, **kw):
+        if a and a[0] is _FOTO_INV_MARKER:
+            # Internal constructor for creating the inverse
+            object.__setattr__(self, 'inv', a[1])
+            dict.__init__(self, [(v, k) for k, v in self.inv.items()])
+            return
+
+        # Validate that values are unique and hashable
+        dict.__init__(self, *a, **kw)
+        
+        # Check for duplicate values
+        val_multidict = {}
+        for k, v in self.items():
+            hash(v)  # Ensure value is hashable
+            val_multidict.setdefault(v, []).append(k)
+        
+        dupes = {v: k_list for v, k_list in val_multidict.items() 
+                 if len(k_list) > 1}
+        
+        if dupes:
+            raise ValueError('expected unique values, got multiple keys for'
+                           ' the following values: %r' % dupes)
+        
+        object.__setattr__(self, 'inv', self.__class__(_FOTO_INV_MARKER, self))
+
+    def updated(self, *a, **kw):
+        """Create a new FrozenOneToOne with updated mappings.
+        
+        Like :meth:`dict.update`, but returns a new FrozenOneToOne instead
+        of modifying in place.
+        
+        Args:
+            *a: A dict or iterable of key-value pairs
+            **kw: Keyword arguments for additional key-value pairs
+            
+        Returns:
+            A new FrozenOneToOne with the updated mappings
+        """
+        data = dict(self)
+        if a:
+            if len(a) > 1:
+                raise TypeError('updated expected at most 1 argument, got %s' % len(a))
+            other = a[0]
+            if hasattr(other, 'items'):
+                data.update(other)
+            else:
+                data.update(dict(other))
+        data.update(kw)
+        return type(self)(data)
+
+    @classmethod
+    def fromkeys(cls, keys, value=None):
+        """Create a FrozenOneToOne from a sequence of keys with a shared value.
+        
+        Note: Since values must be unique in a one-to-one mapping, this only
+        works if there's a single key or if you want duplicate-key behavior.
+        """
+        return cls(dict.fromkeys(keys, value))
+
+    def __repr__(self):
+        cn = self.__class__.__name__
+        dict_repr = dict.__repr__(self)
+        return f"{cn}({dict_repr})"
+
+    def __reduce_ex__(self, protocol):
+        return type(self), (dict(self),)
+
+    def __hash__(self):
+        try:
+            ret = object.__getattribute__(self, '_hash')
+        except AttributeError:
+            try:
+                ret = hash(frozenset(self.items()))
+                object.__setattr__(self, '_hash', ret)
+            except Exception as e:
+                ret = FrozenHashError(e)
+                object.__setattr__(self, '_hash', ret)
+
+        if ret.__class__ is FrozenHashError:
+            raise ret
+
+        return ret
+
+    def __copy__(self):
+        return self
+
+    def __deepcopy__(self, memo):
+        return self
+
+    def copy(self):
+        """Return self (FrozenOneToOne is immutable)."""
+        return self
+
+    def _raise_frozen_typeerror(self, *a, **kw):
         raise TypeError('%s object is immutable' % self.__class__.__name__)
 
     __ior__ = __setitem__ = __delitem__ = update = _raise_frozen_typeerror

@@ -52,7 +52,7 @@ except ImportError:
     _MISSING = object()
 
 
-__all__ = ['IndexedSet', 'complement']
+__all__ = ['IndexedSet', 'FrozenIndexedSet', 'complement']
 
 
 _COMPACTION_FACTOR = 8
@@ -466,6 +466,223 @@ class IndexedSet(MutableSet):
         except KeyError:
             cn = self.__class__.__name__
             raise ValueError(f'{val!r} is not in {cn}')
+
+
+class FrozenIndexedSet:
+    """An immutable version of :class:`IndexedSet` that is hashable and can be
+    used as a dictionary key or set member.
+
+    Like :class:`IndexedSet`, it maintains insertion order and supports
+    indexing and slicing. However, it does not support any mutating operations.
+
+    Args:
+        other (iterable): An optional iterable used to initialize the set.
+
+    >>> fis = FrozenIndexedSet([3, 1, 2, 1, 3])
+    >>> fis
+    FrozenIndexedSet([3, 1, 2])
+    >>> fis[0]
+    3
+    >>> fis[-1]
+    2
+    >>> fis[:2]
+    FrozenIndexedSet([3, 1])
+    >>> hash(fis)  # doctest: +SKIP
+    1234567890
+    >>> 1 in fis
+    True
+    
+    Set operations return new FrozenIndexedSet instances:
+    
+    >>> fis | FrozenIndexedSet([4, 5])
+    FrozenIndexedSet([3, 1, 2, 4, 5])
+    >>> fis & FrozenIndexedSet([1, 2, 4])
+    FrozenIndexedSet([1, 2])
+    
+    All mutating operations raise :exc:`TypeError`:
+    
+    >>> fis.add(4)  # doctest: +SKIP
+    Traceback (most recent call last):
+    ...
+    AttributeError: 'FrozenIndexedSet' object has no attribute 'add'
+    """
+    __slots__ = ('_items', '_index_map', '_hash')
+
+    def __init__(self, other=None):
+        if other is None:
+            items = []
+        elif isinstance(other, FrozenIndexedSet):
+            # Fast path for copying another FrozenIndexedSet
+            object.__setattr__(self, '_items', other._items)
+            object.__setattr__(self, '_index_map', other._index_map)
+            if hasattr(other, '_hash'):
+                object.__setattr__(self, '_hash', other._hash)
+            return
+        else:
+            # Build from iterable, preserving order and uniqueness
+            seen = {}
+            items = []
+            for item in other:
+                if item not in seen:
+                    seen[item] = len(items)
+                    items.append(item)
+            object.__setattr__(self, '_index_map', seen)
+            object.__setattr__(self, '_items', tuple(items))
+            return
+        
+        object.__setattr__(self, '_items', tuple(items))
+        object.__setattr__(self, '_index_map', {})
+
+    def __len__(self):
+        return len(self._items)
+
+    def __contains__(self, item):
+        return item in self._index_map
+
+    def __iter__(self):
+        return iter(self._items)
+
+    def __reversed__(self):
+        return reversed(self._items)
+
+    def __repr__(self):
+        return f'{self.__class__.__name__}({list(self._items)!r})'
+
+    def __eq__(self, other):
+        if isinstance(other, FrozenIndexedSet):
+            return self._items == other._items
+        if isinstance(other, IndexedSet):
+            return len(self) == len(other) and list(self) == list(other)
+        try:
+            return set(self) == set(other)
+        except TypeError:
+            return False
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+    def __hash__(self):
+        try:
+            ret = object.__getattribute__(self, '_hash')
+        except AttributeError:
+            # Hash based on the tuple of items (order matters)
+            ret = hash(self._items)
+            object.__setattr__(self, '_hash', ret)
+        return ret
+
+    def __getitem__(self, index):
+        try:
+            start, stop, step = index.start, index.stop, index.step
+        except AttributeError:
+            # Single index
+            return self._items[index]
+        else:
+            # Slice
+            return self.__class__(self._items[index])
+
+    def __copy__(self):
+        return self
+
+    def __deepcopy__(self, memo):
+        return self
+
+    def copy(self):
+        """Return self (FrozenIndexedSet is immutable)."""
+        return self
+
+    @classmethod
+    def from_iterable(cls, it):
+        """Create a FrozenIndexedSet from an iterable."""
+        return cls(it)
+
+    def index(self, val):
+        """Get the index of a value, raises ValueError if not present."""
+        try:
+            return self._index_map[val]
+        except KeyError:
+            cn = self.__class__.__name__
+            raise ValueError(f'{val!r} is not in {cn}')
+
+    def count(self, val):
+        """Count number of instances of value (0 or 1)."""
+        return 1 if val in self._index_map else 0
+
+    # Set operations - all return new FrozenIndexedSet instances
+    def isdisjoint(self, other):
+        """Return True if no overlap with other."""
+        for k in other:
+            if k in self._index_map:
+                return False
+        return True
+
+    def issubset(self, other):
+        """Return True if other contains this set."""
+        if hasattr(other, '__len__') and len(other) < len(self):
+            return False
+        for k in self._index_map:
+            if k not in other:
+                return False
+        return True
+
+    def issuperset(self, other):
+        """Return True if set contains other."""
+        try:
+            if len(other) > len(self):
+                return False
+        except TypeError:
+            pass
+        for k in other:
+            if k not in self._index_map:
+                return False
+        return True
+
+    def union(self, *others):
+        """Return a new FrozenIndexedSet containing this set and others."""
+        return self.from_iterable(chain(self, *others))
+
+    def intersection(self, *others):
+        """Get a FrozenIndexedSet with overlap of this and others."""
+        if len(others) == 1:
+            other = others[0]
+            return self.from_iterable(k for k in self if k in other)
+        return self.from_iterable(k for k in self 
+                                   if all(k in other for other in others))
+
+    def difference(self, *others):
+        """Get a new FrozenIndexedSet with elements not in others."""
+        if len(others) == 1:
+            other = others[0]
+            return self.from_iterable(k for k in self if k not in other)
+        return self.from_iterable(k for k in self 
+                                   if not any(k in other for other in others))
+
+    def symmetric_difference(self, other):
+        """XOR: elements in either set but not both."""
+        ret = self.union(other)
+        return ret.difference(self.intersection(other))
+
+    __or__ = __ror__ = union
+    __and__ = __rand__ = intersection
+    __sub__ = difference
+    __xor__ = __rxor__ = symmetric_difference
+
+    def __rsub__(self, other):
+        vals = [x for x in other if x not in self]
+        if isinstance(other, (set, frozenset)):
+            return type(other)(vals)
+        return type(other)(vals)
+
+    def __le__(self, other):
+        return self.issubset(other)
+
+    def __lt__(self, other):
+        return len(self) < len(other) and self.issubset(other)
+
+    def __ge__(self, other):
+        return self.issuperset(other)
+
+    def __gt__(self, other):
+        return len(self) > len(other) and self.issuperset(other)
 
 
 def complement(wrapped):
