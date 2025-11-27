@@ -259,6 +259,23 @@ def test_rel_navigate():
     return
 
 
+@pytest.mark.parametrize(
+    ('expected',            'base',             'a',    'b'), [
+    ('https://host/b',      'https://host',     'a',    '/b'),
+    ('https://host/a/b',    'https://host',     'a',    'b'),
+    ('https://host/a/b',    'https://host',     'a/',   'b'),
+    ('https://host/a/b',    'https://host',     '/a',   'b'),
+    ('https://host/a/b',    'https://host/a/',  None,   'b'),
+    ('https://host/a/b',    'https://host/a',   None,   'b'),
+])
+def test_chained_navigate(expected, base, a, b):
+    """Chained :meth:`navigate` calls produces correct results."""
+    if a is not None:
+        assert expected == URL(base).navigate(a).navigate(b).to_text()
+    else:
+        assert expected == URL(base).navigate(b).to_text()
+
+
 def test_navigate():
     orig_text = 'http://a.b/c/d?e#f'
     orig = URL(orig_text)
