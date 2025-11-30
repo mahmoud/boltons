@@ -316,7 +316,7 @@ class BarrelList(List[_T]):
                 li.sort()
             tmp_sorted = sorted(chain.from_iterable(self.lists))
             del self.lists[:]
-            self.lists[0] = tmp_sorted
+            self.lists.append(tmp_sorted)
             self._balance_list(0)
 
     def reverse(self) -> None:
