@@ -40,12 +40,45 @@ of working with `JSON Lines`_-formatted files.
 import io
 import os
 import json
+from collections import Iterable, Mapping
+from itertools import product
+
+try:
+    from collections import UserDict
+except ImportError:
+    from UserDict import UserDict
+    basestring = (str, bytes)
+
+try:
+    from boltons.iterutils import first, is_scalar
+except ImportError:
+    def is_iterable(obj):
+        try:
+            iter(obj)
+        except TypeError:
+            return False
+        return True
+
+    def is_scalar(obj):
+        return not is_iterable(obj) or isinstance(obj, basestring)
+
+    def first(iterable, default=None, key=None):
+        if key is None:
+            for el in iterable:
+                if el:
+                    return el
+        else:
+            for el in iterable:
+                if key(el):
+                    return el
+
+        return default
 
 
 DEFAULT_BLOCKSIZE = 4096
 
 
-__all__ = ['JSONLIterator', 'reverse_iter_lines']
+__all__ = ['JSONLIterator', 'reverse_iter_lines', 'coerce_to_json']
 
 
 def reverse_iter_lines(file_obj, blocksize=DEFAULT_BLOCKSIZE, preseek=True, encoding=None):
@@ -111,6 +144,47 @@ def reverse_iter_lines(file_obj, blocksize=DEFAULT_BLOCKSIZE, preseek=True, enco
     if buff:
         yield buff.decode(encoding) if encoding else buff
 
+
+
+_json_conversion_methods = tuple(''.join(frags)
+                                 for frags in product(('', '_'),
+                                                      ('as', 'to'),
+                                                      ('_',),
+                                                      ('json', 'dict', 'list')))
+
+
+def coerce_to_json(data, fallback_collection=str):
+    """Coerce data into types compatible with JSON.
+
+    JSON has no representation for sets, iterators, etc., so this attempts to
+    convert them to something compatible. It only converts single data
+    items -- it does not go through collections and convert individual elements.
+    Use :func:`boltons.iterutils.remap` with this function to do that.
+
+    :param data:
+    :type data:
+    :param fallback_collection:
+    :type fallback_collection:
+    :return:
+    :rtype:
+    """
+    construct = first(lambda x: getattr(data, m)()
+                      for m in _json_conversion_methods
+                      if hasattr(data, m))
+    if not construct:
+        if is_scalar(data):
+            construct = lambda x: x
+        else:
+            # Would it be better to just `try: dict(data) ...`?
+            if isinstance(data, (Mapping, UserDict)):
+                construct = dict
+            elif isinstance(data, Iterable):
+                construct = list
+
+    if not construct:
+        construct = fallback_collection
+
+    return construct(data)
 
 
 """
