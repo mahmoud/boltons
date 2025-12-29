@@ -570,17 +570,9 @@ def bytes2human(nbytes, ndigits=0):
 
 
 class HTMLTextExtractor(HTMLParser):
-<<<<<<< Updated upstream
-    def __init__(self):
-        self.reset()
-        self.strict = False
-        self.convert_charrefs = True
-        self.result = []
-=======
     def __init__(self) -> None:
         super().__init__(convert_charrefs=True)
         self.result: list[str] = []
->>>>>>> Stashed changes
 
     def handle_data(self, d):
         self.result.append(d)
