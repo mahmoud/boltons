@@ -125,14 +125,20 @@ system instrumentation package.
 
 """
 
+from __future__ import annotations
 
 import bisect
-from math import floor, ceil
 from collections import Counter
+from collections.abc import Callable, Iterable
+from math import ceil, floor
+from typing import TYPE_CHECKING, Iterator, overload
 
+if TYPE_CHECKING:
+    from _typeshed import ConvertibleToFloat
+    from typing_extensions import Self, Literal
 
 class _StatsProperty:
-    def __init__(self, name, func):
+    def __init__(self, name: str, func: Callable[[Stats], float]):
         self.name = name
         self.func = func
         self.internal_name = '_' + name
@@ -141,7 +147,11 @@ class _StatsProperty:
         pre_doctest_doc, _, _ = doc.partition('>>>')
         self.__doc__ = pre_doctest_doc
 
-    def __get__(self, obj, objtype=None):
+    @overload
+    def __get__(self, obj:  None, objtype: object = None) -> Self: ...
+    @overload
+    def __get__(self, obj: Stats, objtype: object = None) -> float: ...
+    def __get__(self, obj: Stats | None, objtype: object = None)  -> float | Self:
         if obj is None:
             return self
         if not obj.data:
@@ -151,7 +161,6 @@ class _StatsProperty:
         except AttributeError:
             setattr(obj, self.internal_name, self.func(obj))
             return getattr(obj, self.internal_name)
-
 
 class Stats:
     """The ``Stats`` type is used to represent a group of unordered
@@ -171,11 +180,17 @@ class Stats:
             step for a little speed boost. Defaults to False.
 
     """
-    def __init__(self, data, default=0.0, use_copy=True, is_sorted=False):
+    @overload
+    def __init__(self, data: list[float], default: float = 0.0, *, use_copy: Literal[False], is_sorted: bool = False) -> None: ...
+    @overload
+    def __init__(self, data: list[float], default: float, use_copy: Literal[False], is_sorted: bool = False) -> None: ...
+    @overload
+    def __init__(self, data: Iterable[float], default: float = 0.0, use_copy: Literal[True] = True, is_sorted: bool = False) -> None: ...
+    def __init__(self, data: Iterable[float], default: float = 0.0, use_copy: bool = True, is_sorted: bool = False) -> None:
         self._use_copy = use_copy
         self._is_sorted = is_sorted
         if use_copy:
-            self.data = list(data)
+            self.data: list[float] = list(data)
         else:
             self.data = data
 
@@ -186,10 +201,10 @@ class Stats:
                                                _StatsProperty)]
         self._pearson_precision = 0
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self.data)
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[float]:
         return iter(self.data)
 
     def _get_sorted_data(self):
@@ -207,7 +222,7 @@ class Stats:
             self.data.sort()
         return self.data
 
-    def clear_cache(self):
+    def clear_cache(self) -> None:
         """``Stats`` objects automatically cache intermediary calculations
         that can be reused. For instance, accessing the ``std_dev``
         attribute after the ``variance`` attribute will be
@@ -460,7 +475,7 @@ class Stats:
             return data[idx_f]
         return (data[idx_f] * (idx_c - idx)) + (data[idx_c] * (idx - idx_f))
 
-    def get_quantile(self, q):
+    def get_quantile(self, q: ConvertibleToFloat) -> float:
         """Get a quantile from the dataset. Quantiles are floating point
         values between ``0.0`` and ``1.0``, with ``0.0`` representing
         the minimum value in the dataset and ``1.0`` representing the
@@ -476,7 +491,7 @@ class Stats:
             return self.default
         return self._get_quantile(self._get_sorted_data(), q)
 
-    def get_zscore(self, value):
+    def get_zscore(self, value: float) -> float:
         """Get the z-score for *value* in the group. If the standard deviation
         is 0, 0 inf or -inf will be returned to indicate whether the value is
         equal to, greater than or below the group's mean.
@@ -491,7 +506,7 @@ class Stats:
                 return float('-inf')
         return (float(value) - mean) / self.std_dev
 
-    def trim_relative(self, amount=0.15):
+    def trim_relative(self, amount: ConvertibleToFloat = 0.15) -> None:
         """A utility function used to cut a proportion of values off each end
         of a list of values. This has the effect of limiting the
         effect of outliers.
@@ -552,7 +567,7 @@ class Stats:
 
         return bins
 
-    def get_histogram_counts(self, bins=None, **kw):
+    def get_histogram_counts(self, bins: int | list[float] | None = None, **kw) -> list[tuple[float, int]]:
         """Produces a list of ``(bin, count)`` pairs comprising a histogram of
         the Stats object's data, using fixed-width bins. See
         :meth:`Stats.format_histogram` for more details.
@@ -602,7 +617,7 @@ class Stats:
 
         return bin_counts
 
-    def format_histogram(self, bins=None, **kw):
+    def format_histogram(self, bins: int | list[float] | None = None, **kw) -> str:
         """Produces a textual histogram of the data, using fixed-width bins,
         allowing for simple visualization, even in console environments.
 
@@ -655,7 +670,7 @@ class Stats:
                                        width=width,
                                        format_bin=format_bin)
 
-    def describe(self, quantiles=None, format=None):
+    def describe(self, quantiles: Iterable[float] | None = None, format: str | None = None) -> dict[str, float] | list[tuple[str, float]] | str:
         """Provides standard summary statistics for the data in the Stats
         object, in one of several convenient formats.
 
@@ -722,8 +737,7 @@ class Stats:
                              for label, val in items])
         return ret
 
-
-def describe(data, quantiles=None, format=None):
+def describe(data: Iterable[float], quantiles: Iterable[float] | None = None, format: str | None = None) -> dict[str, float] | list[tuple[str, float]] | str:
     """A convenience function to get standard summary statistics useful
     for describing most data. See :meth:`Stats.describe` for more
     details.
@@ -767,8 +781,7 @@ del attr
 del attr_name
 del func
 
-
-def format_histogram_counts(bin_counts, width=None, format_bin=None):
+def format_histogram_counts(bin_counts: Iterable[tuple[float, int]], width: int | None = None, format_bin: Callable | None = None) -> str:
     """The formatting logic behind :meth:`Stats.format_histogram`, which
     takes the output of :meth:`Stats.get_histogram_counts`, and passes
     them to this function.

@@ -120,7 +120,7 @@ class URLParseError(ValueError):
 DEFAULT_ENCODING = 'utf8'
 
 
-def to_unicode(obj):
+def to_unicode(obj: object) -> str:
     try:
         return str(obj)
     except UnicodeDecodeError:
@@ -575,7 +575,7 @@ class URL:
                           for p in self.path_parts])
 
     @path.setter
-    def path(self, path_text):
+    def path(self, path_text) -> None:
         self.path_parts = tuple([unquote(p) if '%' in p else p
                                  for p in to_unicode(path_text).split('/')])
         return
@@ -630,7 +630,7 @@ class URL:
         except KeyError:
             return SCHEME_PORT_MAP.get(self.scheme.split('+')[-1])
 
-    def normalize(self, with_case=True):
+    def normalize(self, with_case: bool = True) -> None:
         """Resolve any "." and ".." references in the path, as well as
         normalize scheme and host casing. To turn off case
         normalization, pass ``with_case=False``.

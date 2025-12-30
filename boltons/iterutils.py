@@ -39,14 +39,15 @@ shorter-named convenience form that returns a list. Some of the
 following are based on examples in itertools docs.
 """
 
+from __future__ import annotations
+
 import os
 import math
 import time
-import codecs
 import random
 import itertools
 from itertools import zip_longest
-from collections.abc import Mapping, Sequence, Set, ItemsView, Iterable
+from collections.abc import Generator, Mapping, Sequence, Set, ItemsView, Iterable
 
 
 try:
@@ -58,7 +59,7 @@ except ImportError:
     _UNSET = object()
 
 
-def is_iterable(obj):
+def is_iterable(obj) -> bool:
     """Similar in nature to :func:`callable`, ``is_iterable`` returns
     ``True`` if an object is `iterable`_, ``False`` if not.
 
@@ -76,7 +77,7 @@ def is_iterable(obj):
     return True
 
 
-def is_scalar(obj):
+def is_scalar(obj) -> bool:
     """A near-mirror of :func:`is_iterable`. Returns ``False`` if an
     object is an iterable container type. Strings are considered
     scalar as well, because strings are more often treated as whole
@@ -92,7 +93,7 @@ def is_scalar(obj):
     return not is_iterable(obj) or isinstance(obj, (str, bytes))
 
 
-def is_collection(obj):
+def is_collection(obj) -> bool:
     """The opposite of :func:`is_scalar`.  Returns ``True`` if an object
     is an iterable other than a string.
 
@@ -118,7 +119,7 @@ def split(src, sep=None, maxsplit=None):
     return list(split_iter(src, sep, maxsplit))
 
 
-def split_iter(src, sep=None, maxsplit=None):
+def split_iter(src, sep=None, maxsplit=None) -> Generator:
     """Splits an iterable based on a separator, *sep*, a max of
     *maxsplit* times (no max by default). *sep* can be:
 
@@ -202,7 +203,7 @@ def lstrip(iterable, strip_value=None):
     return list(lstrip_iter(iterable, strip_value))
 
 
-def lstrip_iter(iterable, strip_value=None):
+def lstrip_iter(iterable, strip_value=None) -> Generator:
     """Strips values from the beginning of an iterable. Stripped items will
     match the value of the argument strip_value. Functionality is analogous
     to that of the method str.lstrip. Returns a generator.
@@ -232,7 +233,7 @@ def rstrip(iterable, strip_value=None):
     return list(rstrip_iter(iterable, strip_value))
 
 
-def rstrip_iter(iterable, strip_value=None):
+def rstrip_iter(iterable, strip_value=None) -> Generator:
     """Strips values from the end of an iterable. Stripped items will
     match the value of the argument strip_value. Functionality is analogous
     to that of the method str.rstrip. Returns a generator.
@@ -313,7 +314,7 @@ def _validate_positive_int(value, name, strictly_positive=True):
     return value
 
 
-def chunked_iter(src, size, **kw):
+def chunked_iter(src, size, **kw) -> Generator:
     """Generates *size*-sized chunks from *src* iterable. Unless the
     optional *fill* keyword argument is provided, iterables not evenly
     divisible by *size* will have a final chunk that is smaller than
@@ -358,7 +359,7 @@ def chunked_iter(src, size, **kw):
     return
 
 
-def chunk_ranges(input_size, chunk_size, input_offset=0, overlap_size=0, align=False):
+def chunk_ranges(input_size: int, chunk_size: int, input_offset: int = 0, overlap_size: int = 0, align: bool = False) -> Generator[tuple[int, int], None, None]:
     """Generates *chunk_size*-sized chunk ranges for an input with length *input_size*.
     Optionally, a start of the input can be set via *input_offset*, and
     and overlap between the chunks may be specified via *overlap_size*.
@@ -510,7 +511,7 @@ def windowed_iter(src, size, fill=_UNSET):
     return zip_longest(*tees, fillvalue=fill)
 
 
-def xfrange(stop, start=None, step=1.0):
+def xfrange(stop, start=None, step: float = 1.0) -> Generator:
     """Same as :func:`frange`, but generator-based instead of returning a
     list.
 
@@ -580,7 +581,7 @@ def backoff(start, stop, count=None, factor=2.0, jitter=False):
                              factor=factor, jitter=jitter))
 
 
-def backoff_iter(start, stop, count=None, factor=2.0, jitter=False):
+def backoff_iter(start, stop, count=None, factor: float = 2.0, jitter: bool = False) -> Generator:
     """Generates a sequence of geometrically-increasing floats, suitable
     for usage with `exponential backoff`_. Starts with *start*,
     increasing by *factor* until *stop* is reached, optionally
@@ -791,7 +792,7 @@ def unique(src, key=None):
     return list(unique_iter(src, key))
 
 
-def unique_iter(src, key=None):
+def unique_iter(src, key=None) -> Generator:
     """Yield unique elements from the iterable, *src*, based on *key*,
     in the order in which they first appeared in *src*.
 
@@ -954,7 +955,7 @@ def first(iterable, default=None, key=None):
     return next(filter(key, iterable), default)
 
 
-def flatten_iter(iterable):
+def flatten_iter(iterable) -> Generator:
     """``flatten_iter()`` yields all the elements from *iterable* while
     collapsing any nested iterables.
 
@@ -1314,7 +1315,7 @@ def get_path(root, path, default=_UNSET):
                 cur = cur[seg]
             except (KeyError, IndexError) as exc:
                 raise PathAccessError(exc, seg, path)
-            except TypeError as exc:
+            except TypeError:
                 # either string index in a list, or a parent that
                 # doesn't support indexing
                 try:
@@ -1429,7 +1430,7 @@ class GUIDerator:
         self.count = itertools.count()
         self.reseed()
 
-    def reseed(self):
+    def reseed(self) -> None:
         import socket
         self.pid = os.getpid()
         self.salt = '-'.join([str(self.pid),
@@ -1478,7 +1479,7 @@ class SequentialGUIDerator(GUIDerator):
 
     """
 
-    def reseed(self):
+    def reseed(self) -> None:
         super().reseed()
         start_str = self._sha1(self.salt.encode('utf8')).hexdigest()
         self.start = int(start_str[:self.size], 16)

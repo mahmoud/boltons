@@ -2,6 +2,7 @@ import time
 import inspect
 import functools
 from collections import defaultdict
+from typing import Tuple, Union
 
 import pytest
 
@@ -31,13 +32,13 @@ def pita_wrap(flag=False):
 def test_wraps_py3():
 
     @pita_wrap(flag=True)
-    def annotations(a: int, b: float=1, c: defaultdict=()) -> defaultdict:
+    def annotations(a: int, b: float=1, c: Union[defaultdict, Tuple[()]]=()) -> Tuple[int, float, Union[defaultdict, Tuple[()]]]:
         return a, b, c
 
     assert annotations(0) == (True, "annotations", (0, 1, ()))
     assert annotations.__annotations__ == {'a': int, 'b': float,
-                                           'c': defaultdict,
-                                           'return': defaultdict}
+                                           'c': Union[defaultdict, Tuple[()]],
+                                           'return': Tuple[int, float, Union[defaultdict, Tuple[()]]]}
 
     @pita_wrap(flag=False)
     def kwonly_arg(a, *, b, c=2):

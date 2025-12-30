@@ -33,6 +33,7 @@ Python readily accommodates. Still, there are dozens of basic and
 common capabilities missing from the standard library, several of them
 provided by ``strutils``.
 """
+from __future__ import annotations
 
 
 import builtins
@@ -40,15 +41,21 @@ import collections
 import re
 import string
 import sys
-import typing
-import unicodedata
+from typing import TYPE_CHECKING, Dict, overload
 import uuid
 import zlib
-from collections.abc import Mapping
+import string
+import unicodedata
+import collections
+from collections.abc import Callable, Generator, Iterable, Mapping, Sized
 from gzip import GzipFile
 from html import entities as htmlentitydefs
 from html.parser import HTMLParser
 from io import BytesIO as StringIO
+
+if TYPE_CHECKING:
+    from _typeshed import ReadableBuffer
+    from typing_extensions import Literal
 
 __all__ = ['camel2under', 'under2camel', 'slugify', 'split_punct_ws',
            'unit_len', 'ordinalize', 'cardinalize', 'pluralize', 'singularize',
@@ -65,7 +72,7 @@ _punct_re = re.compile('[' + _punct_ws_str + ']+')
 _camel2under_re = re.compile('((?<=[a-z0-9])[A-Z]|(?!^)[A-Z](?=[a-z]))')
 
 
-def camel2under(camel_string):
+def camel2under(camel_string: str) -> str:
     """Converts a camelcased string to underscores. Useful for turning a
     class name into a function name.
 
@@ -75,7 +82,7 @@ def camel2under(camel_string):
     return _camel2under_re.sub(r'_\1', camel_string).lower()
 
 
-def under2camel(under_string):
+def under2camel(under_string: str) -> str:
     """Converts an underscored string to camelcased. Useful for turning a
     function name into a class name.
 
@@ -84,8 +91,13 @@ def under2camel(under_string):
     """
     return ''.join(w.capitalize() or '_' for w in under_string.split('_'))
 
-
-def slugify(text, delim='_', lower=True, ascii=False):
+@overload
+def slugify(text: str, delim: str = "_", lower: bool = True, *, ascii: Literal[True]) -> bytes: ...
+@overload
+def slugify(text: str, delim: str, lower: bool, ascii: Literal[True]) -> bytes: ...
+@overload
+def slugify(text: str, delim: str = "_", lower: bool = True, ascii: Literal[False] = False) -> str: ...
+def slugify(text: str, delim: str = "_", lower: bool = True, ascii: bool = False) -> bytes | str:
     """
     A basic function that turns text full of scary characters
     (i.e., punctuation and whitespace), into a relatively safe
@@ -111,7 +123,7 @@ def slugify(text, delim='_', lower=True, ascii=False):
     return ret
 
 
-def split_punct_ws(text):
+def split_punct_ws(text: str) -> list[str]:
     """While :meth:`str.split` will split on whitespace,
     :func:`split_punct_ws` will split on punctuation and
     whitespace. This used internally by :func:`slugify`, above.
@@ -122,7 +134,7 @@ def split_punct_ws(text):
     return [w for w in _punct_re.split(text) if w]
 
 
-def unit_len(sized_iterable, unit_noun='item'):  # TODO: len_units()/unitize()?
+def unit_len(sized_iterable: Sized, unit_noun: str = 'item') -> str:  # TODO: len_units()/unitize()?
     """Returns a plain-English description of an iterable's
     :func:`len()`, conditionally pluralized with :func:`cardinalize`,
     detailed below.
@@ -146,7 +158,7 @@ _ORDINAL_MAP = {'1': 'st',
                 '3': 'rd'}  # 'th' is the default
 
 
-def ordinalize(number, ext_only=False):
+def ordinalize(number: int | str, ext_only: bool = False) -> str:
     """Turns *number* into its cardinal form, i.e., 1st, 2nd,
     3rd, 4th, etc. If the last character isn't a digit, it returns the
     string value unchanged.
@@ -182,7 +194,7 @@ def ordinalize(number, ext_only=False):
         return numstr + ext
 
 
-def cardinalize(unit_noun, count):
+def cardinalize(unit_noun: str, count: int) -> str:
     """Conditionally pluralizes a singular word *unit_noun* if
     *count* is not one, preserving case when possible.
 
@@ -197,7 +209,7 @@ def cardinalize(unit_noun, count):
     return pluralize(unit_noun)
 
 
-def singularize(word):
+def singularize(word: str) -> str:
     """Semi-intelligently converts an English plural *word* to its
     singular form, preserving case pattern.
 
@@ -231,7 +243,7 @@ def singularize(word):
     return _match_case(orig_word, singular)
 
 
-def pluralize(word):
+def pluralize(word: str) -> str:
     """Semi-intelligently converts an English *word* from singular form to
     plural, preserving case pattern.
 
@@ -313,7 +325,7 @@ _IRR_P2S = {v: k for k, v in _IRR_S2P.items()}
 HASHTAG_RE = re.compile(r"(?:^|\s)[＃#]{1}(\w+)", re.UNICODE)
 
 
-def find_hashtags(string):
+def find_hashtags(string: str) -> list[str]:
     """Finds and returns all hashtags in a string, with the hashmark
     removed. Supports full-width hashmarks for Asian languages and
     does not false-positive on URL anchors.
@@ -330,7 +342,7 @@ def find_hashtags(string):
     return HASHTAG_RE.findall(string)
 
 
-def a10n(string):
+def a10n(string: str) -> str:
     """That thing where "internationalization" becomes "i18n", what's it
     called? Abbreviation? Oh wait, no: ``a10n``. (It's actually a form
     of `numeronym`_.)
@@ -367,7 +379,7 @@ ANSI_SEQUENCES = re.compile(r'''
 ''', re.VERBOSE)
 
 
-def strip_ansi(text):
+def strip_ansi(text: str | bytes | bytearray) -> str:
     """Strips ANSI escape codes from *text*. Useful for the occasional
     time when a log or redirected output accidentally captures console
     color codes and the like.
@@ -405,7 +417,7 @@ def strip_ansi(text):
     return cleaned
 
 
-def asciify(text, ignore=False):
+def asciify(text: str | bytes | bytearray, ignore: bool = False) -> bytes:
     """Converts a unicode or bytestring, *text*, into a bytestring with
     just ascii characters. Performs basic deaccenting for all you
     Europhiles out there.
@@ -438,7 +450,7 @@ def asciify(text, ignore=False):
         return ret
 
 
-def is_ascii(text):
+def is_ascii(text: str) -> bool:
     """Check if a string or bytestring, *text*, is composed of ascii
     characters only. Raises :exc:`ValueError` if argument is not text.
 
@@ -465,9 +477,9 @@ def is_ascii(text):
     return True
 
 
-class DeaccenterDict(dict):
+class DeaccenterDict(Dict[int, int]):
     "A small caching dictionary for deaccenting."
-    def __missing__(self, key):
+    def __missing__(self, key: int) -> int:
         ch = self.get(key)
         if ch is not None:
             return ch
@@ -547,7 +559,7 @@ _SIZE_BOUNDS = [(1024 ** i, sym) for i, sym in enumerate(_SIZE_SYMBOLS)]
 _SIZE_RANGES = list(zip(_SIZE_BOUNDS, _SIZE_BOUNDS[1:]))
 
 
-def bytes2human(nbytes, ndigits=0):
+def bytes2human(nbytes: int, ndigits: int = 0) -> str:
     """Turns an integer value of *nbytes* into a human readable format. Set
     *ndigits* to control how many digits after the decimal point
     should be shown (default ``0``).
@@ -574,17 +586,17 @@ class HTMLTextExtractor(HTMLParser):
         super().__init__(convert_charrefs=True)
         self.result: list[str] = []
 
-    def handle_data(self, d):
+    def handle_data(self, d: str) -> None:
         self.result.append(d)
 
-    def handle_charref(self, number):
+    def handle_charref(self, number: str) -> None:
         if number[0] == 'x' or number[0] == 'X':
             codepoint = int(number[1:], 16)
         else:
             codepoint = int(number)
         self.result.append(chr(codepoint))
 
-    def handle_entityref(self, name):
+    def handle_entityref(self, name: str) -> None:
         try:
             codepoint = htmlentitydefs.name2codepoint[name]
         except KeyError:
@@ -592,11 +604,11 @@ class HTMLTextExtractor(HTMLParser):
         else:
             self.result.append(chr(codepoint))
 
-    def get_text(self):
+    def get_text(self) -> str:
         return ''.join(self.result)
 
 
-def html2text(html):
+def html2text(html: str) -> str:
     """Strips tags from HTML text, returning markup-free text. Also, does
     a best effort replacement of entities like "&nbsp;"
 
@@ -614,7 +626,7 @@ _EMPTY_GZIP_BYTES = b'\x1f\x8b\x08\x089\xf3\xb9U\x00\x03empty\x00\x03\x00\x00\x0
 _NON_EMPTY_GZIP_BYTES = b'\x1f\x8b\x08\x08\xbc\xf7\xb9U\x00\x03not_empty\x00K\xaa,I-N\xcc\xc8\xafT\xe4\x02\x00\xf3nb\xbf\x0b\x00\x00\x00'
 
 
-def gunzip_bytes(bytestring):
+def gunzip_bytes(bytestring: ReadableBuffer) -> bytes:
     """The :mod:`gzip` module is great if you have a file or file-like
     object, but what if you just have bytes. StringIO is one
     possibility, but it's often faster, easier, and simpler to just
@@ -629,7 +641,7 @@ def gunzip_bytes(bytestring):
     return zlib.decompress(bytestring, 16 + zlib.MAX_WBITS)
 
 
-def gzip_bytes(bytestring, level=6):
+def gzip_bytes(bytestring: ReadableBuffer, level: int = 6) -> bytes:
     """Turn some bytes into some compressed bytes.
 
     >>> len(gzip_bytes(b'a' * 10000))
@@ -656,7 +668,7 @@ _line_ending_re = re.compile(r'(\r\n|\n|\x0b|\f|\r|\x85|\x2028|\x2029)',
                              re.UNICODE)
 
 
-def iter_splitlines(text):
+def iter_splitlines(text: str) -> Generator[str, None, None]:
     r"""Like :meth:`str.splitlines`, but returns an iterator of lines
     instead of a list. Also similar to :meth:`file.next`, as that also
     lazily reads and yields lines from a file.
@@ -688,7 +700,7 @@ def iter_splitlines(text):
     return
 
 
-def indent(text, margin, newline='\n', key=bool):
+def indent(text: str, margin: str, newline: str = "\n", key: Callable[[str], bool] = bool) -> str:
     """The missing counterpart to the built-in :func:`textwrap.dedent`.
 
     Args:
@@ -704,7 +716,7 @@ def indent(text, margin, newline='\n', key=bool):
     return newline.join(indented_lines)
 
 
-def is_uuid(obj, version=4):
+def is_uuid(obj, version: int = 4) -> bool:
     """Check the argument is either a valid UUID object or string.
 
     Args:
@@ -728,7 +740,7 @@ def is_uuid(obj, version=4):
     return True
 
 
-def escape_shell_args(args, sep=' ', style=None):
+def escape_shell_args(args: Iterable[str], sep: str = ' ', style: Literal['cmd', 'sh'] | None = None) -> str:
     """Returns an escaped version of each string in *args*, according to
     *style*.
 
@@ -757,7 +769,7 @@ def escape_shell_args(args, sep=' ', style=None):
 _find_sh_unsafe = re.compile(r'[^a-zA-Z0-9_@%+=:,./-]').search
 
 
-def args2sh(args, sep=' '):
+def args2sh(args: Iterable[str], sep: str = ' '):
     """Return a shell-escaped string version of *args*, separated by
     *sep*, based on the rules of sh, bash, and other shells in the
     Linux/BSD/MacOS ecosystem.
@@ -791,7 +803,7 @@ def args2sh(args, sep=' '):
     return ' '.join(ret_list)
 
 
-def args2cmd(args, sep=' '):
+def args2cmd(args: Iterable[str], sep: str = ' '):
     r"""Return a shell-escaped string version of *args*, separated by
     *sep*, using the same rules as the Microsoft C runtime.
 
@@ -870,7 +882,7 @@ def args2cmd(args, sep=' '):
     return ''.join(result)
 
 
-def parse_int_list(range_string, delim=',', range_delim='-'):
+def parse_int_list(range_string: str, delim: str = ",", range_delim: str = "-") -> list[int]:
     """Returns a sorted list of positive integers based on
     *range_string*. Reverse of :func:`format_int_list`.
 
@@ -907,7 +919,7 @@ def parse_int_list(range_string, delim=',', range_delim='-'):
     return sorted(output)
 
 
-def format_int_list(int_list, delim=',', range_delim='-', delim_space=False):
+def format_int_list(int_list: list[int], delim: str = ",", range_delim: str = "-", delim_space: bool = False) -> str:
     """Returns a sorted range string from a list of positive integers
     (*int_list*). Contiguous ranges of integers are collapsed to min
     and max values. Reverse of :func:`parse_int_list`.
@@ -998,8 +1010,8 @@ def format_int_list(int_list, delim=',', range_delim='-', delim_space=False):
 
 
 def complement_int_list(
-        range_string, range_start=0, range_end=None,
-        delim=',', range_delim='-'):
+        range_string: str, range_start: int = 0, range_end: int | None = None,
+        delim: str = ',', range_delim: str = '-') -> str:
     """ Returns range string that is the complement of the one provided as
     *range_string* parameter.
 
@@ -1085,7 +1097,7 @@ def complement_int_list(
     return format_int_list(complement_values, delim, range_delim)
 
 
-def int_ranges_from_int_list(range_string, delim=',', range_delim='-'):
+def int_ranges_from_int_list(range_string: str, delim: str = ',', range_delim: str = '-') -> tuple[int, int]:
     """ Transform a string of ranges (*range_string*) into a tuple of tuples.
 
     Args:
@@ -1177,14 +1189,14 @@ class MultiReplace:
     of a dictionary.
     """
 
-    def __init__(self, sub_map, **kwargs):
+    def __init__(self, sub_map: Mapping[str, str] | Iterable[tuple[str, str]], **kwargs):
         """Compile any regular expressions that have been passed."""
         options = {
             'regex': False,
             'flags': 0,
         }
         options.update(kwargs)
-        self.group_map = {}
+        self.group_map: dict[str, str] = {}
         regex_values = []
 
         if isinstance(sub_map, Mapping):
@@ -1215,7 +1227,7 @@ class MultiReplace:
         key = [x for x in group_dict if group_dict[x]][0]
         return self.group_map[key]
 
-    def sub(self, text):
+    def sub(self, text: str) -> str:
         """
         Run substitutions on the input text.
 
@@ -1225,7 +1237,7 @@ class MultiReplace:
         return self.combined_pattern.sub(self._get_value, text)
 
 
-def multi_replace(text, sub_map, **kwargs):
+def multi_replace(text: str, sub_map: Mapping[str, str] | Iterable[tuple[str, str]], **kwargs) -> str:
     """
     Shortcut function to invoke MultiReplace in a single call.
 
@@ -1242,7 +1254,7 @@ def multi_replace(text, sub_map, **kwargs):
     return m.sub(text)
 
 
-def unwrap_text(text, ending='\n\n'):
+def unwrap_text(text: str, ending: str | None = "\n\n") -> str:
     r"""
     Unwrap text, the natural complement to :func:`textwrap.wrap`.
 
