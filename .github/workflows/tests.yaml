@@ -18,9 +18,10 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - { name: Linux, python: "3.13", os: ubuntu-latest, tox: py313 }
-          - { name: Windows, python: "3.13", os: windows-latest, tox: py313 }
-          - { name: Mac, python: "3.13", os: macos-latest, tox: py313 }
+          - { name: Linux, python: "3.14", os: ubuntu-latest, tox: py314 }
+          - { name: Windows, python: "3.14", os: windows-latest, tox: py314 }
+          - { name: Mac, python: "3.14", os: macos-latest, tox: py314 }
+          - { name: "3.13", python: "3.13", os: ubuntu-latest, tox: py313 }
           - { name: "3.12", python: "3.12", os: ubuntu-latest, tox: py312 }
           - { name: "3.11", python: "3.11", os: ubuntu-latest, tox: py311 }
           - { name: "3.10", python: "3.10", os: ubuntu-latest, tox: py310 }

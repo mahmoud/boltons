@@ -5,6 +5,8 @@ venv/
 *.py[cod]
 venv-rtd/
 
+nohup.out
+
 # emacs
 *~
 ._*
