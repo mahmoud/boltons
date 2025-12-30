@@ -35,7 +35,11 @@ provided by ``strutils``.
 """
 from __future__ import annotations
 
+
+import builtins
+import collections
 import re
+import string
 import sys
 from typing import TYPE_CHECKING, Dict, overload
 import uuid
@@ -45,8 +49,8 @@ import unicodedata
 import collections
 from collections.abc import Callable, Generator, Iterable, Mapping, Sized
 from gzip import GzipFile
-from html.parser import HTMLParser
 from html import entities as htmlentitydefs
+from html.parser import HTMLParser
 from io import BytesIO as StringIO
 
 if TYPE_CHECKING:
@@ -579,9 +583,7 @@ def bytes2human(nbytes: int, ndigits: int = 0) -> str:
 
 class HTMLTextExtractor(HTMLParser):
     def __init__(self) -> None:
-        self.reset()
-        self.strict = False
-        self.convert_charrefs = True
+        super().__init__(convert_charrefs=True)
         self.result: list[str] = []
 
     def handle_data(self, d: str) -> None:
@@ -1295,3 +1297,32 @@ def removeprefix(text: str, prefix: str) -> str:
     if text.startswith(prefix):
         return text[len(prefix):]
     return text
+
+def human_readable_list(items: typing.Sequence[str], delimiter: str = ',', conjunction: str = 'and', *, oxford: bool = True) -> str:
+    """
+    Given a list of strings, return a human readable string with
+    appropriate delimiters and the conjunction word.
+
+    Args:
+        items: The list of strings to join.
+        delimiter (optional): The delimiter to use between items.
+        conjunction (optional): The word to use before the last item.
+        oxford (optional): Whether to use the Oxford comma/delimiter before
+            the conjunction in lists of 3+ items.
+
+    Returns:
+        str: The human readable string.
+    """
+    if not items:
+        return ''
+
+    delimiter = delimiter and delimiter.strip() + ' '
+    conjunction = conjunction.strip()
+
+    if len(items) == 1:
+        return items[0]
+
+    if len(items) == 2:
+        return f'{items[0]} {conjunction} {items[1]}'
+
+    return f'{delimiter.join(items[:-1])}{delimiter if oxford else " "}{conjunction} {items[-1]}'
