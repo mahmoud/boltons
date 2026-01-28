@@ -1055,8 +1055,14 @@ def default_exit(path, key, old_parent, new_parent, new_items):
     return ret
 
 
-def remap(root, visit=default_visit, enter=default_enter, exit=default_exit,
-          **kwargs):
+def remap(
+        root,
+        visit=default_visit,
+        enter=default_enter,
+        exit=default_exit,
+        cache: bool = True,
+        **kwargs,
+):
     """The remap ("recursive map") function is used to traverse and
     transform nested structures. Lists, tuples, sets, and dictionaries
     are just a few of the data structures nested into heterogeneous
@@ -1130,6 +1136,10 @@ def remap(root, visit=default_visit, enter=default_enter, exit=default_exit,
             :class:`namedtuple`, must be recreated from scratch, but
             use the same type as the new parent passed back from the
             *enter* function.
+        cache (bool): Controls whether to cache transformed
+            objects. Uses object identity for the cache. For example
+            this is turned off for applications like `research` which
+            need to traverse all trees.
         reraise_visit (bool): A pragmatic convenience for the *visit*
             callable. When set to ``False``, remap ignores any errors
             raised by the *visit* callback. Items causing exceptions
@@ -1195,7 +1205,7 @@ def remap(root, visit=default_visit, enter=default_enter, exit=default_exit,
             registry[id_value] = value
             if not new_items_stack:
                 continue
-        elif id_value in registry:
+        elif cache and id_value in registry:
             value = registry[id_value]
         else:
             if trace_enter:
@@ -1388,7 +1398,7 @@ def research(root, query=lambda p, k, v: True, reraise=False, enter=default_ente
                 raise
         return enter(path, key, value)
 
-    remap(root, enter=_enter)
+    remap(root, enter=_enter, cache=False)
     return ret
 
 

@@ -395,6 +395,24 @@ def test_research():
     # empty results with default, reraise=False
     assert research(root, broken_query) == []
 
+    # test that different branches with object identical values are
+    # still traversed and returned
+    literal_tree = {
+            "maybe" : ("hello",),
+            "another" : ("hello",),
+        }
+
+    assert id(literal_tree["maybe"]) == id(literal_tree["another"])
+    assert research(
+        root=literal_tree,
+    ) == [
+        ((None,), literal_tree),
+        (("maybe",), ("hello",)),
+        (("maybe", 0,), "hello"),
+        (("another",), ("hello",)),
+        (("another", 0,), "hello"),
+    ]
+
 
 def test_research_custom_enter():
     # see #368
