@@ -39,6 +39,7 @@ import re
 import inspect
 import functools
 import itertools
+import threading
 from inspect import formatannotation
 from types import FunctionType, MethodType
 
@@ -1003,5 +1004,39 @@ def noop(*args, **kwargs):
         post_func()
     """
     return None
+
+
+def once(func):
+    """Decorator that ensures a function is only executed once, caching
+    the result for all subsequent calls. Thread-safe: concurrent callers
+    block until the first execution completes, then all receive the
+    cached result.
+
+    The decorated function must take no arguments.
+
+    >>> call_count = 0
+    >>> @once
+    ... def expensive_setup():
+    ...     global call_count
+    ...     call_count += 1
+    ...     return 'initialized'
+    >>> expensive_setup()
+    'initialized'
+    >>> expensive_setup()
+    'initialized'
+    >>> call_count
+    1
+    """
+    lock = threading.RLock()
+
+    @functools.cache
+    @functools.wraps(func)
+    def wrapper():
+        with lock:
+            if wrapper.cache_info().currsize:
+                return wrapper()
+            return func()
+
+    return wrapper
 
 # end funcutils.py
