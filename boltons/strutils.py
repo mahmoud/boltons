@@ -57,7 +57,8 @@ __all__ = ['camel2under', 'under2camel', 'slugify', 'split_punct_ws',
            'iter_splitlines', 'indent', 'escape_shell_args',
            'args2cmd', 'args2sh', 'parse_int_list', 'format_int_list',
            'complement_int_list', 'int_ranges_from_int_list', 'MultiReplace',
-           'multi_replace', 'unwrap_text', 'removeprefix']
+           'multi_replace', 'unwrap_text', 'removeprefix',
+           'human_readable_list']
 
 
 _punct_ws_str = string.punctuation + string.whitespace
