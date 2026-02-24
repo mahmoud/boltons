@@ -1006,6 +1006,10 @@ def noop(*args, **kwargs):
     return None
 
 
+
+_UNSET = object()
+
+
 def once(func):
     """Decorator that ensures a function is only executed once, caching
     the result for all subsequent calls. Thread-safe: concurrent callers
@@ -1027,15 +1031,19 @@ def once(func):
     >>> call_count
     1
     """
-    lock = threading.RLock()
+    lock = threading.Lock()
+    result = _UNSET
 
-    @functools.cache
     @functools.wraps(func)
     def wrapper():
+        nonlocal result
+        if result is not _UNSET:
+            return result
         with lock:
-            if wrapper.cache_info().currsize:
-                return wrapper()
-            return func()
+            if result is not _UNSET:
+                return result
+            result = func()
+            return result
 
     return wrapper
 
