@@ -1007,7 +1007,6 @@ def noop(*args, **kwargs):
 
 
 
-_UNSET = object()
 
 
 def once(func):
@@ -1015,6 +1014,9 @@ def once(func):
     the result for all subsequent calls. Thread-safe: concurrent callers
     block until the first execution completes, then all receive the
     cached result.
+
+    This is especially useful in cases like logging, where multiple
+    initializations can cause problems.
 
     The decorated function must take no arguments.
 
@@ -1031,6 +1033,7 @@ def once(func):
     >>> call_count
     1
     """
+    _UNSET = object()
     lock = threading.Lock()
     result = _UNSET
 
