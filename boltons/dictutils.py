@@ -67,12 +67,13 @@ thanks to `Mark Williams`_ for all his help.
 
 """
 
-from collections.abc import KeysView, ValuesView, ItemsView
+from collections.abc import ItemsView, KeysView, ValuesView
 from itertools import zip_longest
 
 try:
     from .typeutils import make_sentinel
-    _MISSING = make_sentinel(var_name='_MISSING')
+
+    _MISSING = make_sentinel(var_name="_MISSING")
 except ImportError:
     _MISSING = object()
 
@@ -80,7 +81,15 @@ except ImportError:
 PREV, NEXT, KEY, VALUE, SPREV, SNEXT = range(6)
 
 
-__all__ = ['MultiDict', 'OMD', 'OrderedMultiDict', 'OneToOne', 'ManyToMany', 'subdict', 'FrozenDict']
+__all__ = [
+    "MultiDict",
+    "OMD",
+    "OrderedMultiDict",
+    "OneToOne",
+    "ManyToMany",
+    "subdict",
+    "FrozenDict",
+]
 
 
 class OrderedMultiDict(dict):
@@ -157,15 +166,18 @@ class OrderedMultiDict(dict):
        behavior, just use :meth:`~OrderedMultiDict.todict()`.
 
     """
+
     def __new__(cls, *a, **kw):
         ret = super().__new__(cls)
         ret._clear_ll()
-        return ret 
-    
+        return ret
+
     def __init__(self, *args, **kwargs):
         if len(args) > 1:
-            raise TypeError('%s expected at most 1 argument, got %s'
-                            % (self.__class__.__name__, len(args)))
+            raise TypeError(
+                "%s expected at most 1 argument, got %s"
+                % (self.__class__.__name__, len(args))
+            )
         super().__init__()
 
         if args:
@@ -288,7 +300,7 @@ class OrderedMultiDict(dict):
                     del self[k]
             for k, v in E.iteritems(multi=True):
                 self_add(k, v)
-        elif callable(getattr(E, 'keys', None)):
+        elif callable(getattr(E, "keys", None)):
             for k in E.keys():
                 self[k] = E[k]
         else:
@@ -313,7 +325,7 @@ class OrderedMultiDict(dict):
             iterator = iter(E.items())
         elif isinstance(E, OrderedMultiDict):
             iterator = E.iteritems(multi=True)
-        elif hasattr(E, 'keys'):
+        elif hasattr(E, "keys"):
             iterator = ((k, E[k]) for k in E.keys())
         else:
             iterator = E
@@ -350,12 +362,13 @@ class OrderedMultiDict(dict):
             for (selfk, selfv), (otherk, otherv) in zipped_items:
                 if selfk != otherk or selfv != otherv:
                     return False
-            if not(next(selfi, _MISSING) is _MISSING
-                   and next(otheri, _MISSING) is _MISSING):
+            if not (
+                next(selfi, _MISSING) is _MISSING and next(otheri, _MISSING) is _MISSING
+            ):
                 # leftovers  (TODO: watch for StopIteration?)
                 return False
             return True
-        elif hasattr(other, 'keys'):
+        elif hasattr(other, "keys"):
             for selfk in self:
                 try:
                     other[selfk] == self[selfk]
@@ -407,7 +420,7 @@ class OrderedMultiDict(dict):
                 k = self.root[PREV][KEY]
             else:
                 if default is _MISSING:
-                    raise KeyError('empty %r' % type(self))
+                    raise KeyError("empty %r" % type(self))
                 return default
         try:
             self._remove(k)
@@ -554,8 +567,9 @@ class OrderedMultiDict(dict):
         except AttributeError:
             superself_iteritems = super().items()
         # (not reverse) because they pop off in reverse order for reinsertion
-        sorted_val_map = {k: sorted(v, key=key, reverse=(not reverse))
-                               for k, v in superself_iteritems}
+        sorted_val_map = {
+            k: sorted(v, key=key, reverse=(not reverse)) for k, v in superself_iteritems
+        }
         ret = self.__class__()
         for k in self.iterkeys(multi=True):
             ret.add(k, sorted_val_map[k].pop())
@@ -625,8 +639,8 @@ class OrderedMultiDict(dict):
 
     def __repr__(self):
         cn = self.__class__.__name__
-        kvs = ', '.join([repr((k, v)) for k, v in self.iteritems(multi=True)])
-        return f'{cn}([{kvs}])'
+        kvs = ", ".join([repr((k, v)) for k, v in self.iteritems(multi=True)])
+        return f"{cn}([{kvs}])"
 
     def viewkeys(self):
         "OMD.viewkeys() -> a set-like object providing a view on OMD's keys"
@@ -651,6 +665,7 @@ class FastIterOrderedMultiDict(OrderedMultiDict):
     is faster and uses constant memory but adding duplicate key-value
     pairs is slower. Brainchild of Mark Williams.
     """
+
     def _clear_ll(self):
         # TODO: always reset objects? (i.e., no else block below)
         try:
@@ -659,9 +674,7 @@ class FastIterOrderedMultiDict(OrderedMultiDict):
             _map = self._map = {}
             self.root = []
         _map.clear()
-        self.root[:] = [self.root, self.root,
-                        None, None,
-                        self.root, self.root]
+        self.root[:] = [self.root, self.root, None, None, self.root, self.root]
 
     def _insert(self, k, v):
         root = self.root
@@ -670,9 +683,7 @@ class FastIterOrderedMultiDict(OrderedMultiDict):
         last = root[PREV]
 
         if cells is empty:
-            cell = [last, root,
-                    k, v,
-                    last, root]
+            cell = [last, root, k, v, last, root]
             # was the last one skipped?
             if last[SPREV][SNEXT] is root:
                 last[SPREV][SNEXT] = cell
@@ -682,9 +693,7 @@ class FastIterOrderedMultiDict(OrderedMultiDict):
             # if the previous was skipped, go back to the cell that
             # skipped it
             sprev = last[SPREV] if (last[SPREV][SNEXT] is not last) else last
-            cell = [last, root,
-                    k, v,
-                    sprev, root]
+            cell = [last, root, k, v, sprev, root]
             # skip me
             last[SNEXT] = root
             last[NEXT] = root[PREV] = root[SPREV] = cell
@@ -776,7 +785,8 @@ class OneToOne(dict):
     For a very similar project, with even more one-to-one
     functionality, check out `bidict <https://github.com/jab/bidict>`_.
     """
-    __slots__ = ('inv',)
+
+    __slots__ = ("inv",)
 
     def __init__(self, *a, **kw):
         raise_on_dupe = False
@@ -806,11 +816,12 @@ class OneToOne(dict):
         for k, v in self.items():
             val_multidict.setdefault(v, []).append(k)
 
-        dupes = {v: k_list for v, k_list in
-                      val_multidict.items() if len(k_list) > 1}
+        dupes = {v: k_list for v, k_list in val_multidict.items() if len(k_list) > 1}
 
-        raise ValueError('expected unique values, got multiple keys for'
-                         ' the following values: %r' % dupes)
+        raise ValueError(
+            "expected unique values, got multiple keys for"
+            " the following values: %r" % dupes
+        )
 
     @classmethod
     def unique(cls, *a, **kw):
@@ -907,6 +918,7 @@ class ManyToMany:
 
     also, can be used as a directed graph among hashable python objects
     """
+
     def __init__(self, items=None):
         self.data = {}
         if type(items) is tuple and items and items[0] is _PAIRING:
@@ -956,7 +968,7 @@ class ManyToMany:
                     self.inv.data[k] = other.inv.data[k]
                 else:
                     self.inv.data[k].update(other.inv.data[k])
-        elif callable(getattr(iterable, 'keys', None)):
+        elif callable(getattr(iterable, "keys", None)):
             for k in iterable.keys():
                 self.add(k, iterable[k])
         else:
@@ -1014,7 +1026,7 @@ class ManyToMany:
 
     def __repr__(self):
         cn = self.__class__.__name__
-        return f'{cn}({list(self.iteritems())!r})'
+        return f"{cn}({list(self.iteritems())!r})"
 
 
 def subdict(d, keep=None, drop=None):
@@ -1066,7 +1078,8 @@ class FrozenDict(dict):
     works everywhere a dict would, including JSON serialization.
 
     """
-    __slots__ = ('_hash',)
+
+    __slots__ = ("_hash",)
 
     def updated(self, *a, **kw):
         """Make a copy and add items from a dictionary or iterable (and/or
@@ -1084,7 +1097,7 @@ class FrozenDict(dict):
 
     def __repr__(self):
         cn = self.__class__.__name__
-        return f'{cn}({dict.__repr__(self)})'
+        return f"{cn}({dict.__repr__(self)})"
 
     def __reduce_ex__(self, protocol):
         return type(self), (dict(self),)
@@ -1109,12 +1122,139 @@ class FrozenDict(dict):
     # block everything else
     def _raise_frozen_typeerror(self, *a, **kw):
         "raises a TypeError, because FrozenDicts are immutable"
-        raise TypeError('%s object is immutable' % self.__class__.__name__)
+        raise TypeError("%s object is immutable" % self.__class__.__name__)
 
     __ior__ = __setitem__ = __delitem__ = update = _raise_frozen_typeerror
     setdefault = pop = popitem = clear = _raise_frozen_typeerror
 
     del _raise_frozen_typeerror
+
+
+class DotDict(dict):
+    """Dictionary subclass that allows dot notation access to keys.
+
+    Nested dictionaries are automatically converted to DotDict instances.
+    Brainchild of Chris Mahoney.
+
+    >>> from boltons.dictutils import DotDict
+    >>> dot_dict = DotDict({"a": 1, "b": {"c": 2}})
+
+    Accessing values with dot notation:
+
+    >>> print(dot_dict.a)
+    1
+    >>> print(dot_dict.b.c)
+    2
+
+    Setting values with dot notation:
+
+    >>> dot_dict.d = 3
+    >>> print(dot_dict.d)
+    3
+
+    Updating nested values with dot notation:
+
+    >>> dot_dict.b.e = 4
+    >>> print(dot_dict.b.e)
+    4
+
+    Deleting values with dot notation:
+
+    >>> del dot_dict.b.c
+    >>> print(dot_dict.b)
+    {'e': 4}
+
+    Converting back to regular dict:
+
+    >>> regular_dict = dot_dict.to_dict()
+    >>> print(regular_dict)
+    {'a': 1, 'b': {'c': 2, 'e': 4}, 'd': 3}
+    """
+
+    def __init__(self, *args, **kwargs) -> None:
+        dict.__init__(self)
+        d = dict(*args, **kwargs)
+        for key, value in d.items():
+            self[key] = self._convert_value(value)
+
+    def _convert_value(self, value):
+        """Convert dictionary values recursively."""
+        if isinstance(value, dict):
+            return DotDict(value)
+        elif isinstance(value, list):
+            return list(self._convert_value(item) for item in value)
+        elif isinstance(value, tuple):
+            return tuple(self._convert_value(item) for item in value)
+        elif isinstance(value, set):
+            return set(self._convert_value(item) for item in value)
+        return value
+
+    def __getattr__(self, key):
+        """Allow dictionary keys to be accessed as attributes."""
+        try:
+            return self[key]
+        except KeyError as e:
+            raise AttributeError(f"Key not found: '{key}'") from e
+
+    def __setattr__(self, key, value) -> None:
+        """Allow setting dictionary keys via attributes."""
+        self[key] = value
+
+    def __setitem__(self, key, value) -> None:
+        """Intercept item setting to convert dictionaries."""
+        dict.__setitem__(self, key, self._convert_value(value))
+
+    def __delitem__(self, key) -> None:
+        """Intercept item deletion to remove keys."""
+        try:
+            dict.__delitem__(self, key)
+        except KeyError as e:
+            raise KeyError(f"Key not found: '{key}'.") from e
+
+    def __delattr__(self, key) -> None:
+        """Allow deleting dictionary keys via attributes."""
+        try:
+            del self[key]
+        except KeyError as e:
+            raise AttributeError(f"Key not found: '{key}'") from e
+
+    def update(self, *args, **kwargs) -> None:
+        """Override update to convert new values.
+
+        This function does not return a value. It updates the dictionary with new key-value pairs.
+
+        >>> dot_dict = DotDict({"a": 1, "b": 2})
+        >>> dot_dict.update({"c": 3, "d": {"e": 4}})
+        >>> print(dot_dict)
+        {'a': 1, 'b': 2, 'c': 3, 'd': {'e': 4}}
+        """
+
+        for k, v in dict(*args, **kwargs).items():
+            self[k] = v
+
+    def to_dict(self):
+        """Convert back to regular dictionary.
+
+        The original dictionary structure, with all nested `#!py DotDict` instances converted back to regular dictionaries.
+
+        >>> dot_dict = DotDict({"a": 1, "b": {"c": 2}})
+        >>> regular_dict = dot_dict.to_dict()
+        >>> print(regular_dict)
+        {'a': 1, 'b': {'c': 2}}
+        """
+
+        def _convert_back(obj):
+            if isinstance(obj, DotDict):
+                return {k: _convert_back(v) for k, v in obj.items()}
+            elif isinstance(obj, list):
+                return list(_convert_back(item) for item in obj)
+            elif isinstance(obj, tuple):
+                return tuple(_convert_back(item) for item in obj)
+            elif isinstance(obj, set):
+                return set(_convert_back(item) for item in obj)
+            return obj
+
+        return _convert_back(self)
 
 
 # end dictutils.py
