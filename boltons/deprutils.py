@@ -31,18 +31,19 @@
 
 import sys
 from types import ModuleType
+from typing import Any
 from warnings import warn
 
 # todo: only warn once
 
 
 class DeprecatableModule(ModuleType):
-    def __init__(self, module):
+    def __init__(self, module: ModuleType):
         name = module.__name__
         super().__init__(name=name)
         self.__dict__.update(module.__dict__)
 
-    def __getattribute__(self, name):
+    def __getattribute__(self, name: str) -> Any:
         get_attribute = super().__getattribute__
         try:
             depros = get_attribute('_deprecated_members')
@@ -55,7 +56,7 @@ class DeprecatableModule(ModuleType):
         return ret
 
 
-def deprecate_module_member(mod_name, name, message):
+def deprecate_module_member(mod_name: str, name: str, message: str) -> None:
     module = sys.modules[mod_name]
     if not isinstance(module, DeprecatableModule):
         sys.modules[mod_name] = module = DeprecatableModule(module)
