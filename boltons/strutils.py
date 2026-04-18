@@ -1154,7 +1154,7 @@ class MultiReplace:
         s = strutils.MultiReplace([
             ('foo', 'zoo'),
             ('cat', 'hat'),
-            ('bat', 'kraken)'
+            ('bat', 'kraken')
         ])
         new = s.sub('The foo bar cat ate a bat')
         new == 'The zoo bar hat ate a kraken'
