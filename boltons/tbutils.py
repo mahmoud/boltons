@@ -777,7 +777,7 @@ class ParsedException:
 
         frames = []
         line_no = start_line
-        while True:
+        while line_no < len(tb_lines):
             frame_line = tb_lines[line_no].strip()
             frame_match = frame_re.match(frame_line)
             if frame_match:
@@ -800,9 +800,10 @@ class ParsedException:
                 else:
                     frame_dict['source_line'] = next_line_stripped
                     line_no += 1
-                if _underline_re.match(tb_lines[line_no + 1]):
-                  # To deal with anchors
-                  line_no += 1
+                    if (line_no + 1 < len(tb_lines)
+                            and _underline_re.match(tb_lines[line_no + 1])):
+                        # To deal with anchors
+                        line_no += 1
             else:
                 break
             line_no += 1

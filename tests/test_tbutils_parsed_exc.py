@@ -80,3 +80,21 @@ TypeError: unsupported operand type(s) for +: 'int' and 'str'"""
     _tb_str_lines = _tb_str.splitlines()
     _tb_str_without_anchor = "\n".join(_tb_str_lines[:3] + _tb_str_lines[4:6] + _tb_str_lines[7:])
     assert parsed_tb.to_string() == _tb_str_without_anchor
+
+
+def test_parsed_exc_truncated():
+    """a traceback whose last frame has a source line but no following
+    exception line should parse without raising IndexError"""
+    _tb_str = """\
+Traceback (most recent call last):
+  File "main.py", line 3, in <module>
+    print(add(1, 2))"""
+
+    parsed_tb = ParsedException.from_string(_tb_str)
+
+    assert parsed_tb.exc_type == ''
+    assert parsed_tb.exc_msg == ''
+    assert parsed_tb.frames == [{'source_line': 'print(add(1, 2))',
+                                 'filepath': 'main.py',
+                                 'lineno': '3',
+                                 'funcname': '<module>'}]
