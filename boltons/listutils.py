@@ -121,7 +121,7 @@ class BarrelList(list):
     def _balance_list(self, list_idx):
         if list_idx < 0:
             list_idx += len(self.lists)
-        cur_list, len_self = self.lists[list_idx], len(self)
+        cur_list = self.lists[list_idx]
         size_limit = self._cur_size_limit
         if len(cur_list) > size_limit:
             half_limit = size_limit // 2
