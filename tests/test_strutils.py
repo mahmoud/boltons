@@ -252,3 +252,25 @@ def test_roundzip():
     assert strutils.gunzip_bytes(strutils.gzip_bytes(aaa)) == aaa
 
     assert strutils.gunzip_bytes(strutils.gzip_bytes(b'')) == b''
+
+
+def test_bytes2human():
+    b2h = strutils.bytes2human
+    # Exact powers of 1024 must roll over to the next unit, not show the
+    # previous unit times 1024.
+    assert b2h(1024) == '1K'
+    assert b2h(1024 ** 2) == '1M'
+    assert b2h(1024 ** 3) == '1G'
+    assert b2h(1024 ** 4) == '1T'
+    # Just below a boundary stays in the smaller unit.
+    assert b2h(1023) == '1023B'
+    assert b2h(1024 ** 2 - 1, 1) == '1024.0K'
+    # Ordinary mid-range values are unaffected.
+    assert b2h(0) == '0B'
+    assert b2h(2048) == '2K'
+    assert b2h(128991) == '126K'
+    # Sign is preserved and negative magnitudes scale like positives.
+    assert b2h(-1024) == '-1K'
+    assert b2h(-(1024 ** 2)) == '-1M'
+    # ndigits controls the fractional part.
+    assert b2h(1024, 2) == '1.00K'
