@@ -34,6 +34,9 @@ applications. Currently this focuses on ways to use :mod:`pdb`, the
 built-in Python debugger.
 """
 
+from __future__ import annotations
+
+from collections.abc import Callable
 import sys
 import time
 from reprlib import Repr
@@ -47,7 +50,7 @@ except ImportError:
 __all__ = ['pdb_on_signal', 'pdb_on_exception', 'wrap_trace']
 
 
-def pdb_on_signal(signalnum=None):
+def pdb_on_signal(signalnum: int | None = None) -> None:
     """Installs a signal handler for *signalnum*, which defaults to
     ``SIGINT``, or keyboard interrupt/ctrl-c. This signal handler
     launches a :mod:`pdb` breakpoint. Results vary in concurrent
@@ -75,7 +78,7 @@ def pdb_on_signal(signalnum=None):
     return
 
 
-def pdb_on_exception(limit=100):
+def pdb_on_exception(limit: int = 100) -> None:
     """Installs a handler which, instead of exiting, attaches a
     post-mortem pdb console whenever an unhandled exception is
     encountered.
@@ -138,8 +141,8 @@ def trace_print_hook(event, label, obj, attr_name,
     return
 
 
-def wrap_trace(obj, hook=trace_print_hook,
-               which=None, events=None, label=None):
+def wrap_trace(obj, hook: Callable = trace_print_hook,
+               which: str | None = None, events: str | None = None, label: str | None = None):
     """Monitor an object for interactions. Whenever code calls a method,
     gets an attribute, or sets an attribute, an event is called. By
     default the trace output is printed, but a custom tracing *hook*

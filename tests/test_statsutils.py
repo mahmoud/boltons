@@ -11,13 +11,12 @@ def test_stats_basic():
     assert da.median == 9.5
 
 
-def _test_pearson():
+def test_pearson():
     import random
-    from statsutils import pearson_type
 
     def get_pt(dist):
         vals = [dist() for x in range(10000)]
-        pt = pearson_type(vals)
+        pt = Stats(vals).pearson_type
         return pt
 
     for x in range(3):

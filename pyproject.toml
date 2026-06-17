@@ -12,6 +12,7 @@ classifiers = [
     "Topic :: Software Development :: Libraries",
     "Development Status :: 5 - Production/Stable",
     "Operating System :: OS Independent",
+    "Typing :: Typed",
     # List of python versions and their support status:
     # https://en.wikipedia.org/wiki/CPython#Version_history
     "Programming Language :: Python :: 3",

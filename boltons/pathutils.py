@@ -41,17 +41,22 @@ together.
 The :func:`shrinkuser` function replaces your home directory with a tilde.
 """
 
+from __future__ import annotations
+
 from os.path import (expanduser, expandvars, join, normpath, split, splitext)
 import os
+from typing import TYPE_CHECKING
 
+if TYPE_CHECKING:
+    from _typeshed import StrPath
 
 __all__ = [
     'augpath', 'shrinkuser', 'expandpath',
 ]
 
 
-def augpath(path, suffix='', prefix='', ext=None, base=None, dpath=None,
-            multidot=False):
+def augpath(path: StrPath, suffix: str = '', prefix: str = '', ext: str | None = None, base: str | None = None, dpath: str | None = None,
+            multidot: bool = False) -> str:
     """
     Augment a path by modifying its components.
 
@@ -131,7 +136,7 @@ def augpath(path, suffix='', prefix='', ext=None, base=None, dpath=None,
     return newpath
 
 
-def shrinkuser(path, home='~'):
+def shrinkuser(path: StrPath, home: str = '~') -> str:
     """
     Inverse of :func:`os.path.expanduser`.
 
@@ -162,7 +167,7 @@ def shrinkuser(path, home='~'):
     return path
 
 
-def expandpath(path):
+def expandpath(path: StrPath) -> str:
     """
     Shell-like expansion of environment variables and tilde home directory.
 

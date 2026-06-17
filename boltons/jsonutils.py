@@ -35,20 +35,29 @@ of working with `JSON Lines`_-formatted files.
 .. _JSON Lines: http://jsonlines.org/
 
 """
+from __future__ import annotations
 
-
+from collections.abc import Generator
 import io
 import os
 import json
+from typing import IO, TYPE_CHECKING, Any, overload
 
+if TYPE_CHECKING:
+    from typing_extensions import Self
 
 DEFAULT_BLOCKSIZE = 4096
 
 
 __all__ = ['JSONLIterator', 'reverse_iter_lines']
 
-
-def reverse_iter_lines(file_obj, blocksize=DEFAULT_BLOCKSIZE, preseek=True, encoding=None):
+@overload
+def reverse_iter_lines(file_obj: IO[bytes], blocksize: int = DEFAULT_BLOCKSIZE, preseek: bool = True, encoding: None = None) -> Generator[bytes, None, None]: ...
+@overload
+def reverse_iter_lines(file_obj: IO[str], blocksize: int = DEFAULT_BLOCKSIZE, preseek: bool = True, *, encoding: str) -> Generator[str, None, None]: ...
+@overload
+def reverse_iter_lines(file_obj: IO[str], blocksize: int, preseek: bool, encoding: str) -> Generator[str, None, None]: ...
+def reverse_iter_lines(file_obj: IO[bytes] | IO[str], blocksize: int = DEFAULT_BLOCKSIZE, preseek: bool = True, encoding: str | None = None) -> Generator[bytes, None, None] | Generator[str, None, None]:
     """Returns an iterator over the lines from a file object, in
     reverse order, i.e., last line first, first line last. Uses the
     :meth:`file.seek` method of file objects, and is tested compatible with
@@ -143,8 +152,8 @@ class JSONLIterator:
 
     .. _JSON Lines format: http://jsonlines.org/
     """
-    def __init__(self, file_obj,
-                 ignore_errors=False, reverse=False, rel_seek=None):
+    def __init__(self, file_obj: IO[str],
+                 ignore_errors: bool = False, reverse: bool = False, rel_seek: float | None = None):
         self._reverse = bool(reverse)
         self._file_obj = file_obj
         self.ignore_errors = ignore_errors
@@ -169,7 +178,7 @@ class JSONLIterator:
             self._line_iter = iter(self._file_obj)
 
     @property
-    def cur_byte_pos(self):
+    def cur_byte_pos(self) -> int:
         "A property representing where in the file the iterator is reading."
         return self._file_obj.tell()
 
@@ -203,10 +212,10 @@ class JSONLIterator:
                 self._align_to_newline()
                 self._cur_pos = fo.tell()
 
-    def __iter__(self):
+    def __iter__(self) -> Self:
         return self
 
-    def next(self):
+    def next(self) -> Any:
         """Yields one :class:`dict` loaded with :func:`json.loads`, advancing
         the file object by one line. Raises :exc:`StopIteration` upon reaching
         the end of the file (or beginning, if ``reverse`` was set to ``True``.
