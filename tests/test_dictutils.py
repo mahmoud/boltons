@@ -61,6 +61,20 @@ def test_eq():
     assert omd != omd3
 
 
+def test_eq_with_dict():
+    # OMD on the left dispatches to OMD.__eq__, which has to compare values
+    # against a plain mapping, not just keys.
+    omd = OMD([('a', 1), ('b', 2)])
+    assert omd == {'a': 1, 'b': 2}
+    assert not (omd != {'a': 1, 'b': 2})
+
+    assert omd != {'a': 999, 'b': 2}
+    assert not (omd == {'a': 999, 'b': 2})
+
+    # same number of keys but a different key
+    assert omd != {'a': 1, 'c': 2}
+
+
 def test_copy():
     for itemset in _ITEMSETS:
         omd = OMD(itemset)

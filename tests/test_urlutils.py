@@ -1,7 +1,7 @@
 import pytest
 
 from boltons import urlutils
-from boltons.urlutils import URL, _URL_RE, find_all_links
+from boltons.urlutils import URL, QueryParamDict, _URL_RE, find_all_links
 
 
 # fully quoted urls that should round trip
@@ -93,6 +93,13 @@ def test_query_params(test_url):
         return 
     qp_text = url_obj.query_params.to_text(full_quote=True)
     assert test_url.endswith(qp_text)
+
+
+def test_query_param_dict_eq_with_dict():
+    qpd = QueryParamDict([('a', '1'), ('b', '2')])
+    assert qpd == {'a': '1', 'b': '2'}
+    assert qpd != {'a': '999', 'b': '2'}
+    assert not (qpd == {'a': '999', 'b': '2'})
 
 
 def test_iri_query():
