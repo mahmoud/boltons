@@ -358,7 +358,8 @@ class OrderedMultiDict(dict):
         elif hasattr(other, 'keys'):
             for selfk in self:
                 try:
-                    other[selfk] == self[selfk]
+                    if other[selfk] != self[selfk]:
+                        return False
                 except KeyError:
                     return False
             return True
