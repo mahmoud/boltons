@@ -1,6 +1,6 @@
 from pytest import raises
 
-from boltons.setutils import IndexedSet, _MISSING, complement
+from boltons.setutils import IndexedSet, FrozenIndexedSet, _MISSING, complement
 
 
 def test_indexed_set_basic():
@@ -203,3 +203,264 @@ def test_iset_index_method():
         if i % 3:
             index = indexed_list.index(i)
             assert i == indexed_list.pop(index)
+
+
+def test_frozen_indexed_set_basic():
+    """Test FrozenIndexedSet basic functionality."""
+    # Empty initialization
+    efis = FrozenIndexedSet()
+    assert len(efis) == 0
+    assert not efis
+    assert list(efis) == []
+    
+    # Basic initialization with duplicates
+    fis = FrozenIndexedSet([3, 1, 2, 1, 3])
+    assert len(fis) == 3
+    assert list(fis) == [3, 1, 2]
+    
+    # Test contains
+    assert 1 in fis
+    assert 2 in fis
+    assert 3 in fis
+    assert 4 not in fis
+    
+    # Test indexing
+    assert fis[0] == 3
+    assert fis[1] == 1
+    assert fis[2] == 2
+    assert fis[-1] == 2
+    assert fis[-2] == 1
+    
+    # Test slicing
+    assert fis[:2] == FrozenIndexedSet([3, 1])
+    assert fis[1:] == FrozenIndexedSet([1, 2])
+    assert fis[::2] == FrozenIndexedSet([3, 2])
+    
+    # Test iteration
+    assert list(fis) == [3, 1, 2]
+    assert list(reversed(fis)) == [2, 1, 3]
+    
+    # Test hashability
+    assert hash(fis)
+    fis_map = {fis: 'value'}
+    assert fis_map[fis] == 'value'
+    
+    # Test equality
+    fis2 = FrozenIndexedSet([3, 1, 2])
+    assert fis == fis2
+    assert hash(fis) == hash(fis2)
+    
+    # Different order means different FrozenIndexedSet
+    fis3 = FrozenIndexedSet([1, 2, 3])
+    assert fis != fis3
+    
+    # But equal as sets
+    assert set(fis) == set(fis3)
+    
+    # Test index method
+    assert fis.index(3) == 0
+    assert fis.index(1) == 1
+    assert fis.index(2) == 2
+    
+    with raises(ValueError):
+        fis.index(4)
+    
+    # Test count
+    assert fis.count(1) == 1
+    assert fis.count(4) == 0
+    
+    # Test copy returns self
+    assert fis.copy() is fis
+    
+    import copy
+    assert copy.copy(fis) is fis
+    
+    # Test repr
+    assert repr(fis) == 'FrozenIndexedSet([3, 1, 2])'
+    
+    return
+
+
+def test_frozen_indexed_set_set_operations():
+    """Test FrozenIndexedSet set operations."""
+    fis1 = FrozenIndexedSet([1, 2, 3, 4])
+    fis2 = FrozenIndexedSet([3, 4, 5, 6])
+    
+    # Union
+    union = fis1 | fis2
+    assert isinstance(union, FrozenIndexedSet)
+    assert set(union) == {1, 2, 3, 4, 5, 6}
+    assert list(union) == [1, 2, 3, 4, 5, 6]  # fis2 items appended
+    
+    # Intersection
+    intersection = fis1 & fis2
+    assert isinstance(intersection, FrozenIndexedSet)
+    assert set(intersection) == {3, 4}
+    assert list(intersection) == [3, 4]  # order from fis1
+    
+    # Difference
+    diff = fis1 - fis2
+    assert isinstance(diff, FrozenIndexedSet)
+    assert set(diff) == {1, 2}
+    assert list(diff) == [1, 2]
+    
+    # Symmetric difference
+    sym_diff = fis1 ^ fis2
+    assert isinstance(sym_diff, FrozenIndexedSet)
+    assert set(sym_diff) == {1, 2, 5, 6}
+    
+    # Test with regular sets
+    regular_set = {3, 4, 5}
+    union_with_set = fis1 | regular_set
+    assert isinstance(union_with_set, FrozenIndexedSet)
+    assert set(union_with_set) == {1, 2, 3, 4, 5}
+    
+    # Reverse operations
+    assert set(fis1 | fis2) == set(fis2 | fis1)
+    assert set(fis1 & fis2) == set(fis2 & fis1)
+    
+    return
+
+
+def test_frozen_indexed_set_set_predicates():
+    """Test FrozenIndexedSet set predicate methods."""
+    fis1 = FrozenIndexedSet([1, 2, 3])
+    fis2 = FrozenIndexedSet([1, 2, 3, 4, 5])
+    fis3 = FrozenIndexedSet([4, 5, 6])
+    
+    # issubset
+    assert fis1.issubset(fis2)
+    assert fis1 <= fis2
+    assert not fis2.issubset(fis1)
+    assert fis1.issubset(fis1)
+    
+    # proper subset
+    assert fis1 < fis2
+    assert not fis1 < fis1
+    
+    # issuperset
+    assert fis2.issuperset(fis1)
+    assert fis2 >= fis1
+    assert not fis1.issuperset(fis2)
+    assert fis1.issuperset(fis1)
+    
+    # proper superset
+    assert fis2 > fis1
+    assert not fis1 > fis1
+    
+    # isdisjoint
+    assert fis1.isdisjoint(fis3)
+    assert not fis1.isdisjoint(fis2)
+    
+    return
+
+
+def test_frozen_indexed_set_from_iterable():
+    """Test FrozenIndexedSet.from_iterable class method."""
+    fis = FrozenIndexedSet.from_iterable(range(5))
+    assert list(fis) == [0, 1, 2, 3, 4]
+    assert isinstance(fis, FrozenIndexedSet)
+    
+    # Test with generator
+    fis2 = FrozenIndexedSet.from_iterable(x * 2 for x in range(3))
+    assert list(fis2) == [0, 2, 4]
+    
+    return
+
+
+def test_frozen_indexed_set_interop_with_indexed_set():
+    """Test interoperability between FrozenIndexedSet and IndexedSet."""
+    fis = FrozenIndexedSet([1, 2, 3])
+    iset = IndexedSet([1, 2, 3])
+    
+    # Equality works both ways
+    assert fis == iset
+    assert iset == fis
+    
+    # Set operations work
+    fis2 = FrozenIndexedSet([3, 4, 5])
+    union = fis | iset
+    assert isinstance(union, FrozenIndexedSet)
+    assert set(union) == {1, 2, 3}
+    
+    return
+
+
+def test_frozen_indexed_set_rsub():
+    """Test FrozenIndexedSet reverse subtraction."""
+    fis = FrozenIndexedSet([1, 2, 3])
+    
+    # rsub with set
+    result = {1, 2, 3, 4} - fis
+    assert isinstance(result, set)
+    assert result == {4}
+    
+    # rsub with frozenset
+    result2 = frozenset([1, 2, 3, 4]) - fis
+    assert isinstance(result2, frozenset)
+    assert result2 == frozenset([4])
+    
+    return
+
+
+def test_frozen_indexed_set_multiple_operations():
+    """Test chaining multiple set operations."""
+    fis1 = FrozenIndexedSet([1, 2, 3])
+    fis2 = FrozenIndexedSet([2, 3, 4])
+    fis3 = FrozenIndexedSet([3, 4, 5])
+    
+    # Multiple unions
+    result = fis1.union(fis2, fis3)
+    assert set(result) == {1, 2, 3, 4, 5}
+    
+    # Multiple intersections
+    result2 = fis1.intersection(fis2, fis3)
+    assert set(result2) == {3}
+    
+    # Multiple differences
+    result3 = fis1.difference(fis2, fis3)
+    assert set(result3) == {1}
+    
+    return
+
+
+def test_frozen_indexed_set_edge_cases():
+    """Test FrozenIndexedSet edge cases."""
+    # Empty set operations
+    empty = FrozenIndexedSet()
+    fis = FrozenIndexedSet([1, 2, 3])
+    
+    assert empty | fis == fis
+    assert fis | empty == fis
+    assert empty & fis == empty
+    assert empty - fis == empty
+    assert fis - empty == fis
+    
+    # Single element
+    single = FrozenIndexedSet([42])
+    assert single[0] == 42
+    assert single[-1] == 42
+    assert 42 in single
+    assert len(single) == 1
+    
+    # Copy from another FrozenIndexedSet (fast path)
+    fis2 = FrozenIndexedSet(fis)
+    assert fis2 == fis
+    assert list(fis2) == list(fis)
+    
+    return
+
+
+def test_frozen_indexed_set_pickle():
+    """Test FrozenIndexedSet pickling."""
+    import pickle
+    
+    fis = FrozenIndexedSet([1, 2, 3, 4, 5])
+    pickled = pickle.dumps(fis)
+    unpickled = pickle.loads(pickled)
+    
+    assert unpickled == fis
+    assert list(unpickled) == list(fis)
+    assert hash(unpickled) == hash(fis)
+    
+    return
