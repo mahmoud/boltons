@@ -2,6 +2,7 @@ docs/_build
 tmp.py
 htmlcov/
 venv/
+.venv/
 *.py[cod]
 venv-rtd/
 

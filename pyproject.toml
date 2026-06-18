@@ -1,6 +1,6 @@
 [project]
 name = "boltons"
-version = "25.0.1dev"
+dynamic = ["version"]
 description = "When they're not builtins, they're boltons."
 readme = "README.md"
 authors = [{ name = "Mahmoud Hashemi", email = "mahmoud@hatnote.com" }]
@@ -37,6 +37,13 @@ Homepage = "https://github.com/mahmoud/boltons"
 include = ["doc/", "tests/", "CHANGELOG.md", "tox.ini"]
 exclude = ["doc/_build"]
 
+
+[dependency-groups]
+dev = [
+    "pytest>=7,<8; python_version < '3.8'",
+    "pytest>=8; python_version >= '3.8'",
+]
+
 [tool.pytest.ini_options]
 doctest_optionflags = [
     "ALLOW_UNICODE",
@@ -48,20 +55,3 @@ doctest_optionflags = [
 [build-system]
 requires = ["flit_core >=3.2,<4"]
 build-backend = "flit_core.buildapi"
-
-# A brief checklist for release:
-# * tox
-# * git commit (if applicable)
-# * Bump pyproject.toml version off of -dev
-# * git commit -a -m "bump version for x.y.z release"
-# * rm -rf dist/*
-# * flit build
-# * flit publish
-# * bump docs/conf.py version
-# * git commit
-# * git tag -a x.y.z -m "brief summary"
-# * write CHANGELOG
-# * git commit
-# * bump pyproject.toml version onto n+1 dev
-# * git commit
-# * git push
