@@ -1,5 +1,0 @@
-coverage==7.2.7
-pytest==7.4.4; python_version < "3.8"
-pytest==8.3.4; python_version >= "3.8"
-pytest-cov==4.1.0
-tox==4.8.0

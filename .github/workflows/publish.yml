@@ -1,0 +1,79 @@
+name: Publish to PyPI
+
+on:
+  push:
+    tags:
+      - "[0-9]*.[0-9]*.[0-9]*"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Validate version
+        run: |
+          VERSION=$(sed -n "s/^__version__ = '\(.*\)'/\1/p" boltons/__init__.py)
+          echo "Package version: $VERSION"
+          if echo "$VERSION" | grep -qi 'dev'; then
+            echo "::error::Version $VERSION contains dev suffix."
+            exit 1
+          fi
+          TAG=${GITHUB_REF#refs/tags/}
+          if [ "$VERSION" != "$TAG" ]; then
+            echo "::error::Tag $TAG does not match __version__ ($VERSION)"
+            exit 1
+          fi
+      - name: Build package
+        run: uv build
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/p/boltons
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+      - uses: pypa/gh-action-pypi-publish@release/v1
+
+  verify:
+    needs: publish
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Wait for PyPI
+        run: |
+          TAG=${GITHUB_REF#refs/tags/}
+          for i in $(seq 1 30); do
+            if curl -s -f "https://pypi.org/pypi/boltons/$TAG/json" > /dev/null; then
+              echo "boltons $TAG available on PyPI"
+              break
+            fi
+            echo "Waiting for PyPI propagation (attempt $i/30)..."
+            sleep 10
+          done
+      - name: Install from PyPI and verify
+        run: |
+          TAG=${GITHUB_REF#refs/tags/}
+          pip install boltons==$TAG --index-url https://pypi.org/simple/
+          INSTALLED=$(cd /tmp && python -c "import boltons; print(boltons.__version__)")
+          echo "Installed version: $INSTALLED"
+          if [ "$INSTALLED" != "$TAG" ]; then
+            echo "::error::Installed version $INSTALLED does not match tag $TAG"
+            exit 1
+          fi
