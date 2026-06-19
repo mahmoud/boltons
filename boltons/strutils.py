@@ -1214,9 +1214,7 @@ class MultiReplace:
 
     def _get_value(self, match):
         """Given a match object find replacement value."""
-        group_dict = match.groupdict()
-        key = [x for x in group_dict if group_dict[x]][0]
-        return self.group_map[key]
+        return self.group_map[match.lastgroup]
 
     def sub(self, text):
         """
