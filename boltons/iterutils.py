@@ -158,7 +158,7 @@ def split_iter(src, sep=None, maxsplit=None):
     if maxsplit is not None:
         maxsplit = int(maxsplit)
         if maxsplit == 0:
-            yield [src]
+            yield list(src)
             return
 
     if callable(sep):

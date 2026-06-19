@@ -4,6 +4,7 @@ import pytest
 
 from boltons.dictutils import OMD
 from boltons.iterutils import (first,
+                               split,
                                pairwise,
                                pairwise_iter,
                                windowed,
@@ -22,6 +23,14 @@ isint = lambda x: isinstance(x, int)
 odd = lambda x: isint(x) and x % 2 != 0
 even = lambda x: isint(x) and x % 2 == 0
 is_meaning_of_life = lambda x: x == 42
+
+
+class TestSplit:
+    def test_maxsplit_zero_returns_unsplit_values(self):
+        values = [1, None, 2]
+
+        assert split(values, maxsplit=0) == [values]
+        assert split(iter(values), maxsplit=0) == [values]
 
 
 class TestFirst:
@@ -634,4 +643,3 @@ def test_partition_multiple():
     assert positive == [2, 3]
     assert negative == [-1, -2]
     assert zero == [0]
-
