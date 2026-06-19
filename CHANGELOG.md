@@ -5,6 +5,24 @@ for an average of one 33-commit release about every 9 weeks. Versions
 are named according to the [CalVer](https://calver.org) versioning
 scheme (`YY.MINOR.MICRO`).
 
+## 26.0.0
+
+_(June 19, 2026)_
+
+- Added [`funcutils.once`][funcutils.once] decorator for one-time function execution
+- Added [`strutils.human_readable_list`][strutils.human_readable_list] for formatting lists as human-readable strings
+- Extended [`iterutils.partition`][iterutils.partition] to accept multiple predicates
+- Added `cache` option to [`iterutils.remap`][iterutils.remap] and [`iterutils.research`][iterutils.research]
+- Fixed [`iterutils.split`][iterutils.split] `maxsplit=0` wrapping source object instead of its values
+- Fixed [`listutils.BarrelList`][listutils.BarrelList] `insert()` raising `IndexError` on large negative indices (now clamps like built-in `list`)
+- Fixed [`listutils.BarrelList`][listutils.BarrelList] `sort()` with multiple internal lists
+- Fixed [`dictutils.OrderedMultiDict`][dictutils.OrderedMultiDict] equality comparison against plain mappings
+- Fixed [`strutils.bytes2human`][strutils.bytes2human] rollover at exact powers of 1024
+- Fixed [`tbutils.ParsedException.from_string`][tbutils.ParsedException] `IndexError` on truncated tracebacks
+- Fixed [`tableutils.Table.to_text`][tableutils.Table] column sizing
+- Fixed [`strutils.html2text`][strutils.html2text] handling
+- Added Python 3.14 support
+
 ## 25.0.0
 
 _(February 2, 2025)_
@@ -1090,6 +1108,7 @@ added in this release.
 [funcutils.total_ordering]: http://boltons.readthedocs.org/en/latest/funcutils.html#boltons.funcutils.total_ordering
 [funcutils.update_wrapper]: http://boltons.readthedocs.org/en/latest/funcutils.html#boltons.funcutils.update_wrapper
 [funcutils.wraps]: http://boltons.readthedocs.org/en/latest/funcutils.html#boltons.funcutils.wraps
+[funcutils.once]: https://boltons.readthedocs.io/en/latest/funcutils.html#boltons.funcutils.once
 [gcutils.GCToggler]: http://boltons.readthedocs.org/en/latest/gcutils.html#boltons.gcutils.GCToggler
 [gcutils.get_all]: http://boltons.readthedocs.org/en/latest/gcutils.html#boltons.gcutils.get_all
 [gcutils.is_tracked]: http://boltons.readthedocs.org/en/latest/gcutils.html#boltons.gcutils.is_tracked
@@ -1144,6 +1163,7 @@ added in this release.
 [iterutils.same]: http://boltons.readthedocs.org/en/latest/iterutils.html#boltons.iterutils.same
 [iterutils.remap]: http://boltons.readthedocs.org/en/latest/iterutils.html#boltons.iterutils.remap
 [iterutils.research]: http://boltons.readthedocs.org/en/latest/iterutils.html#boltons.iterutils.research
+[iterutils.partition]: http://boltons.readthedocs.org/en/latest/iterutils.html#boltons.iterutils.partition
 [iterutils.soft_sorted]: http://boltons.readthedocs.org/en/latest/iterutils.html#boltons.iterutils.soft_sorted
 [iterutils.untyped_sorted]: http://boltons.readthedocs.org/en/latest/iterutils.html#boltons.iterutils.untyped_sorted
 [iterutils.split]: http://boltons.readthedocs.org/en/latest/iterutils.html#boltons.iterutils.split
@@ -1154,6 +1174,7 @@ added in this release.
 [iterutils.unique]: http://boltons.readthedocs.org/en/latest/iterutils.html#boltons.iterutils.unique
 [iterutils.windowed_iter]: http://boltons.readthedocs.org/en/latest/iterutils.html#boltons.iterutils.windowed_iter
 [iterutils.xfrange]: http://boltons.readthedocs.org/en/latest/iterutils.html#boltons.iterutils.xfrange
+[listutils.BarrelList]: http://boltons.readthedocs.org/en/latest/listutils.html#boltons.listutils.BarrelList
 [jsonutils.JSONLIterator]: http://boltons.readthedocs.org/en/latest/jsonutils.html#boltons.jsonutils.JSONLIterator
 [mathutils.Bits]: http://boltons.readthedocs.org/en/latest/mathutils.html#boltons.mathutils.Bits
 [mathutils.ceil]: http://boltons.readthedocs.org/en/latest/mathutils.html#boltons.mathutils.ceil
@@ -1179,6 +1200,7 @@ added in this release.
 [strutils]: http://boltons.readthedocs.org/en/latest/strutils.html
 [strutils.HTMLTextExtractor]: http://boltons.readthedocs.org/en/latest/strutils.html#boltons.strutils.HTMLTextExtractor
 [strutils.a10n]: http://boltons.readthedocs.org/en/latest/strutils.html#boltons.strutils.a10n
+[strutils.bytes2human]: http://boltons.readthedocs.org/en/latest/strutils.html#boltons.strutils.bytes2human
 [strutils.args2cmd]: http://boltons.readthedocs.org/en/latest/strutils.html#boltons.strutils.args2cmd
 [strutils.args2sh]: http://boltons.readthedocs.org/en/latest/strutils.html#boltons.strutils.args2sh
 [strutils.escape_shell_args]: http://boltons.readthedocs.org/en/latest/strutils.html#boltons.strutils.escape_shell_args
@@ -1186,6 +1208,7 @@ added in this release.
 [strutils.gzip_bytes]: http://boltons.readthedocs.org/en/latest/strutils.html#boltons.strutils.gzip_bytes
 [strutils.gunzip_bytes]: http://boltons.readthedocs.org/en/latest/strutils.html#boltons.strutils.gunzip_bytes
 [strutils.html2text]: http://boltons.readthedocs.org/en/latest/strutils.html#boltons.strutils.html2text
+[strutils.human_readable_list]: http://boltons.readthedocs.org/en/latest/strutils.html#boltons.strutils.human_readable_list
 [strutils.indent]: http://boltons.readthedocs.org/en/latest/strutils.html#boltons.strutils.indent
 [strutils.iter_splitlines]: http://boltons.readthedocs.org/en/latest/strutils.html#boltons.strutils.iter_splitlines
 [strutils.ordinalize]: http://boltons.readthedocs.org/en/latest/strutils.html#boltons.strutils.ordinalize
@@ -1198,6 +1221,7 @@ added in this release.
 [strutils.int_list_to_int_tuples]: http://boltons.readthedocs.org/en/latest/strutils.html#boltons.strutils.int_list_to_int_tuples
 [strutils.slugify]: http://boltons.readthedocs.org/en/latest/strutils.html#boltons.strutils.slugify
 [strutils.strip_ansi]: http://boltons.readthedocs.org/en/latest/strutils.html#boltons.strutils.strip_ansi
+[strutils.unwrap_text]: http://boltons.readthedocs.org/en/latest/strutils.html#boltons.strutils.unwrap_text
 [tableutils]: http://boltons.readthedocs.org/en/latest/tableutils.html
 [tableutils.Table]: http://boltons.readthedocs.org/en/latest/tableutils.html#boltons.tableutils.Table
 [tbutils]: http://boltons.readthedocs.org/en/latest/tbutils.html
