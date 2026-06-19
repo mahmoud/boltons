@@ -51,6 +51,17 @@ def test_barrel_list():
     bl3[:20:2] = range(0, -10, -1)
     assert bl3[6] == -3  # some truly tricky stepping/slicing works
 
+
+def test_barrel_list_insert_before_start_matches_list():
+    bl = BarrelList(range(int(1e5)))
+    bl._balance_list(0)
+
+    bl.insert(-int(1e9), 'start')
+
+    assert bl[0] == 'start'
+    assert len(bl) == int(1e5) + 1
+
+
 def test_sort_barrel_list():
     bl = BarrelList(reversed(range(100000)))
     bl.pop(50000)

@@ -139,7 +139,7 @@ class BarrelList(list):
         else:
             list_idx, rel_idx = self._translate_index(index)
             if list_idx is None:
-                raise IndexError()
+                list_idx, rel_idx = 0, 0
             self.lists[list_idx].insert(rel_idx, item)
             self._balance_list(list_idx)
         return
