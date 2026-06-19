@@ -100,8 +100,6 @@ TEST_INTS = [0, 74, 96, 183, 456, 150, 1098, 665, 1752, 1053, 190,
              21384, 40145, 26160, 46428, 30360]
 
 
-test_barrel_list()
-
 if __name__ == '__main__':
     _TUNE_SETUP = """\
 from boltons.listutils import BarrelList
