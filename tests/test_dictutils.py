@@ -96,9 +96,32 @@ def test_omd_pickle():
 
     nonempty = OMD([('a', 1), ('b', 2), ('b', 3)])
 
-    roundtripped = pickle.loads(pickle.dumps(nonempty)) 
+    roundtripped = pickle.loads(pickle.dumps(nonempty))
     assert roundtripped == nonempty
     assert roundtripped.getlist('b') == [2, 3]
+
+
+def test_omd_copy_module():
+    # copy.copy / copy.deepcopy must preserve multiple values per key. The
+    # inherited dict __reduce_ex__ used to reapply a dictitems iterator after
+    # __setstate__, collapsing each key down to a single value.
+    import copy
+
+    omd = OMD([('a', 1), ('a', 2), ('b', 3)])
+
+    shallow = copy.copy(omd)
+    assert shallow == omd
+    assert shallow.getlist('a') == [1, 2]
+
+    deep = copy.deepcopy(omd)
+    assert deep == omd
+    assert deep.getlist('a') == [1, 2]
+
+    # deepcopy must not share mutable values with the original
+    nested = OMD([('x', [1]), ('x', [2])])
+    nested_copy = copy.deepcopy(nested)
+    nested_copy.getlist('x')[0].append(99)
+    assert nested.getlist('x') == [[1], [2]]
 
 
 
