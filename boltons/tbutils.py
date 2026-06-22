@@ -716,9 +716,9 @@ class ParsedException:
 
         .. note::
 
-           Note that this method does not output "anchors" (e.g.,
-           ``~~~~~^^``), as were added in Python 3.13. See the built-in
-           ``traceback`` module if these are necessary.
+           Note that this method stores traceback anchor lines (e.g.,
+           ``~~~~~^^``), but does not store SyntaxError details as
+           structured fields.
         """
         lines = ['Traceback (most recent call last):']
 
@@ -729,6 +729,9 @@ class ParsedException:
             source_line = frame.get('source_line')
             if source_line:
                 lines.append(f'    {source_line}')
+                source_line_anchor = frame.get('source_line_anchor')
+                if source_line_anchor:
+                    lines.append(f'    {source_line_anchor}')
         if self.exc_msg:
             lines.append(f'{self.exc_type}: {self.exc_msg}')
         else:
@@ -798,11 +801,13 @@ class ParsedException:
                 ):
                     frame_dict['source_line'] = ''
                 else:
-                    frame_dict['source_line'] = next_line_stripped
+                    frame_dict['source_line'] = next_line[4:]
                     line_no += 1
                     if (line_no + 1 < len(tb_lines)
                             and _underline_re.match(tb_lines[line_no + 1])):
-                        # To deal with anchors
+                        frame_dict['source_line_anchor'] = tb_lines[
+                            line_no + 1
+                        ][4:]
                         line_no += 1
             else:
                 break
