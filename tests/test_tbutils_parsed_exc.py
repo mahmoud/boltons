@@ -67,19 +67,23 @@ TypeError: unsupported operand type(s) for +: 'int' and 'str'"""
 
     assert parsed_tb.exc_type == 'TypeError'
     assert parsed_tb.exc_msg == "unsupported operand type(s) for +: 'int' and 'str'"
-    assert parsed_tb.frames == [{'source_line': 'print(add(1, "two"))',
-                                  'filepath': 'main.py',
-                                  'lineno': '3',
-                                  'funcname': '<module>'},
-                                  {'source_line': 'return a + b',
-                                  'filepath': 'add.py',
-                                  'lineno': '2',
-                                  'funcname': 'add'}]
-    
-    # Note: not checking the anchor lines (indices 3, 6) because column details not currently stored in ParsedException
-    _tb_str_lines = _tb_str.splitlines()
-    _tb_str_without_anchor = "\n".join(_tb_str_lines[:3] + _tb_str_lines[4:6] + _tb_str_lines[7:])
-    assert parsed_tb.to_string() == _tb_str_without_anchor
+    assert parsed_tb.frames == [
+        {
+            'source_line': 'print(add(1, "two"))',
+            'source_line_anchor': '      ^^^^^^^^^^^^^',
+            'filepath': 'main.py',
+            'lineno': '3',
+            'funcname': '<module>',
+        },
+        {
+            'source_line': 'return a + b',
+            'source_line_anchor': '       ~~^~~',
+            'filepath': 'add.py',
+            'lineno': '2',
+            'funcname': 'add',
+        },
+    ]
+    assert parsed_tb.to_string() == _tb_str
 
 
 def test_parsed_exc_truncated():
