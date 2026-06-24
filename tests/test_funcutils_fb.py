@@ -235,7 +235,8 @@ def test_wraps_expected():
     def expect_pair(func):
         @wraps(func, expected=[('c', 5)])
         def wrapped(*args, **kwargs):
-            args, c = args[:2], args[-1]
+            # defaulted args are now forwarded as keyword args; extract from kwargs
+            c = kwargs.pop('c', 5)
             return func(*args, **kwargs) + (c,)
         return wrapped
 
@@ -244,7 +245,8 @@ def test_wraps_expected():
     def expect_dict(func):
         @wraps(func, expected={'c': 6})
         def wrapped(*args, **kwargs):
-            args, c = args[:2], args[-1]
+            # defaulted args are now forwarded as keyword args; extract from kwargs
+            c = kwargs.pop('c', 6)
             return func(*args, **kwargs) + (c,)
         return wrapped
 
@@ -277,7 +279,7 @@ def test_get_arg_names():
     [
         (["a", "b"], None, None, None, "a, b", "(a, b)"),
         (None, "args", "kwargs", None, "*args, **kwargs", "(*args, **kwargs)"),
-        ("a", None, None, dict(a="a"), "a", "(a)"),
+        ("a", None, None, dict(a="a"), "a=a", "(a)"),
     ],
 )
 def test_get_invocation_sig_str(
