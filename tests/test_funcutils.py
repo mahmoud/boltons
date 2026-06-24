@@ -6,7 +6,8 @@ from boltons.funcutils import (copy_function,
                                InstancePartial,
                                CachedInstancePartial,
                                noop,
-                               once)
+                               once,
+                               wraps)
 
 
 class Greeter:
@@ -80,6 +81,34 @@ def test_format_invocation():
     assert format_invocation('f', ('a', 'b')) == "f('a', 'b')"
     assert format_invocation('g', (), {'x': 'y'})  == "g(x='y')"
     assert format_invocation('h', ('a', 'b'), {'x': 'y', 'z': 'zz'}) == "h('a', 'b', x='y', z='zz')"
+
+def test_wraps_preserves_kwargs_for_defaulted_args():
+    """wraps must not collapse keyword args into positional args (issue #343).
+
+    When a caller passes a defaulted parameter by keyword, the generated
+    invocation must forward it as a keyword argument so that wrappers
+    that inspect *args and **kwargs see the value in the right place.
+    """
+    def flip(f):
+        @wraps(f)
+        def wrapper(*args, **kwargs):
+            return f(*reversed(args), **kwargs)
+        return wrapper
+
+    def power(x, y, msg=''):
+        return (x, y, msg)
+
+    flipped = flip(power)
+
+    # keyword arg must stay in kwargs, not bleed into args
+    assert flipped(3, 2, msg='abc') == (2, 3, 'abc')
+    # positional-only call still works
+    assert flipped(3, 2) == (2, 3, '')
+    # passing the defaulted arg positionally: the generated wrapper binds it
+    # as msg='pos' then forwards msg=msg (keyword), so the inner wrapper sees
+    # args=(3, 2) and kwargs={'msg': 'pos'}; reversed args only affects x and y
+    assert flipped(3, 2, 'pos') == (2, 3, 'pos')
+
 
 def test_noop():
     assert noop() is None

@@ -790,23 +790,28 @@ class FunctionBuilder:
     """, re.VERBOSE)
 
     def get_invocation_str(self):
-        kwonly_pairs = None
-        formatters = {}
-        if self.kwonlyargs:
-            kwonly_pairs = {arg: arg
-                                for arg in self.kwonlyargs}
-            formatters['formatvalue'] = lambda value: '=' + value
+        # Build the invocation string that forwards all arguments to _call.
+        # Regular args that have defaults must be forwarded as keyword
+        # arguments (``name=name``) so that callers who supply them by
+        # keyword have those values arrive in *kwargs* inside the wrapper,
+        # not silently flattened into a positional tuple.  Without this,
+        # ``wrapper(*args, **kwargs)`` loses keyword information for
+        # defaulted parameters (issue #343).
+        defaults = self.defaults or ()
+        n_positional = len(self.args) - len(defaults)
+        positional_args = self.args[:n_positional]
+        defaulted_args = self.args[n_positional:]
 
-        sig = inspect_formatargspec(self.args,
-                                    self.varargs,
-                                    self.varkw,
-                                    [],
-                                    kwonly_pairs,
-                                    kwonly_pairs,
-                                    {},
-                                    **formatters)
-        sig = self._KWONLY_MARKER.sub('', sig)
-        return sig[1:-1]
+        parts = list(positional_args)
+        if self.varargs:
+            parts.append('*' + self.varargs)
+        for arg in defaulted_args:
+            parts.append(arg + '=' + arg)
+        for arg in (self.kwonlyargs or []):
+            parts.append(arg + '=' + arg)
+        if self.varkw:
+            parts.append('**' + self.varkw)
+        return ', '.join(parts)
 
     @classmethod
     def from_func(cls, func):
