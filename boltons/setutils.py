@@ -412,6 +412,11 @@ class IndexedSet(MutableSet):
             return self.from_iterable(iter_slice)
         if index < 0:
             index += len(self)
+        if not 0 <= index < len(self):
+            # _get_real_index() normalizes negative indices a second time, so
+            # an out-of-range negative index would otherwise wrap around and
+            # return the wrong item instead of raising (list semantics).
+            raise IndexError('IndexedSet index out of range')
         real_index = self._get_real_index(index)
         try:
             ret = self.item_list[real_index]

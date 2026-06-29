@@ -203,3 +203,30 @@ def test_iset_index_method():
         if i % 3:
             index = indexed_list.index(i)
             assert i == indexed_list.pop(index)
+
+
+def test_indexed_set_getitem_out_of_range():
+    # Integer indexing must match list semantics: an out-of-range index raises
+    # IndexError. Regression for __getitem__ silently wrapping out-of-range
+    # negative indices (they were normalized twice) instead of raising.
+    ref = [10, 20, 30]
+    iset = IndexedSet(ref)
+
+    for i in range(-len(ref), len(ref)):
+        assert iset[i] == ref[i]
+
+    for bad in (3, 4, 100, -4, -5, -7, -100):
+        with raises(IndexError):
+            iset[bad]
+
+    # The mapping from logical to real index must stay correct once internal
+    # dead markers exist (discard() leaves holes in the backing list).
+    big = IndexedSet(range(10))
+    big.discard(0)
+    big.discard(5)
+    live = [1, 2, 3, 4, 6, 7, 8, 9]
+    for i in range(-len(live), len(live)):
+        assert big[i] == live[i]
+    for bad in (len(live), -len(live) - 1):
+        with raises(IndexError):
+            big[bad]
