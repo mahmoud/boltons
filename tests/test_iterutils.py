@@ -535,6 +535,21 @@ def test_guiderator():
     assert len(next(guid_iter)) == 26
 
 
+def test_guiderator_bytes_hostname(monkeypatch):
+    # socket.gethostname() may return bytes on some platforms; reseed() must
+    # not raise a TypeError when building the salt (issue #295).
+    import socket
+    import string
+    from boltons.iterutils import GUIDerator
+
+    monkeypatch.setattr(socket, 'gethostname', lambda: b'myhost')
+
+    guid_iter = GUIDerator()
+    guid = next(guid_iter)
+    assert guid
+    assert all([c in string.hexdigits for c in guid])
+
+
 def test_seqguiderator():
     import string
     from boltons.iterutils import SequentialGUIDerator as GUIDerator

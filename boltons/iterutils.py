@@ -1475,8 +1475,13 @@ class GUIDerator:
     def reseed(self):
         import socket
         self.pid = os.getpid()
+        hostname = socket.gethostname()
+        # gethostname() may return bytes on some platforms/configs; decode so
+        # the str.join() below does not raise a TypeError on a mixed sequence.
+        if isinstance(hostname, bytes):
+            hostname = hostname.decode('utf8', 'replace')
         self.salt = '-'.join([str(self.pid),
-                              socket.gethostname() or '<nohostname>',
+                              hostname or '<nohostname>',
                               str(time.time()),
                               os.urandom(6).hex()])
         return
