@@ -386,7 +386,7 @@ class AtomicSaver:
 
     # TODO: option to abort if target file modify date has changed since start?
     def __init__(self, dest_path, **kwargs):
-        self.dest_path = dest_path
+        self.dest_path = os.fspath(dest_path)
         self.overwrite = kwargs.pop('overwrite', True)
         self.file_perms = kwargs.pop('file_perms', None)
         self.overwrite_part = kwargs.pop('overwrite_part', False)
@@ -400,7 +400,7 @@ class AtomicSaver:
         self.dest_path = os.path.abspath(self.dest_path)
         self.dest_dir = os.path.dirname(self.dest_path)
         if not self.part_filename:
-            self.part_path = dest_path + '.part'
+            self.part_path = self.dest_path + '.part'
         else:
             self.part_path = os.path.join(self.dest_dir, self.part_filename)
         self.mode = 'w+' if self.text_mode else 'w+b'
@@ -530,6 +530,7 @@ def iter_find_files(directory, patterns, ignored=None, include_dirs=False, max_d
     elif isinstance(ignored, str):
         ignored = [ignored]
     ign_re = re.compile('|'.join([fnmatch.translate(p) for p in ignored]))
+    directory = os.fspath(directory)
     start_depth = len(directory.split(os.path.sep))
     for root, dirs, files in os.walk(directory):
         if max_depth is not None and (len(root.split(os.path.sep)) - start_depth) > max_depth:
