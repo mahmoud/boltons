@@ -917,6 +917,29 @@ def parse_url(url_text):
         if sep:
             # TODO: empty userinfo error?
             user, _, pw = userinfo.partition(':')
+        else:
+            # No '@' found in authority. This can happen when the password
+            # contains an unencoded '?' or '/', causing the URL regex to stop
+            # the authority capture early and absorb the '@' into the query
+            # or path instead. Recover by detecting '@' at the start of
+            # the query (unencoded '?') or after '/' at the start of the
+            # path (unencoded '/'), then reconstruct userinfo and hostinfo.
+            query_text = gs.get('query') or ''
+            path_text = gs.get('path') or ''
+            if query_text.startswith('@'):
+                # Unencoded '?' in password: the regex treated '?' as the
+                # query delimiter and '@' landed at the start of the query.
+                userinfo = au_text + '?'
+                hostinfo = query_text[1:]
+                gs['query'] = None
+                user, _, pw = userinfo.partition(':')
+            elif path_text.startswith('/@'):
+                # Unencoded '/' in password: the regex treated '/' as the
+                # path start and '@' landed immediately after in the path.
+                userinfo = au_text + '/'
+                hostinfo = path_text[2:]
+                gs['path'] = ''
+                user, _, pw = userinfo.partition(':')
 
     host, port = None, None
     if hostinfo:
