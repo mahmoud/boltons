@@ -227,6 +227,13 @@ def singularize(word):
         singular = word[:-3] + 'y'
     elif word.endswith('es') and word[-3] == 's':
         singular = word[:-2]
+    elif word.endswith('ss'):
+        # Words ending in a double 's' (glass, boss, kiss) are already
+        # singular; their plurals end in 'sses' and are handled above. Do
+        # not blindly strip the trailing 's', which would produce 'glas',
+        # 'bos', 'kis' and break idempotency (singularize('Glasses') ==
+        # 'Glass', but 'Glass' must stay 'Glass').
+        return orig_word
     else:
         singular = word[:-1]
     return _match_case(orig_word, singular)

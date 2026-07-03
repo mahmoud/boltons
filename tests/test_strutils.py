@@ -274,3 +274,28 @@ def test_bytes2human():
     assert b2h(-(1024 ** 2)) == '-1M'
     # ndigits controls the fractional part.
     assert b2h(1024, 2) == '1.00K'
+
+
+def test_singularize_double_s():
+    singularize = strutils.singularize
+    # Words ending in a double 's' are already singular (their plurals end
+    # in 'sses'), so singularize must not strip the trailing 's' and produce
+    # 'glas'/'bos'/'kis'. Regression for the branch that blindly did word[:-1].
+    assert singularize('glass') == 'glass'
+    assert singularize('boss') == 'boss'
+    assert singularize('class') == 'class'
+    assert singularize('kiss') == 'kiss'
+    assert singularize('address') == 'address'
+    assert singularize('business') == 'business'
+    # Case pattern is preserved, like the rest of singularize().
+    assert singularize('Glass') == 'Glass'
+    assert singularize('BOSS') == 'BOSS'
+    # The real plurals of these words still singularize correctly (the 'sses'
+    # -> 'ss' branch runs before the new guard, so nothing regresses).
+    assert singularize('glasses') == 'glass'
+    assert singularize('bosses') == 'boss'
+    assert singularize('classes') == 'class'
+    assert singularize('addresses') == 'address'
+    # singularize() is now idempotent for these words: feeding its own output
+    # back in is a no-op (previously 'Glasses' -> 'Glass' -> 'Glas').
+    assert singularize(singularize('Glasses')) == 'Glass'
