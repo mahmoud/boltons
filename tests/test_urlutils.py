@@ -169,6 +169,45 @@ def test_not_equal():
     assert bono != u
 
 
+def test_url_query_param_order_independent_equality():
+    # Different key order should not affect URL equality (issue #280).
+    a = URL('http://example.com/foo?foo=bar&bar=foo')
+    b = URL('http://example.com/foo?bar=foo&foo=bar')
+    assert a == b
+
+
+def test_url_query_param_different_values_not_equal():
+    a = URL('http://example.com/?a=1&b=2')
+    b = URL('http://example.com/?a=2&b=1')
+    assert a != b
+
+
+def test_url_query_param_multi_value_order_matters():
+    # For repeated keys, value order within that key is preserved.
+    a = URL('http://example.com/?k=1&k=2')
+    b = URL('http://example.com/?k=2&k=1')
+    assert a != b
+
+
+def test_query_param_dict_order_independent_eq():
+    a = QueryParamDict.from_text('foo=bar&bar=foo')
+    b = QueryParamDict.from_text('bar=foo&foo=bar')
+    assert a == b
+
+
+def test_query_param_dict_multi_value_order_matters():
+    # Same-key value ordering is significant.
+    a = QueryParamDict.from_text('k=1&k=2')
+    b = QueryParamDict.from_text('k=2&k=1')
+    assert a != b
+
+
+def test_query_param_dict_different_values_not_equal():
+    a = QueryParamDict.from_text('a=1&b=2')
+    b = QueryParamDict.from_text('a=2&b=1')
+    assert a != b
+
+
 def _test_bad_utf8():  # not part of the API
     bad_bin_url = 'http://xn--9ca.com/%00%FF/%C3%A9'
     url = URL(bad_bin_url)

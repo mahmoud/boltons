@@ -1586,6 +1586,32 @@ class QueryParamDict(OrderedMultiDict):
         pairs = parse_qsl(query_string, keep_blank_values=True)
         return cls(pairs)
 
+    def __eq__(self, other):
+        """Compare two :class:`QueryParamDict` instances in a key-order-independent
+        way.
+
+        Two query param dicts are equal when they contain the same keys and,
+        for each key, the same list of values in the same order.  The
+        insertion order of *different* keys does not affect equality, which
+        matches the behaviour described in RFC 3986 §6.2.3.
+
+        >>> QueryParamDict.from_text('a=1&b=2') == QueryParamDict.from_text('b=2&a=1')
+        True
+        >>> QueryParamDict.from_text('a=1&a=2') == QueryParamDict.from_text('a=2&a=1')
+        False
+        """
+        if not isinstance(other, QueryParamDict):
+            return super().__eq__(other)
+        if set(self.keys()) != set(other.keys()):
+            return False
+        for key in self.keys():
+            if self.getlist(key) != other.getlist(key):
+                return False
+        return True
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
     def to_text(self, full_quote=False):
         """
         Render and return a query string.
