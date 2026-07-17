@@ -1,4 +1,5 @@
 import time
+import sys
 import inspect
 import functools
 from collections import defaultdict
@@ -127,30 +128,6 @@ def test_get_arg_names():
     assert fb_example.get_arg_names(only_required=True) == ('req',)
 
 
-@pytest.mark.parametrize('signature,should_match',
-                         [('a, *, b', True),
-                          ('a,*,b', True),
-                          ('a, * , b', True),
-                          ('a, *,\nb', True),
-                          ('a, *\n,b', True),
-                          ('a, b', False),
-                          ('a, *args', False),
-                          ('a, *args, **kwargs', False),
-                          ('*args', False),
-                          ('*args, **kwargs', False)])
-def test_FunctionBuilder_KWONLY_MARKER(signature, should_match):
-    """
-    _KWONLY_MARKER matches the keyword-only argument separator,
-    regardless of whitespace.
-
-    Note: it assumes the signature is valid Python.
-    """
-    matched = bool(FunctionBuilder._KWONLY_MARKER.search(signature))
-    message = "{!r}: should_match was {}, but result was {}".format(
-        signature, should_match, matched)
-    assert bool(matched) == should_match, message
-
-
 def test_FunctionBuilder_add_arg_kwonly():
     fb = FunctionBuilder('return_val', doc='returns the value',
                          body='return val')
@@ -217,22 +194,10 @@ def test_get_invocation_sig_str(
 def test_wraps_inner_kwarg_only():
     """from https://github.com/mahmoud/boltons/issues/261
 
-    mh responds to the issue:
-
-    You'll notice that when kw-only args are involved the first time
-    (wraps(f)(g)) it works fine. The other way around, however,
-    wraps(g)(f) fails, because by the very nature of funcutils.wraps,
-    you're trying to give f the same signature as g. And f's signature
-    is not like g's. g supports positional b and f() does not.
-
-    If you want to make a wrapper which converts a keyword-only
-    argument to one that can be positional or keyword only, that'll
-    require a different approach for now.
-
-    A potential fix would be to pass all function arguments as
-    keywords. But doubt that's the right direction, because, while I
-    have yet to add positional argument only support, that'll
-    definitely throw a wrench into things.
+    wraps(g)(f) used to raise a TypeError when f's b was keyword-only,
+    because g's defaulted b was forwarded positionally. Defaulted args
+    are now forwarded as keywords (with positional-only awareness), so
+    the wrapper works in both directions.
     """
     from boltons.funcutils import wraps
 
@@ -247,9 +212,7 @@ def test_wraps_inner_kwarg_only():
     assert g(3) == 30
     assert wraps(f)(g)(3) == 3  # yay, g got the f default (not so with functools.wraps!)
 
-    # but this doesn't work
-    with pytest.raises(TypeError):
-        wraps(g)(f)(3)
+    assert wraps(g)(f)(3) == 30  # g's b=10 is forwarded as a keyword
 
     return
 
@@ -316,3 +279,53 @@ def test_wraps_hide_wrapped():
     new_new_sig = inspect.signature(new_new_func, follow_wrapped=True)
 
     assert len(new_new_sig.parameters) == 0
+
+
+def test_wraps_defaulted_arg_keyword_forwarding():
+    # issue #343: a defaulted arg passed by keyword must reach the
+    # wrapper's **kwargs, not be flattened into *args
+    def flip(f):
+        @wraps(f)
+        def wrapper(*args, **kwargs):
+            return f(*reversed(args), **kwargs)
+        return wrapper
+
+    def power(x, y, msg=''):
+        return (x, y, msg)
+
+    assert flip(power)(3, 2, msg='abc') == (2, 3, 'abc')
+    assert flip(power)(3, 2) == (2, 3, '')
+
+
+def test_wraps_defaulted_arg_before_varargs():
+    # a defaulted arg preceding *varargs must stay positional; forwarding
+    # it as a keyword would raise "got multiple values for argument"
+    def deco(f):
+        @wraps(f)
+        def wrapper(*args, **kwargs):
+            return f(*args, **kwargs)
+        return wrapper
+
+    def func(x, y=1, *rest):
+        return (x, y, rest)
+
+    assert deco(func)(1, 2, 3) == (1, 2, (3,))
+    assert deco(func)(1) == (1, 1, ())
+
+
+@pytest.mark.skipif(sys.version_info < (3, 8),
+                    reason='positional-only params require 3.8+')
+def test_wraps_posonly_defaulted_arg():
+    # positional-only params, defaulted or not, are never keyword-forwarded
+    ns = {}
+    exec('def func(x, y=2, /, z=3):\n    return (x, y, z)', ns)
+    func = ns['func']
+
+    def deco(f):
+        @wraps(f)
+        def wrapper(*args, **kwargs):
+            return f(*args, **kwargs)
+        return wrapper
+
+    assert deco(func)(1, 5) == (1, 5, 3)
+    assert deco(func)(1, 5, z=7) == (1, 5, 7)

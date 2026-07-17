@@ -35,7 +35,6 @@ correcting Python's standard metaprogramming facilities.
 """
 
 import sys
-import re
 import inspect
 import functools
 import itertools
@@ -743,6 +742,7 @@ class FunctionBuilder:
                  'body': lambda: 'pass',
                  'indent': lambda: 4,
                  "annotations": dict,
+                 'posonlyargs': list,
                  'filename': lambda: 'boltons.funcutils.FunctionBuilder'}
 
     _defaults.update(_argspec_defaults)
@@ -782,31 +782,31 @@ class FunctionBuilder:
                                      {},
                                      annotations)
 
-    _KWONLY_MARKER = re.compile(r"""
-    \*     # a star
-    \s*    # followed by any amount of whitespace
-    ,      # followed by a comma
-    \s*    # followed by any amount of whitespace
-    """, re.VERBOSE)
-
     def get_invocation_str(self):
-        kwonly_pairs = None
-        formatters = {}
-        if self.kwonlyargs:
-            kwonly_pairs = {arg: arg
-                                for arg in self.kwonlyargs}
-            formatters['formatvalue'] = lambda value: '=' + value
-
-        sig = inspect_formatargspec(self.args,
-                                    self.varargs,
-                                    self.varkw,
-                                    [],
-                                    kwonly_pairs,
-                                    kwonly_pairs,
-                                    {},
-                                    **formatters)
-        sig = self._KWONLY_MARKER.sub('', sig)
-        return sig[1:-1]
+        # Regular args with defaults (and keyword-only args) are forwarded
+        # as keywords (name=name), so values callers pass by keyword reach
+        # the wrapper's **kwargs instead of being silently flattened into
+        # *args (#343). Two classes must stay positional: positional-only
+        # params (keywords are rejected outright), and every regular arg
+        # when *varargs is present (a keyword-forwarded arg that precedes
+        # *varargs collides with non-empty varargs).
+        defaults = self.defaults or ()
+        args = list(self.args or ())
+        n_positional = len(args) - len(defaults)
+        parts, kw_parts = [], []
+        for i, arg in enumerate(args):
+            if (i >= n_positional and not self.varargs
+                    and arg not in self.posonlyargs):
+                kw_parts.append(arg + '=' + arg)
+            else:
+                parts.append(arg)
+        if self.varargs:
+            parts.append('*' + self.varargs)
+        parts += kw_parts
+        parts += [arg + '=' + arg for arg in self.kwonlyargs or ()]
+        if self.varkw:
+            parts.append('**' + self.varkw)
+        return ', '.join(parts)
 
     @classmethod
     def from_func(cls, func):
@@ -833,6 +833,15 @@ class FunctionBuilder:
                       'dict': getattr(func, '__dict__', {})}
 
         kwargs.update(cls._argspec_to_dict(func))
+
+        # getfullargspec merges positional-only params into args; recover
+        # them from the code object so they are never keyword-forwarded.
+        # (functools.partial objects have no __code__; posonly detection
+        # is skipped for them, preserving today's behavior.)
+        n_posonly = getattr(getattr(func, '__code__', None),
+                            'co_posonlyargcount', 0)
+        if n_posonly:
+            kwargs['posonlyargs'] = list(kwargs['args'][:n_posonly])
 
         if inspect.iscoroutinefunction(func):
             kwargs['is_async'] = True
