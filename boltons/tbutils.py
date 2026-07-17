@@ -716,9 +716,10 @@ class ParsedException:
 
         .. note::
 
-           Note that this method does not output "anchors" (e.g.,
-           ``~~~~~^^``), as were added in Python 3.13. See the built-in
-           ``traceback`` module if these are necessary.
+           Anchor lines (e.g., ``~~~~~^^``, present in tracebacks from
+           Python 3.11+) round-trip: they are parsed into each frame's
+           ``source_line_anchor`` and re-emitted aligned beneath the
+           frame's source line.
         """
         lines = ['Traceback (most recent call last):']
 
@@ -729,6 +730,9 @@ class ParsedException:
             source_line = frame.get('source_line')
             if source_line:
                 lines.append(f'    {source_line}')
+                anchor = frame.get('source_line_anchor')
+                if anchor:
+                    lines.append(f'    {anchor}')
         if self.exc_msg:
             lines.append(f'{self.exc_type}: {self.exc_msg}')
         else:
@@ -802,7 +806,13 @@ class ParsedException:
                     line_no += 1
                     if (line_no + 1 < len(tb_lines)
                             and _underline_re.match(tb_lines[line_no + 1])):
-                        # To deal with anchors
+                        # store anchors dedented by the source line's
+                        # indentation so columns stay aligned with the
+                        # stripped source_line, whatever the tb's indent
+                        indent = len(next_line) - len(next_line.lstrip())
+                        anchor = tb_lines[line_no + 1][indent:].rstrip()
+                        if anchor:
+                            frame_dict['source_line_anchor'] = anchor
                         line_no += 1
             else:
                 break
