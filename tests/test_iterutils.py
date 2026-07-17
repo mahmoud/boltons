@@ -489,6 +489,21 @@ def test_backoff_validation():
         backoff(2, 8, jitter=20)
 
 
+def test_backoff_constant_factor():
+    from boltons.iterutils import backoff
+
+    # factor=1.0 (constant backoff) is allowed with an explicit count
+    assert backoff(1, 10, count=5, factor=1.0) == [1.0, 1.0, 1.0, 1.0, 1.0]
+    assert backoff(2, 10, count=3, factor=1.0) == [2.0, 2.0, 2.0]
+    # start == stop needs no growth, so an inferred count yields a single value
+    assert backoff(5, 5, factor=1.0) == [5.0]
+    # inferring the count from a non-growing factor is impossible, not a crash
+    with pytest.raises(ValueError):
+        backoff(1, 10, factor=1.0)
+    with pytest.raises(ValueError):
+        backoff(0, 10, factor=1.0)
+
+
 def test_backoff_jitter():
     from boltons.iterutils import backoff
 

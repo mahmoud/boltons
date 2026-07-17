@@ -648,8 +648,14 @@ def backoff_iter(start, stop, count=None, factor=2.0, jitter=False):
         raise ValueError('expected stop >= start, not %r' % stop)
     if count is None:
         denom = start if start else 1
-        count = 1 + math.ceil(math.log(stop/denom, factor))
-        count = count if start else count + 1
+        if factor == 1.0:
+            if start != stop:
+                raise ValueError('expected factor > 1.0 when count is None'
+                                 ' and start != stop, not %r' % factor)
+            count = 1
+        else:
+            count = 1 + math.ceil(math.log(stop/denom, factor))
+            count = count if start else count + 1
     if count != 'repeat' and count < 0:
         raise ValueError('count must be positive or "repeat", not %r' % count)
     if jitter:
