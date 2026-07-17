@@ -203,3 +203,37 @@ def test_iset_index_method():
         if i % 3:
             index = indexed_list.index(i)
             assert i == indexed_list.pop(index)
+
+
+def test_iset_slice_after_removal():
+    # PR #423: slice bounds were mapped into item_list space while islice
+    # consumed the apparent (dead-slot-free) stream, so any removal made
+    # slices over-count.
+    x = IndexedSet(range(10))
+    x.pop(2)  # leaves [0, 1, 3, 4, 5, 6, 7, 8, 9] with a dead slot
+    assert list(x[1:4]) == [1, 3, 4]
+    assert list(x[-3:]) == [7, 8, 9]
+    assert list(x[2:-1]) == [3, 4, 5, 6, 7, 8]
+    assert isinstance(x[1:4], IndexedSet)
+
+
+def test_iset_slice_agreement():
+    # Slicing must not depend on dead slots: a set with removals must slice
+    # identically to a freshly-built set with the same contents (all steps,
+    # including the reversed-window negative-step semantics), and positive
+    # steps must match list slicing exactly.
+    bounds = (None, -12, -9, -5, -1, 0, 1, 4, 8, 9, 12)
+    steps = (None, 1, 2, 3, -1, -2, -3)
+    for pops in ([], [2], [0, 1, 2], [7, 8, 9], [0, 3, 6, 9], [1, 2, 5, 6]):
+        iset = IndexedSet(range(10))
+        for p in pops:
+            iset.discard(p)
+        fresh = IndexedSet(iset)  # same contents, no dead slots
+        ref = list(iset)
+        for start in bounds:
+            for stop in bounds:
+                for step in steps:
+                    s = slice(start, stop, step)
+                    assert list(iset[s]) == list(fresh[s]), (pops, s)
+                    if step is None or step > 0:
+                        assert list(iset[s]) == ref[s], (pops, s)
