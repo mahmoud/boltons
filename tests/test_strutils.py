@@ -299,3 +299,18 @@ def test_singularize_double_s():
     # singularize() is now idempotent for these words: feeding its own output
     # back in is a no-op (previously 'Glasses' -> 'Glass' -> 'Glas').
     assert singularize(singularize('Glasses')) == 'Glass'
+
+
+def test_pluralize_x():
+    pluralize = strutils.pluralize
+    # Words ending in 'x' take an '-es' plural, like the 's'/'ch'/'sh' cases
+    # already handled; previously they wrongly got a bare 's' ('boxs').
+    assert pluralize('box') == 'boxes'
+    assert pluralize('fox') == 'foxes'
+    assert pluralize('tax') == 'taxes'
+    assert pluralize('prefix') == 'prefixes'
+    # Case pattern is preserved, like the rest of pluralize().
+    assert pluralize('Box') == 'Boxes'
+    assert pluralize('FOX') == 'FOXES'
+    # Irregular '-x' words are unaffected (handled before the rule).
+    assert pluralize('ox') == 'oxen'

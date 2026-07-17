@@ -258,7 +258,7 @@ def pluralize(word):
         plural = irr_plural
     elif word.endswith('y') and word[-2:-1] not in 'aeiou':
         plural = word[:-1] + 'ies'
-    elif word[-1] == 's' or word.endswith('ch') or word.endswith('sh'):
+    elif word[-1] in 'sx' or word.endswith('ch') or word.endswith('sh'):
         plural = word if word.endswith('es') else word + 'es'
     else:
         plural = word + 's'
