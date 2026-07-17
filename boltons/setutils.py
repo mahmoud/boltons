@@ -392,10 +392,14 @@ class IndexedSet(MutableSet):
     def iter_slice(self, start, stop, step=None):
         "iterate over a slice of the set"
         iterable = self
-        if start is not None:
-            start = self._get_real_index(start)
-        if stop is not None:
-            stop = self._get_real_index(stop)
+        # islice consumes the apparent (dead-slot-free) stream, so the bounds
+        # must stay in apparent index space. Running them through
+        # _get_real_index() inflated them by the dead slots, over-counting once
+        # anything had been removed. Normalize negatives the way slicing does.
+        if start is not None and start < 0:
+            start = max(len(self) + start, 0)
+        if stop is not None and stop < 0:
+            stop = max(len(self) + stop, 0)
         if step is not None and step < 0:
             step = -step
             iterable = reversed(self)

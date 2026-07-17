@@ -203,3 +203,28 @@ def test_iset_index_method():
         if i % 3:
             index = indexed_list.index(i)
             assert i == indexed_list.pop(index)
+
+
+def test_indexed_set_slice_after_removal():
+    # Slicing must match list slicing even after items are removed. Bounds were
+    # run through _get_real_index() (item_list space) while islice consumed the
+    # apparent, dead-slot-free stream, so any removal made slices over-count.
+    iset = IndexedSet(range(10))
+    iset.pop(2)  # leaves [0, 1, 3, 4, 5, 6, 7, 8, 9] with a dead slot
+    assert list(iset[1:4]) == [1, 3, 4]
+    assert list(iset[-3:]) == [7, 8, 9]
+    assert list(iset[2:-1]) == [3, 4, 5, 6, 7, 8]
+
+    # Exhaustively agree with list slicing across removal patterns and bounds
+    # (positive steps only; negative-step slicing is separately unimplemented).
+    bounds = (None, -12, -5, -1, 0, 1, 4, 8, 12)
+    for pops in ([2], [0, 1, 2], [7, 8, 9], [0, 3, 6, 9]):
+        iset = IndexedSet(range(10))
+        for p in pops:
+            iset.discard(p)
+        reference = list(iset)
+        for start in bounds:
+            for stop in bounds:
+                for step in (None, 1, 2, 3):
+                    s = slice(start, stop, step)
+                    assert list(iset[s]) == reference[s], (pops, s)
