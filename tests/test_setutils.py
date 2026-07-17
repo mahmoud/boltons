@@ -237,3 +237,37 @@ def test_iset_slice_agreement():
                     assert list(iset[s]) == list(fresh[s]), (pops, s)
                     if step is None or step > 0:
                         assert list(iset[s]) == ref[s], (pops, s)
+
+
+def test_iset_scalar_index_bounds():
+    # Out-of-range negatives used to wrap silently: __getitem__ normalized
+    # the index and _get_real_index normalized it AGAIN, so x[-10] on a
+    # 9-element set returned x[-1], and pop(-15) removed a middle element.
+    x = IndexedSet(range(10))
+    x.pop(2)  # len 9, one dead slot
+    assert x[-1] == 9
+    assert x[-9] == 0
+    with raises(IndexError):
+        x[9]
+    with raises(IndexError):
+        x[-10]
+    with raises(IndexError):
+        x.pop(-15)
+    assert 4 in x  # pop(-15) formerly silently removed 4
+    with raises(IndexError):
+        IndexedSet()[0]
+
+
+def test_iset_scalar_index_multiple_dead_intervals():
+    # exercise the _get_real_index interval walk across several dead ranges
+    iset = IndexedSet(range(100))
+    for p in (5, 20, 40, 60, 80):
+        iset.discard(p)
+    assert len(iset.dead_indices) == 5  # below compaction threshold (100/8)
+    ref = list(iset)
+    for i in list(range(-95, 95, 7)) + [0, -1, 94, -95]:
+        assert iset[i] == ref[i]
+    with raises(IndexError):
+        iset[95]
+    with raises(IndexError):
+        iset[-96]

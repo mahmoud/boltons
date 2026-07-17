@@ -158,6 +158,8 @@ class IndexedSet(MutableSet):
     def _get_real_index(self, index):
         if index < 0:
             index += len(self)
+        if index < 0 or index >= len(self):
+            raise IndexError('IndexedSet index out of range')
         if not self.dead_indices:
             return index
         real_index = index
@@ -416,14 +418,8 @@ class IndexedSet(MutableSet):
         else:
             iter_slice = self.iter_slice(start, stop, step)
             return self.from_iterable(iter_slice)
-        if index < 0:
-            index += len(self)
         real_index = self._get_real_index(index)
-        try:
-            ret = self.item_list[real_index]
-        except IndexError:
-            raise IndexError('IndexedSet index out of range')
-        return ret
+        return self.item_list[real_index]
 
     def pop(self, index=None):
         "pop(index) -> remove the item at a given index (-1 by default)"
