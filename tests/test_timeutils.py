@@ -56,3 +56,14 @@ def test_daterange_with_same_start_stop():
     assert next(date_range_inclusive) == today
     with pytest.raises(StopIteration):
         next(date_range_inclusive)
+
+
+def test_daterange_zero_step_raises():
+    start = date(2020, 1, 1)
+    stop = date(2020, 1, 5)
+    with pytest.raises(ValueError, match='non-zero'):
+        list(daterange(start, stop, step=0))
+    with pytest.raises(ValueError, match='non-zero'):
+        list(daterange(start, stop, step=timedelta(0)))
+    with pytest.raises(ValueError, match='non-zero'):
+        list(daterange(start, stop, step=(0, 0, 0)))

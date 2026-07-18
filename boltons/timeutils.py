@@ -363,8 +363,11 @@ def daterange(start, stop, step=1, inclusive=False):
     else:
         raise ValueError('step expected int, timedelta, or tuple'
                          ' (year, month, day), not: %r' % step)
-    
+
     m_step += y_step * 12
+    # Zero step never advances; same class of error as range(..., step=0).
+    if m_step == 0 and d_step == timedelta(0):
+        raise ValueError('step must be non-zero')
 
     if stop is None:
         finished = lambda now, stop: False
