@@ -117,7 +117,7 @@ def isoparse(iso_str):
     .. _dateutil: https://pypi.python.org/pypi/python-dateutil
 
     """
-    parts = [p for p in _NONDIGIT_RE.split(iso_str) if p]
+    parts = _NONDIGIT_RE.split(iso_str)
     dt_args = [int(p) for p in parts]
     # Fractional seconds from isoformat are 1-6 digits of a second, not raw microseconds.
     if len(dt_args) >= 7:
