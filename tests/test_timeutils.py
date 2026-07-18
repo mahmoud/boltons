@@ -1,8 +1,8 @@
-from datetime import timedelta, date
+from datetime import datetime, timedelta, date
 
 import pytest
 
-from boltons.timeutils import daterange
+from boltons.timeutils import daterange, isoparse
 
 
 def test_daterange_years():
@@ -56,3 +56,13 @@ def test_daterange_with_same_start_stop():
     assert next(date_range_inclusive) == today
     with pytest.raises(StopIteration):
         next(date_range_inclusive)
+
+
+def test_isoparse_fractional_seconds_match_isoformat():
+    # isoformat(timespec='milliseconds') yields 3 fractional digits; treat as a second fraction.
+    ms = datetime(2026, 7, 18, 5, 8, 2, 851000)
+    assert isoparse(ms.isoformat(timespec='milliseconds')) == ms
+    assert isoparse('2020-01-01T00:00:00.851') == datetime(2020, 1, 1, 0, 0, 0, 851000)
+    us = datetime(2020, 1, 1, 0, 0, 0, 123456)
+    assert isoparse(us.isoformat(timespec='microseconds')) == us
+    assert isoparse('2020-01-01T00:00:00') == datetime(2020, 1, 1, 0, 0, 0)
