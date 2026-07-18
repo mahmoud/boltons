@@ -141,6 +141,13 @@ class TestMultiReplace(TestCase):
         m = strutils.MultiReplace({'cat.+': 'kedi', r'purple': 'mor', })
         self.assertEqual(m.sub('The cat.+ is purple'), 'The kedi is mor')
 
+    def test_empty_sub_map_is_noop(self):
+        """Empty substitution maps leave text unchanged (no KeyError)."""
+        self.assertEqual(strutils.MultiReplace({}).sub('hello world'), 'hello world')
+        self.assertEqual(strutils.multi_replace('hello world', {}), 'hello world')
+        self.assertEqual(strutils.MultiReplace([]).sub('hello world'), 'hello world')
+        self.assertEqual(strutils.multi_replace('hello world', []), 'hello world')
+
 
 def test_human_readable_list():
     """Test the human_readable_list function with various inputs."""

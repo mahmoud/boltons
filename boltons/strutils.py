@@ -1214,10 +1214,14 @@ class MultiReplace:
             regex_values.append(f'(?P<{group_name}>{exp})')
             self.group_map[group_name] = vals[1]
 
-        self.combined_pattern = re.compile(
-            '|'.join(regex_values),
-            flags=options['flags']
-        )
+        # Empty sub_map must be a no-op; '|'.join([]) compiles to '' and matches everywhere.
+        if not regex_values:
+            self.combined_pattern = None
+        else:
+            self.combined_pattern = re.compile(
+                '|'.join(regex_values),
+                flags=options['flags']
+            )
 
     def _get_value(self, match):
         """Given a match object find replacement value."""
@@ -1230,6 +1234,8 @@ class MultiReplace:
         Given an input string, run all substitutions given in the
         constructor.
         """
+        if self.combined_pattern is None:
+            return text
         return self.combined_pattern.sub(self._get_value, text)
 
 
