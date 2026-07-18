@@ -290,7 +290,7 @@ class Table:
         if self.headers:
             self._width = len(self.headers)
             return
-        self._width = max([len(d) for d in self._data])
+        self._width = max((len(d) for d in self._data), default=0)  # empty islice after [[]]
 
     def _fill(self):
         width, filler = self._width, [None]
@@ -566,15 +566,17 @@ class Table:
         lines = []
         widths = []
         headers = list(self.headers)
+        if with_headers and self._width > len(headers):  # match to_html None padding
+            headers.extend([None] * (self._width - len(headers)))
         text_data = [[to_text(cell, maxlen=maxlen) for cell in row]
                      for row in self._data]
         for idx in range(self._width):
             cur_widths = [len(row[idx]) for row in text_data]
             if with_headers:
                 cur_widths.append(len(to_text(headers[idx], maxlen=maxlen)))
-            widths.append(max(cur_widths))
+            widths.append(max(cur_widths) if cur_widths else 0)
         if with_headers:
-            lines.append(' | '.join([h.center(widths[i])
+            lines.append(' | '.join([to_text(h, maxlen=maxlen).center(widths[i])
                                      for i, h in enumerate(headers)]))
             lines.append('-|-'.join(['-' * w for w in widths]))
         for row in text_data:
