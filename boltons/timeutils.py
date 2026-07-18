@@ -122,7 +122,6 @@ def isoparse(iso_str):
     # Fractional seconds from isoformat are 1-6 digits of a second, not raw microseconds.
     if len(dt_args) >= 7:
         dt_args[6] = int((parts[6] + '000000')[:6])
-        dt_args = dt_args[:7]
     return datetime(*dt_args)
 
 
