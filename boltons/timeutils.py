@@ -366,7 +366,7 @@ def daterange(start, stop, step=1, inclusive=False):
 
     m_step += y_step * 12
     # Zero step never advances; same class of error as range(..., step=0).
-    if m_step == 0 and d_step == timedelta(0):
+    if m_step == 0 and d_step.days == 0:
         raise ValueError('step must be non-zero')
 
     if stop is None:
