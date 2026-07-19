@@ -102,6 +102,12 @@ def test_complement_set():
     assert (cab | cbc) > cab
     assert cc > sab
     assert not (cab > sab)
+    # <= / >= between two complement sets (comp(X) <= comp(Y) iff Y subset X)
+    assert cab <= complement('a')
+    assert not (complement('a') <= cab)
+    assert cab <= cab
+    assert complement('a') >= cab
+    assert cab >= cab
     assert not cab.isdisjoint(cc)  # complements never disjoint
     assert cab.isdisjoint(sab)
     assert not cab.isdisjoint(sc)

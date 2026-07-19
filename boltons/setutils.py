@@ -824,7 +824,7 @@ class _ComplementSet:
             if exc is None:  # - +
                 return False
             else:  # - -
-                return self._excluded.issupserset(exc)
+                return self._excluded.issuperset(exc)
         else:
             if inc is None:  # + -
                 return self._included.isdisjoint(exc)
@@ -868,7 +868,7 @@ class _ComplementSet:
             if inc is None:  # + -
                 return False
             else:  # + +
-                return self._included.issupserset(inc)
+                return self._included.issuperset(inc)
 
     def __gt__(self, other):
         inc, exc = _norm_args_notimplemented(other)
