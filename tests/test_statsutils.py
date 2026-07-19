@@ -11,6 +11,15 @@ def test_stats_basic():
     assert da.median == 9.5
 
 
+def test_pearson_type_covers_kappa_ge_zero():
+    # pearson_type used to raise RuntimeError('missed a spot') whenever the
+    # Pearson criterion (kappa) was >= 0, i.e. Types IV/V/VI, which ordinary
+    # small samples routinely land in. It should classify them instead.
+    assert Stats([8, 4, 4, 4, 5, 1, 6, 5]).pearson_type == 4  # Type IV
+    for data in ([0, 1, 2, 3, 4], [1, 1, 2, 3, 5, 8, 13], range(9)):
+        assert Stats(data).pearson_type in (0, 1, 2, 3, 4, 5, 6, 7)
+
+
 def _test_pearson():
     import random
     from statsutils import pearson_type
