@@ -180,11 +180,11 @@ class JSONLIterator:
         cur_pos = fo.tell()
         while '\n' not in cur:
             cur = fo.read(bsize)
+            if not cur:
+                # EOF before a newline: no further complete lines.
+                return
             total_read += bsize
-        try:
-            newline_offset = cur.index('\n') + total_read - bsize
-        except ValueError:
-            raise  # TODO: seek to end?
+        newline_offset = cur.index('\n') + total_read - bsize
         fo.seek(cur_pos + newline_offset)
 
     def _init_rel_seek(self):

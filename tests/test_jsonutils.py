@@ -1,3 +1,4 @@
+import io
 import os
 
 from boltons.jsonutils import (JSONLIterator,
@@ -37,3 +38,24 @@ def test_jsonl_iterator():
     jsonl_iter = JSONLIterator(open(JSONL_DATA_PATH), reverse=True)
     jsonl_list = list(jsonl_iter)
     assert jsonl_list == ref
+
+
+
+def test_jsonl_rel_seek_eof_without_newline():
+    """rel_seek with no following newline must stop at EOF, not spin."""
+    class CountingStringIO(io.StringIO):
+        def __init__(self, *a, **kw):
+            super().__init__(*a, **kw)
+            self.read_calls = 0
+
+        def read(self, size=-1):
+            self.read_calls += 1
+            if self.read_calls > 64:
+                raise AssertionError('too many reads; _align_to_newline hung')
+            return super().read(size)
+
+    bio = CountingStringIO('{"a": 1}')
+    assert list(JSONLIterator(bio, rel_seek=0.5)) == []
+
+    bio = CountingStringIO('')
+    assert list(JSONLIterator(bio, rel_seek=0.5)) == []
