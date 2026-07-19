@@ -658,3 +658,17 @@ def test_partition_multiple():
     assert positive == [2, 3]
     assert negative == [-1, -2]
     assert zero == [0]
+
+
+def test_xfrange_negative_step():
+    from boltons.iterutils import frange, xfrange
+
+    # Same cases as frange's doctest / range()-style negative steps.
+    assert list(xfrange(5, 0, step=-1.25)) == [5.0, 3.75, 2.5, 1.25]
+    assert list(xfrange(5, 0, step=-1)) == [5.0, 4.0, 3.0, 2.0, 1.0]
+    assert list(xfrange(2, -2, step=-0.5)) == [
+        2.0, 1.5, 1.0, 0.5, 0.0, -0.5, -1.0, -1.5]
+    # Empty when the step points away from stop (must not hang).
+    assert list(xfrange(0, 5, step=-1)) == []
+    assert frange(5, 0, step=-1.25) == list(xfrange(5, 0, step=-1.25))
+    assert frange(5) == list(xfrange(5))

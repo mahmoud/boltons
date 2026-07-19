@@ -527,9 +527,15 @@ def xfrange(stop, start=None, step=1.0):
         # swap when all args are used
         stop, start = start * 1.0, stop * 1.0
     cur = start
-    while cur < stop:
-        yield cur
-        cur += step
+    # Match range()/frange: negative step walks downward (was always `cur < stop`).
+    if step > 0:
+        while cur < stop:
+            yield cur
+            cur += step
+    else:
+        while cur > stop:
+            yield cur
+            cur += step
 
 
 def frange(stop, start=None, step=1.0):
@@ -546,21 +552,7 @@ def frange(stop, start=None, step=1.0):
     >>> frange(5, 0, step=-1.25)
     [5.0, 3.75, 2.5, 1.25]
     """
-    if not step:
-        raise ValueError('step must be non-zero')
-    if start is None:
-        start, stop = 0.0, stop * 1.0
-    else:
-        # swap when all args are used
-        stop, start = start * 1.0, stop * 1.0
-    count = int(math.ceil((stop - start) / step))
-    ret = [None] * count
-    if not ret:
-        return ret
-    ret[0] = start
-    for i in range(1, count):
-        ret[i] = ret[i - 1] + step
-    return ret
+    return list(xfrange(stop, start, step))
 
 
 def backoff(start, stop, count=None, factor=2.0, jitter=False):
