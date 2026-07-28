@@ -365,7 +365,7 @@ def daterange(start, stop, step=1, inclusive=False):
                          ' (year, month, day), not: %r' % step)
 
     m_step += y_step * 12
-    # Zero / non-advancing step loops forever; same class of error as range(..., step=0).
+    # Non-advancing step would loop forever (same class as range(..., step=0)).
     if m_step == 0 and (start + d_step) == start:
         raise ValueError('step must be non-zero')
 

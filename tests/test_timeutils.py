@@ -67,7 +67,6 @@ def test_daterange_zero_step_raises():
         list(daterange(start, stop, step=timedelta(0)))
     with pytest.raises(ValueError, match='non-zero'):
         list(daterange(start, stop, step=(0, 0, 0)))
-    # date + sub-day timedelta does not advance -> hang on master
     with pytest.raises(ValueError, match='non-zero'):
         list(daterange(start, stop, step=timedelta(hours=1)))
     with pytest.raises(ValueError, match='non-zero'):
