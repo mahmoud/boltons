@@ -181,8 +181,7 @@ class JSONLIterator:
         while '\n' not in cur:
             cur = fo.read(bsize)
             if not cur:
-                # EOF before a newline: no further complete lines.
-                return
+                return  # EOF before a newline
             total_read += bsize
         newline_offset = cur.index('\n') + total_read - bsize
         fo.seek(cur_pos + newline_offset)

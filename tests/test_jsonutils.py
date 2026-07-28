@@ -42,7 +42,6 @@ def test_jsonl_iterator():
 
 
 def test_jsonl_rel_seek_eof_without_newline():
-    """rel_seek with no following newline must stop at EOF, not spin."""
     class CountingStringIO(io.StringIO):
         def __init__(self, *a, **kw):
             super().__init__(*a, **kw)
