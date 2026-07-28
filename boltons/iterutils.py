@@ -527,7 +527,6 @@ def xfrange(stop, start=None, step=1.0):
         # swap when all args are used
         stop, start = start * 1.0, stop * 1.0
     cur = start
-    # Match range()/frange: negative step walks downward (was always `cur < stop`).
     if step > 0:
         while cur < stop:
             yield cur
