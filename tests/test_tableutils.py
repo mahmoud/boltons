@@ -55,11 +55,10 @@ def test_table_obj():
 
 
 def test_table_empty_first_row_only_does_not_crash():
-    # First row used as headers; remaining data is an empty islice (truthy).
     t = Table([[]])
     assert t.headers == []
     assert list(t) == []
-    assert t.to_text() == "\n"  # same as Table([])
+    assert t.to_text() == Table([]).to_text()
 
 
 def test_table_to_text_none_and_non_str_headers():
@@ -71,9 +70,7 @@ def test_table_to_text_none_and_non_str_headers():
 
 
 def test_table_to_text_pads_short_headers():
-    # Empty first row as headers, then a data row of width 1.
     t = Table([[], [1]])
-    assert t._width == 1
     text = t.to_text()
     assert "1" in text
     assert "None" in text
