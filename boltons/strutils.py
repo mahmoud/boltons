@@ -1214,7 +1214,7 @@ class MultiReplace:
             regex_values.append(f'(?P<{group_name}>{exp})')
             self.group_map[group_name] = vals[1]
 
-        # Empty sub_map must be a no-op; '|'.join([]) compiles to '' and matches everywhere.
+        # '|'.join([]) compiles to '' and matches everywhere; empty map is a no-op.
         if not regex_values:
             self.combined_pattern = None
         else:
