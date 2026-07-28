@@ -59,7 +59,6 @@ def test_daterange_with_same_start_stop():
 
 
 def test_isoparse_fractional_seconds_match_isoformat():
-    # isoformat(timespec='milliseconds') yields 3 fractional digits; treat as a second fraction.
     ms = datetime(2026, 7, 18, 5, 8, 2, 851000)
     assert isoparse(ms.isoformat(timespec='milliseconds')) == ms
     assert isoparse('2020-01-01T00:00:00.851') == datetime(2020, 1, 1, 0, 0, 0, 851000)
