@@ -271,3 +271,28 @@ def test_iset_scalar_index_multiple_dead_intervals():
         iset[95]
     with raises(IndexError):
         iset[-96]
+
+
+def test_bulk_difference_update():
+    # removals large enough to take the O(n) bulk path (> _MAX_DEAD_INTERVALS)
+    thing = IndexedSet(range(1000))
+    thing.difference_update(set(range(0, 1000, 2)))
+    assert list(thing) == list(range(1, 1000, 2))
+    assert thing[0] == 1 and thing[-1] == 999
+    assert thing.index(501) == 250
+    thing.add(0)
+    assert thing[-1] == 0
+
+
+def test_bulk_intersection_update():
+    thing = IndexedSet(range(1000))
+    thing.intersection_update(set(range(500, 2000)))
+    assert list(thing) == list(range(500, 1000))
+    assert thing[0] == 500 and thing.index(750) == 250
+
+
+def test_small_difference_update_unchanged():
+    # small removals keep the incremental path
+    thing = IndexedSet(range(100))
+    thing.difference_update({1, 3, 5})
+    assert list(thing)[:5] == [0, 2, 4, 6, 7]
