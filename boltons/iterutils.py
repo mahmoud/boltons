@@ -516,6 +516,8 @@ def xfrange(stop, start=None, step=1.0):
 
     >>> tuple(xfrange(1, 3, step=0.75))
     (1.0, 1.75, 2.5)
+    >>> tuple(xfrange(5, 0, step=-1.25))
+    (5.0, 3.75, 2.5, 1.25)
 
     See :func:`frange` for more details.
     """
@@ -527,7 +529,7 @@ def xfrange(stop, start=None, step=1.0):
         # swap when all args are used
         stop, start = start * 1.0, stop * 1.0
     cur = start
-    while cur < stop:
+    while (cur < stop) if step > 0 else (cur > stop):
         yield cur
         cur += step
 
