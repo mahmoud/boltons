@@ -156,7 +156,7 @@ class JSONLIterator:
             raise ValueError("'rel_seek' expected a float between"
                              " -1.0 and 1.0, not %r" % rel_seek)
         elif rel_seek < 0:
-            rel_seek = 1.0 - rel_seek
+            rel_seek = 1.0 + rel_seek
         self._rel_seek = rel_seek
         self._blocksize = 4096
         if rel_seek is not None:
@@ -180,11 +180,13 @@ class JSONLIterator:
         cur_pos = fo.tell()
         while '\n' not in cur:
             cur = fo.read(bsize)
+            if not cur:
+                # no newline until EOF; a partial trailing line was
+                # never yieldable from a mid-line seek anyway
+                fo.seek(0, os.SEEK_END)
+                return
             total_read += bsize
-        try:
-            newline_offset = cur.index('\n') + total_read - bsize
-        except ValueError:
-            raise  # TODO: seek to end?
+        newline_offset = cur.index('\n') + total_read - bsize
         fo.seek(cur_pos + newline_offset)
 
     def _init_rel_seek(self):

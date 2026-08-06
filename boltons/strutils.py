@@ -1230,6 +1230,8 @@ class MultiReplace:
         Given an input string, run all substitutions given in the
         constructor.
         """
+        if not self.group_map:
+            return text
         return self.combined_pattern.sub(self._get_value, text)
 
 

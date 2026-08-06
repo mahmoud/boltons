@@ -52,3 +52,36 @@ def test_table_obj():
     t4 = Table.from_object(TestType())
     assert len(t4) == 1
     assert 'greeting' in t4.headers
+
+
+
+def test_to_text_empty_table():
+    # used to raise ValueError from max() over an empty sequence
+    assert Table([[]]).to_text() == ''
+
+
+def test_to_text_none_headers():
+    # used to raise AttributeError calling .center() on a None header
+    t = Table([[None, 'b'], [1, 2]])
+    lines = t.to_text().splitlines()
+    header_cells = [c.strip() for c in lines[0].split(' | ')]
+    # None headers render the same as None data cells
+    assert header_cells[0] == 'None'
+
+
+def test_to_text_no_headers():
+    # used to raise IndexError; empty headers mean no header row or
+    # separator rule, same as to_html
+    t = Table([[], [1]])
+    assert t.headers == []
+    assert t.to_text() == '1'
+
+
+def test_to_text_short_headers_padded():
+    # used to raise IndexError; non-empty headers shorter than the
+    # table width get padded with None cells, same as to_html
+    t = Table([[1, 2]], headers=[])
+    t.headers = ['a']
+    lines = t.to_text().splitlines()
+    header_cells = [c.strip() for c in lines[0].split(' | ')]
+    assert header_cells == ['a', 'None']

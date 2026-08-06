@@ -116,8 +116,17 @@ def isoparse(iso_str):
     .. _iso8601: https://pypi.python.org/pypi/iso8601
     .. _dateutil: https://pypi.python.org/pypi/python-dateutil
 
+    >>> isoparse('1970-01-01T00:00:00.851')
+    datetime.datetime(1970, 1, 1, 0, 0, 0, 851000)
+
     """
-    dt_args = [int(p) for p in _NONDIGIT_RE.split(iso_str)]
+    parts = _NONDIGIT_RE.split(iso_str)
+    dt_args = [int(p) for p in parts]
+    if len(parts) > 6:
+        # fractional-second digits are not microseconds until scaled:
+        # '.851' means 851000us, not 851us. Digits past microsecond
+        # precision are truncated (e.g. nanosecond timestamps).
+        dt_args[6] = int(parts[6].ljust(6, '0')[:6])
     return datetime(*dt_args)
 
 
@@ -315,7 +324,10 @@ def daterange(start, stop, step=1, inclusive=False):
             *stop*. Can be an :class:`int` number of days, a
             :class:`datetime.timedelta`, or a :class:`tuple` of integers,
             `(year, month, day)`. Positive and negative *step* values
-            are supported.
+            are supported. A step that does not advance (e.g. ``0`` or a
+            self-cancelling tuple like ``(0, 1, -31)``) raises
+            :exc:`ValueError`; a step pointed away from *stop* yields
+            nothing, like ``range(1, 5, -1)``.
         inclusive (bool): Whether or not the *stop* date can be
             returned. *stop* is only returned when a *step* falls evenly
             on it.
@@ -366,6 +378,13 @@ def daterange(start, stop, step=1, inclusive=False):
     
     m_step += y_step * 12
 
+    def _advance(cur):
+        if m_step:
+            m_y_step, cur_month = divmod((cur.month - 1) + m_step, 12)
+            cur = cur.replace(year=cur.year + m_y_step,
+                              month=(cur_month + 1))
+        return cur + d_step
+
     if stop is None:
         finished = lambda now, stop: False
     elif start <= stop:
@@ -374,13 +393,28 @@ def daterange(start, stop, step=1, inclusive=False):
         finished = operator.lt if inclusive else operator.le
     now = start
 
+    # guard against steps that cannot make progress: a stationary step
+    # (e.g. 0, or month/day cancellation like (0, 1, -31)) would loop
+    # forever, and a step pointed away from *stop* would walk off
+    # unboundedly. The former raises, the latter yields nothing, like
+    # range(1, 5, -1).
+    probe = _advance(start)
+    if probe == start:
+        raise ValueError('step does not advance: %r' % (step,))
+    if stop is not None and start != stop and (probe > start) != (stop > start):
+        return
+
     while not finished(now, stop):
         yield now
-        if m_step:
-            m_y_step, cur_month = divmod((now.month - 1) + m_step, 12)
-            now = now.replace(year=now.year + m_y_step,
-                              month=(cur_month + 1))
-        now = now + d_step
+        prev, now = now, _advance(now)
+        if now == prev:
+            raise ValueError('step does not advance: %r' % (step,))
+        if stop is not None and abs(stop - now) >= abs(stop - prev):
+            # the step has stopped approaching stop (e.g. month/day
+            # cancellation partway through a sequence); terminate
+            # rather than iterate forever. finished() above yields the
+            # same result for plain overshoot.
+            return
     return
 
 
