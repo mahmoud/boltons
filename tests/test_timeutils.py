@@ -1,8 +1,8 @@
-from datetime import timedelta, date
+from datetime import timedelta, date, datetime
 
 import pytest
 
-from boltons.timeutils import daterange
+from boltons.timeutils import daterange, isoparse
 
 
 def test_daterange_years():
@@ -56,3 +56,27 @@ def test_daterange_with_same_start_stop():
     assert next(date_range_inclusive) == today
     with pytest.raises(StopIteration):
         next(date_range_inclusive)
+
+
+
+def test_isoparse_basic():
+    dt = datetime(2020, 1, 2, 3, 4, 5)
+    assert isoparse(dt.isoformat()) == dt
+
+
+def test_isoparse_fractional_seconds():
+    # isoformat() round-trip at every timespec, not just microseconds
+    dt = datetime(2020, 1, 2, 3, 4, 5, 851000)
+    assert isoparse(dt.isoformat(timespec='milliseconds')) == dt
+    assert isoparse(dt.isoformat(timespec='microseconds')) == dt
+    assert isoparse(dt.isoformat()) == dt
+
+    # leading zeros in the fraction scale correctly
+    assert isoparse('2020-01-02T03:04:05.051').microsecond == 51000
+    assert isoparse('2020-01-02T03:04:05.000001').microsecond == 1
+
+
+def test_isoparse_fraction_overprecise():
+    # digits past microsecond precision (e.g. nanosecond timestamps)
+    # truncate rather than raise
+    assert isoparse('2020-01-01T00:00:00.123456789').microsecond == 123456

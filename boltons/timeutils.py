@@ -116,8 +116,17 @@ def isoparse(iso_str):
     .. _iso8601: https://pypi.python.org/pypi/iso8601
     .. _dateutil: https://pypi.python.org/pypi/python-dateutil
 
+    >>> isoparse('1970-01-01T00:00:00.851')
+    datetime.datetime(1970, 1, 1, 0, 0, 0, 851000)
+
     """
-    dt_args = [int(p) for p in _NONDIGIT_RE.split(iso_str)]
+    parts = _NONDIGIT_RE.split(iso_str)
+    dt_args = [int(p) for p in parts]
+    if len(parts) > 6:
+        # fractional-second digits are not microseconds until scaled:
+        # '.851' means 851000us, not 851us. Digits past microsecond
+        # precision are truncated (e.g. nanosecond timestamps).
+        dt_args[6] = int(parts[6].ljust(6, '0')[:6])
     return datetime(*dt_args)
 
 
