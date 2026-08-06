@@ -37,3 +37,47 @@ def test_jsonl_iterator():
     jsonl_iter = JSONLIterator(open(JSONL_DATA_PATH), reverse=True)
     jsonl_list = list(jsonl_iter)
     assert jsonl_list == ref
+
+
+class _CappedReadFile:
+    """Wraps a file object, raising if read() is called more than
+    max_reads times, so a non-terminating read loop fails fast
+    instead of hanging the test suite."""
+    def __init__(self, fo, max_reads=100):
+        self._fo = fo
+        self._reads = 0
+        self._max_reads = max_reads
+
+    def read(self, size=-1):
+        self._reads += 1
+        if self._reads > self._max_reads:
+            raise RuntimeError('read() called more than %s times,'
+                               ' likely an infinite loop' % self._max_reads)
+        return self._fo.read(size)
+
+    def __iter__(self):
+        return iter(self._fo)
+
+    def __getattr__(self, name):
+        return getattr(self._fo, name)
+
+
+def test_jsonl_iterator_mid_last_line_seek_terminates(tmp_path):
+    # a rel_seek landing mid-final-line of a file with no trailing
+    # newline used to loop forever in _align_to_newline
+    path = tmp_path / 'no_trailing_newline.jsonl'
+    path.write_text('{"1": 1}\n{"2": 2}')
+    fo = _CappedReadFile(open(str(path)))
+    jsonl_iter = JSONLIterator(fo, rel_seek=0.9)
+    assert list(jsonl_iter) == []
+
+
+def test_jsonl_iterator_rel_seek_negative():
+    # negative rel_seek used to normalize to >1.0, seeking past EOF
+    # and looping forever in _align_to_newline
+    ref = list(JSONLIterator(open(JSONL_DATA_PATH)))
+    fo = _CappedReadFile(open(JSONL_DATA_PATH))
+    tail = list(JSONLIterator(fo, rel_seek=-0.5))
+    assert tail
+    assert tail == list(JSONLIterator(open(JSONL_DATA_PATH), rel_seek=0.5))
+    assert tail == ref[len(ref) - len(tail):]
