@@ -601,10 +601,39 @@ def update_wrapper(wrapper, func, injected=None, expected=None, build_from=None,
     for arg, default in expected_items:
         fb.add_arg(arg, default)  # may raise ExistingArgument
 
+    # Generate invocation string, taking into account wrapper's signature to
+    # ensure we don't pass keyword-only args of the wrapper as positional
+    target_sig = inspect.signature(wrapper)
+    target_params = target_sig.parameters
+    defaults = fb.defaults or ()
+    args = list(fb.args or ())
+    n_positional = len(args) - len(defaults)
+    parts, kw_parts = [], []
+    for i, arg in enumerate(args):
+        # Check if this arg is keyword-only in wrapper
+        if arg in target_params:
+            param = target_params[arg]
+            if param.kind == inspect.Parameter.KEYWORD_ONLY:
+                kw_parts.append(arg + '=' + arg)
+                continue
+        # Existing logic
+        if (i >= n_positional and not fb.varargs
+                and arg not in fb.posonlyargs):
+            kw_parts.append(arg + '=' + arg)
+        else:
+            parts.append(arg)
+    if fb.varargs:
+        parts.append('*' + fb.varargs)
+    parts += kw_parts
+    parts += [arg + '=' + arg for arg in fb.kwonlyargs or ()]
+    if fb.varkw:
+        parts.append('**' + fb.varkw)
+    invocation_str = ', '.join(parts)
+
     if fb.is_async:
-        fb.body = 'return await _call(%s)' % fb.get_invocation_str()
+        fb.body = 'return await _call(%s)' % invocation_str
     else:
-        fb.body = 'return _call(%s)' % fb.get_invocation_str()
+        fb.body = 'return _call(%s)' % invocation_str
 
     execdict = dict(_call=wrapper, _func=func)
     fully_wrapped = fb.get_func(execdict, with_dict=update_dict)
