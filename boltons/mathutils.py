@@ -161,7 +161,7 @@ class Bits:
             raise ValueError('Bits cannot represent negative values')
         if len_ is None:
             len_ = len(f'{val:b}')
-        if val > 2 ** len_:
+        if val >= 2 ** len_:
             raise ValueError(f'value {val} cannot be represented with {len_} bits')
         self.val = val  # data is stored internally as integer
         self.len = len_

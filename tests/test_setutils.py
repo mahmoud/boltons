@@ -102,6 +102,22 @@ def test_complement_set():
     assert (cab | cbc) > cab
     assert cc > sab
     assert not (cab > sab)
+    # <= / >= between two complement sets (comp(X) <= comp(Y) iff Y subset X)
+    assert cab <= complement('a')
+    assert not (complement('a') <= cab)
+    assert cab <= cab
+    assert complement('a') >= cab
+    assert cab >= cab
+    # double-complemented (included-form) sets dispatch to the + +
+    # branches of __le__/__ge__: comp(comp(X)) behaves like X
+    ccab = complement(complement(set('ab')))
+    cca = complement(complement(set('a')))
+    assert ccab >= cca
+    assert not (cca >= ccab)
+    assert cca <= ccab
+    assert not (ccab <= cca)
+    assert ccab >= ccab
+    assert ccab <= ccab
     assert not cab.isdisjoint(cc)  # complements never disjoint
     assert cab.isdisjoint(sab)
     assert not cab.isdisjoint(sc)

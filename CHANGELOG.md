@@ -5,6 +5,18 @@ for an average of one 33-commit release about every 9 weeks. Versions
 are named according to the [CalVer](https://calver.org) versioning
 scheme (`YY.MINOR.MICRO`).
 
+## 26.1.1
+
+_(unreleased)_
+
+- Fixed [`funcutils.wraps`][funcutils.wraps] passing arguments positionally to wrappers that only accept them as keywords ([#261](https://github.com/mahmoud/boltons/issues/261))
+- Fixed [`tableutils.Table.to_text`][tableutils.Table] crashes on empty tables, `None` headers, and short header rows; empty headers now render no header row, matching `to_html`
+- Fixed [`timeutils.isoparse`][timeutils.isoparse] misreading fractional seconds (`.851` parsed as 851µs instead of 851000µs); >6-digit fractions now truncate instead of raising
+- Fixed [`timeutils.daterange`][timeutils.daterange] looping forever on non-advancing steps: zero and self-cancelling month/day steps now raise `ValueError`, wrong-direction steps yield nothing like `range()`
+- Fixed [`strutils.MultiReplace`][strutils.MultiReplace] raising `KeyError` on empty substitution maps (now a no-op)
+- Fixed [`jsonutils.JSONLIterator`][jsonutils.JSONLIterator] hanging when a seek lands past the last newline, and negative `rel_seek` values seeking past EOF (sign bug)
+- Fixed [`iterutils.xfrange`][iterutils.xfrange] yielding nothing for descending ranges; now shares [`frange`][iterutils.frange]'s count-based semantics, so both agree at inexact float boundaries
+
 ## 26.1.0
 
 _(July 17, 2026)_

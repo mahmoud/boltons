@@ -314,3 +314,12 @@ def test_pluralize_x():
     assert pluralize('FOX') == 'FOXES'
     # Irregular '-x' words are unaffected (handled before the rule).
     assert pluralize('ox') == 'oxen'
+
+
+
+def test_multi_replace_empty_mapping():
+    # An empty substitution map is a no-op; previously the empty combined
+    # pattern matched everywhere with lastgroup None, raising KeyError.
+    assert strutils.MultiReplace({}).sub('foo bar') == 'foo bar'
+    assert strutils.MultiReplace([]).sub('foo bar') == 'foo bar'
+    assert strutils.multi_replace('foo bar', {}) == 'foo bar'
