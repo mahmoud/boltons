@@ -818,8 +818,6 @@ class _ComplementSet:
         inc, exc = _norm_args_notimplemented(other)
         if inc is NotImplemented:
             return NotImplemented
-        if inc is NotImplemented:
-            return NotImplemented
         if self._included is None:
             if exc is None:  # - +
                 return False
@@ -833,8 +831,6 @@ class _ComplementSet:
 
     def __lt__(self, other):
         inc, exc = _norm_args_notimplemented(other)
-        if inc is NotImplemented:
-            return NotImplemented
         if inc is NotImplemented:
             return NotImplemented
         if self._included is None:
