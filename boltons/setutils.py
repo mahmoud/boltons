@@ -56,6 +56,7 @@ __all__ = ['IndexedSet', 'complement']
 
 
 _COMPACTION_FACTOR = 8
+_MAX_DEAD_INTERVALS = 384
 
 # TODO: inherit from set()
 # TODO: .discard_many(), .remove_many()
@@ -143,7 +144,7 @@ class IndexedSet(MutableSet):
         if not ii_map:
             del items[:]
             del ded[:]
-        elif len(ded) > 384:
+        elif len(ded) > _MAX_DEAD_INTERVALS:
             self._compact()
         elif self._dead_index_count > (len(items) / _COMPACTION_FACTOR):
             self._compact()
@@ -201,6 +202,19 @@ class IndexedSet(MutableSet):
         else:
             dints.insert(int_idx, cand_int)
         return
+
+    def _bulk_discard(self, to_remove):
+        """Remove many items in a single O(n) pass.
+
+        Removing k scattered items via repeated :meth:`discard` triggers a
+        full O(n) compaction every ``_MAX_DEAD_INTERVALS`` removals, i.e.
+        O(n * k) overall. Rebuilding once keeps bulk updates linear.
+        """
+        self.item_list = [item for item in self.item_list
+                          if item is not _MISSING and item not in to_remove]
+        self.item_index_map = {item: i
+                               for i, item in enumerate(self.item_list)}
+        del self.dead_indices[:]
 
     # common operations (shared by set and list)
     def __len__(self):
@@ -355,14 +369,22 @@ class IndexedSet(MutableSet):
 
     def intersection_update(self, *others):
         "intersection_update(*others) -> discard self.difference(*others)"
-        for val in self.difference(*others):
+        to_remove = self.difference(*others)
+        if len(to_remove) > _MAX_DEAD_INTERVALS:
+            self._bulk_discard(to_remove)
+            return
+        for val in to_remove:
             self.discard(val)
 
     def difference_update(self, *others):
         "difference_update(*others) -> discard self.intersection(*others)"
         if self in others:
             self.clear()
-        for val in self.intersection(*others):
+        to_remove = self.intersection(*others)
+        if len(to_remove) > _MAX_DEAD_INTERVALS:
+            self._bulk_discard(to_remove)
+            return
+        for val in to_remove:
             self.discard(val)
 
     def symmetric_difference_update(self, other):  # note singular 'other'

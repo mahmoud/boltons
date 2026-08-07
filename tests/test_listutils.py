@@ -138,3 +138,69 @@ bl.extend(range(int(%s)))
     except Exception as e:
         import pdb;pdb.post_mortem()
         raise
+
+
+def _multi_sublist_bl(n=30000):
+    # BarrelList only splits into sublists after a mutating op triggers
+    # _balance_list; a single indexed pop on a freshly-built list does it
+    bl = BarrelList(range(n))
+    bl.pop(0)
+    bl.insert(0, 0)
+    assert len(bl.lists) > 1
+    assert list(bl) == list(range(n))
+    return bl
+
+
+def test_barrel_list_getitem_past_end():
+    # bl[len(bl)] used to return an element from the middle
+    bl = _multi_sublist_bl()
+    try:
+        bl[len(bl)]
+    except IndexError:
+        pass
+    else:
+        assert False, 'expected IndexError'
+
+
+def test_barrel_list_insert_at_end():
+    # insert(len(bl), x) used to insert mid-list; list.insert clamps to append
+    bl = _multi_sublist_bl()
+    bl.insert(len(bl), 'end')
+    assert bl[-1] == 'end'
+    bl.insert(len(bl) + 100, 'past_end')
+    assert bl[-1] == 'past_end'
+    bl.insert(-len(bl) - 100, 'front')
+    assert bl[0] == 'front'
+
+
+def test_barrel_list_pop_after_tail_drained():
+    # pop() used to raise IndexError on a non-empty BarrelList whose tail
+    # sublist had been emptied by indexed pops
+    bl = _multi_sublist_bl()
+    for _ in range(len(bl.lists[-1])):
+        bl.pop(len(bl) - 1)
+    expected = bl[-1]
+    assert bl.pop() == expected
+
+
+def test_barrel_list_matches_list():
+    import random
+    rng = random.Random(7)
+    ref, bl = list(range(2000)), BarrelList(range(2000))
+    for _ in range(4000):
+        op = rng.random()
+        if op < 0.3 and ref:
+            i = rng.randrange(-len(ref), len(ref))
+            assert ref.pop(i) == bl.pop(i)
+        elif op < 0.5 and ref:
+            assert ref.pop() == bl.pop()
+        elif op < 0.8:
+            i = rng.randrange(-len(ref) - 2, len(ref) + 2)
+            v = rng.random()
+            ref.insert(i, v)
+            bl.insert(i, v)
+        elif ref:
+            i = rng.randrange(-len(ref), len(ref))
+            assert ref[i] == bl[i]
+        assert len(ref) == len(bl)
+    assert list(bl) == ref
