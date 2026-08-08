@@ -313,8 +313,8 @@ class TracebackInfo:
     @classmethod
     def from_dict(cls, d):
         "Complements :meth:`TracebackInfo.to_dict`."
-        # TODO: check this.
-        return cls(d['frames'])
+        frames = [cls.callpoint_type(**frame) for frame in d['frames']]
+        return cls(frames)
 
     def to_dict(self):
         """Returns a dict with a list of :class:`Callpoint` frames converted
