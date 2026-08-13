@@ -83,6 +83,11 @@ def test_bits():
     chk(Bits('10')[0], True)
     chk(Bits('10')[1], False)
     chk(Bits('0000100')[4], True)
+    chk(Bits('10')[-1], False)
+    chk(Bits('10')[-2], True)
+    chk(Bits('0000100')[-3], True)
+    with raises(IndexError):
+        Bits('10')[-3]
     chk(Bits('10').as_list(), [True, False])
     chk(Bits('10').as_int(), 2)
     chk(Bits('10').as_bin(), '10')
