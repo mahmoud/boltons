@@ -2,6 +2,8 @@ import re
 import uuid
 from unittest import TestCase
 
+import pytest
+
 from boltons import strutils
 
 
@@ -323,3 +325,41 @@ def test_multi_replace_empty_mapping():
     assert strutils.MultiReplace({}).sub('foo bar') == 'foo bar'
     assert strutils.MultiReplace([]).sub('foo bar') == 'foo bar'
     assert strutils.multi_replace('foo bar', {}) == 'foo bar'
+
+
+def test_ellipsize():
+    ellipsize = strutils.ellipsize
+
+    # short enough text is returned unchanged
+    assert ellipsize('Hello, World!') == 'Hello, World!'
+    # exact boundary is still a no-op
+    assert ellipsize('Hello, World!', 13) == 'Hello, World!'
+
+    # cut lands on the last space boundary, never mid-word
+    assert ellipsize('The quick brown fox jumps', 16) == 'The quick brown…'
+
+    # trailing sentence punctuation at the cut is stripped
+    res = ellipsize('Beautiful is better than ugly. Explicit is better.', 31)
+    assert res == 'Beautiful is better than ugly…'
+
+    # a decimal point is not sentence punctuation; numbers stay whole
+    res = ellipsize('rates around 6.5% this week', 20)
+    assert res == 'rates around 6.5%…'
+    assert '6.5%' in res
+
+    # no space at all: hard cut at the limit
+    assert ellipsize('antidisestablishmentarianism', 10) == 'antidises…'
+
+    # custom ellipsis string
+    assert ellipsize('The quick brown fox jumps', 18, ellipsis='...') == 'The quick brown...'
+
+    # every result respects max_len
+    text = 'the wheels on the bus go round and round'
+    for max_len in range(2, len(text) + 1):
+        assert len(ellipsize(text, max_len)) <= max_len
+
+    # max_len must exceed the length of the ellipsis
+    with pytest.raises(ValueError):
+        ellipsize('anything', 1)
+    with pytest.raises(ValueError):
+        ellipsize('anything', 3, ellipsis='...')
