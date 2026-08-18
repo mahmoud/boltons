@@ -1,4 +1,4 @@
-from boltons.statsutils import Stats
+from boltons.statsutils import Stats, mode
 
 
 def test_stats_basic():
@@ -9,6 +9,16 @@ def test_stats_basic():
     assert da.skewness == 0
     assert round(da.kurtosis, 1) == 1.9
     assert da.median == 9.5
+
+
+def test_mode():
+    assert Stats([2, 1, 3, 1]).mode == 1
+    # ties resolve to the value seen first in the data
+    assert mode([1, 1, 2, 2, 3]) == 1
+    # non-numeric, categorical data is supported
+    assert mode(['a', 'b', 'b', 'c', 'c', 'c']) == 'c'
+    # empty data falls back to the configured default
+    assert Stats([], default=None).mode is None
 
 
 def _test_pearson():
