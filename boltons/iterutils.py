@@ -1473,7 +1473,7 @@ class GUIDerator:
     def __init__(self, size=24):
         self.size = size
         if size < 20 or size > 36:
-            raise ValueError('expected 20 < size <= 36')
+            raise ValueError('expected 20 <= size <= 36')
         import hashlib
         self._sha1 = hashlib.sha1
         self.count = itertools.count()
