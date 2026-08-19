@@ -363,3 +363,16 @@ def test_ellipsize():
         ellipsize('anything', 1)
     with pytest.raises(ValueError):
         ellipsize('anything', 3, ellipsis='...')
+
+
+def test_args2sh_sep():
+    assert strutils.args2sh(['aa', 'bb']) == 'aa bb'
+    assert strutils.args2sh(['aa', 'bb'], sep='|') == 'aa|bb'
+    # escaping is unaffected by the separator
+    assert strutils.args2sh(['a a', 'bb'], sep='|') == "'a a'|bb"
+
+
+def test_args2cmd_sep():
+    assert strutils.args2cmd(['aa', 'bb']) == 'aa bb'
+    assert strutils.args2cmd(['aa', 'bb'], sep='|') == 'aa|bb'
+    assert strutils.args2cmd(['a a', 'bb'], sep='|') == '"a a"|bb'
