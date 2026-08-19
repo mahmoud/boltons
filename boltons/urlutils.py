@@ -964,9 +964,9 @@ def parse_qsl(qs, keep_blank_values=True, encoding=DEFAULT_ENCODING):
                 value = None
             else:
                 continue
-        key = unquote(key.replace('+', ' '))
+        key = unquote(key.replace('+', ' '), encoding=encoding)
         if value:
-            value = unquote(value.replace('+', ' '))
+            value = unquote(value.replace('+', ' '), encoding=encoding)
         ret.append((key, value))
     return ret
 
