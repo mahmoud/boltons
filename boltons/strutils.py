@@ -798,7 +798,7 @@ def args2sh(args, sep=' '):
         # the string $'b is then quoted as '$'"'"'b'
         ret_list.append("'" + arg.replace("'", "'\"'\"'") + "'")
 
-    return ' '.join(ret_list)
+    return sep.join(ret_list)
 
 
 def args2cmd(args, sep=' '):
@@ -845,9 +845,9 @@ def args2cmd(args, sep=' '):
     for arg in args:
         bs_buf = []
 
-        # Add a space to separate this argument from the others
+        # Add the separator between this argument and the others
         if result:
-            result.append(' ')
+            result.append(sep)
 
         needquote = (" " in arg) or ("\t" in arg) or not arg
         if needquote:
