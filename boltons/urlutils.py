@@ -800,9 +800,31 @@ class URL:
     def __unicode__(self):
         return self.to_text()
 
+    @staticmethod
+    def _norm_query_params(query_params):
+        "Normalize query params into an order-agnostic, comparable form."
+        if query_params is None:
+            return None
+        try:
+            items = list(query_params.items(multi=True))
+        except (AttributeError, TypeError):
+            try:
+                items = list(query_params.items())
+            except AttributeError:
+                return query_params
+        return sorted(items, key=lambda kv: (str(kv[0]), str(kv[1])))
+
     def __eq__(self, other):
         for attr in self._cmp_attrs:
-            if not getattr(self, attr) == getattr(other, attr, None):
+            self_val = getattr(self, attr)
+            other_val = getattr(other, attr, None)
+            if attr == 'query_params':
+                # query parameter order is not significant for equality
+                if (self._norm_query_params(self_val)
+                        != self._norm_query_params(other_val)):
+                    return False
+                continue
+            if not self_val == other_val:
                 return False
         return True
 
