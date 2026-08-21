@@ -483,3 +483,13 @@ def test_unicodey():
 
 def test_str_repr():
     assert str(URL("http://googlewebsite.com/e-shops.aspx")) == "http://googlewebsite.com/e-shops.aspx"
+
+
+def test_url_eq_query_param_order():
+    # query parameter order does not affect equality; see issue #280
+    assert URL('http://example.com/?a=1&b=2') == URL('http://example.com/?b=2&a=1')
+    assert URL('http://example.com/?a=1&a=2') == URL('http://example.com/?a=2&a=1')
+    # different values are still unequal
+    assert URL('http://example.com/?a=1') != URL('http://example.com/?a=2')
+    # other components still participate in equality
+    assert URL('http://example.com/x?a=1') != URL('http://example.com/y?a=1')
