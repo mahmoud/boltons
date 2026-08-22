@@ -327,6 +327,25 @@ def test_multi_replace_empty_mapping():
     assert strutils.multi_replace('foo bar', {}) == 'foo bar'
 
 
+def test_camel2under():
+    # unchanged behavior
+    assert strutils.camel2under('BasicParseTest') == 'basic_parse_test'
+    assert strutils.camel2under('HTTPServer') == 'http_server'
+    assert strutils.camel2under('getHTTPResponseCode') == 'get_http_response_code'
+    assert strutils.camel2under('XMLParser') == 'xml_parser'
+    assert strutils.camel2under('ABTest') == 'ab_test'
+    assert strutils.camel2under('AsciiToUTF8') == 'ascii_to_utf8'
+    assert strutils.camel2under('HTMLParser2') == 'html_parser2'
+    assert strutils.camel2under('iOS') == 'i_os'
+    assert strutils.camel2under('already_under') == 'already_under'
+
+    # #142: a run of capitals followed by lowercase letters is one word
+    assert strutils.camel2under('NSDecimalToUInt') == 'ns_decimal_to_uint'
+    assert strutils.camel2under('HTTPSConnection') == 'https_connection'
+    assert strutils.camel2under('UInt') == 'uint'
+    assert strutils.camel2under('TheIDs') == 'the_ids'
+
+
 def test_ellipsize():
     ellipsize = strutils.ellipsize
 
