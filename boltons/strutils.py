@@ -63,7 +63,8 @@ __all__ = ['camel2under', 'under2camel', 'slugify', 'split_punct_ws',
 
 _punct_ws_str = string.punctuation + string.whitespace
 _punct_re = re.compile('[' + _punct_ws_str + ']+')
-_camel2under_re = re.compile('((?<=[a-z0-9])[A-Z]|(?!^)[A-Z](?=[a-z]))')
+_camel2under_acronym_re = re.compile('([A-Z]{2,})([A-Z][a-z])')
+_camel2under_re = re.compile('([a-z0-9])([A-Z])')
 
 
 def camel2under(camel_string):
@@ -72,8 +73,20 @@ def camel2under(camel_string):
 
     >>> camel2under('BasicParseTest')
     'basic_parse_test'
+
+    Runs of consecutive capital letters (e.g., acronyms like ``NS`` or
+    ``HTTPS``) are treated as a single word when they are immediately
+    followed by another capitalized word, and are otherwise kept
+    together, avoiding spurious underscores in the middle of short
+    acronyms such as ``UInt``.
+
+    >>> camel2under('NSDecimalToUInt')
+    'ns_decimal_to_uint'
+    >>> camel2under('HTTPSConnection')
+    'https_connection'
     """
-    return _camel2under_re.sub(r'_\1', camel_string).lower()
+    intermediate = _camel2under_acronym_re.sub(r'\1_\2', camel_string)
+    return _camel2under_re.sub(r'\1_\2', intermediate).lower()
 
 
 def under2camel(under_string):
