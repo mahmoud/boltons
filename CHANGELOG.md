@@ -9,6 +9,7 @@ scheme (`YY.MINOR.MICRO`).
 
 _(unreleased)_
 
+- Added [`strutils.ellipsize`][strutils.ellipsize] for word-boundary-aware text truncation with an ellipsis
 - Fixed [`funcutils.wraps`][funcutils.wraps] passing arguments positionally to wrappers that only accept them as keywords ([#261](https://github.com/mahmoud/boltons/issues/261))
 - Fixed [`tableutils.Table.to_text`][tableutils.Table] crashes on empty tables, `None` headers, and short header rows; empty headers now render no header row, matching `to_html`
 - Fixed [`timeutils.isoparse`][timeutils.isoparse] misreading fractional seconds (`.851` parsed as 851µs instead of 851000µs); >6-digit fractions now truncate instead of raising
@@ -1227,6 +1228,7 @@ added in this release.
 [strutils.args2cmd]: http://boltons.readthedocs.org/en/latest/strutils.html#boltons.strutils.args2cmd
 [strutils.args2sh]: http://boltons.readthedocs.org/en/latest/strutils.html#boltons.strutils.args2sh
 [strutils.escape_shell_args]: http://boltons.readthedocs.org/en/latest/strutils.html#boltons.strutils.escape_shell_args
+[strutils.ellipsize]: http://boltons.readthedocs.org/en/latest/strutils.html#boltons.strutils.ellipsize
 [strutils.find_hashtags]: http://boltons.readthedocs.org/en/latest/strutils.html#boltons.strutils.find_hashtags
 [strutils.gzip_bytes]: http://boltons.readthedocs.org/en/latest/strutils.html#boltons.strutils.gzip_bytes
 [strutils.gunzip_bytes]: http://boltons.readthedocs.org/en/latest/strutils.html#boltons.strutils.gunzip_bytes
