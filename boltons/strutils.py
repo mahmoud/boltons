@@ -552,7 +552,7 @@ DEACCENT_MAP = DeaccenterDict(_BASE_DEACCENT_MAP)
 
 _SIZE_SYMBOLS = ('B', 'K', 'M', 'G', 'T', 'P', 'E', 'Z', 'Y')
 _SIZE_BOUNDS = [(1024 ** i, sym) for i, sym in enumerate(_SIZE_SYMBOLS)]
-_SIZE_RANGES = list(zip(_SIZE_BOUNDS, _SIZE_BOUNDS[1:]))
+_SIZE_RANGES = list(zip(_SIZE_BOUNDS, _SIZE_BOUNDS[1:] + [(float('inf'), '')]))
 
 
 def bytes2human(nbytes, ndigits=0):
@@ -568,6 +568,8 @@ def bytes2human(nbytes, ndigits=0):
     '0.00B'
     >>> bytes2human(1024)
     '1K'
+    >>> bytes2human(1024 ** 8)
+    '1Y'
     """
     abs_bytes = abs(nbytes)
     for (size, symbol), (next_size, next_symbol) in _SIZE_RANGES:
