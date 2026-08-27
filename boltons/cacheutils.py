@@ -726,7 +726,7 @@ class ThresholdCounter:
         """Get the top *n* keys and counts as tuples. If *n* is omitted,
         returns all the pairs.
         """
-        if not n or n <= 0:
+        if n is not None and n <= 0:
             return []
         ret = sorted(self.iteritems(), key=lambda x: x[1], reverse=True)
         if n is None or n >= len(ret):

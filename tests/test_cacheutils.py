@@ -471,6 +471,9 @@ def test_threshold_counter():
     assert tc.get_uncommon_count() == 1  # bc the initial 1 was dropped
     assert round(tc.get_commonality(), 2) == 0.92
     assert tc.most_common(2) == [(2, 10), (5, 1)]
+    assert tc.most_common() == [(2, 10), (5, 1)]  # n omitted -> all pairs
+    assert tc.most_common(0) == []
+    assert tc.most_common(-1) == []
     assert list(tc.elements()) == ([2] * 10) + [5]
 
     assert tc[2] == 10
