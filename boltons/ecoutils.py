@@ -308,13 +308,17 @@ def get_profile(**kwargs):
     if kwargs:
         raise TypeError(f'unexpected keyword arguments: {kwargs.keys()!r}')
     ret = {}
-    try:
-        ret['username'] = getpass.getuser()
-    except Exception:
-        ret['username'] = ''
+    # Values masked below are not looked up at all when scrubbing. Skip them.
+    if scrub:
+        ret['username'] = '-'
+    else:
+        try:
+            ret['username'] = getpass.getuser()
+        except Exception:
+            ret['username'] = ''
     ret['guid'] = str(INSTANCE_ID)
-    ret['hostname'] = socket.gethostname()
-    ret['hostfqdn'] = socket.getfqdn()
+    ret['hostname'] = '-' if scrub else socket.gethostname()
+    ret['hostfqdn'] = '-' if scrub else socket.getfqdn()
     uname = platform.uname()
     ret['uname'] = {'system': uname[0],
                     'node': uname[1],
@@ -334,7 +338,7 @@ def get_profile(**kwargs):
     ret['fs_encoding'] = sys.getfilesystemencoding()
     ret['ulimit_soft'] = RLIMIT_FDS_SOFT
     ret['ulimit_hard'] = RLIMIT_FDS_HARD
-    ret['cwd'] = os.getcwd()
+    ret['cwd'] = '-' if scrub else os.getcwd()
     ret['umask'] = oct(os.umask(os.umask(2))).rjust(3, '0')
 
     ret['python'] = get_python_info()
@@ -343,13 +347,9 @@ def get_profile(**kwargs):
 
     if scrub:
         # mask identifiable information
-        ret['cwd'] = '-'
-        ret['hostname'] = '-'
-        ret['hostfqdn'] = '-'
         ret['python']['bin'] = '-'
         ret['python']['argv'] = '-'
         ret['uname']['node'] = '-'
-        ret['username'] = '-'
 
     return ret
 
