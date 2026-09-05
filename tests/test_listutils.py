@@ -138,3 +138,14 @@ bl.extend(range(int(%s)))
     except Exception as e:
         import pdb;pdb.post_mortem()
         raise
+
+
+def test_barrellist_delete_across_multiple_barrels():
+    for start, stop in ((2, 10), (1, 7), (4, 10), (2, 4)):
+        reference = list(range(12))
+        value = BarrelList()
+        value.lists = [reference[i : i + 3] for i in range(0, 12, 3)]
+        del reference[start:stop]
+        del value[start:stop]
+        assert list(value) == reference
+        assert len(value) == len(reference)

@@ -207,9 +207,9 @@ class BarrelList(list):
         if start_list_idx == stop_list_idx:
             del self.lists[start_list_idx][start_rel_idx:stop_rel_idx]
         elif start_list_idx < stop_list_idx:
-            del self.lists[start_list_idx + 1:stop_list_idx]
-            del self.lists[start_list_idx][start_rel_idx:]
             del self.lists[stop_list_idx][:stop_rel_idx]
+            del self.lists[start_list_idx][start_rel_idx:]
+            del self.lists[start_list_idx + 1:stop_list_idx]
         else:
             assert False, ('start list index should never translate to'
                            ' greater than stop list index')
