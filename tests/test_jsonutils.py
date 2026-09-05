@@ -81,3 +81,10 @@ def test_jsonl_iterator_rel_seek_negative():
     assert tail
     assert tail == list(JSONLIterator(open(JSONL_DATA_PATH), rel_seek=0.5))
     assert tail == ref[len(ref) - len(tail):]
+
+
+def test_jsonl_relative_seek_binary_matches_text(tmp_path):
+    path = tmp_path / 'records.jsonl'
+    path.write_bytes(b'{"n": 1}\n{"n": 2}\n{"n": 3}\n')
+    with path.open('rb') as binary, path.open() as text:
+        assert list(JSONLIterator(binary, rel_seek=0.4)) == list(JSONLIterator(text, rel_seek=0.4))

@@ -176,9 +176,10 @@ class JSONLIterator:
     def _align_to_newline(self):
         "Aligns the file object's position to the next newline."
         fo, bsize = self._file_obj, self._blocksize
-        cur, total_read = '', 0
+        newline = b'\n' if isinstance(fo.read(0), bytes) else '\n'
+        cur, total_read = newline[:0], 0
         cur_pos = fo.tell()
-        while '\n' not in cur:
+        while newline not in cur:
             cur = fo.read(bsize)
             if not cur:
                 # no newline until EOF; a partial trailing line was
@@ -186,7 +187,7 @@ class JSONLIterator:
                 fo.seek(0, os.SEEK_END)
                 return
             total_read += bsize
-        newline_offset = cur.index('\n') + total_read - bsize
+        newline_offset = cur.index(newline) + total_read - bsize
         fo.seek(cur_pos + newline_offset)
 
     def _init_rel_seek(self):
