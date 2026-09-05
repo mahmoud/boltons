@@ -81,3 +81,12 @@ def test_jsonl_iterator_rel_seek_negative():
     assert tail
     assert tail == list(JSONLIterator(open(JSONL_DATA_PATH), rel_seek=0.5))
     assert tail == ref[len(ref) - len(tail):]
+
+
+def test_reverse_iter_lines_keeps_text_stream_attached(tmp_path):
+    path = tmp_path / 'lines.txt'
+    path.write_text('first\nsecond')
+    with path.open() as stream:
+        assert list(reverse_iter_lines(stream)) == ['second', 'first']
+        stream.seek(0)
+        assert stream.read() == 'first\nsecond'
