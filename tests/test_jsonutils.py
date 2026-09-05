@@ -81,3 +81,12 @@ def test_jsonl_iterator_rel_seek_negative():
     assert tail
     assert tail == list(JSONLIterator(open(JSONL_DATA_PATH), rel_seek=0.5))
     assert tail == ref[len(ref) - len(tail):]
+
+
+def test_jsonl_explicit_end_seek(tmp_path):
+    path = tmp_path / 'records.jsonl'
+    path.write_text('{"n": 1}\n{"n": 2}\n')
+    with path.open('rb', buffering=0) as stream:
+        assert list(JSONLIterator(stream, reverse=True, rel_seek=1.0)) == [{'n': 2}, {'n': 1}]
+    with path.open() as stream:
+        assert list(JSONLIterator(stream, rel_seek=1.0)) == []
