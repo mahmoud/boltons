@@ -114,6 +114,8 @@ class BarrelList(list):
             if rel_idx < len_list:
                 break
             rel_idx -= len_list
+        else:
+            rel_idx += len(lists[-1])
         if rel_idx < 0:
             return None, None
         return list_idx, rel_idx

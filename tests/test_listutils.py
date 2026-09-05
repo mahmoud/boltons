@@ -138,3 +138,25 @@ bl.extend(range(int(%s)))
     except Exception as e:
         import pdb;pdb.post_mortem()
         raise
+
+
+def test_barrellist_out_of_bounds_indexes():
+    import operator
+    import pytest
+
+    for parts in ([[0, 1, 2]], [[0], [1, 2]]):
+        for index in (3, 4, 10, -4):
+            for operation in (
+                operator.getitem,
+                operator.delitem,
+                lambda obj, i: operator.setitem(obj, i, 99),
+                lambda obj, i: obj.pop(i),
+            ):
+                value = BarrelList()
+                value.lists = [part[:] for part in parts]
+                with pytest.raises(IndexError):
+                    operation(value, index)
+                assert list(value) == [0, 1, 2]
+    value = BarrelList([0, 1, 2])
+    value.insert(100, 3)
+    assert list(value) == [0, 1, 2, 3]
