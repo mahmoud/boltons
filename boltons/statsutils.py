@@ -561,6 +561,8 @@ class Stats:
             # freedman algorithm for fixed-width bin selection
             q25, q75 = self.get_quantile(0.25), self.get_quantile(0.75)
             dx = 2 * (q75 - q25) / (len_data ** (1 / 3.0))
+            if dx == 0:
+                return [float(min_data), float(max_data)] if with_max else [float(min_data)]
             bin_count = max(1, int(ceil((max_data - min_data) / dx)))
             bins = [min_data + (dx * i) for i in range(bin_count + 1)]
             bins = [b for b in bins if b < max_data]
