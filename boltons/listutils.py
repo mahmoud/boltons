@@ -168,23 +168,11 @@ class BarrelList(list):
         return ret
 
     def iter_slice(self, start, stop, step=None):
-        iterable = self  # TODO: optimization opportunities abound
-        # start_list_idx, stop_list_idx = 0, len(self.lists)
-        if start is None:
-            start = 0
-        if stop is None:
-            stop = len(self)
-        if step is not None and step < 0:
-            step = -step
-            start, stop = -start, -stop - 1
-            iterable = reversed(self)
-        if start < 0:
-            start += len(self)
-            # start_list_idx, start_rel_idx = self._translate_index(start)
-        if stop < 0:
-            stop += len(self)
-            # stop_list_idx, stop_rel_idx = self._translate_index(stop)
-        return islice(iterable, start, stop, step)
+        length = len(self)
+        start, stop, step = slice(start, stop, step).indices(length)
+        if step < 0:
+            return islice(reversed(self), length - 1 - start, length - 1 - stop, -step)
+        return islice(self, start, stop, step)
 
     def del_slice(self, start, stop, step=None):
         if step is not None and abs(step) > 1:  # punt
