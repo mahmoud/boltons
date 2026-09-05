@@ -206,9 +206,13 @@ class Bits:
         return [c == '1' for c in self.as_bin()]
 
     def as_bin(self):
+        if not self.len:
+            return ''
         return f'{{0:0{self.len}b}}'.format(self.val)
 
     def as_hex(self):
+        if not self.len:
+            return ''
         # make template to pad out to number of bytes necessary to represent bits
         tmpl = f'%0{2 * (self.len // 8 + ((self.len % 8) != 0))}X'
         ret = tmpl % self.val
@@ -232,6 +236,8 @@ class Bits:
     def from_hex(cls, hex):
         if isinstance(hex, bytes):
             hex = hex.decode('ascii')
+        if not hex:
+            return cls('')
         if not hex.startswith('0x'):
             hex = '0x' + hex
         return cls(hex)
