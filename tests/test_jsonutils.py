@@ -81,3 +81,20 @@ def test_jsonl_iterator_rel_seek_negative():
     assert tail
     assert tail == list(JSONLIterator(open(JSONL_DATA_PATH), rel_seek=0.5))
     assert tail == ref[len(ref) - len(tail):]
+
+
+def test_reverse_iter_lines_uses_file_encoding(tmp_path):
+    from io import TextIOWrapper
+
+    path = tmp_path / 'latin1.txt'
+    path.write_bytes('café\nfin'.encode('latin-1'))
+    with path.open('rb') as raw:
+        stream = TextIOWrapper(raw, encoding='latin-1')
+        assert list(reverse_iter_lines(stream)) == ['fin', 'café']
+
+
+def test_reverse_iter_lines_uses_explicit_binary_encoding():
+    from io import BytesIO
+
+    stream = BytesIO('café\nfin'.encode('latin-1'))
+    assert list(reverse_iter_lines(stream, encoding='latin-1')) == ['fin', 'café']
