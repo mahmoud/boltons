@@ -134,3 +134,9 @@ def test_empty_bits_conversions():
         assert Bits.from_bin(bits.as_bin()) == bits
         assert Bits.from_hex(bits.as_hex()) == bits
         assert Bits.from_bytes(bits.as_bytes()) == bits
+
+
+def test_empty_bits_rejects_non_hex_inputs():
+    for value in (None, 0, False):
+        with raises(AttributeError):
+            Bits.from_hex(value)

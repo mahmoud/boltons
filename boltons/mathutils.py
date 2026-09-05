@@ -236,7 +236,7 @@ class Bits:
     def from_hex(cls, hex):
         if isinstance(hex, bytes):
             hex = hex.decode('ascii')
-        if not hex:
+        if hex == '':
             return cls('')
         if not hex.startswith('0x'):
             hex = '0x' + hex
