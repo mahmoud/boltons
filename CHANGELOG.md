@@ -7,7 +7,7 @@ scheme (`YY.MINOR.MICRO`).
 
 ## 26.2.0
 
-_(unreleased)_
+_(September 7, 2026)_
 
 - Added [`statsutils.mode`][statsutils.mode] to return the most common value, breaking ties by first appearance ([#453](https://github.com/mahmoud/boltons/pull/453))
 - Fixed [`setutils.IndexedSet.update`][setutils.IndexedSet.update] adding the iterables themselves instead of their elements when given multiple inputs ([#474](https://github.com/mahmoud/boltons/pull/474))
@@ -48,6 +48,11 @@ _(unreleased)_
 - Fixed [`strutils.args2sh`][strutils.args2sh] and [`strutils.args2cmd`][strutils.args2cmd] ignoring the `sep` argument ([#454](https://github.com/mahmoud/boltons/pull/454))
 - Fixed [`statsutils.Stats.pearson_type`][statsutils.Stats.pearson_type] raising `RuntimeError` instead of classifying Pearson types IV, V, and VI ([#434](https://github.com/mahmoud/boltons/pull/434))
 - Fixed [`statsutils.Stats.pearson_type`][statsutils.Stats.pearson_type] division by zero at the exact coefficient boundary, preserving the existing Normal and Gamma cases ([#434](https://github.com/mahmoud/boltons/pull/434))
+- Fixed [`setutils.complement`][setutils.complement] subset and superset comparisons raising `AttributeError` ([#438](https://github.com/mahmoud/boltons/pull/438))
+- Fixed [`mathutils.Bits`][mathutils.Bits] accepting values too large for the requested bit length
+- Fixed [`tbutils.ParsedException`][tbutils.ParsedException] dropping Python 3.11+ traceback anchor lines during round trips ([#333](https://github.com/mahmoud/boltons/pull/333))
+- Fixed [`strutils.pluralize`][strutils.pluralize] handling of words ending in `x`, such as `box`
+- Fixed [`iterutils.backoff_iter`][iterutils.backoff_iter] division by zero with `factor=1.0` and no count; equal bounds yield once, and unequal bounds raise `ValueError`
 
 ## 26.1.0
 
