@@ -52,6 +52,26 @@ def test_indent():
     assert strutils.indent(to_indent, '  ') == ref
 
 
+@pytest.mark.parametrize('line_ending', ['\u2028', '\u2029'])
+def test_iter_splitlines_unicode_line_endings(line_ending):
+    text = line_ending + 'first' + line_ending + 'second' + line_ending
+
+    assert list(strutils.iter_splitlines(text)) == ['', 'first', 'second', '']
+
+
+def test_iter_splitlines_preserves_numbers_after_spaces():
+    text = 'February 28, or February 29 in a leap year'
+
+    assert list(strutils.iter_splitlines(text)) == [text]
+
+
+def test_indent_unicode_line_endings():
+    text = 'February 28\u2028February 29\u2029March 1\r\nMarch 2'
+
+    assert strutils.indent(text, '  ') == (
+        '  February 28\n  February 29\n  March 1\n  March 2')
+
+
 def test_is_uuid():
     assert strutils.is_uuid(uuid.uuid4()) == True
     assert strutils.is_uuid(uuid.uuid4(), version=1) == False
