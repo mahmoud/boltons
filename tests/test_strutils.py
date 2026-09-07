@@ -284,6 +284,7 @@ def test_bytes2human():
     assert b2h(1024 ** 2) == '1M'
     assert b2h(1024 ** 3) == '1G'
     assert b2h(1024 ** 4) == '1T'
+    assert b2h(1024 ** 8) == '1Y'
     # Just below a boundary stays in the smaller unit.
     assert b2h(1023) == '1023B'
     assert b2h(1024 ** 2 - 1, 1) == '1024.0K'
