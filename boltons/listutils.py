@@ -114,6 +114,8 @@ class BarrelList(list):
             if rel_idx < len_list:
                 break
             rel_idx -= len_list
+        else:
+            return None, None  # index >= len(self)
         if rel_idx < 0:
             return None, None
         return list_idx, rel_idx
@@ -137,9 +139,13 @@ class BarrelList(list):
             self.lists[0].insert(index, item)
             self._balance_list(0)
         else:
-            list_idx, rel_idx = self._translate_index(index)
-            if list_idx is None:
+            len_self = len(self)
+            if index >= len_self:  # clamp to append, like list.insert
+                list_idx, rel_idx = len(self.lists) - 1, len(self.lists[-1])
+            elif index < -len_self:  # clamp to prepend, like list.insert
                 list_idx, rel_idx = 0, 0
+            else:
+                list_idx, rel_idx = self._translate_index(index)
             self.lists[list_idx].insert(rel_idx, item)
             self._balance_list(list_idx)
         return
@@ -156,6 +162,8 @@ class BarrelList(list):
             return self.lists[0].pop()
         index = a and a[0]
         if index == () or index is None or index == -1:
+            while len(lists) > 1 and not lists[-1]:
+                lists.pop()  # clean up empty tail sublists first
             ret = lists[-1].pop()
             if len(lists) > 1 and not lists[-1]:
                 lists.pop()
@@ -164,7 +172,10 @@ class BarrelList(list):
             if list_idx is None:
                 raise IndexError()
             ret = lists[list_idx].pop(rel_idx)
-            self._balance_list(list_idx)
+            if len(lists) > 1 and not lists[list_idx]:
+                del lists[list_idx]  # don't accumulate empty sublists
+            else:
+                self._balance_list(list_idx)
         return ret
 
     def iter_slice(self, start, stop, step=None):
