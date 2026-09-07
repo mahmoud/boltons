@@ -189,6 +189,18 @@ def test_userinfo():
     assert url.to_text() == 'http://someuser:somepassword@example.com/some-segment@ignore'
 
 
+def test_password_without_username():
+    url = URL('http://:secret@example.com/path')
+    assert url.username == ''
+    assert url.password == 'secret'
+    assert url.to_text() == 'http://:secret@example.com/path'
+    assert url.get_authority(with_userinfo=True) == ':secret@example.com'
+    assert url.get_authority() == 'example.com'
+
+    url.password = 'p@ss'
+    assert url.to_text(full_quote=True) == 'http://:p%40ss@example.com/path'
+
+
 def test_quoted_userinfo():
     url = URL('http://wikipedia.org')
     url.username = 'user'
