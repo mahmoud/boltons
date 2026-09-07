@@ -204,3 +204,19 @@ def test_barrel_list_matches_list():
             assert ref[i] == bl[i]
         assert len(ref) == len(bl)
     assert list(bl) == ref
+
+
+def test_barrellist_slicing_matches_list():
+    import itertools
+    import pytest
+
+    for size in (0, 1, 8):
+        reference = list(range(size))
+        value = BarrelList(reference)
+        for start, stop, step in itertools.product(
+            (None, -20, -2, 0, 2, 20), (None, -20, -2, 0, 2, 20), (None, -3, -1, 1, 2)
+        ):
+            key = slice(start, stop, step)
+            assert list(value[key]) == reference[key], key
+        with pytest.raises(ValueError):
+            value[::0]
