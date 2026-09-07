@@ -116,3 +116,17 @@ def test_daterange_datetime_hourly():
     hours = list(daterange(start, stop, step=timedelta(hours=3)))
     assert hours == [datetime(2020, 1, 1, 0), datetime(2020, 1, 1, 3),
                      datetime(2020, 1, 1, 6), datetime(2020, 1, 1, 9)]
+
+
+def test_relative_time_defaults_to_matching_timezone():
+    from datetime import datetime, timedelta, timezone
+    from boltons.timeutils import decimal_relative_time, relative_time
+
+    for tz in (None, timezone.utc, timezone(timedelta(hours=5, minutes=30))):
+        now = (
+            datetime.now(tz)
+            if tz is not None
+            else datetime.now(timezone.utc).replace(tzinfo=None)
+        )
+        assert decimal_relative_time(now) == (0.0, 'seconds')
+        assert relative_time(now) == '0 seconds ago'

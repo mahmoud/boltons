@@ -232,7 +232,10 @@ def decimal_relative_time(d, other=None, ndigits=0, cardinalize=True):
 
     """
     if other is None:
-        other = datetime.now(timezone.utc).replace(tzinfo=None)
+        if d.tzinfo is None:
+            other = datetime.now(timezone.utc).replace(tzinfo=None)
+        else:
+            other = datetime.now(d.tzinfo)
     diff = other - d
     diff_seconds = timedelta.total_seconds(diff)
     abs_diff = abs(diff)
