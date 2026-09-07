@@ -293,11 +293,11 @@ class LRI(dict):
                 self[key] = default
                 return default
 
-    def update(self, E, **F):
+    def update(self, E=(), **F):
         # E and F are throwback names to the dict() __doc__
         with self._lock:
             if E is self:
-                return
+                E = ()
             setitem = self.__setitem__
             if callable(getattr(E, 'keys', None)):
                 for k in E.keys():
