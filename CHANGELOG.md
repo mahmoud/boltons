@@ -46,6 +46,8 @@ _(unreleased)_
 - Fixed [`strutils.bytes2human`][strutils.bytes2human] failing to use the `Y` suffix for yottabyte-sized values ([#459](https://github.com/mahmoud/boltons/pull/459))
 - Fixed [`urlutils.URL.get_authority`][urlutils.URL.get_authority] dropping passwords when the username is empty ([#477](https://github.com/mahmoud/boltons/pull/477))
 - Fixed [`strutils.args2sh`][strutils.args2sh] and [`strutils.args2cmd`][strutils.args2cmd] ignoring the `sep` argument ([#454](https://github.com/mahmoud/boltons/pull/454))
+- Fixed [`statsutils.Stats.pearson_type`][statsutils.Stats.pearson_type] raising `RuntimeError` instead of classifying Pearson types IV, V, and VI ([#434](https://github.com/mahmoud/boltons/pull/434))
+- Fixed [`statsutils.Stats.pearson_type`][statsutils.Stats.pearson_type] division by zero at the exact coefficient boundary, preserving the existing Normal and Gamma cases ([#434](https://github.com/mahmoud/boltons/pull/434))
 
 ## 26.1.0
 
@@ -1313,3 +1315,4 @@ added in this release.
 [setutils.IndexedSet.update]: https://boltons.readthedocs.io/en/latest/setutils.html#boltons.setutils.IndexedSet.update
 [strutils.MultiReplace]: https://boltons.readthedocs.io/en/latest/strutils.html#boltons.strutils.MultiReplace
 [setutils.IndexedSet]: https://boltons.readthedocs.io/en/latest/setutils.html#boltons.setutils.IndexedSet
+[statsutils.Stats.pearson_type]: https://boltons.readthedocs.io/en/latest/statsutils.html#boltons.statsutils.Stats.pearson_type

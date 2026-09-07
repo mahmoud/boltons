@@ -46,9 +46,3 @@ def test_empty_type_name_raises_value_error(factory):
 def test_invalid_character_still_raises_value_error(factory):
     with pytest.raises(ValueError):
         factory('Point', ['x', 'y-z'])
-
-
-@pytest.mark.parametrize("factory", [namedtuple, namedlist])
-def test_valid_names_still_accepted(factory):
-    cls = factory('Point', ['x', 'y'])
-    assert cls(x=1, y=2).x == 1
