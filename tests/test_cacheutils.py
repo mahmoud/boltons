@@ -166,6 +166,56 @@ def test_lru_basic():
     assert second_lru != lru
 
 
+@pytest.mark.parametrize('cache_type, expected', [
+    (LRI, {'b': 2, 'c': 3}),
+    (LRU, {'a': 1, 'c': 3}),
+])
+def test_cache_update_no_args(cache_type, expected):
+    cache = cache_type(max_size=2, values=[('a', 1), ('b', 2)])
+    assert cache['a'] == 1
+
+    assert cache.update() is None
+    assert cache.update(cache) is None
+    assert (cache.hit_count, cache.miss_count, cache.soft_miss_count) == (1, 0, 0)
+
+    cache['c'] = 3
+    assert dict(cache) == expected
+
+
+@pytest.mark.parametrize('cache_type', [LRI, LRU])
+@pytest.mark.parametrize('with_self', [False, True])
+def test_cache_update_keywords(cache_type, with_self):
+    cache = cache_type(max_size=2, values=[('a', 1), ('b', 2)])
+
+    if with_self:
+        result = cache.update(cache, a=3, c=4)
+    else:
+        result = cache.update(a=3, c=4)
+
+    assert result is None
+    assert dict(cache) == {'a': 3, 'c': 4}
+    assert cache['a'] == 3
+    assert cache['c'] == 4
+
+    cache['d'] = 5
+    assert dict(cache) == {'c': 4, 'd': 5}
+
+
+@pytest.mark.parametrize('cache_type', [LRI, LRU])
+@pytest.mark.parametrize('source_type', [dict, iter])
+def test_cache_update_source_and_keywords(cache_type, source_type):
+    cache = cache_type(max_size=2)
+    source = source_type([('a', 1), ('b', 2)])
+
+    assert cache.update(source, a=3) is None
+    assert dict(cache) == {'a': 3, 'b': 2}
+    cache['c'] = 4
+    assert dict(cache) == {'a': 3, 'c': 4}
+
+    with pytest.raises(TypeError):
+        cache.update(None)
+
+
 @pytest.mark.parametrize("lru_class", [LRU, LRI])
 def test_lru_dict_replacement(lru_class):
     # see issue #348
