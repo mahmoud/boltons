@@ -152,7 +152,7 @@ class JSONLIterator:
         if rel_seek is None:
             if reverse:
                 rel_seek = 1.0
-        elif not -1.0 < rel_seek < 1.0:
+        elif not -1.0 < rel_seek <= 1.0:
             raise ValueError("'rel_seek' expected a float between"
                              " -1.0 and 1.0, not %r" % rel_seek)
         elif rel_seek < 0:
