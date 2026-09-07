@@ -90,3 +90,10 @@ def test_jsonl_explicit_end_seek(tmp_path):
         assert list(JSONLIterator(stream, reverse=True, rel_seek=1.0)) == [{'n': 2}, {'n': 1}]
     with path.open() as stream:
         assert list(JSONLIterator(stream, rel_seek=1.0)) == []
+
+
+def test_jsonl_relative_seek_binary_matches_text(tmp_path):
+    path = tmp_path / 'records.jsonl'
+    path.write_bytes(b'{"n": 1}\n{"n": 2}\n{"n": 3}\n')
+    with path.open('rb') as binary, path.open() as text:
+        assert list(JSONLIterator(binary, rel_seek=0.4)) == list(JSONLIterator(text, rel_seek=0.4))
