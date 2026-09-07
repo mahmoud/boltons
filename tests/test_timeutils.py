@@ -1,8 +1,8 @@
-from datetime import timedelta, date, datetime
+from datetime import timedelta, date, datetime, timezone
 
 import pytest
 
-from boltons.timeutils import daterange, isoparse
+from boltons.timeutils import daterange, isoparse, Eastern
 
 
 def test_daterange_years():
@@ -130,3 +130,25 @@ def test_relative_time_defaults_to_matching_timezone():
         )
         assert decimal_relative_time(now) == (0.0, 'seconds')
         assert relative_time(now) == '0 seconds ago'
+
+
+def test_us_timezone_dst_fold():
+    unfolded = datetime(2011, 11, 6, 1, 30, tzinfo=Eastern, fold=0)
+    folded = datetime(2011, 11, 6, 1, 30, tzinfo=Eastern, fold=1)
+
+    assert unfolded.utcoffset() == -4 * timedelta(hours=1)
+    assert unfolded.tzname() == 'EDT'
+    assert folded.utcoffset() == -5 * timedelta(hours=1)
+    assert folded.tzname() == 'EST'
+
+
+def test_us_timezone_fromutc_sets_fold():
+    first = datetime(2011, 11, 6, 5, 30, tzinfo=timezone.utc).astimezone(Eastern)
+    second = datetime(2011, 11, 6, 6, 30, tzinfo=timezone.utc).astimezone(Eastern)
+
+    assert first.replace(tzinfo=None) == datetime(2011, 11, 6, 1, 30)
+    assert first.fold == 0
+    assert first.tzname() == 'EDT'
+    assert second.replace(tzinfo=None) == datetime(2011, 11, 6, 1, 30)
+    assert second.fold == 1
+    assert second.tzname() == 'EST'
