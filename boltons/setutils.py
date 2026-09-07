@@ -363,7 +363,7 @@ class IndexedSet(MutableSet):
         elif len(others) == 1:
             other = others[0]
         else:
-            other = chain(others)
+            other = chain.from_iterable(others)
         for o in other:
             self.add(o)
 
