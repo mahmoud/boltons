@@ -97,3 +97,26 @@ def test_jsonl_relative_seek_binary_matches_text(tmp_path):
     path.write_bytes(b'{"n": 1}\n{"n": 2}\n{"n": 3}\n')
     with path.open('rb') as binary, path.open() as text:
         assert list(JSONLIterator(binary, rel_seek=0.4)) == list(JSONLIterator(text, rel_seek=0.4))
+
+
+def test_reverse_iter_lines_uses_file_encoding(tmp_path):
+    path = tmp_path / 'latin1.txt'
+    path.write_bytes('café\nfin'.encode('latin-1'))
+    with path.open(encoding='latin-1') as stream:
+        assert list(reverse_iter_lines(stream)) == ['fin', 'café']
+
+
+def test_reverse_iter_lines_uses_explicit_binary_encoding():
+    from io import BytesIO
+
+    stream = BytesIO('café\nfin'.encode('latin-1'))
+    assert list(reverse_iter_lines(stream, encoding='latin-1')) == ['fin', 'café']
+
+
+def test_reverse_iter_lines_keeps_text_stream_attached(tmp_path):
+    path = tmp_path / 'lines.txt'
+    path.write_text('first\nsecond')
+    with path.open() as stream:
+        assert list(reverse_iter_lines(stream)) == ['second', 'first']
+        stream.seek(0)
+        assert stream.read() == 'first\nsecond'
