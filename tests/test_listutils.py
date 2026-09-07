@@ -220,3 +220,23 @@ def test_barrellist_slicing_matches_list():
             assert list(value[key]) == reference[key], key
         with pytest.raises(ValueError):
             value[::0]
+
+
+def test_barrellist_delete_across_multiple_barrels():
+    for start, stop in ((2, 10), (1, 7), (4, 10), (2, 4)):
+        reference = list(range(12))
+        value = BarrelList()
+        value.lists = [reference[i : i + 3] for i in range(0, 12, 3)]
+        del reference[start:stop]
+        del value[start:stop]
+        assert list(value) == reference
+        assert len(value) == len(reference)
+
+
+def test_barrel_list_delete_to_end():
+    for stop in (None, 30000, 40000):
+        reference = list(range(30000))
+        value = _multi_sublist_bl()
+        del reference[10000:stop]
+        del value[10000:stop]
+        assert list(value) == reference

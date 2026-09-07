@@ -194,10 +194,11 @@ class BarrelList(list):
             return
         if start is None:
             start = 0
-        if stop is None:
-            stop = len(self)
         start_list_idx, start_rel_idx = self._translate_index(start)
-        stop_list_idx, stop_rel_idx = self._translate_index(stop)
+        if stop is None or stop >= len(self):
+            stop_list_idx, stop_rel_idx = len(self.lists) - 1, len(self.lists[-1])
+        else:
+            stop_list_idx, stop_rel_idx = self._translate_index(stop)
         if start_list_idx is None:
             raise IndexError()
         if stop_list_idx is None:
@@ -206,9 +207,9 @@ class BarrelList(list):
         if start_list_idx == stop_list_idx:
             del self.lists[start_list_idx][start_rel_idx:stop_rel_idx]
         elif start_list_idx < stop_list_idx:
-            del self.lists[start_list_idx + 1:stop_list_idx]
-            del self.lists[start_list_idx][start_rel_idx:]
             del self.lists[stop_list_idx][:stop_rel_idx]
+            del self.lists[start_list_idx][start_rel_idx:]
+            del self.lists[start_list_idx + 1:stop_list_idx]
         else:
             assert False, ('start list index should never translate to'
                            ' greater than stop list index')
