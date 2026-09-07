@@ -5,12 +5,13 @@ for an average of one 33-commit release about every 9 weeks. Versions
 are named according to the [CalVer](https://calver.org) versioning
 scheme (`YY.MINOR.MICRO`).
 
-## 26.1.1
+## 26.2.0
 
 _(unreleased)_
 
-- Fixed [`setutils.IndexedSet`][setutils.IndexedSet] updating from multiple iterables to add their elements instead of the iterables themselves
-- Fixed [`strutils.iter_splitlines`][strutils.iter_splitlines] and [`strutils.indent`][strutils.indent] recognizing Unicode line separators instead of splitting on spaces followed by `28` or `29`
+- Added [`statsutils.mode`][statsutils.mode] to return the most common value, breaking ties by first appearance ([#453](https://github.com/mahmoud/boltons/pull/453))
+- Fixed [`setutils.IndexedSet.update`][setutils.IndexedSet.update] adding the iterables themselves instead of their elements when given multiple inputs ([#474](https://github.com/mahmoud/boltons/pull/474))
+- Fixed [`strutils.iter_splitlines`][strutils.iter_splitlines] and [`strutils.indent`][strutils.indent] splitting dates containing ` 28` or ` 29` instead of recognizing Unicode line separators ([#475](https://github.com/mahmoud/boltons/pull/475))
 - Added [`strutils.ellipsize`][strutils.ellipsize] for word-boundary-aware text truncation with an ellipsis
 - Fixed [`funcutils.wraps`][funcutils.wraps] passing arguments positionally to wrappers that only accept them as keywords ([#261](https://github.com/mahmoud/boltons/issues/261))
 - Fixed [`tableutils.Table.to_text`][tableutils.Table] crashes on empty tables, `None` headers, and short header rows; empty headers now render no header row, matching `to_html`
@@ -19,6 +20,34 @@ _(unreleased)_
 - Fixed [`strutils.MultiReplace`][strutils.MultiReplace] raising `KeyError` on empty substitution maps (now a no-op)
 - Fixed [`jsonutils.JSONLIterator`][jsonutils.JSONLIterator] hanging when a seek lands past the last newline, and negative `rel_seek` values seeking past EOF (sign bug)
 - Fixed [`iterutils.xfrange`][iterutils.xfrange] yielding nothing for descending ranges; now shares [`frange`][iterutils.frange]'s count-based semantics, so both agree at inexact float boundaries
+- Fixed [`urlutils.parse_qsl`][urlutils.parse_qsl] ignoring its `encoding` argument when decoding keys and values ([#455](https://github.com/mahmoud/boltons/pull/455))
+- Fixed [`dictutils.OrderedMultiDict.addlist`][dictutils.OrderedMultiDict.addlist] dropping values from one-shot iterables, including the vendored copy in `urlutils` ([#458](https://github.com/mahmoud/boltons/pull/458))
+- Fixed [`ecoutils.get_profile`][ecoutils.get_profile] looking up identifying host, username, and working-directory information when `scrub=True` ([#461](https://github.com/mahmoud/boltons/pull/461))
+- Fixed [`namedutils.namedtuple`][namedutils.namedtuple] and [`namedutils.namedlist`][namedutils.namedlist] raising `IndexError` instead of `ValueError` for empty type and field names ([#462](https://github.com/mahmoud/boltons/pull/462))
+- Fixed [`iterutils.GUIDerator`][iterutils.GUIDerator] error text to reflect the inclusive minimum size of 20 ([#451](https://github.com/mahmoud/boltons/pull/451))
+- Fixed [`timeutils.decimal_relative_time`][timeutils.decimal_relative_time] and `relative_time` rejecting aware datetimes when the comparison time is omitted ([#469](https://github.com/mahmoud/boltons/pull/469))
+- Fixed [`timeutils.USTimeZone`][timeutils.USTimeZone] handling of repeated and missing DST hours, including `fold` on UTC conversion ([#441](https://github.com/mahmoud/boltons/pull/441))
+- Fixed [`mathutils.Bits`][mathutils.Bits] negative indexing ([#450](https://github.com/mahmoud/boltons/pull/450))
+- Fixed [`mathutils.Bits`][mathutils.Bits] empty binary, hexadecimal, and byte round trips ([#468](https://github.com/mahmoud/boltons/pull/468))
+- Sped up [`setutils.IndexedSet`][setutils.IndexedSet] bulk difference and intersection updates with a single-pass rebuild ([#440](https://github.com/mahmoud/boltons/pull/440))
+- Fixed [`listutils.BarrelList`][listutils.BarrelList] out-of-range indexing returning unrelated values ([#440](https://github.com/mahmoud/boltons/pull/440))
+- Fixed [`listutils.BarrelList`][listutils.BarrelList] insertion clamping across multiple internal lists ([#440](https://github.com/mahmoud/boltons/pull/440))
+- Fixed [`listutils.BarrelList`][listutils.BarrelList] popping after an internal list was emptied by indexed removals ([#440](https://github.com/mahmoud/boltons/pull/440))
+- Fixed [`listutils.BarrelList.iter_slice`][listutils.BarrelList.iter_slice] slice normalization and reverse steps ([#471](https://github.com/mahmoud/boltons/pull/471))
+- Fixed [`listutils.BarrelList.del_slice`][listutils.BarrelList.del_slice] deletion across internal lists and through the end of the list ([#472](https://github.com/mahmoud/boltons/pull/472))
+- Fixed [`jsonutils.JSONLIterator`][jsonutils.JSONLIterator] rejecting the documented `rel_seek=1.0` endpoint ([#465](https://github.com/mahmoud/boltons/pull/465))
+- Fixed [`jsonutils.JSONLIterator`][jsonutils.JSONLIterator] relative seeking in binary streams ([#464](https://github.com/mahmoud/boltons/pull/464))
+- Fixed [`statsutils.Stats.get_histogram_counts`][statsutils.Stats.get_histogram_counts] division by zero for data with no interquartile spread ([#467](https://github.com/mahmoud/boltons/pull/467))
+- Fixed [`jsonutils.reverse_iter_lines`][jsonutils.reverse_iter_lines] ignoring explicit and stream encodings ([#463](https://github.com/mahmoud/boltons/pull/463))
+- Fixed [`jsonutils.reverse_iter_lines`][jsonutils.reverse_iter_lines] detaching the caller's text stream, preventing later reads and context-manager cleanup ([#466](https://github.com/mahmoud/boltons/pull/466))
+- Fixed [`cacheutils.ThresholdCounter.update`][cacheutils.ThresholdCounter.update] ignoring mapping and keyword counts ([#476](https://github.com/mahmoud/boltons/pull/476))
+- Fixed [`cacheutils.LRI.update`][cacheutils.LRI.update] and [`cacheutils.LRU.update`][cacheutils.LRU.update] rejecting empty and keyword-only updates, and ignoring keywords when the source is the cache itself ([#478](https://github.com/mahmoud/boltons/pull/478))
+- Fixed [`cacheutils.ThresholdCounter.most_common`][cacheutils.ThresholdCounter.most_common] returning no pairs when the limit is omitted ([#460](https://github.com/mahmoud/boltons/pull/460))
+- Fixed [`strutils.bytes2human`][strutils.bytes2human] failing to use the `Y` suffix for yottabyte-sized values ([#459](https://github.com/mahmoud/boltons/pull/459))
+- Fixed [`urlutils.URL.get_authority`][urlutils.URL.get_authority] dropping passwords when the username is empty ([#477](https://github.com/mahmoud/boltons/pull/477))
+- Fixed [`strutils.args2sh`][strutils.args2sh] and [`strutils.args2cmd`][strutils.args2cmd] ignoring the `sep` argument ([#454](https://github.com/mahmoud/boltons/pull/454))
+- Fixed [`statsutils.Stats.pearson_type`][statsutils.Stats.pearson_type] raising `RuntimeError` instead of classifying Pearson types IV, V, and VI ([#434](https://github.com/mahmoud/boltons/pull/434))
+- Fixed [`statsutils.Stats.pearson_type`][statsutils.Stats.pearson_type] division by zero at the exact coefficient boundary, preserving the existing Normal and Gamma cases ([#434](https://github.com/mahmoud/boltons/pull/434))
 
 ## 26.1.0
 
@@ -1268,3 +1297,22 @@ added in this release.
 [urlutils]: http://boltons.readthedocs.org/en/latest/urlutils.html
 [urlutils.SCHEME_PORT_MAP]: http://boltons.readthedocs.org/en/latest/urlutils.html#boltons.urlutils.SCHEME_PORT_MAP
 [urlutils.find_all_links]: http://boltons.readthedocs.org/en/latest/urlutils.html#boltons.urlutils.find_all_links
+[statsutils.mode]: https://boltons.readthedocs.io/en/latest/statsutils.html#boltons.statsutils.mode
+[urlutils.parse_qsl]: https://boltons.readthedocs.io/en/latest/urlutils.html#boltons.urlutils.parse_qsl
+[dictutils.OrderedMultiDict.addlist]: https://boltons.readthedocs.io/en/latest/dictutils.html#boltons.dictutils.OrderedMultiDict.addlist
+[ecoutils.get_profile]: https://boltons.readthedocs.io/en/latest/ecoutils.html#boltons.ecoutils.get_profile
+[namedutils.namedtuple]: https://boltons.readthedocs.io/en/latest/namedutils.html#boltons.namedutils.namedtuple
+[namedutils.namedlist]: https://boltons.readthedocs.io/en/latest/namedutils.html#boltons.namedutils.namedlist
+[timeutils.USTimeZone]: https://boltons.readthedocs.io/en/latest/timeutils.html#boltons.timeutils.USTimeZone
+[cacheutils.ThresholdCounter.update]: https://boltons.readthedocs.io/en/latest/cacheutils.html#boltons.cacheutils.ThresholdCounter.update
+[cacheutils.ThresholdCounter.most_common]: https://boltons.readthedocs.io/en/latest/cacheutils.html#boltons.cacheutils.ThresholdCounter.most_common
+[cacheutils.LRI.update]: https://boltons.readthedocs.io/en/latest/cacheutils.html#boltons.cacheutils.LRI.update
+[cacheutils.LRU.update]: https://boltons.readthedocs.io/en/latest/cacheutils.html#boltons.cacheutils.LRU.update
+[urlutils.URL.get_authority]: https://boltons.readthedocs.io/en/latest/urlutils.html#boltons.urlutils.URL.get_authority
+[statsutils.Stats.get_histogram_counts]: https://boltons.readthedocs.io/en/latest/statsutils.html#boltons.statsutils.Stats.get_histogram_counts
+[listutils.BarrelList.iter_slice]: https://boltons.readthedocs.io/en/latest/listutils.html#boltons.listutils.BarrelList.iter_slice
+[listutils.BarrelList.del_slice]: https://boltons.readthedocs.io/en/latest/listutils.html#boltons.listutils.BarrelList.del_slice
+[setutils.IndexedSet.update]: https://boltons.readthedocs.io/en/latest/setutils.html#boltons.setutils.IndexedSet.update
+[strutils.MultiReplace]: https://boltons.readthedocs.io/en/latest/strutils.html#boltons.strutils.MultiReplace
+[setutils.IndexedSet]: https://boltons.readthedocs.io/en/latest/setutils.html#boltons.setutils.IndexedSet
+[statsutils.Stats.pearson_type]: https://boltons.readthedocs.io/en/latest/statsutils.html#boltons.statsutils.Stats.pearson_type

@@ -58,8 +58,8 @@ def reverse_iter_lines(file_obj, blocksize=DEFAULT_BLOCKSIZE, preseek=True, enco
         file_obj (file): An open file object. Note that
             ``reverse_iter_lines`` mutably reads from the file and
             other functions should not mutably interact with the file
-            object after being passed. Files can be opened in bytes or
-            text mode.
+            object during iteration. Files can be opened in bytes or
+            text mode. Seek before reusing a text stream after iteration.
         blocksize (int): The block size to pass to
           :meth:`file.read()`. Warning: keep this a fairly large
           multiple of 2, defaults to 4096.
@@ -69,21 +69,17 @@ def reverse_iter_lines(file_obj, blocksize=DEFAULT_BLOCKSIZE, preseek=True, enco
             file cursor is already in position, either at the end of
             the file or in the middle for relative reverse line
             generation.
+        encoding (str): Text encoding used to decode lines. Defaults to the
+            file's encoding, or returns bytes when neither is specified.
 
     """
     # This function is a bit of a pain because it attempts to be byte/text agnostic
-    try:
-        encoding = encoding or file_obj.encoding
-    except AttributeError:
-        # BytesIO
-        encoding = None
-    else:
-        encoding = 'utf-8'
+    encoding = encoding or getattr(file_obj, 'encoding', None)
 
     # need orig_obj to keep alive otherwise __del__ on the TextWrapper will close the file
     orig_obj = file_obj
     try:
-        file_obj = orig_obj.detach()
+        file_obj = orig_obj.buffer
     except (AttributeError, io.UnsupportedOperation):
         pass
 
