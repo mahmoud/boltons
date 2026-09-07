@@ -1,4 +1,4 @@
-from pytest import raises
+from pytest import mark, raises
 
 from boltons.setutils import IndexedSet, _MISSING, complement
 
@@ -26,6 +26,25 @@ def test_indexed_set_rsub():
     assert (set('abc') - IndexedSet('bcd')) == {'a'}
     assert (IndexedSet('abc') - IndexedSet('bcd')) == IndexedSet(['a'])
     assert (frozenset('abc') - IndexedSet('bcd')) == frozenset(['a'])
+
+
+@mark.parametrize('iterable_type', [list, tuple, iter])
+def test_indexed_set_update_multiple_iterables(iterable_type):
+    items = IndexedSet([1])
+
+    result = items.update(iterable_type([2, 1, 3]), iterable_type([]),
+                          iterable_type([3, 4, 2]))
+
+    assert result is None
+    assert list(items) == [1, 2, 3, 4]
+
+
+def test_indexed_set_update_multiple_iterables_with_tuple_items():
+    items = IndexedSet()
+
+    items.update([(1, 2)], [(3, 4), (1, 2)])
+
+    assert list(items) == [(1, 2), (3, 4)]
 
 
 def test_indexed_set_mutate():
