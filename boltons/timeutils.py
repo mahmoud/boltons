@@ -116,8 +116,17 @@ def isoparse(iso_str):
     .. _iso8601: https://pypi.python.org/pypi/iso8601
     .. _dateutil: https://pypi.python.org/pypi/python-dateutil
 
+    >>> isoparse('1970-01-01T00:00:00.851')
+    datetime.datetime(1970, 1, 1, 0, 0, 0, 851000)
+
     """
-    dt_args = [int(p) for p in _NONDIGIT_RE.split(iso_str)]
+    parts = _NONDIGIT_RE.split(iso_str)
+    dt_args = [int(p) for p in parts]
+    if len(parts) > 6:
+        # fractional-second digits are not microseconds until scaled:
+        # '.851' means 851000us, not 851us. Digits past microsecond
+        # precision are truncated (e.g. nanosecond timestamps).
+        dt_args[6] = int(parts[6].ljust(6, '0')[:6])
     return datetime(*dt_args)
 
 
@@ -223,7 +232,10 @@ def decimal_relative_time(d, other=None, ndigits=0, cardinalize=True):
 
     """
     if other is None:
-        other = datetime.now(timezone.utc).replace(tzinfo=None)
+        if d.tzinfo is None:
+            other = datetime.now(timezone.utc).replace(tzinfo=None)
+        else:
+            other = datetime.now(d.tzinfo)
     diff = other - d
     diff_seconds = timedelta.total_seconds(diff)
     abs_diff = abs(diff)
@@ -315,7 +327,10 @@ def daterange(start, stop, step=1, inclusive=False):
             *stop*. Can be an :class:`int` number of days, a
             :class:`datetime.timedelta`, or a :class:`tuple` of integers,
             `(year, month, day)`. Positive and negative *step* values
-            are supported.
+            are supported. A step that does not advance (e.g. ``0`` or a
+            self-cancelling tuple like ``(0, 1, -31)``) raises
+            :exc:`ValueError`; a step pointed away from *stop* yields
+            nothing, like ``range(1, 5, -1)``.
         inclusive (bool): Whether or not the *stop* date can be
             returned. *stop* is only returned when a *step* falls evenly
             on it.
@@ -366,6 +381,13 @@ def daterange(start, stop, step=1, inclusive=False):
     
     m_step += y_step * 12
 
+    def _advance(cur):
+        if m_step:
+            m_y_step, cur_month = divmod((cur.month - 1) + m_step, 12)
+            cur = cur.replace(year=cur.year + m_y_step,
+                              month=(cur_month + 1))
+        return cur + d_step
+
     if stop is None:
         finished = lambda now, stop: False
     elif start <= stop:
@@ -374,13 +396,28 @@ def daterange(start, stop, step=1, inclusive=False):
         finished = operator.lt if inclusive else operator.le
     now = start
 
+    # guard against steps that cannot make progress: a stationary step
+    # (e.g. 0, or month/day cancellation like (0, 1, -31)) would loop
+    # forever, and a step pointed away from *stop* would walk off
+    # unboundedly. The former raises, the latter yields nothing, like
+    # range(1, 5, -1).
+    probe = _advance(start)
+    if probe == start:
+        raise ValueError('step does not advance: %r' % (step,))
+    if stop is not None and start != stop and (probe > start) != (stop > start):
+        return
+
     while not finished(now, stop):
         yield now
-        if m_step:
-            m_y_step, cur_month = divmod((now.month - 1) + m_step, 12)
-            now = now.replace(year=now.year + m_y_step,
-                              month=(cur_month + 1))
-        now = now + d_step
+        prev, now = now, _advance(now)
+        if now == prev:
+            raise ValueError('step does not advance: %r' % (step,))
+        if stop is not None and abs(stop - now) >= abs(stop - prev):
+            # the step has stopped approaching stop (e.g. month/day
+            # cancellation partway through a sequence); terminate
+            # rather than iterate forever. finished() above yields the
+            # same result for plain overshoot.
+            return
     return
 
 
@@ -490,16 +527,16 @@ def _first_sunday_on_or_after(dt):
 # In the US, since 2007, DST starts at 2am (standard time) on the second
 # Sunday in March, which is the first Sunday on or after Mar 8.
 DSTSTART_2007 = datetime(1, 3, 8, 2)
-# and ends at 2am (DST time; 1am standard time) on the first Sunday of Nov.
-DSTEND_2007 = datetime(1, 11, 1, 1)
+# and ends at 2am (daylight time) on the first Sunday of Nov.
+DSTEND_2007 = datetime(1, 11, 1, 2)
 # From 1987 to 2006, DST used to start at 2am (standard time) on the first
-# Sunday in April and to end at 2am (DST time; 1am standard time) on the last
+# Sunday in April and to end at 2am (daylight time) on the last
 # Sunday of October, which is the first Sunday on or after Oct 25.
 DSTSTART_1987_2006 = datetime(1, 4, 1, 2)
-DSTEND_1987_2006 = datetime(1, 10, 25, 1)
+DSTEND_1987_2006 = datetime(1, 10, 25, 2)
 # From 1967 to 1986, DST used to start at 2am (standard time) on the last
-# Sunday in April (the one on or after April 24) and to end at 2am (DST time;
-# 1am standard time) on the last Sunday of October, which is the first Sunday
+# Sunday in April (the one on or after April 24) and to end at 2am (daylight
+# time) on the last Sunday of October, which is the first Sunday
 # on or after Oct 25.
 DSTSTART_1967_1986 = datetime(1, 4, 24, 2)
 DSTEND_1967_1986 = DSTEND_1987_2006
@@ -529,6 +566,18 @@ class USTimeZone(tzinfo):
     def utcoffset(self, dt):
         return self.stdoffset + self.dst(dt)
 
+    def _dst_range(self, year):
+        if year > 2006:
+            dststart, dstend = DSTSTART_2007, DSTEND_2007
+        elif 1986 < year < 2007:
+            dststart, dstend = DSTSTART_1987_2006, DSTEND_1987_2006
+        elif 1966 < year < 1987:
+            dststart, dstend = DSTSTART_1967_1986, DSTEND_1967_1986
+        else:
+            return None, None
+        return (_first_sunday_on_or_after(dststart.replace(year=year)),
+                _first_sunday_on_or_after(dstend.replace(year=year)))
+
     def dst(self, dt):
         if dt is None or dt.tzinfo is None:
             # An exception may be sensible here, in one or both cases.
@@ -540,24 +589,41 @@ class USTimeZone(tzinfo):
 
         # Find start and end times for US DST. For years before 1967, return
         # ZERO for no DST.
-        if 2006 < dt.year:
-            dststart, dstend = DSTSTART_2007, DSTEND_2007
-        elif 1986 < dt.year < 2007:
-            dststart, dstend = DSTSTART_1987_2006, DSTEND_1987_2006
-        elif 1966 < dt.year < 1987:
-            dststart, dstend = DSTSTART_1967_1986, DSTEND_1967_1986
-        else:
+        start, end = self._dst_range(dt.year)
+        if start is None:
             return ZERO
-
-        start = _first_sunday_on_or_after(dststart.replace(year=dt.year))
-        end = _first_sunday_on_or_after(dstend.replace(year=dt.year))
 
         # Can't compare naive to aware objects, so strip the timezone
         # from dt first.
-        if start <= dt.replace(tzinfo=None) < end:
+        dt = dt.replace(tzinfo=None)
+        if start + HOUR <= dt < end - HOUR:
             return HOUR
-        else:
-            return ZERO
+        if end - HOUR <= dt < end:
+            return ZERO if getattr(dt, 'fold', 0) else HOUR
+        if start <= dt < start + HOUR:
+            return HOUR if getattr(dt, 'fold', 0) else ZERO
+        return ZERO
+
+    def fromutc(self, dt):
+        if dt.tzinfo is not self:
+            raise ValueError('fromutc: dt.tzinfo is not self')
+
+        start, end = self._dst_range(dt.year)
+        if start is None:
+            return dt + self.stdoffset
+
+        start = start.replace(tzinfo=self)
+        end = end.replace(tzinfo=self)
+        std_time = dt + self.stdoffset
+        dst_time = std_time + HOUR
+
+        if end <= dst_time < end + HOUR:
+            return std_time.replace(fold=1)
+        if std_time < start or dst_time >= end:
+            return std_time
+        if start <= std_time < end - HOUR:
+            return dst_time
+        return std_time
 
 
 Eastern = USTimeZone(-5, "Eastern",  "EST", "EDT")

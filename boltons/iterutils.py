@@ -526,8 +526,9 @@ def xfrange(stop, start=None, step=1.0):
     else:
         # swap when all args are used
         stop, start = start * 1.0, stop * 1.0
+    count = int(math.ceil((stop - start) / step))
     cur = start
-    while cur < stop:
+    for _ in range(count):
         yield cur
         cur += step
 
@@ -1472,7 +1473,7 @@ class GUIDerator:
     def __init__(self, size=24):
         self.size = size
         if size < 20 or size > 36:
-            raise ValueError('expected 20 < size <= 36')
+            raise ValueError('expected 20 <= size <= 36')
         import hashlib
         self._sha1 = hashlib.sha1
         self.count = itertools.count()

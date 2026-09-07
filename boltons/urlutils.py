@@ -964,9 +964,9 @@ def parse_qsl(qs, keep_blank_values=True, encoding=DEFAULT_ENCODING):
                 value = None
             else:
                 continue
-        key = unquote(key.replace('+', ' '))
+        key = unquote(key.replace('+', ' '), encoding=encoding)
         if value:
-            value = unquote(value.replace('+', ' '))
+            value = unquote(value.replace('+', ' '), encoding=encoding)
         ret.append((key, value))
     return ret
 
@@ -1123,6 +1123,9 @@ class OrderedMultiDict(dict):
         Called ``addlist`` for consistency with :meth:`getlist`, but
         tuples and other sequences and iterables work.
         """
+        # materialize first: the values are traversed twice below, and a
+        # one-shot iterator would be empty by the second pass
+        v = list(v)
         if not v:
             return
         self_insert = self._insert

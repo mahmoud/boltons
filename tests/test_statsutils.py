@@ -1,4 +1,4 @@
-from boltons.statsutils import Stats
+from boltons.statsutils import Stats, mode
 
 
 def test_stats_basic():
@@ -20,6 +20,16 @@ def test_pearson_type_covers_kappa_ge_zero():
         assert Stats(data).pearson_type in (0, 1, 2, 3, 4, 5, 6, 7)
 
 
+def test_mode():
+    assert Stats([2, 1, 3, 1]).mode == 1
+    # ties resolve to the value seen first in the data
+    assert mode([1, 1, 2, 2, 3]) == 1
+    # non-numeric, categorical data is supported
+    assert mode(['a', 'b', 'b', 'c', 'c', 'c']) == 'c'
+    # empty data falls back to the configured default
+    assert Stats([], default=None).mode is None
+
+
 def _test_pearson():
     import random
     from statsutils import pearson_type
@@ -39,3 +49,10 @@ def _test_pearson():
         print('pearson type:', pt)
 
         # import pdb;pdb.set_trace()
+
+
+def test_histogram_zero_interquartile_range():
+    for data in ([5] * 10, [0] * 10 + [100]):
+        counts = Stats(data).get_histogram_counts()
+        assert counts == [(float(min(data)), len(data))]
+        assert Stats(data).format_histogram()

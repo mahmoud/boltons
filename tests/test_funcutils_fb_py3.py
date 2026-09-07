@@ -329,3 +329,53 @@ def test_wraps_posonly_defaulted_arg():
 
     assert deco(func)(1, 5) == (1, 5, 3)
     assert deco(func)(1, 5, z=7) == (1, 5, 7)
+
+
+def test_wraps_target_kwonly_arg():
+    # issue #261: wraps(g)(f) generates a shim with g's signature that
+    # calls f; args that f only accepts as keywords must be forwarded
+    # as keywords, even when g's signature would pass them positionally
+    def g(a: float, b=10):
+        return a * b
+
+    def f(a: int, *, b=1):
+        return a * b
+
+    assert wraps(f)(g)(3) == 3
+    assert wraps(g)(f)(3) == 30  # raised TypeError before the fix
+
+
+def test_wraps_target_kwonly_arg_no_default():
+    # the non-defaulted flavor: donor's b is positional and undefaulted,
+    # so signature-based forwarding alone leaves it positional
+    def g(a, b):
+        return a * b
+
+    def f(a, *, b):
+        return a + b
+
+    assert wraps(g)(f)(3, 4) == 7
+    assert wraps(g)(f)(3, b=4) == 7
+
+
+def test_wraps_target_kwonly_arg_with_varargs():
+    # varargs normally force positional forwarding (#343), but an arg
+    # the target only accepts as keyword is still keyword-forwarded,
+    # emitted after *varargs: _call(a, *va, b=b)
+    def g(a, b, *va):
+        raise AssertionError('never called')
+
+    def f(a, *va, b):
+        return (a, va, b)
+
+    assert wraps(g)(f)(1, 2, 3) == (1, (3,), 2)
+
+
+def test_wraps_uninspectable_target():
+    # a wrapper without an introspectable signature (e.g. some C
+    # callables) falls back to signature-based forwarding at wrap time
+    def g(a, b):
+        return a * b
+
+    wrapped = update_wrapper(map, g)
+    assert wrapped.__name__ == 'g'

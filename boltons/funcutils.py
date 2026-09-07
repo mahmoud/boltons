@@ -601,10 +601,11 @@ def update_wrapper(wrapper, func, injected=None, expected=None, build_from=None,
     for arg, default in expected_items:
         fb.add_arg(arg, default)  # may raise ExistingArgument
 
+    invocation_str = fb.get_invocation_str(target=wrapper)
     if fb.is_async:
-        fb.body = 'return await _call(%s)' % fb.get_invocation_str()
+        fb.body = 'return await _call(%s)' % invocation_str
     else:
-        fb.body = 'return _call(%s)' % fb.get_invocation_str()
+        fb.body = 'return _call(%s)' % invocation_str
 
     execdict = dict(_call=wrapper, _func=func)
     fully_wrapped = fb.get_func(execdict, with_dict=update_dict)
@@ -782,7 +783,7 @@ class FunctionBuilder:
                                      {},
                                      annotations)
 
-    def get_invocation_str(self):
+    def get_invocation_str(self, target=None):
         # Regular args with defaults (and keyword-only args) are forwarded
         # as keywords (name=name), so values callers pass by keyword reach
         # the wrapper's **kwargs instead of being silently flattened into
@@ -790,12 +791,31 @@ class FunctionBuilder:
         # params (keywords are rejected outright), and every regular arg
         # when *varargs is present (a keyword-forwarded arg that precedes
         # *varargs collides with non-empty varargs).
+        #
+        # When *target* -- the callable the generated invocation will
+        # actually call -- is provided, any argument that target only
+        # accepts as a keyword is forwarded as a keyword regardless of
+        # the rules above, since positional forwarding could never bind
+        # it (#261). Targets without introspectable signatures fall
+        # back to signature-based forwarding alone.
+        target_kwonly = frozenset()
+        if target is not None:
+            try:
+                target_params = inspect.signature(target).parameters
+            except (ValueError, TypeError):
+                pass
+            else:
+                target_kwonly = frozenset(
+                    p.name for p in target_params.values()
+                    if p.kind is inspect.Parameter.KEYWORD_ONLY)
         defaults = self.defaults or ()
         args = list(self.args or ())
         n_positional = len(args) - len(defaults)
         parts, kw_parts = [], []
         for i, arg in enumerate(args):
-            if (i >= n_positional and not self.varargs
+            if arg in target_kwonly:
+                kw_parts.append(arg + '=' + arg)
+            elif (i >= n_positional and not self.varargs
                     and arg not in self.posonlyargs):
                 kw_parts.append(arg + '=' + arg)
             else:

@@ -95,6 +95,16 @@ def test_query_params(test_url):
     assert test_url.endswith(qp_text)
 
 
+def test_parse_qsl_encoding():
+    # %E9 is 'e' with an acute accent in latin-1, and not valid utf-8
+    qs = 'k=%E9'
+    assert urlutils.parse_qsl(qs, encoding='latin-1') == [('k', '\xe9')]
+    # the default is unchanged: undecodable bytes become the replacement char
+    assert urlutils.parse_qsl(qs) == [('k', '\ufffd')]
+    # keys are decoded with the same encoding as values
+    assert urlutils.parse_qsl('%E9=v', encoding='latin-1') == [('\xe9', 'v')]
+
+
 def test_query_param_dict_eq_with_dict():
     qpd = QueryParamDict([('a', '1'), ('b', '2')])
     assert qpd == {'a': '1', 'b': '2'}

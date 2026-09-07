@@ -1,6 +1,7 @@
 name: Tests
 on:
   push:
+    branches: [master]
     paths-ignore:
       - "docs/**"
       - "*.md"
@@ -10,6 +11,7 @@ on:
       - "docs/**"
       - "*.md"
       - "*.rst"
+  workflow_dispatch:
 permissions:
   contents: read
 

@@ -5,6 +5,21 @@ for an average of one 33-commit release about every 9 weeks. Versions
 are named according to the [CalVer](https://calver.org) versioning
 scheme (`YY.MINOR.MICRO`).
 
+## 26.1.1
+
+_(unreleased)_
+
+- Fixed [`setutils.IndexedSet`][setutils.IndexedSet] updating from multiple iterables to add their elements instead of the iterables themselves
+- Fixed [`strutils.iter_splitlines`][strutils.iter_splitlines] and [`strutils.indent`][strutils.indent] recognizing Unicode line separators instead of splitting on spaces followed by `28` or `29`
+- Added [`strutils.ellipsize`][strutils.ellipsize] for word-boundary-aware text truncation with an ellipsis
+- Fixed [`funcutils.wraps`][funcutils.wraps] passing arguments positionally to wrappers that only accept them as keywords ([#261](https://github.com/mahmoud/boltons/issues/261))
+- Fixed [`tableutils.Table.to_text`][tableutils.Table] crashes on empty tables, `None` headers, and short header rows; empty headers now render no header row, matching `to_html`
+- Fixed [`timeutils.isoparse`][timeutils.isoparse] misreading fractional seconds (`.851` parsed as 851µs instead of 851000µs); >6-digit fractions now truncate instead of raising
+- Fixed [`timeutils.daterange`][timeutils.daterange] looping forever on non-advancing steps: zero and self-cancelling month/day steps now raise `ValueError`, wrong-direction steps yield nothing like `range()`
+- Fixed [`strutils.MultiReplace`][strutils.MultiReplace] raising `KeyError` on empty substitution maps (now a no-op)
+- Fixed [`jsonutils.JSONLIterator`][jsonutils.JSONLIterator] hanging when a seek lands past the last newline, and negative `rel_seek` values seeking past EOF (sign bug)
+- Fixed [`iterutils.xfrange`][iterutils.xfrange] yielding nothing for descending ranges; now shares [`frange`][iterutils.frange]'s count-based semantics, so both agree at inexact float boundaries
+
 ## 26.1.0
 
 _(July 17, 2026)_
@@ -1215,6 +1230,7 @@ added in this release.
 [strutils.args2cmd]: http://boltons.readthedocs.org/en/latest/strutils.html#boltons.strutils.args2cmd
 [strutils.args2sh]: http://boltons.readthedocs.org/en/latest/strutils.html#boltons.strutils.args2sh
 [strutils.escape_shell_args]: http://boltons.readthedocs.org/en/latest/strutils.html#boltons.strutils.escape_shell_args
+[strutils.ellipsize]: http://boltons.readthedocs.org/en/latest/strutils.html#boltons.strutils.ellipsize
 [strutils.find_hashtags]: http://boltons.readthedocs.org/en/latest/strutils.html#boltons.strutils.find_hashtags
 [strutils.gzip_bytes]: http://boltons.readthedocs.org/en/latest/strutils.html#boltons.strutils.gzip_bytes
 [strutils.gunzip_bytes]: http://boltons.readthedocs.org/en/latest/strutils.html#boltons.strutils.gunzip_bytes

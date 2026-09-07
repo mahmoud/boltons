@@ -83,6 +83,11 @@ def test_bits():
     chk(Bits('10')[0], True)
     chk(Bits('10')[1], False)
     chk(Bits('0000100')[4], True)
+    chk(Bits('10')[-1], False)
+    chk(Bits('10')[-2], True)
+    chk(Bits('0000100')[-3], True)
+    with raises(IndexError):
+        Bits('10')[-3]
     chk(Bits('10').as_list(), [True, False])
     chk(Bits('10').as_int(), 2)
     chk(Bits('10').as_bin(), '10')
@@ -110,3 +115,33 @@ def test_bits():
             ).as_int()
         ),
         Bits('101'))
+
+
+def test_bits_len_bound():
+    # The largest value representable in n bits is 2 ** n - 1, so 2 ** n must
+    # be rejected rather than silently producing an over-long Bits.
+    # Largest value that fits is accepted and round-trips.
+    assert Bits(3, 2).as_bin() == '11'
+    # 2 ** len_ does not fit in len_ bits and must raise.
+    with raises(ValueError):
+        Bits(4, 2)
+    with raises(ValueError):
+        Bits(1, 0)
+
+
+def test_empty_bits_conversions():
+    for bits in (Bits(''), Bits([]), Bits('101')[:0], Bits(0, 0)):
+        assert len(bits) == 0
+        assert bits.as_bin() == ''
+        assert bits.as_list() == []
+        assert bits.as_hex() == ''
+        assert bits.as_bytes() == b''
+        assert Bits.from_bin(bits.as_bin()) == bits
+        assert Bits.from_hex(bits.as_hex()) == bits
+        assert Bits.from_bytes(bits.as_bytes()) == bits
+
+
+def test_empty_bits_rejects_non_hex_inputs():
+    for value in (None, 0, False):
+        with raises(AttributeError):
+            Bits.from_hex(value)

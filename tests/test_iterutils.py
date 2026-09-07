@@ -658,3 +658,42 @@ def test_partition_multiple():
     assert positive == [2, 3]
     assert negative == [-1, -2]
     assert zero == [0]
+
+
+# Tests for frange/xfrange
+
+def test_xfrange_descending():
+    from boltons.iterutils import xfrange
+
+    assert list(xfrange(5, 0, step=-1.25)) == [5.0, 3.75, 2.5, 1.25]
+
+
+def test_xfrange_wrong_direction():
+    from boltons.iterutils import xfrange
+
+    assert list(xfrange(1, 5, step=-1)) == []
+    assert list(xfrange(5, 0)) == []
+
+
+def test_frange_inexact_boundary_counts():
+    from boltons.iterutils import frange
+
+    assert len(frange(1.0, step=0.1)) == 10
+    assert len(frange(10.0, step=0.1)) == 100
+
+
+def test_xfrange_matches_frange():
+    from boltons.iterutils import frange, xfrange
+
+    assert list(xfrange(1.0, step=0.1)) == frange(1.0, step=0.1)
+    assert list(xfrange(10.0, step=0.1)) == frange(10.0, step=0.1)
+    assert list(xfrange(1, 3, step=0.75)) == frange(1, 3, step=0.75)
+
+
+def test_frange_xfrange_zero_step():
+    from boltons.iterutils import frange, xfrange
+
+    with pytest.raises(ValueError):
+        frange(10, step=0)
+    with pytest.raises(ValueError):
+        list(xfrange(10, step=0))

@@ -58,7 +58,7 @@ __all__ = ['camel2under', 'under2camel', 'slugify', 'split_punct_ws',
            'args2cmd', 'args2sh', 'parse_int_list', 'format_int_list',
            'complement_int_list', 'int_ranges_from_int_list', 'MultiReplace',
            'multi_replace', 'unwrap_text', 'removeprefix',
-           'human_readable_list']
+           'human_readable_list', 'ellipsize']
 
 
 _punct_ws_str = string.punctuation + string.whitespace
@@ -662,7 +662,7 @@ def gzip_bytes(bytestring, level=6):
 
 
 
-_line_ending_re = re.compile(r'(\r\n|\n|\x0b|\f|\r|\x85|\x2028|\x2029)',
+_line_ending_re = re.compile(r'(\r\n|\n|\x0b|\f|\r|\x85|\u2028|\u2029)',
                              re.UNICODE)
 
 
@@ -798,7 +798,7 @@ def args2sh(args, sep=' '):
         # the string $'b is then quoted as '$'"'"'b'
         ret_list.append("'" + arg.replace("'", "'\"'\"'") + "'")
 
-    return ' '.join(ret_list)
+    return sep.join(ret_list)
 
 
 def args2cmd(args, sep=' '):
@@ -845,9 +845,9 @@ def args2cmd(args, sep=' '):
     for arg in args:
         bs_buf = []
 
-        # Add a space to separate this argument from the others
+        # Add the separator between this argument and the others
         if result:
-            result.append(' ')
+            result.append(sep)
 
         needquote = (" " in arg) or ("\t" in arg) or not arg
         if needquote:
@@ -1230,6 +1230,8 @@ class MultiReplace:
         Given an input string, run all substitutions given in the
         constructor.
         """
+        if not self.group_map:
+            return text
         return self.combined_pattern.sub(self._get_value, text)
 
 
@@ -1322,3 +1324,65 @@ def human_readable_list(items: typing.Sequence[str], delimiter: str = ',', conju
         return f'{items[0]} {conjunction} {items[1]}'
 
     return f'{delimiter.join(items[:-1])}{delimiter if oxford else " "}{conjunction} {items[-1]}'
+
+
+
+def ellipsize(text, max_len=160, *, ellipsis='…'):
+    """Truncate *text* to at most *max_len* characters, cutting at the
+    last space before the limit and appending *ellipsis*. The returned
+    string, ellipsis included, is never longer than *max_len*.
+
+    Text short enough to fit is returned unchanged:
+
+    >>> ellipsize('Hello, World!', 16)
+    'Hello, World!'
+
+    Longer text is cut at a space, never mid-word, and trailing
+    punctuation at the cut is stripped:
+
+    >>> ellipsize('Beautiful is better than ugly. Explicit is better.', 31)
+    'Beautiful is better than ugly…'
+
+    A ``.`` between two digits is a decimal point, not sentence
+    punctuation, and numbers are kept whole:
+
+    >>> ellipsize('rates around 6.5% this week', 20)
+    'rates around 6.5%…'
+
+    A single token longer than *max_len* is hard-cut at the limit:
+
+    >>> ellipsize('antidisestablishmentarianism', 10)
+    'antidises…'
+
+    Args:
+        text (str): The string to truncate.
+        max_len (int): Maximum length of the result, including the
+            ellipsis. Must be greater than ``len(ellipsis)``.
+        ellipsis (str): The suffix appended to truncated text.
+            Defaults to ``'…'`` (U+2026, HORIZONTAL ELLIPSIS).
+    """
+    if max_len <= len(ellipsis):
+        raise ValueError('expected max_len greater than length of'
+                         ' ellipsis %r, not %r' % (ellipsis, max_len))
+    if len(text) <= max_len:
+        return text
+    limit = max_len - len(ellipsis)
+    cut_at = text.rfind(' ', 0, limit + 1)
+    if cut_at <= 0:
+        # no space boundary available, hard-cut mid-token
+        return text[:limit] + ellipsis
+    end = cut_at
+    while end > 0:
+        ch = text[end - 1]
+        if ch.isspace() or ch in ',;:!?':
+            end -= 1
+        elif ch == '.' and not (end > 1 and text[end - 2].isdigit()
+                                and text[end].isdigit()):
+            # sentence-ending period; a "." between two digits is a
+            # decimal point and is preserved (e.g. "6.5%")
+            end -= 1
+        else:
+            break
+    if not end:
+        return text[:limit] + ellipsis
+    return text[:end] + ellipsis

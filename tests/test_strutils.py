@@ -2,6 +2,8 @@ import re
 import uuid
 from unittest import TestCase
 
+import pytest
+
 from boltons import strutils
 
 
@@ -48,6 +50,26 @@ def test_indent():
     to_indent = '\nabc\ndef\n\nxyz\n'
     ref = '\n  abc\n  def\n\n  xyz\n'
     assert strutils.indent(to_indent, '  ') == ref
+
+
+@pytest.mark.parametrize('line_ending', ['\u2028', '\u2029'])
+def test_iter_splitlines_unicode_line_endings(line_ending):
+    text = line_ending + 'first' + line_ending + 'second' + line_ending
+
+    assert list(strutils.iter_splitlines(text)) == ['', 'first', 'second', '']
+
+
+def test_iter_splitlines_preserves_numbers_after_spaces():
+    text = 'February 28, or February 29 in a leap year'
+
+    assert list(strutils.iter_splitlines(text)) == [text]
+
+
+def test_indent_unicode_line_endings():
+    text = 'February 28\u2028February 29\u2029March 1\r\nMarch 2'
+
+    assert strutils.indent(text, '  ') == (
+        '  February 28\n  February 29\n  March 1\n  March 2')
 
 
 def test_is_uuid():
@@ -314,3 +336,63 @@ def test_pluralize_x():
     assert pluralize('FOX') == 'FOXES'
     # Irregular '-x' words are unaffected (handled before the rule).
     assert pluralize('ox') == 'oxen'
+
+
+
+def test_multi_replace_empty_mapping():
+    # An empty substitution map is a no-op; previously the empty combined
+    # pattern matched everywhere with lastgroup None, raising KeyError.
+    assert strutils.MultiReplace({}).sub('foo bar') == 'foo bar'
+    assert strutils.MultiReplace([]).sub('foo bar') == 'foo bar'
+    assert strutils.multi_replace('foo bar', {}) == 'foo bar'
+
+
+def test_ellipsize():
+    ellipsize = strutils.ellipsize
+
+    # short enough text is returned unchanged
+    assert ellipsize('Hello, World!') == 'Hello, World!'
+    # exact boundary is still a no-op
+    assert ellipsize('Hello, World!', 13) == 'Hello, World!'
+
+    # cut lands on the last space boundary, never mid-word
+    assert ellipsize('The quick brown fox jumps', 16) == 'The quick brown…'
+
+    # trailing sentence punctuation at the cut is stripped
+    res = ellipsize('Beautiful is better than ugly. Explicit is better.', 31)
+    assert res == 'Beautiful is better than ugly…'
+
+    # a decimal point is not sentence punctuation; numbers stay whole
+    res = ellipsize('rates around 6.5% this week', 20)
+    assert res == 'rates around 6.5%…'
+    assert '6.5%' in res
+
+    # no space at all: hard cut at the limit
+    assert ellipsize('antidisestablishmentarianism', 10) == 'antidises…'
+
+    # custom ellipsis string
+    assert ellipsize('The quick brown fox jumps', 18, ellipsis='...') == 'The quick brown...'
+
+    # every result respects max_len
+    text = 'the wheels on the bus go round and round'
+    for max_len in range(2, len(text) + 1):
+        assert len(ellipsize(text, max_len)) <= max_len
+
+    # max_len must exceed the length of the ellipsis
+    with pytest.raises(ValueError):
+        ellipsize('anything', 1)
+    with pytest.raises(ValueError):
+        ellipsize('anything', 3, ellipsis='...')
+
+
+def test_args2sh_sep():
+    assert strutils.args2sh(['aa', 'bb']) == 'aa bb'
+    assert strutils.args2sh(['aa', 'bb'], sep='|') == 'aa|bb'
+    # escaping is unaffected by the separator
+    assert strutils.args2sh(['a a', 'bb'], sep='|') == "'a a'|bb"
+
+
+def test_args2cmd_sep():
+    assert strutils.args2cmd(['aa', 'bb']) == 'aa bb'
+    assert strutils.args2cmd(['aa', 'bb'], sep='|') == 'aa|bb'
+    assert strutils.args2cmd(['a a', 'bb'], sep='|') == '"a a"|bb'
