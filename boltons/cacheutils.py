@@ -802,8 +802,11 @@ class ThresholdCounter:
         to integer counts.
         """
         if iterable is not None:
-            if callable(getattr(iterable, 'iteritems', None)):
-                for key, count in iterable.iteritems():
+            items = getattr(iterable, 'iteritems', None)
+            if not callable(items):
+                items = getattr(iterable, 'items', None)
+            if callable(items):
+                for key, count in items():
                     for i in range(count):
                         self.add(key)
             else:
