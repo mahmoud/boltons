@@ -270,6 +270,26 @@ def test_addlist():
     assert len(list(e_omd.iteritems(multi=True))) == 0
 
 
+def test_addlist_iterator():
+    # the docstring promises "tuples and other sequences and iterables work",
+    # and a one-shot iterator used to leave the OMD internally inconsistent
+    omd = OMD()
+    omd.addlist('a', iter([1, 2, 3]))
+    omd.addlist('b', (x for x in [4, 5]))
+
+    assert omd.keys() == ['a', 'b']
+    assert omd.getlist('a') == [1, 2, 3]
+    assert omd.getlist('b') == [4, 5]
+    assert omd.get('a') == 3
+    assert len(list(omd.iteritems(multi=True))) == 5
+
+    e_omd = OMD()
+    e_omd.addlist('a', (x for x in []))
+    assert len(e_omd) == 0
+    assert e_omd.keys() == []
+    assert e_omd.get('a') is None
+
+
 def test_pop_all():
     omd = OMD()
     omd.add('even', 0)
