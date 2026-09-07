@@ -466,9 +466,13 @@ class Stats:
         elif round(c2, precision) == 0:
             return 3  # Gamma
         else:
+            if c0 == 0:
+                # At exact zero, c2's sign selects the limiting Type I/VI.
+                return 1 if c2 < 0 else 6
             k = c1 ** 2 / (4 * c0 * c2)
             if k < 0:
                 return 1  # Beta
+            # The existing precision also widens the Type V boundary.
             elif round(k, precision) == 1:
                 return 5  # Type V
             elif k < 1:
