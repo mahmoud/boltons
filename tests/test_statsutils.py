@@ -40,3 +40,10 @@ def _test_pearson():
         print('pearson type:', pt)
 
         # import pdb;pdb.set_trace()
+
+
+def test_histogram_zero_interquartile_range():
+    for data in ([5] * 10, [0] * 10 + [100]):
+        counts = Stats(data).get_histogram_counts()
+        assert counts == [(float(min(data)), len(data))]
+        assert Stats(data).format_histogram()
