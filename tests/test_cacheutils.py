@@ -1,6 +1,7 @@
 import string
 import sys
 from abc import abstractmethod, ABCMeta
+from collections import UserDict
 
 import pytest
 
@@ -478,3 +479,61 @@ def test_threshold_counter():
     assert sorted(tc.keys()) == [2, 5]
     assert sorted(tc.values()) == [1, 10]
     assert sorted(tc.items()) == [(2, 10), (5, 1)]
+
+
+@pytest.mark.parametrize('mapping_type', [dict, UserDict])
+def test_threshold_counter_update_mapping_counts(mapping_type):
+    tc = ThresholdCounter()
+    tc.add('a')
+
+    assert tc.update(mapping_type(a=3, b=2, zero=0)) is None
+
+    assert dict(tc.items()) == {'a': 4, 'b': 2}
+    assert tc.total == 6
+    assert 'zero' not in tc
+
+
+@pytest.mark.parametrize('source', [None, ['a']])
+def test_threshold_counter_update_keyword_counts(source):
+    tc = ThresholdCounter()
+    tc.update(source, a=3, b=2, zero=0)
+
+    expected_a = 3 if source is None else 4
+    assert dict(tc.items()) == {'a': expected_a, 'b': 2}
+    assert tc.total == expected_a + 2
+
+
+def test_threshold_counter_update_legacy_mapping():
+    class LegacyMapping:
+        def iteritems(self):
+            return iter([('a', 3), ('zero', 0)])
+
+    tc = ThresholdCounter()
+    tc.update(LegacyMapping())
+
+    assert tc.items() == [('a', 3)]
+    assert tc.total == 3
+
+
+def test_threshold_counter_update_iterable_tuple_keys():
+    tc = ThresholdCounter()
+    tc.update(iter([('a', 3), ('a', 3), ('b', 2)]))
+
+    assert dict(tc.items()) == {('a', 3): 2, ('b', 2): 1}
+    assert tc.total == 3
+
+
+@pytest.mark.parametrize('threshold', [0.1, 0.25])
+def test_threshold_counter_update_mapping_compaction(threshold):
+    tc = ThresholdCounter(threshold=threshold)
+    expected = ThresholdCounter(threshold=threshold)
+    tc.add('rare')
+    expected.add('rare')
+
+    tc.update({'a': 10, 'b': 5})
+    expected.update(['a'] * 10 + ['b'] * 5)
+
+    assert dict(tc.items()) == dict(expected.items())
+    assert tc.total == expected.total == 16
+    assert tc.get_common_count() == expected.get_common_count()
+    assert tc.get_uncommon_count() == expected.get_uncommon_count()
