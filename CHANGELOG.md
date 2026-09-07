@@ -9,6 +9,7 @@ scheme (`YY.MINOR.MICRO`).
 
 _(unreleased)_
 
+- Fixed [`cacheutils.ThresholdCounter.update`][cacheutils.ThresholdCounter] ignoring counts supplied in Python 3 mappings and keyword arguments
 - Added [`strutils.ellipsize`][strutils.ellipsize] for word-boundary-aware text truncation with an ellipsis
 - Fixed [`funcutils.wraps`][funcutils.wraps] passing arguments positionally to wrappers that only accept them as keywords ([#261](https://github.com/mahmoud/boltons/issues/261))
 - Fixed [`tableutils.Table.to_text`][tableutils.Table] crashes on empty tables, `None` headers, and short header rows; empty headers now render no header row, matching `to_html`
