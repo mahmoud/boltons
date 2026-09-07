@@ -127,3 +127,21 @@ def test_bits_len_bound():
         Bits(4, 2)
     with raises(ValueError):
         Bits(1, 0)
+
+
+def test_empty_bits_conversions():
+    for bits in (Bits(''), Bits([]), Bits('101')[:0], Bits(0, 0)):
+        assert len(bits) == 0
+        assert bits.as_bin() == ''
+        assert bits.as_list() == []
+        assert bits.as_hex() == ''
+        assert bits.as_bytes() == b''
+        assert Bits.from_bin(bits.as_bin()) == bits
+        assert Bits.from_hex(bits.as_hex()) == bits
+        assert Bits.from_bytes(bits.as_bytes()) == bits
+
+
+def test_empty_bits_rejects_non_hex_inputs():
+    for value in (None, 0, False):
+        with raises(AttributeError):
+            Bits.from_hex(value)
