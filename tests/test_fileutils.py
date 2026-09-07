@@ -1,6 +1,8 @@
 import os.path
 import pathlib
 
+import pytest
+
 
 
 from boltons import fileutils
@@ -73,7 +75,7 @@ def test_rotate_file_one_rotation(tmp_path):
 def test_rotate_file_full_rotation(tmp_path):
     file_path = tmp_path / 'test_file.txt'
     file_path.write_text('test content 0')
-    for i in range(1, 5):
+    for i in range(1, 6):
         cur_path = tmp_path / f'test_file.{i}.txt'
         cur_path.write_text(f'test content {i}')
         assert cur_path.exists()
@@ -81,16 +83,16 @@ def test_rotate_file_full_rotation(tmp_path):
     fileutils.rotate_file(file_path, keep=5)
     assert not file_path.exists()
 
-    for i in range(1, 5):
+    for i in range(1, 6):
         cur_path = tmp_path / f'test_file.{i}.txt'
         assert cur_path.read_text() == f'test content {i-1}'
 
-    assert not (tmp_path / 'test_file.5.txt').exists()
+    assert not (tmp_path / 'test_file.6.txt').exists()
 
 def test_rotate_file_full_rotation_no_ext(tmp_path):
     file_path = tmp_path / 'test_file'
     file_path.write_text('test content 0')
-    for i in range(1, 5):
+    for i in range(1, 6):
         cur_path = tmp_path / f'test_file.{i}'
         cur_path.write_text(f'test content {i}')
         assert cur_path.exists()
@@ -98,9 +100,24 @@ def test_rotate_file_full_rotation_no_ext(tmp_path):
     fileutils.rotate_file(file_path, keep=5)
     assert not file_path.exists()
 
-    for i in range(1, 5):
+    for i in range(1, 6):
         cur_path = tmp_path / f'test_file.{i}'
         assert cur_path.read_text() == f'test content {i-1}'
 
-    assert not (tmp_path / 'test_file.5').exists()
+    assert not (tmp_path / 'test_file.6').exists()
 
+
+@pytest.mark.parametrize('extension', ['', '.txt'])
+@pytest.mark.parametrize('keep', [1, 2, 5])
+def test_rotate_file_retains_requested_generations(tmp_path, extension, keep):
+    file_path = tmp_path / f'log{extension}'
+    for generation in range(keep + 2):
+        file_path.write_text(f'generation {generation}')
+        fileutils.rotate_file(file_path, keep=keep)
+
+        expected = {
+            f'log.{index}{extension}': f'generation {generation - index + 1}'
+            for index in range(1, min(generation + 1, keep) + 1)
+        }
+        actual = {path.name: path.read_text() for path in tmp_path.iterdir()}
+        assert actual == expected
