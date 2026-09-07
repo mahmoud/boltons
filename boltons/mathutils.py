@@ -170,7 +170,9 @@ class Bits:
         if type(k) is slice:
             return Bits(self.as_bin()[k])
         if type(k) is int:
-            if k >= self.len:
+            if k < 0:
+                k += self.len
+            if k < 0 or k >= self.len:
                 raise IndexError(k)
             return bool((1 << (self.len - k - 1)) & self.val)
         raise TypeError(type(k))
