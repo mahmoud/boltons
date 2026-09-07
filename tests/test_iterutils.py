@@ -550,6 +550,19 @@ def test_guiderator():
     assert len(next(guid_iter)) == 26
 
 
+def test_guiderator_size_bounds():
+    import pytest
+    from boltons.iterutils import GUIDerator
+
+    # the documented lower bound (20) is inclusive and must work
+    assert len(next(GUIDerator(size=20))) == 20
+
+    # out-of-range sizes raise, with a message stating the real inclusive bounds
+    for bad in (19, 37):
+        with pytest.raises(ValueError, match=r"20 <= size <= 36"):
+            GUIDerator(size=bad)
+
+
 def test_seqguiderator():
     import string
     from boltons.iterutils import SequentialGUIDerator as GUIDerator
