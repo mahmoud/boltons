@@ -285,6 +285,20 @@ def test_rel_navigate():
     return
 
 
+@pytest.mark.parametrize('as_url', [False, True])
+def test_navigate_normalizes_absolute_destination(as_url):
+    original = URL('http://example.com/base?old=1')
+    text = 'HTTPS://EXAMPLE.ORG/a/./b/../c?new=2#fragment'
+    destination = URL(text) if as_url else text
+    result = original.navigate(destination)
+
+    assert result.to_text() == 'https://example.org/a/c?new=2#fragment'
+    assert original.to_text() == 'http://example.com/base?old=1'
+    if as_url:
+        assert result is not destination
+        assert destination.path == '/a/./b/../c'
+
+
 def test_navigate():
     orig_text = 'http://a.b/c/d?e#f'
     orig = URL(orig_text)
