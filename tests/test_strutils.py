@@ -1,4 +1,5 @@
 import re
+import string
 import uuid
 from unittest import TestCase
 
@@ -44,6 +45,22 @@ def test_asciify():
     b = strutils.asciify(ref)
     assert len(b) == len(b)
     assert b[-1:].decode('ascii') == 'e'
+
+
+def test_slugify_strips_all_punctuation():
+    # string.punctuation contains ']', '^', and '\\', which are
+    # metacharacters inside a regex character class. An earlier
+    # implementation built the class from the raw string, so an
+    # unescaped '\\]' was read as an escaped bracket rather than two
+    # class members, leaving '\\' as the one punctuation character
+    # slugify never stripped.
+    for char in string.punctuation:
+        assert strutils.slugify(f'a{char}b') == 'a_b'
+
+
+def test_slugify_backslash():
+    assert strutils.slugify('a\\b') == 'a_b'
+    assert strutils.slugify(r'C:\Users\file.txt') == 'c_users_file_txt'
 
 
 def test_indent():
