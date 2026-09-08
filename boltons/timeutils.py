@@ -309,18 +309,20 @@ def strpdate(string, format):
 
 def daterange(start, stop, step=1, inclusive=False):
     """In the spirit of :func:`range` and :func:`xrange`, the `daterange`
-    generator that yields a sequence of :class:`~datetime.date`
-    objects, starting at *start*, incrementing by *step*, until *stop*
-    is reached.
+    generator yields a sequence of :class:`~datetime.date` or
+    :class:`~datetime.datetime` objects, starting at *start*, incrementing
+    by *step*, until *stop* is reached. With a :class:`~datetime.datetime`
+    start, the yielded values are also datetimes. Use compatible types
+    for *start* and *stop*, including their timezone awareness.
 
     When *inclusive* is True, the final date may be *stop*, **if**
     *step* falls evenly on it. By default, *step* is one day. See
     details below for many more details.
 
     Args:
-        start (datetime.date): The starting date The first value in
-            the sequence.
-        stop (datetime.date): The stopping date. By default not
+        start (datetime.date or datetime.datetime): The starting date or
+            datetime, and the first value in the sequence.
+        stop (datetime.date or datetime.datetime): The stopping value. By default not
             included in return. Can be `None` to yield an infinite
             sequence.
         step (int): The value to increment *start* by to reach
@@ -357,6 +359,12 @@ def daterange(start, stop, step=1, inclusive=False):
     datetime.date(2017, 6, 1)
     datetime.date(2017, 7, 1)
     datetime.date(2017, 8, 1)
+
+    Datetime inputs also support sub-day :class:`~datetime.timedelta` steps:
+
+    >>> list(daterange(datetime(2020, 1, 1, 9), datetime(2020, 1, 1, 12),
+    ...                step=timedelta(hours=1)))
+    [datetime.datetime(2020, 1, 1, 9, 0), datetime.datetime(2020, 1, 1, 10, 0), datetime.datetime(2020, 1, 1, 11, 0)]
 
     *Be careful when using stop=None, as this will yield an infinite
     sequence of dates.*
