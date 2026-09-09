@@ -670,7 +670,9 @@ class URL:
         if dest.scheme and dest.host:
             # absolute URLs replace everything, but don't make an
             # extra copy if we don't have to
-            return URL(dest) if orig_dest is None else dest
+            ret = URL(dest) if orig_dest is None else dest
+            ret.normalize()
+            return ret
         query_params = dest.query_params
 
         if dest.path:
