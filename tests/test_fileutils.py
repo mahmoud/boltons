@@ -1,6 +1,8 @@
 import os.path
 import pathlib
 
+import pytest
+
 
 
 from boltons import fileutils
@@ -27,6 +29,21 @@ def test_fileperms():
     assert oct(int(up)) == '0o770'
 
     assert int(FilePerms()) == 0
+
+
+@pytest.mark.parametrize('field', ['user', 'group', 'other'])
+@pytest.mark.parametrize('before', ['', 'r', 'w', 'x', 'rw', 'rx', 'wx', 'rwx'])
+@pytest.mark.parametrize('after', ['', 'r', 'w', 'x', 'rw', 'rx', 'wx', 'rwx'])
+def test_fileperms_replace_field(field, before, after):
+    values = dict(user='rw', group='r', other='x')
+    values[field] = before
+    perms = FilePerms(**values)
+
+    setattr(perms, field, after)
+
+    values[field] = after
+    assert getattr(perms, field) == after
+    assert int(perms) == int(FilePerms(**values))
 
 
 def test_atomicsaver_pathlike(tmp_path):
