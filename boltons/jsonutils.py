@@ -52,7 +52,7 @@ def reverse_iter_lines(file_obj, blocksize=DEFAULT_BLOCKSIZE, preseek=True, enco
     """Returns an iterator over the lines from a file object, in
     reverse order, i.e., last line first, first line last. Uses the
     :meth:`file.seek` method of file objects, and is tested compatible with
-    :class:`file` objects, as well as :class:`StringIO.StringIO`.
+        :class:`file` objects, as well as :class:`io.StringIO`.
 
     Args:
         file_obj (file): An open file object. Note that
@@ -70,7 +70,8 @@ def reverse_iter_lines(file_obj, blocksize=DEFAULT_BLOCKSIZE, preseek=True, enco
             the file or in the middle for relative reverse line
             generation.
         encoding (str): Text encoding used to decode lines. Defaults to the
-            file's encoding, or returns bytes when neither is specified.
+            file's encoding, or returns bytes when neither is specified for
+            a binary stream. Already-decoded text streams return strings.
 
     """
     # This function is a bit of a pain because it attempts to be byte/text agnostic
@@ -83,11 +84,14 @@ def reverse_iter_lines(file_obj, blocksize=DEFAULT_BLOCKSIZE, preseek=True, enco
     except (AttributeError, io.UnsupportedOperation):
         pass
 
-    empty_bytes, newline_bytes, empty_text = b'', b'\n', ''
+    empty = file_obj.read(0)
+    is_text = isinstance(empty, str)
+    newline = '\n' if is_text else b'\n'
+    decode_lines = encoding and not is_text
 
     if preseek:
         file_obj.seek(0, os.SEEK_END)
-    buff = empty_bytes
+    buff = empty
     cur_pos = file_obj.tell()
     while 0 < cur_pos:
         read_size = min(blocksize, cur_pos)
@@ -97,15 +101,15 @@ def reverse_iter_lines(file_obj, blocksize=DEFAULT_BLOCKSIZE, preseek=True, enco
         buff = cur + buff
         lines = buff.splitlines()
 
-        if len(lines) < 2 or lines[0] == empty_bytes:
+        if len(lines) < 2 or lines[0] == empty:
             continue
-        if buff[-1:] == newline_bytes:
-            yield empty_text if encoding else empty_bytes
+        if buff[-1:] == newline:
+            yield '' if decode_lines else empty
         for line in lines[:0:-1]:
-            yield line.decode(encoding) if encoding else line
+            yield line.decode(encoding) if decode_lines else line
         buff = lines[0]
     if buff:
-        yield buff.decode(encoding) if encoding else buff
+        yield buff.decode(encoding) if decode_lines else buff
 
 
 
