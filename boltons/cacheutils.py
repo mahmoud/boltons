@@ -308,6 +308,10 @@ class LRI(dict):
                 setitem(k, F[k])
             return
 
+    def __ior__(self, other):
+        self.update(other)
+        return self
+
     def __eq__(self, other):
         with self._lock:
             if self is other:
