@@ -169,7 +169,7 @@ class FilePerms:
         i &= FULL_PERMS
         key = ('', 'x', 'w', 'xw', 'r', 'rx', 'rw', 'rwx')
         parts = []
-        while i:
+        for _ in range(3):
             parts.append(key[i & _SINGLE_FULL_PERM])
             i >>= 3
         parts.reverse()
