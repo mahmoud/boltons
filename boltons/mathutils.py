@@ -199,7 +199,7 @@ class Bits:
         return Bits(self.val << other, self.len + other)
 
     def __rshift__(self, other):
-        return Bits(self.val >> other, self.len - other)
+        return Bits(self.val >> other, max(0, self.len - other))
 
     def __hash__(self):
         return hash(self.val)
