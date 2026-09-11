@@ -331,3 +331,51 @@ def test_small_difference_update_unchanged():
     thing = IndexedSet(range(100))
     thing.difference_update({1, 3, 5})
     assert list(thing)[:5] == [0, 2, 4, 6, 7]
+
+
+@mark.parametrize('method', ['difference_update', 'intersection_update'])
+@mark.parametrize('others', [
+    (),
+    ({1, 2}, {2, 3}),
+    ({1}, {3}),
+    (set(), {1, 2}),
+    ({1, 2}, {2, 3}, {2, 4}),
+])
+def test_indexed_set_update_set_operations_match_builtin(method, others):
+    original = [3, 1, 4, 2]
+    items = IndexedSet(original)
+    expected = set(original)
+    getattr(expected, method)(*others)
+
+    result = getattr(items, method)(*others)
+
+    assert result is None
+    assert list(items) == [value for value in original if value in expected]
+    assert [items[i] for i in range(len(items))] == list(items)
+
+
+@mark.parametrize('method', ['difference_update', 'intersection_update'])
+def test_indexed_set_multiple_update_uses_bulk_removal(method):
+    original = list(range(1000))
+    others = [set(range(600)), set(range(400, 800))]
+    items = IndexedSet(original)
+    expected = set(original)
+    getattr(expected, method)(*others)
+
+    getattr(items, method)(*others)
+
+    assert list(items) == [value for value in original if value in expected]
+    assert items[0] == min(expected)
+    assert items[-1] == max(expected)
+    assert items.index(max(expected)) == len(items) - 1
+
+
+@mark.parametrize('method', ['difference_update', 'intersection_update'])
+def test_indexed_set_update_with_self(method):
+    items = IndexedSet([3, 1, 4, 2])
+    expected = set(items)
+    getattr(expected, method)(expected, {1, 2})
+
+    getattr(items, method)(items, {1, 2})
+
+    assert list(items) == [value for value in [3, 1, 4, 2] if value in expected]
