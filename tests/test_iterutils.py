@@ -474,6 +474,16 @@ def test_backoff_zero_start():
     assert slow_backoff == [0.0, 1.0, 1.2, 1.44, 1.73, 2.07, 2.49, 2.9]
 
 
+@pytest.mark.parametrize('stop', [0.1, 0.25, 0.5, 0.75, 1.0])
+@pytest.mark.parametrize('factor', [1.2, 2.0, 10.0])
+def test_backoff_zero_start_fractional_stop(stop, factor):
+    from boltons.iterutils import backoff, backoff_iter
+
+    expected = [0.0, stop]
+    assert backoff(0, stop, factor=factor) == expected
+    assert list(backoff_iter(0, stop, factor=factor)) == expected
+
+
 def test_backoff_validation():
     from boltons.iterutils import backoff
 
