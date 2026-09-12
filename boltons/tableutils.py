@@ -279,7 +279,7 @@ class Table:
         if not data:
             return
         self._data.extend(data)
-        self._set_width()
+        self._set_width(reset=not self.headers)
         self._fill()
 
     def _set_width(self, reset=False):
