@@ -599,6 +599,12 @@ def backoff_iter(start, stop, count=None, factor=2.0, jitter=False):
     >>> list(backoff_iter(0.25, 100.0, factor=10))
     [0.25, 2.5, 25.0, 100.0]
 
+    A zero *start* yields an immediate retry, followed by a delay of 1,
+    capped at *stop*:
+
+    >>> list(backoff_iter(0, 0.5))
+    [0.0, 0.5]
+
     A simplified usage example:
 
     .. code-block:: python
@@ -620,7 +626,7 @@ def backoff_iter(start, stop, count=None, factor=2.0, jitter=False):
 
     Args:
 
-        start (float): Positive number for baseline.
+        start (float): Nonnegative number for baseline.
         stop (float): Positive number for maximum.
         count (int): Number of steps before stopping
             iteration. Defaults to the number of steps between *start* and
@@ -648,7 +654,7 @@ def backoff_iter(start, stop, count=None, factor=2.0, jitter=False):
     if stop < start:
         raise ValueError('expected stop >= start, not %r' % stop)
     if count is None:
-        denom = start if start else 1
+        denom = start if start else min(stop, 1.0)
         if factor == 1.0:
             if start != stop:
                 raise ValueError('expected factor > 1.0 when count is None'
