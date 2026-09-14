@@ -460,7 +460,8 @@ class CachedFunction:
 
     def __call__(self, *args, **kwargs):
         cache = self.get_cache()
-        key = self.key_func(args, kwargs, typed=self.typed)
+        key_args = (self.func,) + args if self.scoped else args
+        key = self.key_func(key_args, kwargs, typed=self.typed)
         try:
             ret = cache[key]
         except KeyError:
