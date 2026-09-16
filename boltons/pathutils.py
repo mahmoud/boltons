@@ -153,12 +153,12 @@ def shrinkuser(path, home='~'):
         >>> assert shrinkuser(path + '/1', '$HOME') == join('$HOME', '1')
     """
     path = normpath(path)
-    userhome_dpath = expanduser('~')
-    if path.startswith(userhome_dpath):
-        if len(path) == len(userhome_dpath):
-            path = home
-        elif path[len(userhome_dpath)] == os.path.sep:
-            path = home + path[len(userhome_dpath):]
+    userhome_dpath = normpath(expanduser('~'))
+    prefix = userhome_dpath.rstrip(os.path.sep) + os.path.sep
+    if path == userhome_dpath:
+        path = home
+    elif path.startswith(prefix):
+        path = join(home, path[len(prefix):])
     return path
 
 
