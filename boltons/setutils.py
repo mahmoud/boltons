@@ -41,7 +41,7 @@ characteristics of Python's built-in set implementation.
 
 
 from bisect import bisect_left
-from collections.abc import MutableSet
+from collections.abc import MutableSet, Iterator
 from itertools import chain, islice
 import operator
 
@@ -309,6 +309,8 @@ class IndexedSet(MutableSet):
 
     def iter_intersection(self, *others):
         "iter_intersection(*others) -> iterate over elements also in others"
+        others = tuple(self.from_iterable(other) if isinstance(other, Iterator) else other
+                       for other in others)
         for k in self:
             for other in others:
                 if k not in other:
@@ -321,11 +323,15 @@ class IndexedSet(MutableSet):
         "intersection(*others) -> get a set with overlap of this and others"
         if len(others) == 1:
             other = others[0]
+            if isinstance(other, Iterator):
+                other = self.from_iterable(other)
             return self.from_iterable(k for k in self if k in other)
         return self.from_iterable(self.iter_intersection(*others))
 
     def iter_difference(self, *others):
         "iter_difference(*others) -> iterate over elements not in others"
+        others = tuple(self.from_iterable(other) if isinstance(other, Iterator) else other
+                       for other in others)
         for k in self:
             for other in others:
                 if k in other:
@@ -338,11 +344,15 @@ class IndexedSet(MutableSet):
         "difference(*others) -> get a new set with elements not in others"
         if len(others) == 1:
             other = others[0]
+            if isinstance(other, Iterator):
+                other = self.from_iterable(other)
             return self.from_iterable(k for k in self if k not in other)
         return self.from_iterable(self.iter_difference(*others))
 
     def symmetric_difference(self, *others):
         "symmetric_difference(*others) -> XOR set of this and others"
+        others = tuple(self.from_iterable(other) if isinstance(other, Iterator) else other
+                       for other in others)
         ret = self.union(*others)
         return ret.difference(self.intersection(*others))
 
@@ -391,7 +401,7 @@ class IndexedSet(MutableSet):
         "symmetric_difference_update(other) -> in-place XOR with other"
         if self is other:
             self.clear()
-        for val in other:
+        for val in self.from_iterable(other):
             if val in self:
                 self.discard(val)
             else:
