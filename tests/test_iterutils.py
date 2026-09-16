@@ -26,6 +26,12 @@ is_meaning_of_life = lambda x: x == 42
 
 
 class TestSplit:
+    @pytest.mark.parametrize('maxsplit', [-1, -2, -100])
+    @pytest.mark.parametrize('sep', [None, [None], lambda value: value is None])
+    def test_negative_maxsplit_is_unlimited(self, maxsplit, sep):
+        values = [None, 1, None, None, 2, None, 3, None]
+        assert split(iter(values), sep=sep, maxsplit=maxsplit) == split(values, sep=sep)
+
     def test_maxsplit_zero_returns_unsplit_values(self):
         values = [1, None, 2]
 
