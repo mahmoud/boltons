@@ -36,6 +36,7 @@ provided by ``strutils``.
 
 
 import builtins
+import math
 import collections
 import re
 import string
@@ -571,7 +572,12 @@ def bytes2human(nbytes, ndigits=0):
     '1K'
     >>> bytes2human(1024 ** 8)
     '1Y'
+
+    Non-finite values (``nan`` / ``±inf``) raise ``ValueError`` — otherwise the
+    unit loop falls through to yottabytes and returns nonsense like ``'nanY'``.
     """
+    if isinstance(nbytes, float) and not math.isfinite(nbytes):
+        raise ValueError('nbytes must be a finite number, got %r' % (nbytes,))
     abs_bytes = abs(nbytes)
     for (size, symbol), (next_size, next_symbol) in _SIZE_RANGES:
         if abs_bytes < next_size:

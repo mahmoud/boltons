@@ -299,6 +299,17 @@ def test_bytes2human():
     assert b2h(1024, 2) == '1.00K'
 
 
+
+
+def test_bytes2human_rejects_nonfinite():
+    """Non-finite nbytes must raise — otherwise the unit loop falls to Y."""
+    import math
+    import pytest
+    b2h = strutils.bytes2human
+    for bad in (float('nan'), float('inf'), float('-inf')):
+        with pytest.raises(ValueError):
+            b2h(bad)
+
 def test_singularize_double_s():
     singularize = strutils.singularize
     # Words ending in a double 's' are already singular (their plurals end
