@@ -562,8 +562,10 @@ class MultiFileReader:
         for the input, and returns an empty string when the files are
         exhausted.
         """
-        if not amt:
-            return self._joiner.join(f.read() for f in self._fileobjs)
+        if amt is None or amt < 0:
+            result = self._joiner.join(f.read() for f in self._fileobjs[self._index:])
+            self._index = len(self._fileobjs)
+            return result
         parts = []
         while amt > 0 and self._index < len(self._fileobjs):
             parts.append(self._fileobjs[self._index].read(amt))
@@ -585,3 +587,4 @@ class MultiFileReader:
                 'MultiFileReader only supports seeking to start at this time')
         for f in self._fileobjs:
             f.seek(0)
+        self._index = 0
