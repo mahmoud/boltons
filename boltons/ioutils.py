@@ -432,14 +432,22 @@ class SpooledStringIO(SpooledIOBase):
         self._checkClosed()
         # Seek to position from the start of the file
         if mode == os.SEEK_SET:
+            if pos < 0:
+                raise ValueError("negative seek position")
             self.buffer.seek(0)
             self._traverse_codepoints(0, pos)
             self._tell = pos
         # Seek to new position relative to current position
         elif mode == os.SEEK_CUR:
             start_pos = self.tell()
-            self._traverse_codepoints(self.tell(), pos)
-            self._tell = start_pos + pos
+            destination = start_pos + pos
+            if destination < 0:
+                raise ValueError("negative seek position")
+            if pos < 0:
+                # UTF-8 offsets count characters, so traverse from the start.
+                return self.seek(destination)
+            self._traverse_codepoints(start_pos, pos)
+            self._tell = destination
         elif mode == os.SEEK_END:
             self.buffer.seek(0)
             dest_position = self.len - pos
