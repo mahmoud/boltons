@@ -1,4 +1,7 @@
 import sys
+from itertools import product
+
+import pytest
 
 from boltons.listutils import SplayList, BarrelList
 
@@ -240,3 +243,37 @@ def test_barrel_list_delete_to_end():
         del reference[10000:stop]
         del value[10000:stop]
         assert list(value) == reference
+
+
+@pytest.mark.parametrize('size', [0, 1, 12])
+@pytest.mark.parametrize('barrel_size', [1, 3, 12])
+def test_barrel_list_slice_deletion_matches_list(size, barrel_size):
+    bounds = (None, -20, -2, 0, 2, 20)
+    for start, stop, step in product(bounds, bounds, (None, -3, -1, 1, 2)):
+        reference = list(range(size))
+        value = BarrelList()
+        value.lists = [reference[i:i + barrel_size]
+                       for i in range(0, size, barrel_size)] or [[]]
+        key = slice(start, stop, step)
+
+        del reference[key]
+        del value[key]
+
+        assert list(value) == reference, key
+        assert len(value) == len(reference), key
+        value.append('after deletion')
+        assert list(value) == reference + ['after deletion'], key
+
+
+@pytest.mark.parametrize('key, error', [
+    (slice(None, None, 0), ValueError),
+    (slice(1.5, None), TypeError),
+    (slice(None, 1.5), TypeError),
+    (slice(None, None, 1.5), TypeError),
+])
+def test_barrel_list_invalid_slice_deletion_preserves_items(key, error):
+    value = BarrelList()
+    value.lists = [[0, 1], [2, 3]]
+    with pytest.raises(error):
+        del value[key]
+    assert list(value) == [0, 1, 2, 3]
