@@ -280,16 +280,16 @@ class SpooledIOBase(IOBase):
 
 class SpooledBytesIO(SpooledIOBase):
     """
-    SpooledBytesIO is a spooled file-like-object that only accepts bytes. On
-    Python 2.x this means the 'str' type; on Python 3.x this means the 'bytes'
-    type. Bytes are written in and retrieved exactly as given, but it will
-    raise TypeErrors if something other than bytes are written.
+    SpooledBytesIO is a spooled file-like object accepting bytes-like objects,
+    including bytes, bytearray, and memoryview. Writes return the number of
+    bytes written. Bytes are retrieved exactly as given; writing text raises
+    TypeError.
 
     Example::
 
         >>> from boltons import ioutils
         >>> with ioutils.SpooledBytesIO() as f:
-        ...     f.write(b"Happy IO")
+        ...     _ = f.write(b"Happy IO")
         ...     _ = f.seek(0)
         ...     isinstance(f.getvalue(), bytes)
         True
@@ -301,14 +301,10 @@ class SpooledBytesIO(SpooledIOBase):
 
     def write(self, s):
         self._checkClosed()
-        if not isinstance(s, bytes):
-            raise TypeError("bytes expected, got {}".format(
-                type(s).__name__
-            ))
-
-        if self.tell() + len(s) >= self._max_size:
-            self.rollover()
-        self.buffer.write(s)
+        with memoryview(s) as view:
+            if self.tell() + view.nbytes >= self._max_size:
+                self.rollover()
+            return self.buffer.write(view)
 
     def seek(self, pos, mode=0):
         self._checkClosed()
@@ -376,7 +372,7 @@ class SpooledStringIO(SpooledIOBase):
 
         >>> from boltons import ioutils
         >>> with ioutils.SpooledStringIO() as f:
-        ...     f.write(u"\u2014 Hey, an emdash!")
+        ...     _ = f.write(u"\u2014 Hey, an emdash!")
         ...     _ = f.seek(0)
         ...     isinstance(f.read(), str)
         True
@@ -403,6 +399,7 @@ class SpooledStringIO(SpooledIOBase):
             self.rollover()
         self.buffer.write(s.encode('utf-8'))
         self._tell = current_pos + len(s)
+        return len(s)
 
     def _traverse_codepoints(self, current_position, n):
         """Traverse from current position to the right n codepoints"""
@@ -435,14 +432,22 @@ class SpooledStringIO(SpooledIOBase):
         self._checkClosed()
         # Seek to position from the start of the file
         if mode == os.SEEK_SET:
+            if pos < 0:
+                raise ValueError("negative seek position")
             self.buffer.seek(0)
             self._traverse_codepoints(0, pos)
             self._tell = pos
         # Seek to new position relative to current position
         elif mode == os.SEEK_CUR:
             start_pos = self.tell()
-            self._traverse_codepoints(self.tell(), pos)
-            self._tell = start_pos + pos
+            destination = start_pos + pos
+            if destination < 0:
+                raise ValueError("negative seek position")
+            if pos < 0:
+                # UTF-8 offsets count characters, so traverse from the start.
+                return self.seek(destination)
+            self._traverse_codepoints(start_pos, pos)
+            self._tell = destination
         elif mode == os.SEEK_END:
             self.buffer.seek(0)
             dest_position = self.len - pos
