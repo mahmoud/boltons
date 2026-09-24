@@ -396,19 +396,23 @@ def strip_ansi(text):
     """
     # TODO: move to cliutils.py
 
-    # Transform any ASCII-like content to unicode to allow regex to match, and
-    # save input type for later.
+    # Decode bytes so the regex can match, saving the input type for later.
+    # ANSI escape sequences are pure ASCII, so 'latin-1' is used rather than
+    # 'utf-8': it maps every byte 0-255 to a code point one-to-one and never
+    # raises, and re-encoding reproduces the input bytes exactly. Decoding as
+    # 'utf-8' raised UnicodeDecodeError on non-UTF-8 content -- e.g. cp437 or
+    # latin-1 ANSI art, the very input this function documents supporting.
     target_type = None
     # Unicode type aliased to str is code-smell for Boltons in Python 3 env.
     if isinstance(text, (bytes, bytearray)):
         target_type = type(text)
-        text = text.decode('utf-8')
+        text = text.decode('latin-1')
 
     cleaned = ANSI_SEQUENCES.sub('', text)
 
     # Transform back the result to the same bytearray type provided by the user.
     if target_type and target_type != type(cleaned):
-        cleaned = target_type(cleaned, 'utf-8')
+        cleaned = target_type(cleaned, 'latin-1')
 
     return cleaned
 

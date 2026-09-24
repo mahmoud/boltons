@@ -37,6 +37,12 @@ def test_strip_ansi():
         bytearray(
             b'(\xe2\x95\xaf\xc2\xb0\xe2\x96\xa1\xc2\xb0)\xe2\x95\xaf\xef\xb8'
             b'\xb5 \xe2\x94\xbb\xe2\x94\x81\xe2\x94\xbb')
+    # Non-UTF-8 bytes must not raise: ANSI art is usually cp437/latin-1, not
+    # UTF-8, and the escape codes being stripped are pure ASCII regardless.
+    # The result is the input bytes minus the escapes, byte for byte.
+    assert strutils.strip_ansi(b'\x1b[31m\xdb\xdb\x1b[0m') == b'\xdb\xdb'
+    assert strutils.strip_ansi(bytearray(b'\x1b[1mcaf\xe9\x1b[0m')) == \
+        bytearray(b'caf\xe9')
 
 
 def test_asciify():
