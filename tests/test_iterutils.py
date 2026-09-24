@@ -697,3 +697,57 @@ def test_frange_xfrange_zero_step():
         frange(10, step=0)
     with pytest.raises(ValueError):
         list(xfrange(10, step=0))
+
+
+def test_soft_sorted_first_last_ordering():
+    from boltons.iterutils import soft_sorted
+
+    assert soft_sorted(['two', 'b', 'one', 'a'],
+                       first=['one', 'two']) == ['one', 'two', 'a', 'b']
+    assert soft_sorted(range(7), first=[6, 15], last=[2, 4],
+                       reverse=True) == [6, 5, 3, 1, 0, 2, 4]
+    assert soft_sorted([]) == []
+    assert soft_sorted([3, 1, 2]) == [1, 2, 3]
+
+
+def test_soft_sorted_duplicate_entries_use_first_position():
+    from boltons.iterutils import soft_sorted
+
+    # 'a' is listed twice; its rank is the earlier position
+    assert soft_sorted(['b', 'a'], first=['a', 'a', 'b']) == ['a', 'b']
+    assert soft_sorted(['b', 'a'], first=['b', 'a', 'b']) == ['b', 'a']
+
+
+def test_soft_sorted_key_in_both_first_and_last():
+    from boltons.iterutils import soft_sorted
+
+    # an element listed in both is emitted at both ends
+    assert soft_sorted(['a', 'b'], first=['a'], last=['a']) == ['a', 'b', 'a']
+
+
+def test_soft_sorted_unhashable_keys():
+    from boltons.iterutils import soft_sorted
+
+    assert soft_sorted([[2], [1]], first=[[1]]) == [[1], [2]]
+    assert soft_sorted([[1], [2], [3]], first=[[3], [1]]) == [[3], [1], [2]]
+
+
+def test_soft_sorted_string_first_is_a_sequence():
+    from boltons.iterutils import soft_sorted
+    import string
+
+    assert ''.join(soft_sorted(string.hexdigits, first='za1', last='b',
+                               key=str.lower)) == 'aA1023456789cCdDeEfFbB'
+
+
+def test_soft_sorted_calls_key_once_per_item():
+    from boltons.iterutils import soft_sorted
+
+    calls = []
+
+    def key(x):
+        calls.append(x)
+        return x
+
+    soft_sorted(range(50), first=[1, 2], last=[3], key=key)
+    assert len(calls) == 50

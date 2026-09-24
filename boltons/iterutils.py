@@ -44,6 +44,7 @@ import math
 import time
 import codecs
 import random
+import operator
 import itertools
 from itertools import zip_longest
 from collections.abc import Mapping, Sequence, Set, ItemsView, Iterable
@@ -1546,6 +1547,29 @@ guid_iter = GUIDerator()
 seq_guid_iter = SequentialGUIDerator()
 
 
+_get_key = operator.itemgetter(0)
+
+
+def _first_occurrence_index(seq):
+    """Map every entry of *seq* to the index of its first occurrence, or
+    return None when that cannot be done faithfully.
+
+    str and bytes are excluded because ``in`` tests them for a substring
+    rather than an element, and sequences holding unhashable entries are
+    excluded because they cannot be keyed by value. Callers fall back to
+    scanning in both cases.
+    """
+    if isinstance(seq, (str, bytes, bytearray)):
+        return None
+    index = {}
+    try:
+        for i, item in enumerate(seq):
+            index.setdefault(item, i)
+    except TypeError:
+        return None
+    return index
+
+
 def soft_sorted(iterable, first=None, last=None, key=None, reverse=False):
     """For when you care about the order of some elements, but not about
     others.
@@ -1582,17 +1606,53 @@ def soft_sorted(iterable, first=None, last=None, key=None, reverse=False):
     last = last or []
     key = key or (lambda x: x)
     seq = list(iterable)
-    other = [x for x in seq if not (
-        (first and key(x) in first) or (last and key(x) in last))]
-    other.sort(key=key, reverse=reverse)
 
-    if first:
-        first = sorted([x for x in seq if key(x) in first],
-                       key=lambda x: first.index(key(x)))
-    if last:
-        last = sorted([x for x in seq if key(x) in last],
-                      key=lambda x: last.index(key(x)))
-    return first + other + last
+    if not first and not last:
+        seq.sort(key=key, reverse=reverse)
+        return seq
+
+    # Evaluate key() once per item. It was previously called again for
+    # every membership test and once more for every index lookup.
+    keyed = [(key(x), x) for x in seq]
+
+    first_index = _first_occurrence_index(first)
+    last_index = _first_occurrence_index(last)
+    if first_index is not None and last_index is not None:
+        try:
+            for k, _ in keyed:
+                hash(k)
+        except TypeError:
+            first_index = last_index = None  # unhashable keys, scan instead
+
+    if first_index is None:
+        in_first = lambda k: k in first
+        in_last = lambda k: k in last
+        first_rank = lambda kx: first.index(kx[0])
+        last_rank = lambda kx: last.index(kx[0])
+    else:
+        in_first = first_index.__contains__
+        in_last = last_index.__contains__
+        first_rank = lambda kx: first_index[kx[0]]
+        last_rank = lambda kx: last_index[kx[0]]
+
+    first_keyed, last_keyed, other_keyed = [], [], []
+    for k, x in keyed:
+        in_f = in_first(k)
+        in_l = in_last(k)
+        if in_f:
+            first_keyed.append((k, x))
+        if in_l:
+            last_keyed.append((k, x))
+        if not (in_f or in_l):
+            other_keyed.append((k, x))
+
+    other_keyed.sort(key=_get_key, reverse=reverse)
+    first_keyed.sort(key=first_rank)
+    last_keyed.sort(key=last_rank)
+
+    return ([x for _, x in first_keyed]
+            + [x for _, x in other_keyed]
+            + [x for _, x in last_keyed])
 
 
 def untyped_sorted(iterable, key=None, reverse=False):
