@@ -110,6 +110,9 @@ figure something out.
 
 ## Development
 
+See the [testing guide](tests/README.md) for focused test runs, coverage,
+and guidance on adding tests.
+
 Install [uv](https://docs.astral.sh/uv/), then set up a dev environment:
 
 ```bash
