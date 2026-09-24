@@ -135,6 +135,34 @@ def test_invalid_port():
         URL('http://reader.googlewebsite.com:neverforget')
 
 
+@pytest.mark.parametrize('url_text, authority', [
+    ('http://example.com:0/path', 'example.com:0'),
+    ('https://127.0.0.1:0/path', '127.0.0.1:0'),
+    ('http://[::1]:0/path', '[::1]:0'),
+])
+def test_zero_port_roundtrip(url_text, authority):
+    url = URL(url_text)
+    assert url.port == 0
+    assert url.get_authority() == authority
+    assert url.to_text() == url_text
+    assert url.to_text(full_quote=True) == url_text
+    assert URL(url).port == 0
+
+
+@pytest.mark.parametrize('scheme, port, authority', [
+    ('http', None, 'example.com'),
+    ('http', 0, 'example.com:0'),
+    ('http', 80, 'example.com'),
+    ('https', 443, 'example.com'),
+    ('http', 8080, 'example.com:8080'),
+    ('unknown', 0, 'example.com:0'),
+])
+def test_authority_port_from_parts(scheme, port, authority):
+    url = URL.from_parts(scheme=scheme, host='example.com', port=port)
+    assert url.get_authority() == authority
+    assert url.to_text() == scheme + '://' + authority
+
+
 def test_invalid_ipv6():
     invalid_ipv6_ips = ['2001::0234:C1ab::A0:aabc:003F',
                         '2001::1::3F']

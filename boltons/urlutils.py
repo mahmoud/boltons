@@ -736,8 +736,7 @@ class URL:
                 _add(self.host.encode('idna').decode('ascii'))
             else:
                 _add(self.host)
-            # TODO: 0 port?
-            if self.port and self.port != self.default_port:
+            if self.port is not None and self.port != self.default_port:
                 _add(':')
                 _add(str(self.port))
         return ''.join(parts)
