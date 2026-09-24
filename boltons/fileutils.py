@@ -531,10 +531,12 @@ def iter_find_files(directory, patterns, ignored=None, include_dirs=False, max_d
         ignored = [ignored]
     ign_re = re.compile('|'.join([fnmatch.translate(p) for p in ignored]))
     directory = os.fspath(directory)
-    start_depth = len(directory.split(os.path.sep))
     for root, dirs, files in os.walk(directory):
-        if max_depth is not None and (len(root.split(os.path.sep)) - start_depth) > max_depth:
-            continue
+        if max_depth is not None:
+            relative_root = os.path.relpath(root, directory)
+            depth = 0 if relative_root == os.curdir else relative_root.count(os.path.sep) + 1
+            if depth > max_depth:
+                continue
         if include_dirs:
             for basename in dirs:
                 if pats_re.match(basename):

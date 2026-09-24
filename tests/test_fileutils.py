@@ -36,6 +36,25 @@ def test_atomicsaver_pathlike(tmp_path):
     assert dest.read_bytes() == b'pathlike works'
 
 
+def test_iter_find_files_max_depth_trailing_separator(tmp_path):
+    (tmp_path / 'root.txt').touch()
+    child = tmp_path / 'child'
+    child.mkdir()
+    (child / 'child.txt').touch()
+    grandchild = child / 'grandchild'
+    grandchild.mkdir()
+    (grandchild / 'deep.txt').touch()
+
+    for max_depth, expected in (
+        (0, {'root.txt'}),
+        (1, {'root.txt', 'child.txt'}),
+    ):
+        for suffix in ('', os.path.sep, os.path.sep * 2):
+            paths = iter_find_files(str(tmp_path) + suffix, '*.txt',
+                                    max_depth=max_depth)
+            assert {os.path.basename(path) for path in paths} == expected
+
+
 def test_iter_find_files_pathlike():
     boltons_path = pathlib.Path(BOLTONS_PATH)
     results = list(iter_find_files(boltons_path, patterns=['*.py']))
