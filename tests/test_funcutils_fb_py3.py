@@ -331,6 +331,97 @@ def test_wraps_posonly_defaulted_arg():
     assert deco(func)(1, 5, z=7) == (1, 5, 7)
 
 
+def test_formatargspec_posonly_defaults_and_annotations():
+    assert funcutils.inspect_formatargspec(
+        ['a', 'b'], defaults=(1, 'two'),
+        annotations={'a': int, 'b': str, 'return': tuple},
+        posonlyargs=['a'],
+    ) == "(a: int=1, /, b: str='two') -> tuple"
+
+
+@pytest.mark.skipif(sys.version_info < (3, 8),
+                    reason='positional-only params require 3.8+')
+def test_wraps_posonly_keyword_collision():
+    ns = {}
+    exec('def func(a=1, /, **kw):\n    return a, kw', ns)
+    func = ns['func']
+
+    @wraps(func)
+    def wrapped(*args, **kwargs):
+        return func(*args, **kwargs)
+
+    assert wrapped(1, a=2) == (1, {'a': 2})
+    assert wrapped(a=2) == (1, {'a': 2})
+
+
+@pytest.mark.skipif(sys.version_info < (3, 8),
+                    reason='positional-only params require 3.8+')
+def test_wraps_posonly_rejects_keyword_binding():
+    ns = {}
+    exec('def func(a, /, b):\n    return a, b', ns)
+    func = ns['func']
+
+    @wraps(func)
+    def wrapped(*args, **kwargs):
+        return func(*args, **kwargs)
+
+    assert wrapped(1, b=2) == (1, 2)
+    with pytest.raises(TypeError):
+        wrapped(a=1, b=2)
+
+
+@pytest.mark.skipif(sys.version_info < (3, 8),
+                    reason='positional-only params require 3.8+')
+def test_wraps_posonly_mixed_signature():
+    ns = {}
+    exec('def func(a: int, b=2, /, c=3, *args, flag=True, **kw) -> tuple:\n'
+         '    return a, b, c, args, flag, kw', ns)
+    func = ns['func']
+
+    @wraps(func)
+    def wrapped(*args, **kwargs):
+        return func(*args, **kwargs)
+
+    assert inspect.signature(wrapped, follow_wrapped=False) == inspect.signature(func)
+    assert wrapped(1) == (1, 2, 3, (), True, {})
+    assert wrapped(1, 2, 4, 5, flag=False, a=6) == (1, 2, 4, (5,), False, {'a': 6})
+
+
+@pytest.mark.skipif(sys.version_info < (3, 8),
+                    reason='positional-only params require 3.8+')
+def test_FunctionBuilder_remove_posonly_args():
+    ns = {}
+    exec('def func(a, b=2, /, c=3):\n    pass', ns)
+    fb = FunctionBuilder.from_func(ns['func'])
+    fb.body = 'return c'
+
+    fb.remove_arg('b')
+    assert fb.posonlyargs == ['a']
+    assert fb.get_sig_str() == '(a, /, c)'
+    assert fb.get_defaults_dict() == {'c': 3}
+    assert fb.get_func()(1) == 3
+
+    fb.remove_arg('a')
+    assert fb.posonlyargs == []
+    assert fb.get_sig_str() == '(c)'
+    assert fb.get_func()(c=4) == 4
+
+
+@pytest.mark.skipif(sys.version_info < (3, 8),
+                    reason='positional-only params require 3.8+')
+def test_wraps_injected_posonly_arg():
+    ns = {}
+    exec('def func(a, b, /, c=3):\n    return a, b, c', ns)
+    func = ns['func']
+
+    @wraps(func, injected='b')
+    def wrapped(*args, **kwargs):
+        return func(args[0], 2, *args[1:], **kwargs)
+
+    assert str(inspect.signature(wrapped, follow_wrapped=False)) == '(a, /, c=3)'
+    assert wrapped(1, c=4) == (1, 2, 4)
+
+
 def test_wraps_target_kwonly_arg():
     # issue #261: wraps(g)(f) generates a shim with g's signature that
     # calls f; args that f only accepts as keywords must be forwarded

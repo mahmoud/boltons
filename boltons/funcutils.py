@@ -61,13 +61,16 @@ def inspect_formatargspec(
         formatvarkw=lambda name: '**' + name,
         formatvalue=lambda value: '=' + repr(value),
         formatreturns=lambda text: ' -> ' + text,
-        formatannotation=formatannotation):
+        formatannotation=formatannotation,
+        posonlyargs=()):
     """Copy formatargspec from python 3.7 standard library.
     Python 3 has deprecated formatargspec and requested that Signature
     be used instead, however this requires a full reimplementation
     of formatargspec() in terms of creating Parameter objects and such.
     Instead of introducing all the object-creation overhead and having
     to reinvent from scratch, just copy their compatibility routine.
+
+    ``posonlyargs`` identifies the positional-only prefix of ``args``.
     """
 
     def formatargandannotation(arg):
@@ -83,6 +86,8 @@ def inspect_formatargspec(
         if defaults and i >= firstdefault:
             spec = spec + formatvalue(defaults[i - firstdefault])
         specs.append(spec)
+        if posonlyargs and arg == posonlyargs[-1]:
+            specs.append('/')
     if varargs is not None:
         specs.append(formatvarargs(formatargandannotation(varargs)))
     else:
@@ -694,6 +699,8 @@ class FunctionBuilder:
             in a function which does nothing and returns ``None``.
         args (list): List of argument names, defaults to empty list,
             denoting no arguments.
+        posonlyargs (list): Positional-only prefix of *args*. Defaults to
+            an empty list. **Python 3.8+ only.**
         varargs (str): Name of the catch-all variable for positional
             arguments. E.g., "args" if the resultant function is to have
             ``*args`` in the signature. Defaults to None.
@@ -781,7 +788,8 @@ class FunctionBuilder:
                                      [],
                                      self.kwonlyargs,
                                      {},
-                                     annotations)
+                                     annotations,
+                                     posonlyargs=self.posonlyargs)
 
     def get_invocation_str(self, target=None):
         # Regular args with defaults (and keyword-only args) are forwarded
@@ -983,6 +991,8 @@ class FunctionBuilder:
         else:
             d_dict.pop(arg_name, None)
             self.defaults = tuple([d_dict[a] for a in args if a in d_dict])
+            if arg_name in self.posonlyargs:
+                self.posonlyargs.remove(arg_name)
         return
 
     def _compile(self, src, execdict):
