@@ -85,3 +85,31 @@ def test_to_text_short_headers_padded():
     lines = t.to_text().splitlines()
     header_cells = [c.strip() for c in lines[0].split(' | ')]
     assert header_cells == ['a', 'None']
+
+
+def test_extend_headerless_table_with_wider_rows():
+    table = Table([[1]], headers=None)
+    table.extend([[2, 3]])
+
+    assert list(table) == [[1, None], [2, 3]]
+    assert [[cell.strip() for cell in line.split(' | ')]
+            for line in table.to_text().splitlines()] == [['1', 'None'], ['2', '3']]
+    assert table.to_html(orientation='vertical') == (
+        '<table>\n'
+        '<tr><td>1</td><td>2</td></tr>\n'
+        '<tr><td>None</td><td>3</td></tr>\n'
+        '</table>'
+    )
+
+
+def test_extend_headerless_table_preserves_width_for_shorter_rows():
+    table = Table([[1, 2]], headers=None)
+    table.extend([[3]])
+    table.extend(iter([[4, 5, 6]]))
+    table.extend(iter([]))
+
+    assert list(table) == [[1, 2, None], [3, None, None], [4, 5, 6]]
+    assert [[cell.strip() for cell in line.split(' | ')]
+            for line in table.to_text().splitlines()] == [
+        ['1', '2', 'None'], ['3', 'None', 'None'], ['4', '5', '6']
+    ]
