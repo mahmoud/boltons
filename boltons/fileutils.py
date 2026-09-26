@@ -716,13 +716,13 @@ def rotate_file(filename, *, keep: int = 5):
         else:
             kept_names.append(f'{fn_root}.{i}')
 
+    if os.path.exists(kept_names[-1]):
+        os.remove(kept_names[-1])
+
     fns = [filename] + kept_names
     for orig_name, kept_name in reversed(list(zip(fns, fns[1:]))):
         if not os.path.exists(orig_name):
             continue
         os.rename(orig_name, kept_name)
-
-    if os.path.exists(kept_names[-1]):
-        os.remove(kept_names[-1])
 
     return
