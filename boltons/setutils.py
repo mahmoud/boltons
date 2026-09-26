@@ -788,12 +788,12 @@ class _ComplementSet:
             return NotImplemented
         if self._included is None:
             if exc is None:  # - +
-                return _ComplementSet(excluded=self._excluded - inc)
+                return _ComplementSet(excluded=self._excluded.symmetric_difference(inc))
             else:  # - -
                 return _ComplementSet(included=self._excluded.symmetric_difference(exc))
         else:
             if inc is None:  # + -
-                return _ComplementSet(excluded=exc - self._included)
+                return _ComplementSet(excluded=exc.symmetric_difference(self._included))
             else:  # + +
                 return _ComplementSet(included=self._included.symmetric_difference(inc))
 
@@ -803,13 +803,13 @@ class _ComplementSet:
         inc, exc = _norm_args_typeerror(other)
         if self._included is None:
             if exc is None:  # - +
-                self._excluded |= inc
+                self._excluded.symmetric_difference_update(inc)
             else:  # - -
                 self._excluded.symmetric_difference_update(exc)
                 self._included, self._excluded = self._excluded, None
         else:
             if inc is None:  # + -
-                self._included |= exc
+                self._included.symmetric_difference_update(exc)
                 self._included, self._excluded = None, self._included
             else:  # + +
                 self._included.symmetric_difference_update(inc)

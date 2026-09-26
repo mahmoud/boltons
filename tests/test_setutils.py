@@ -194,6 +194,47 @@ def test_complement_set():
     assert opsmash(cab, ops) == ops
 
 
+@mark.parametrize('left_values,right_values', [
+    ({1, 2}, {2, 3}),
+    ({1}, {1}),
+    ({1}, {2}),
+    (set(), {1}),
+    ({1}, set()),
+])
+@mark.parametrize('left_complemented', [False, True])
+@mark.parametrize('right_type', ['set', 'frozenset', 'included', 'excluded'])
+def test_complement_symmetric_difference(left_values, right_values,
+                                        left_complemented, right_type):
+    left = complement(left_values)
+    if not left_complemented:
+        left.complement()
+    if right_type == 'set':
+        right = set(right_values)
+    elif right_type == 'frozenset':
+        right = frozenset(right_values)
+    else:
+        right = complement(right_values)
+        if right_type == 'included':
+            right.complement()
+
+    # Include a value outside both finite inputs to check complement membership.
+    sample = set(range(5))
+    original_left = {value for value in sample if value in left}
+    original_right = {value for value in sample if value in right}
+    expected = original_left ^ original_right
+
+    for result in (left ^ right, right ^ left, left.symmetric_difference(right)):
+        assert {value for value in sample if value in result} == expected
+    assert {value for value in sample if value in left} == original_left
+    assert {value for value in sample if value in right} == original_right
+
+    assert left.symmetric_difference_update(right) is None
+    assert {value for value in sample if value in left} == expected
+    assert {value for value in sample if value in right} == original_right
+    left.symmetric_difference_update(right)
+    assert {value for value in sample if value in left} == original_left
+
+
 def test_iset_index_method():
     original_list = list(range(8, 20)) + list(range(8))
 
