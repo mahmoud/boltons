@@ -24,6 +24,31 @@ def test_lru_add():
     assert 0 not in cache
 
 
+@pytest.mark.parametrize('cache_type', [LRI, LRU])
+@pytest.mark.parametrize('as_pairs', [False, True])
+def test_cache_inplace_union(cache_type, as_pairs):
+    cache = cache_type(max_size=2)
+    cache['old'] = 0
+    original = cache
+    updates = [('first', 1), ('second', 2)]
+    cache |= updates if as_pairs else dict(updates)
+
+    assert cache is original
+    assert dict(cache) == {'first': 1, 'second': 2}
+    assert cache.pop('first') == 1
+    cache['third'] = 3
+    cache['fourth'] = 4
+    assert dict(cache) == {'third': 3, 'fourth': 4}
+
+
+@pytest.mark.parametrize('cache_type', [LRI, LRU])
+def test_cache_inplace_union_self(cache_type):
+    cache = cache_type(max_size=2, values={'first': 1, 'second': 2})
+    cache |= cache
+    cache['third'] = 3
+    assert dict(cache) == {'second': 2, 'third': 3}
+
+
 def test_lri():
     cache_size = 10
     bc = LRI(cache_size, on_miss=lambda k: k.upper())
