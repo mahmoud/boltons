@@ -1,6 +1,8 @@
 import os.path
 import pathlib
 
+import pytest
+
 
 
 from boltons import fileutils
@@ -27,6 +29,12 @@ def test_fileperms():
     assert oct(int(up)) == '0o770'
 
     assert int(FilePerms()) == 0
+
+
+@pytest.mark.parametrize('mode', list(range(0o1000)) + [0o1000, 0o7007, 0o100070, -1])
+def test_fileperms_from_int_roundtrip(mode):
+    perms = FilePerms.from_int(mode)
+    assert int(perms) == mode & 0o777
 
 
 def test_atomicsaver_pathlike(tmp_path):
