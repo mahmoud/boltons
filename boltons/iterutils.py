@@ -358,6 +358,45 @@ def chunked_iter(src, size, **kw):
     return
 
 
+def chunked_filter(src, size, key=None):
+    """Yield items from *src* selected by a *key* function that operates on
+    chunks of up to *size* items. This is useful when a predicate can look
+    up several items in one database query or API request, avoiding a
+    separate request for every item.
+
+    The *key* function receives each chunk from :func:`chunked_iter` and
+    must return an iterable with one truth value per item, in the same
+    order. Items with a true value are yielded in their original order.
+    If *key* is ``None``, the items themselves are tested, as with
+    :func:`filter`.
+
+    For example, a batch lookup can identify records already processed
+    by another service:
+
+    >>> processed_ids = {2, 5}
+    >>> def is_new(ids):
+    ...     return [item_id not in processed_ids for item_id in ids]
+    >>> list(chunked_filter(range(1, 8), 3, key=is_new))
+    [1, 3, 4, 6, 7]
+
+    The source is consumed one chunk at a time, only as output is
+    requested. The final chunk may have fewer than *size* items. A
+    :exc:`ValueError` is raised if *key* returns the wrong number of
+    values for a chunk.
+    """
+    if key is not None and not callable(key):
+        raise TypeError('expected a callable key or None, not %r' % (key,))
+
+    for chunk in chunked_iter(src, size):
+        allowed = chunk if key is None else list(key(chunk))
+        if len(allowed) != len(chunk):
+            raise ValueError('chunked_filter expected key to return %d values, got %d'
+                             % (len(chunk), len(allowed)))
+        for item, allow in zip(chunk, allowed):
+            if allow:
+                yield item
+
+
 def chunk_ranges(input_size, chunk_size, input_offset=0, overlap_size=0, align=False):
     """Generates *chunk_size*-sized chunk ranges for an input with length *input_size*.
     Optionally, a start of the input can be set via *input_offset*, and

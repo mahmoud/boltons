@@ -2,6 +2,7 @@ import os
 
 import pytest
 
+from boltons import iterutils
 from boltons.dictutils import OMD
 from boltons.iterutils import (first,
                                split,
@@ -23,6 +24,93 @@ isint = lambda x: isinstance(x, int)
 odd = lambda x: isint(x) and x % 2 != 0
 even = lambda x: isint(x) and x % 2 == 0
 is_meaning_of_life = lambda x: x == 42
+
+
+class TestChunkedFilter:
+    def test_batch_predicate(self):
+        records = [{'id': value} for value in [1, 2, 3, 2, 4, 5, 6]]
+        requested = []
+        existing = {2, 5}
+
+        def key(chunk):
+            requested.append([record['id'] for record in chunk])
+            return (record['id'] not in existing for record in chunk)
+
+        result = list(iterutils.chunked_filter(records, 3, key=key))
+
+        assert requested == [[1, 2, 3], [2, 4, 5], [6]]
+        assert len(result) == 4
+        assert all(actual is records[index]
+                   for actual, index in zip(result, [0, 2, 4, 6]))
+
+    def test_lazy_consumption(self):
+        consumed = []
+        checked = []
+
+        def source():
+            for item in range(7):
+                consumed.append(item)
+                yield item
+
+        def key(chunk):
+            checked.append(chunk)
+            return [item % 2 == 0 for item in chunk]
+
+        result = iterutils.chunked_filter(source(), 3, key=key)
+        assert consumed == checked == []
+        assert next(result) == 0
+        assert consumed == [0, 1, 2]
+        assert checked == [[0, 1, 2]]
+        assert next(result) == 2
+        assert consumed == [0, 1, 2]
+        assert next(result) == 4
+        assert consumed == [0, 1, 2, 3, 4, 5]
+        assert checked == [[0, 1, 2], [3, 4, 5]]
+        assert list(result) == [6]
+        assert checked == [[0, 1, 2], [3, 4, 5], [6]]
+
+    @pytest.mark.parametrize('src, expected', [
+        ([0, 1, None, 2, '', 3], [1, 2, 3]),
+        ('abc', ['a', 'b', 'c']),
+        (b'\x00ab', [97, 98]),
+    ])
+    def test_default_key(self, src, expected):
+        assert list(iterutils.chunked_filter(src, 2)) == expected
+        assert list(iterutils.chunked_filter(iter(src), 2, key=None)) == expected
+
+    def test_predicate_truth_values(self):
+        def key(chunk):
+            return [0, None, 'yes', [1]]
+
+        assert list(iterutils.chunked_filter(range(4), 4, key)) == [2, 3]
+
+    def test_empty(self):
+        def key(chunk):
+            pytest.fail('key must not be called for an empty source')
+
+        assert list(iterutils.chunked_filter(iter([]), 3, key)) == []
+
+    @pytest.mark.parametrize('mask', [[], [True], [True, False, True]])
+    def test_wrong_predicate_length(self, mask):
+        with pytest.raises(ValueError, match='expected key to return 2 values'):
+            list(iterutils.chunked_filter([1, 2], 2, lambda chunk: iter(mask)))
+
+    @pytest.mark.parametrize('key', [False, 1, 'key'])
+    def test_noncallable_key(self, key):
+        with pytest.raises(TypeError, match='expected a callable key'):
+            list(iterutils.chunked_filter([1, 2], 2, key))
+
+    @pytest.mark.parametrize('size', [0, -1])
+    def test_invalid_size(self, size):
+        with pytest.raises(ValueError, match='positive integer'):
+            list(iterutils.chunked_filter([1], size))
+
+    def test_key_exception(self):
+        def key(chunk):
+            raise RuntimeError('batch lookup failed')
+
+        with pytest.raises(RuntimeError, match='batch lookup failed'):
+            list(iterutils.chunked_filter([1], 2, key))
 
 
 class TestSplit:
