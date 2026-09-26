@@ -1,4 +1,4 @@
-from pytest import raises
+from pytest import raises, mark
 from boltons.mathutils import clamp, ceil, floor, Bits
 import math
 
@@ -127,6 +127,33 @@ def test_bits_len_bound():
         Bits(4, 2)
     with raises(ValueError):
         Bits(1, 0)
+
+
+@mark.parametrize('value, shift, expected', [
+    ('101', 0, '101'),
+    ('101', 1, '10'),
+    ('0010', 1, '001'),
+    ('101', 3, ''),
+    ('101', 4, ''),
+    ('101', 1024, ''),
+    ('101', 1000000, ''),
+    ('', 0, ''),
+    ('', 1, ''),
+    ('0', 2, ''),
+])
+def test_bits_right_shift(value, shift, expected):
+    bits = Bits(value)
+    result = bits >> shift
+    assert len(result) == len(expected)
+    assert result.as_bin() == expected
+    assert result.as_int() == bits.as_int() >> shift
+    assert result == Bits(expected)
+    assert bits.as_bin() == value
+
+
+def test_bits_right_shift_negative():
+    with raises(ValueError):
+        Bits('101') >> -1
 
 
 def test_empty_bits_conversions():
