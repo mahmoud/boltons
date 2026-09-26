@@ -1,4 +1,7 @@
 import os
+from io import StringIO
+
+import pytest
 
 from boltons.jsonutils import (JSONLIterator,
                                DEFAULT_BLOCKSIZE,
@@ -120,3 +123,25 @@ def test_reverse_iter_lines_keeps_text_stream_attached(tmp_path):
         assert list(reverse_iter_lines(stream)) == ['second', 'first']
         stream.seek(0)
         assert stream.read() == 'first\nsecond'
+
+
+@pytest.mark.parametrize('blocksize', [2, DEFAULT_BLOCKSIZE])
+@pytest.mark.parametrize('encoding', [None, 'utf-8'])
+def test_reverse_iter_lines_stringio(blocksize, encoding):
+    text = 'café\nmiddle\nlast\n'
+    with StringIO(text) as stream:
+        assert list(reverse_iter_lines(stream, blocksize=blocksize, encoding=encoding)) == [
+            '', 'last', 'middle', 'café']
+        stream.seek(0)
+        assert stream.read() == text
+
+
+def test_reverse_iter_lines_stringio_preseek_false():
+    with StringIO('café\nmiddle\nlast') as stream:
+        stream.seek(len('café\nmiddle'))
+        assert list(reverse_iter_lines(stream, blocksize=2, preseek=False)) == ['middle', 'café']
+
+
+def test_jsonl_iterator_stringio_reverse():
+    with StringIO('{"name": "café"}\n{"n": 2}\n') as stream:
+        assert list(JSONLIterator(stream, reverse=True)) == [{'n': 2}, {'name': 'café'}]
