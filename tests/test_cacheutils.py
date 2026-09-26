@@ -259,10 +259,10 @@ def test_cached_dec():
 def test_unscoped_cached_dec():
     lru = LRU()
     inner_func = CountingCallable()
-    func = cached(lru)(inner_func)
+    func = cached(lru, scoped=False)(inner_func)
 
     other_inner_func = CountingCallable()
-    other_func = cached(lru)(other_inner_func)
+    other_func = cached(lru, scoped=False)(other_inner_func)
 
     assert inner_func.call_count == 0
     func('a')
@@ -272,6 +272,25 @@ def test_unscoped_cached_dec():
     other_func('a')
     assert other_inner_func.call_count == 0
     return
+
+
+def test_scoped_cached_dec():
+    # scoped=True is the documented default: functions sharing a cache must not
+    # read one another's entries.
+    lru = LRU()
+
+    @cached(lru)
+    def square(n):
+        return n * n
+
+    @cached(lru)
+    def cube(n):
+        return n * n * n
+
+    assert square(2) == 4
+    assert cube(2) == 8
+    assert square(2) == 4
+    assert len(lru) == 2
 
 
 def test_callable_cached_dec():
