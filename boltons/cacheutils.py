@@ -282,7 +282,10 @@ class LRI(dict):
             self._init_ll()
 
     def copy(self):
-        return self.__class__(max_size=self.max_size, values=self)
+        with self._lock:
+            values = self._get_flattened_ll()[1:]
+            return self.__class__(max_size=self.max_size, values=values,
+                                  on_miss=self.on_miss)
 
     def setdefault(self, key, default=None):
         with self._lock:
