@@ -62,7 +62,11 @@ __all__ = ['camel2under', 'under2camel', 'slugify', 'split_punct_ws',
 
 
 _punct_ws_str = string.punctuation + string.whitespace
-_punct_re = re.compile('[' + _punct_ws_str + ']+')
+# re.escape() is required: string.punctuation contains ']', '^', and '\',
+# which are metacharacters inside a character class. Unescaped, the '\]'
+# is read as an escaped bracket rather than two class members, so '\'
+# ends up excluded from the class and is never split on.
+_punct_re = re.compile('[' + re.escape(_punct_ws_str) + ']+')
 _camel2under_re = re.compile('((?<=[a-z0-9])[A-Z]|(?!^)[A-Z](?=[a-z]))')
 
 
