@@ -150,6 +150,7 @@ class FilePerms:
             for symbol in value:
                 bit = 2 ** key.index(symbol)
                 mode |= (bit << (self.offset * 3))
+            fp_obj._integer &= ~(_SINGLE_FULL_PERM << (self.offset * 3))
             fp_obj._integer |= mode
 
     def __init__(self, user='', group='', other=''):
