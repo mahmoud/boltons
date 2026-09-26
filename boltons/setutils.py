@@ -368,8 +368,9 @@ class IndexedSet(MutableSet):
             self.add(o)
 
     def intersection_update(self, *others):
-        "intersection_update(*others) -> discard self.difference(*others)"
-        to_remove = self.difference(*others)
+        "intersection_update(*others) -> keep items present in every other set"
+        to_remove = self.from_iterable(
+            item for item in self if any(item not in other for other in others))
         if len(to_remove) > _MAX_DEAD_INTERVALS:
             self._bulk_discard(to_remove)
             return
@@ -377,10 +378,9 @@ class IndexedSet(MutableSet):
             self.discard(val)
 
     def difference_update(self, *others):
-        "difference_update(*others) -> discard self.intersection(*others)"
-        if self in others:
-            self.clear()
-        to_remove = self.intersection(*others)
+        "difference_update(*others) -> discard items present in any other set"
+        to_remove = self.from_iterable(
+            item for item in self if any(item in other for other in others))
         if len(to_remove) > _MAX_DEAD_INTERVALS:
             self._bulk_discard(to_remove)
             return
