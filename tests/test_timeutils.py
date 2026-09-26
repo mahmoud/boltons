@@ -38,6 +38,29 @@ def test_daterange_years_step():
     assert dates == expected
     
     
+def test_daterange_month_step_day_overflow():
+    # a month/year step that lands the anchor day on a day that
+    # doesn't exist in the target month (e.g. the 31st advancing into
+    # February) used to raise ValueError from date.replace(); it
+    # should clamp to the last valid day of that month instead.
+    dates = list(daterange(date(2020, 1, 31), date(2020, 6, 30),
+                          step=(0, 1, 0), inclusive=True))
+    assert dates == [date(2020, 1, 31), date(2020, 2, 29), date(2020, 3, 29),
+                     date(2020, 4, 29), date(2020, 5, 29), date(2020, 6, 29)]
+
+    # non-leap year: Feb has only 28 days
+    dates = list(daterange(date(2021, 1, 31), date(2021, 4, 30),
+                          step=(0, 1, 0), inclusive=True))
+    assert dates == [date(2021, 1, 31), date(2021, 2, 28), date(2021, 3, 28),
+                     date(2021, 4, 28)]
+
+    # also applies stepping backwards
+    dates = list(daterange(date(2020, 3, 31), date(2019, 12, 1),
+                          step=(0, -1, 0), inclusive=True))
+    assert dates == [date(2020, 3, 31), date(2020, 2, 29), date(2020, 1, 29),
+                     date(2019, 12, 29)]
+
+
 def test_daterange_infinite():
     today = date.today()
     infinite_dates = daterange(today, None)

@@ -53,6 +53,7 @@ degree of accuracy in corner cases, check out `pytz`_ and `dateutil`_.
 import re
 import time
 import bisect
+import calendar
 import operator
 from datetime import tzinfo, timedelta, date, datetime, timezone
 
@@ -330,7 +331,11 @@ def daterange(start, stop, step=1, inclusive=False):
             are supported. A step that does not advance (e.g. ``0`` or a
             self-cancelling tuple like ``(0, 1, -31)``) raises
             :exc:`ValueError`; a step pointed away from *stop* yields
-            nothing, like ``range(1, 5, -1)``.
+            nothing, like ``range(1, 5, -1)``. When a year/month step
+            advances *start* onto a day that doesn't exist in the
+            target month (e.g. the 31st advancing into February), the
+            day is clamped to the last day of that month rather than
+            raising.
         inclusive (bool): Whether or not the *stop* date can be
             returned. *stop* is only returned when a *step* falls evenly
             on it.
@@ -384,8 +389,15 @@ def daterange(start, stop, step=1, inclusive=False):
     def _advance(cur):
         if m_step:
             m_y_step, cur_month = divmod((cur.month - 1) + m_step, 12)
-            cur = cur.replace(year=cur.year + m_y_step,
-                              month=(cur_month + 1))
+            target_year, target_month = cur.year + m_y_step, cur_month + 1
+            # cur.day may not exist in target_month (e.g. the 31st
+            # advancing into a shorter month); clamp to the last valid
+            # day rather than letting date.replace() raise, matching
+            # the behavior of dateutil's relativedelta.
+            target_day = min(cur.day,
+                             calendar.monthrange(target_year, target_month)[1])
+            cur = cur.replace(year=target_year, month=target_month,
+                              day=target_day)
         return cur + d_step
 
     if stop is None:
