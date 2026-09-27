@@ -675,7 +675,7 @@ class _ComplementSet:
                 return _ComplementSet(excluded=self._excluded.union(other._excluded))
         else:
             if inc is None:  # + -
-                return _ComplementSet(included=exc - self._included)
+                return _ComplementSet(included=self._included - exc)
             else:  # + +
                 return _ComplementSet(included=self._included.intersection(inc))
 
@@ -687,13 +687,12 @@ class _ComplementSet:
             return NotImplemented
         if self._included is None:
             if exc is None:  # - +
-                self._excluded = inc - self._excluded  # TODO: do this in place?
+                self._included, self._excluded = inc - self._excluded, None
             else:  # - -
                 self._excluded |= exc
         else:
             if inc is None:  # + -
                 self._included -= exc
-                self._included, self._excluded = None, self._included
             else:  # + +
                 self._included &= inc
         return self

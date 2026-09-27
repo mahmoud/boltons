@@ -194,6 +194,75 @@ def test_complement_set():
     assert opsmash(cab, ops) == ops
 
 
+@mark.parametrize('left_values,right_values', [
+    ({1, 2}, {2, 3}),
+    ({1}, {2}),
+    ({1, 2}, {1, 2}),
+    (set(), {1}),
+    ({1}, set()),
+    (set(), set()),
+], ids=['overlap', 'disjoint', 'equal', 'empty-left', 'empty-right', 'both-empty'])
+@mark.parametrize('set_type', [set, frozenset])
+@mark.parametrize('left_excluded', [False, True], ids=['included', 'excluded'])
+@mark.parametrize('right_form', ['plain', 'included', 'excluded'])
+@mark.parametrize('inplace', [False, True], ids=['intersection', 'iand'])
+def test_complement_intersection(left_values, right_values, set_type,
+                                left_excluded, right_form, inplace):
+    left = complement(set_type(left_values))
+    if not left_excluded:
+        left = complement(left)
+    right = set_type(right_values)
+    if right_form != 'plain':
+        right = complement(right)
+        if right_form == 'included':
+            right = complement(right)
+
+    # Include values outside both finite inputs to catch accidentally
+    # complemented results, independently of _ComplementSet's equality.
+    universe = set(range(5))
+    left_members = universe - left_values if left_excluded else left_values
+    right_members = (universe - right_values
+                     if right_form == 'excluded' else right_values)
+    expected = left_members & right_members
+
+    if inplace:
+        alias = left
+        left &= right
+        assert left is alias
+        results = [left]
+    else:
+        results = [left & right, right & left, left.intersection(right)]
+        assert {x for x in universe if x in left} == left_members
+    assert {x for x in universe if x in right} == right_members
+
+    for result in results:
+        assert {x for x in universe if x in result} == expected
+        if not left_excluded or right_form != 'excluded':
+            assert set(result) == expected
+            assert len(result) == len(expected)
+            assert bool(result) == bool(expected)
+        else:
+            with raises(NotImplementedError):
+                len(result)
+            with raises(NotImplementedError):
+                iter(result)
+
+
+@mark.parametrize('set_type', [set, frozenset])
+@mark.parametrize('excluded', [False, True], ids=['included', 'excluded'])
+def test_complement_intersection_self(set_type, excluded):
+    value = complement(set_type({1, 2}))
+    if not excluded:
+        value = complement(value)
+    original = complement(complement(value))
+    alias = value
+
+    value &= value
+
+    assert value is alias
+    assert value == original
+
+
 def test_iset_index_method():
     original_list = list(range(8, 20)) + list(range(8))
 
