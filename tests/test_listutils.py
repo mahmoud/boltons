@@ -1,5 +1,7 @@
 import sys
 
+import pytest
+
 from boltons.listutils import SplayList, BarrelList
 
 
@@ -240,3 +242,56 @@ def test_barrel_list_delete_to_end():
         del reference[10000:stop]
         del value[10000:stop]
         assert list(value) == reference
+
+
+@pytest.mark.parametrize('barrel_sizes', [
+    (0,), (1,), (6,), (2, 2, 2), (0, 2, 0, 2, 0), (0, 0, 0),
+])
+def test_barrel_list_extend_self(barrel_sizes, monkeypatch):
+    value = BarrelList()
+    value.lists = [[object() for _ in range(size)] for size in barrel_sizes]
+    expected = list(value)
+    expected.extend(expected)
+    original_iter = BarrelList.__iter__
+
+    def bounded_iter(self):
+        # Fail promptly if extend starts consuming its own newly appended
+        # values, instead of letting a regression exhaust the test runner.
+        initial_length = len(self)
+        for index, item in enumerate(original_iter(self)):
+            assert index < initial_length, 'iteration grew during self-extension'
+            yield item
+
+    with monkeypatch.context() as patch:
+        patch.setattr(BarrelList, '__iter__', bounded_iter)
+        assert value.extend(value) is None
+
+    assert list(value) == expected
+    assert len(value) == len(expected)
+
+
+@pytest.mark.parametrize('iterable_type', [list, tuple, iter, BarrelList])
+def test_barrel_list_extend_other_iterables(iterable_type):
+    first, second = object(), object()
+    value = BarrelList([first])
+    source = iterable_type([second])
+
+    assert value.extend(source) is None
+
+    assert list(value) == [first, second]
+    if iterable_type is not iter:
+        assert list(source) == [second]
+
+
+def test_barrel_list_extend_failing_iterator():
+    value = BarrelList([0])
+
+    def items():
+        yield 1
+        assert list(value) == [0, 1]
+        raise RuntimeError('iterator failed')
+
+    with pytest.raises(RuntimeError, match='iterator failed'):
+        value.extend(items())
+
+    assert list(value) == [0, 1]

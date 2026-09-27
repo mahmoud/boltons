@@ -154,6 +154,9 @@ class BarrelList(list):
         self.lists[-1].append(item)
 
     def extend(self, iterable):
+        if iterable is self:
+            # Do not iterate over values appended during self-extension.
+            iterable = list(self)
         self.lists[-1].extend(iterable)
 
     def pop(self, *a):
