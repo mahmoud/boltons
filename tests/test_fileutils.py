@@ -29,6 +29,25 @@ def test_fileperms():
     assert int(FilePerms()) == 0
 
 
+def test_fileperms_revoke():
+    # narrowing a field must clear its bits from the integer, not
+    # just update the attribute/repr (see gh-480)
+    fp = FilePerms(user='rw', group='r', other='r')
+    assert oct(int(fp)) == '0o644'
+
+    fp.other = ''
+    assert fp.other == ''
+    assert oct(int(fp)) == '0o640'
+
+    fp.group = ''
+    assert fp.group == ''
+    assert oct(int(fp)) == '0o600'
+
+    # and it should still be possible to grant bits back afterwards
+    fp.group = 'r'
+    assert oct(int(fp)) == '0o640'
+
+
 def test_atomicsaver_pathlike(tmp_path):
     dest = tmp_path / 'output.bin'
     with fileutils.AtomicSaver(dest) as f:

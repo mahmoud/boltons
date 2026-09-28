@@ -150,7 +150,8 @@ class FilePerms:
             for symbol in value:
                 bit = 2 ** key.index(symbol)
                 mode |= (bit << (self.offset * 3))
-            fp_obj._integer |= mode
+            field_mask = 0b111 << (self.offset * 3)
+            fp_obj._integer = (fp_obj._integer & ~field_mask) | mode
 
     def __init__(self, user='', group='', other=''):
         self._user, self._group, self._other = '', '', ''
