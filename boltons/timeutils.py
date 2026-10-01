@@ -484,10 +484,33 @@ class LocalTZInfo(tzinfo):
         _dst_offset = timedelta(seconds=-time.altzone)
 
     def is_dst(self, dt):
-        dt_t = (dt.year, dt.month, dt.day, dt.hour, dt.minute,
-                dt.second, dt.weekday(), 0, -1)
-        local_t = time.localtime(time.mktime(dt_t))
+        # Naive local timestamps honor fold, unlike time.mktime(). Drop
+        # microseconds so timestamp rounding cannot cross a transition.
+        local = dt.replace(tzinfo=None, microsecond=0)
+        local_t = time.localtime(local.timestamp())
+        if local != datetime(*local_t[:6]):
+            # In a gap, timestamp() lands on the opposite side of the
+            # transition. Read the DST flag from the requested side.
+            local_t = time.localtime(local.replace(fold=1 - local.fold).timestamp())
         return local_t.tm_isdst > 0
+
+    def fromutc(self, dt):
+        if not isinstance(dt, datetime):
+            raise TypeError('fromutc: argument must be a datetime')
+        if dt.tzinfo is not self:
+            raise ValueError('fromutc: dt.tzinfo is not self')
+
+        # Interpret dt's fields as UTC without calling our own utcoffset.
+        # Convert whole seconds, then restore microseconds without rounding.
+        utc = dt.replace(tzinfo=None, microsecond=0)
+        stamp = (utc - datetime(1970, 1, 1)).total_seconds()
+        local = type(dt).fromtimestamp(stamp)
+        result = local.replace(tzinfo=self, microsecond=dt.microsecond)
+        if local - utc != self.utcoffset(result):
+            # Historical offsets can differ from our cached pair. Keep the
+            # original conversion rather than mixing two timezone models.
+            return super().fromutc(dt)
+        return result
 
     def utcoffset(self, dt):
         if self.is_dst(dt):

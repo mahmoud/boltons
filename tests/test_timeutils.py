@@ -1,4 +1,12 @@
 from datetime import timedelta, date, datetime, timezone
+import json
+import os
+from pathlib import Path
+import subprocess
+import sys
+import time
+
+import boltons.timeutils
 
 import pytest
 
@@ -152,3 +160,152 @@ def test_us_timezone_fromutc_sets_fold():
     assert second.replace(tzinfo=None) == datetime(2011, 11, 6, 1, 30)
     assert second.fold == 1
     assert second.tzname() == 'EST'
+
+
+# Run with TZ established before importing timeutils, which caches the local
+# standard and daylight offsets. The parent process's timezone never changes.
+def _local_timezone_probe(tz, local, utc):
+    code = """
+import json
+import sys
+import time
+from datetime import datetime, timezone
+
+sys.path.insert(0, sys.argv[1])
+time.tzset()
+from boltons.timeutils import LocalTZInfo
+
+zone = LocalTZInfo()
+local, utc = json.loads(sys.argv[2])
+def describe(dt):
+    return [dt.replace(tzinfo=None).isoformat(), dt.fold,
+            dt.utcoffset().total_seconds(), dt.dst().total_seconds(),
+            dt.tzname(), dt.astimezone(timezone.utc).isoformat()]
+
+result = {'local': [], 'utc': [], 'validation': [], 'system_utc': []}
+for values in local:
+    for fold in (0, 1):
+        dt = datetime(*values, tzinfo=zone, fold=fold)
+        result['local'].append(describe(dt))
+for values in utc:
+    dt = datetime(*values, tzinfo=timezone.utc)
+    result['system_utc'].append(datetime.fromtimestamp(dt.timestamp()).isoformat())
+    converted = dt.astimezone(zone)
+    direct = zone.fromutc(dt.replace(tzinfo=zone))
+    stamp = datetime.fromtimestamp(dt.timestamp(), zone)
+    result['utc'].append([describe(converted), describe(direct), describe(stamp),
+                          converted.tzinfo is zone])
+for invalid in (None, 1, datetime(2011, 1, 1),
+                datetime(2011, 1, 1, tzinfo=timezone.utc),
+                datetime(2011, 1, 1, tzinfo=LocalTZInfo())):
+    try:
+        zone.fromutc(invalid)
+    except Exception as exc:
+        result['validation'].append(type(exc).__name__)
+    else:
+        result['validation'].append(None)
+class DateTimeSubclass(datetime):
+    pass
+value = DateTimeSubclass(2011, 1, 1, microsecond=123456, tzinfo=zone)
+converted = zone.fromutc(value)
+result['subclass'] = [type(converted).__name__, converted.microsecond,
+                      converted.tzinfo is zone]
+far = datetime(2500, 1, 1, microsecond=999999, tzinfo=zone)
+result['precision'] = zone.fromutc(far).astimezone(timezone.utc).isoformat()
+print(json.dumps(result))
+"""
+    root = str(Path(boltons.timeutils.__file__).resolve().parent.parent)
+    output = subprocess.check_output(
+        [sys.executable, '-I', '-S', '-B', '-c', code, root,
+         json.dumps([local, utc])],
+        env=dict(os.environ, TZ=tz), text=True, timeout=20)
+    return json.loads(output)
+
+
+@pytest.mark.skipif(not hasattr(time, 'tzset'), reason='requires time.tzset')
+@pytest.mark.parametrize('tz,overlap,gap,offsets,names,dst', [
+    ('EST5EDT,M3.2.0/2,M11.1.0/2', (2011, 11, 6, 1, 30),
+     (2011, 3, 13, 2, 30), (-14400, -18000), ('EDT', 'EST'), 3600),
+    ('LHST-10:30LHDT-11,M10.1.0/2,M4.1.0/2', (2011, 4, 3, 1, 45),
+     (2011, 10, 2, 2, 15), (39600, 37800), ('LHDT', 'LHST'), 1800),
+])
+def test_local_timezone_fold_and_gap(tz, overlap, gap, offsets, names, dst):
+    result = _local_timezone_probe(tz, [overlap, gap], [])['local']
+    assert [row[2] for row in result] == [*offsets, *reversed(offsets)]
+    assert [row[3] for row in result] == [dst, 0, 0, dst]
+    assert [row[4] for row in result] == [*names, *reversed(names)]
+    # The two occurrences of a repeated wall time denote distinct instants.
+    instants = [datetime.fromisoformat(row[5]) for row in result[:2]]
+    assert instants[1] - instants[0] == timedelta(seconds=dst)
+
+
+@pytest.mark.skipif(not hasattr(time, 'tzset'), reason='requires time.tzset')
+@pytest.mark.parametrize('tz,utc,expected', [
+    ('EST5EDT,M3.2.0/2,M11.1.0/2',
+     [(2011, 11, 6, 5, 30, 0, 123456), (2011, 11, 6, 6, 30, 0, 123456),
+      (2011, 3, 13, 6, 30), (2011, 3, 13, 7, 30),
+      (2011, 11, 6, 5, 59, 59, 999999), (2011, 11, 6, 6),
+      (2011, 3, 13, 6, 59, 59, 999999), (2011, 3, 13, 7)],
+     [('2011-11-06T01:30:00.123456', 0, -14400, 3600, 'EDT'),
+      ('2011-11-06T01:30:00.123456', 1, -18000, 0, 'EST'),
+      ('2011-03-13T01:30:00', 0, -18000, 0, 'EST'),
+      ('2011-03-13T03:30:00', 0, -14400, 3600, 'EDT'),
+      ('2011-11-06T01:59:59.999999', 0, -14400, 3600, 'EDT'),
+      ('2011-11-06T01:00:00', 1, -18000, 0, 'EST'),
+      ('2011-03-13T01:59:59.999999', 0, -18000, 0, 'EST'),
+      ('2011-03-13T03:00:00', 0, -14400, 3600, 'EDT')]),
+    ('LHST-10:30LHDT-11,M10.1.0/2,M4.1.0/2',
+     [(2011, 4, 2, 14, 45), (2011, 4, 2, 15, 15),
+      (2011, 10, 1, 15, 15), (2011, 10, 1, 15, 45)],
+     [('2011-04-03T01:45:00', 0, 39600, 1800, 'LHDT'),
+      ('2011-04-03T01:45:00', 1, 37800, 0, 'LHST'),
+      ('2011-10-02T01:45:00', 0, 37800, 0, 'LHST'),
+      ('2011-10-02T02:45:00', 0, 39600, 1800, 'LHDT')]),
+])
+def test_local_timezone_fromutc(tz, utc, expected):
+    result = _local_timezone_probe(tz, [], utc)
+    for values, want, (converted, direct, stamp, same_zone) in zip(
+            utc, expected, result['utc']):
+        assert tuple(converted[:5]) == want
+        assert converted == direct == stamp
+        assert converted[5] == datetime(*values, tzinfo=timezone.utc).isoformat()
+        assert same_zone
+    assert result['validation'] == ['TypeError', 'TypeError', 'ValueError',
+                                    'ValueError', 'ValueError']
+    assert result['subclass'] == ['DateTimeSubclass', 123456, True]
+    assert result['precision'] == '2500-01-01T00:00:00.999999+00:00'
+
+
+@pytest.mark.skipif(not hasattr(time, 'tzset'), reason='requires time.tzset')
+@pytest.mark.parametrize('tz,offsets,names,dst', [
+    ('EST5EDT,M3.2.0/2,M11.1.0/2', (-18000, -14400), ('EST', 'EDT'), (0, 3600)),
+    ('LHST-10:30LHDT-11,M10.1.0/2,M4.1.0/2', (39600, 37800),
+     ('LHDT', 'LHST'), (1800, 0)),
+    ('NPT-5:45', (20700, 20700), ('NPT', 'NPT'), (0, 0)),
+])
+def test_local_timezone_ordinary_times(tz, offsets, names, dst):
+    dates = [(2011, 1, 15, 12, 0, 0, 999999), (2011, 7, 15, 12, 0, 0, 999999)]
+    result = _local_timezone_probe(tz, dates, [])
+    for i, values in enumerate(dates):
+        first, second = result['local'][2 * i:2 * i + 2]
+        assert first[0] == second[0] == datetime(*values).isoformat()
+        assert first[2:] == second[2:]
+        assert first[2:5] == [offsets[i], dst[i], names[i]]
+    assert result['validation'] == ['TypeError', 'TypeError', 'ValueError',
+                                    'ValueError', 'ValueError']
+    assert result['subclass'] == ['DateTimeSubclass', 123456, True]
+    assert result['precision'] == '2500-01-01T00:00:00.999999+00:00'
+
+
+@pytest.mark.skipif(not hasattr(time, 'tzset'), reason='requires time.tzset')
+def test_local_timezone_historical_offset_roundtrip():
+    utc = (1985, 1, 1, 0, 0, 0, 123456)
+    result = _local_timezone_probe('Asia/Kathmandu', [], [utc])
+    # The IANA database is optional. Check its historical rule independently
+    # of LocalTZInfo, whose documented generalization uses cached offsets.
+    if result['system_utc'] != ['1985-01-01T05:30:00.123456']:
+        pytest.skip('requires the historical Asia/Kathmandu timezone data')
+    converted, direct, stamp, same_zone = result['utc'][0]
+    assert converted == direct == stamp
+    assert converted[5] == '1985-01-01T00:00:00.123456+00:00'
+    assert same_zone
