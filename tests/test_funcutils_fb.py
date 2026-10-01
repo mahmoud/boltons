@@ -1,5 +1,5 @@
 import pytest
-from boltons.funcutils import wraps, FunctionBuilder
+from boltons.funcutils import wraps, FunctionBuilder, NO_DEFAULT
 
 
 def pita_wrap(flag=False):
@@ -294,3 +294,40 @@ def test_get_invocation_sig_str(
 
     assert fb.get_invocation_str() == invocation_str
     assert fb.get_sig_str() == sig_str
+
+
+@pytest.mark.parametrize("default", [NO_DEFAULT, 5])
+def test_wraps_expected_keyword_only(default):
+    import inspect
+
+    @wraps(wrappable_func, expected=[("c", default, True)])
+    def wrapped(a, b, *, c):
+        return wrappable_func(a, b) + (c,)
+
+    signature = inspect.signature(wrapped, follow_wrapped=False)
+    assert signature.parameters["c"].kind is inspect.Parameter.KEYWORD_ONLY
+    assert wrapped(1, 2, c=7) == (1, 2, 7)
+    with pytest.raises(TypeError):
+        wrapped(1, 2, 7)
+    if default is NO_DEFAULT:
+        assert signature.parameters["c"].default is inspect.Parameter.empty
+        with pytest.raises(TypeError):
+            wrapped(1, 2)
+    else:
+        assert signature.parameters["c"].default == 5
+        assert wrapped(1, 2) == (1, 2, 5)
+
+
+def test_wraps_expected_mixed_argument_kinds():
+    @wraps(wrappable_func, expected=[("c", 3, False), ("d", 4, True)])
+    def wrapped(a, b, c, *, d):
+        return a, b, c, d
+
+    assert wrapped(1, 2) == (1, 2, 3, 4)
+    assert wrapped(1, 2, 5, d=6) == (1, 2, 5, 6)
+
+
+@pytest.mark.parametrize("expected", [[("c",)], [("c", 1, True, "extra")]])
+def test_wraps_expected_invalid_tuple(expected):
+    with pytest.raises(ValueError):
+        wraps(wrappable_func, expected=expected)(lambda *args, **kwargs: None)

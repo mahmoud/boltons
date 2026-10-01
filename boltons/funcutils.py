@@ -544,8 +544,10 @@ def update_wrapper(wrapper, func, injected=None, expected=None, build_from=None,
         injected (list): An optional list of argument names which
             should not appear in the new wrapper's signature.
         expected (list): An optional list of argument names (or (name,
-            default) pairs) representing new arguments introduced by
-            the wrapper (the opposite of *injected*). See
+            default) pairs, or (name, default, kwonly) triples) representing
+            new arguments introduced by the wrapper (the opposite of
+            *injected*). Set *kwonly* to True for keyword-only arguments,
+            using ``NO_DEFAULT`` for required arguments. See
             :meth:`FunctionBuilder.add_arg()` for more details.
         build_from (function): The callable from which the new wrapper
             is built. Defaults to *func*, unless *wrapper* is partial object
@@ -598,8 +600,8 @@ def update_wrapper(wrapper, func, injected=None, expected=None, build_from=None,
                 continue  # keyword arg will be caught by the varkw
             raise
 
-    for arg, default in expected_items:
-        fb.add_arg(arg, default)  # may raise ExistingArgument
+    for arg, default, kwonly in expected_items:
+        fb.add_arg(arg, default, kwonly=kwonly)  # may raise ExistingArgument
 
     invocation_str = fb.get_invocation_str(target=wrapper)
     if fb.is_async:
@@ -633,9 +635,11 @@ def _parse_wraps_expected(expected):
         expected_iter = iter(expected)
     except TypeError as e:
         raise ValueError('"expected" takes string name, sequence of string names,'
-                         ' iterable of (name, default) pairs, or a mapping of '
+                         ' iterable of (name, default) pairs or (name, default, kwonly) triples,'
+                         ' or a mapping of '
                          ' {name: default}, not %r (got: %r)' % (expected, e))
     for argname in expected_iter:
+        kwonly = False
         if isinstance(argname, str):
             # dict keys and bare strings
             try:
@@ -643,17 +647,22 @@ def _parse_wraps_expected(expected):
             except TypeError:
                 default = NO_DEFAULT
         else:
-            # pairs
+            # Pairs retain their positional behavior; triples can be keyword-only.
             try:
-                argname, default = argname
+                parts = tuple(argname)
+                if len(parts) == 3:
+                    argname, default, kwonly = parts
+                else:
+                    argname, default = parts
             except (TypeError, ValueError):
                 raise ValueError('"expected" takes string name, sequence of string names,'
-                                 ' iterable of (name, default) pairs, or a mapping of '
+                                 ' iterable of (name, default) pairs or (name, default, kwonly) triples,'
+                                 ' or a mapping of '
                                  ' {name: default}, not %r')
         if not isinstance(argname, str):
             raise ValueError(f'all "expected" argnames must be strings, not {argname!r}')
 
-        expected_items.append((argname, default))
+        expected_items.append((argname, default, kwonly))
 
     return expected_items
 
