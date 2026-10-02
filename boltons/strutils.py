@@ -574,7 +574,7 @@ def bytes2human(nbytes, ndigits=0):
     """
     abs_bytes = abs(nbytes)
     for (size, symbol), (next_size, next_symbol) in _SIZE_RANGES:
-        if abs_bytes < next_size:
+        if round(abs_bytes / size, ndigits) < 1024:
             break
     hnbytes = float(nbytes) / size
     return '{hnbytes:.{ndigits}f}{symbol}'.format(hnbytes=hnbytes,

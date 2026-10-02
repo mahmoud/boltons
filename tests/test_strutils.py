@@ -287,7 +287,13 @@ def test_bytes2human():
     assert b2h(1024 ** 8) == '1Y'
     # Just below a boundary stays in the smaller unit.
     assert b2h(1023) == '1023B'
-    assert b2h(1024 ** 2 - 1, 1) == '1024.0K'
+    assert b2h(1024 ** 2 - 1, 3) == '1023.999K'
+    # Values that round up to 1024 roll over too.
+    assert b2h(1023.5) == '1K'
+    assert b2h(1023.99, 1) == '1.0K'
+    assert b2h(1024 ** 2 - 1) == '1M'
+    assert b2h(1024 ** 2 - 1, 1) == '1.0M'
+    assert b2h(-(1024 ** 2 - 1)) == '-1M'
     # Ordinary mid-range values are unaffected.
     assert b2h(0) == '0B'
     assert b2h(2048) == '2K'
