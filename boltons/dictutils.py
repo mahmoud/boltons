@@ -883,16 +883,12 @@ class OneToOne(dict):
         return self[key]
 
     def update(self, dict_or_iterable, **kw):
-        keys_vals = []
         if isinstance(dict_or_iterable, dict):
-            for val in dict_or_iterable.values():
-                hash(val)
-                keys_vals = list(dict_or_iterable.items())
-        else:
-            for key, val in dict_or_iterable:
-                hash(key)
-                hash(val)
-                keys_vals = list(dict_or_iterable)
+            dict_or_iterable = dict_or_iterable.items()
+        keys_vals = list(dict_or_iterable)
+        for key, val in keys_vals:
+            hash(key)
+            hash(val)
         for val in kw.values():
             hash(val)
         keys_vals.extend(kw.items())
