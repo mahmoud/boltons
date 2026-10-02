@@ -500,12 +500,12 @@ class SpooledStringIO(SpooledIOBase):
 
     @property
     def len(self):
-        """Determine the number of codepoints in the file"""
+        """Determine the number of codepoints without changing the position."""
         pos = self.buffer.tell()
         self.buffer.seek(0)
         total = 0
         while True:
-            ret = self.read(READ_CHUNK_SIZE)
+            ret = self.buffer.reader.read(READ_CHUNK_SIZE, READ_CHUNK_SIZE)
             if not ret:
                 break
             total += len(ret)

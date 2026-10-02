@@ -5,6 +5,10 @@ for an average of one 33-commit release about every 9 weeks. Versions
 are named according to the [CalVer](https://calver.org) versioning
 scheme (`YY.MINOR.MICRO`).
 
+## Unreleased
+
+- Fixed `ioutils.SpooledStringIO` length queries changing the logical cursor and breaking subsequent relative seeks.
+
 ## 26.2.0
 
 _(September 7, 2026)_
