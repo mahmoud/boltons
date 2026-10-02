@@ -960,12 +960,12 @@ class ManyToMany:
             other = iterable
             for k in other.data:
                 if k not in self.data:
-                    self.data[k] = other.data[k]
+                    self.data[k] = other.data[k].copy()
                 else:
                     self.data[k].update(other.data[k])
             for k in other.inv.data:
                 if k not in self.inv.data:
-                    self.inv.data[k] = other.inv.data[k]
+                    self.inv.data[k] = other.inv.data[k].copy()
                 else:
                     self.inv.data[k].update(other.inv.data[k])
         elif callable(getattr(iterable, 'keys', None)):
