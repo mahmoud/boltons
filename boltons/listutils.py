@@ -156,6 +156,12 @@ class BarrelList(list):
     def extend(self, iterable):
         self.lists[-1].extend(iterable)
 
+    def clear(self):
+        """Remove all items from the list."""
+        for cur in self.lists:
+            cur.clear()
+        self.lists[:] = [[]]
+
     def pop(self, *a):
         lists = self.lists
         if len(lists) == 1 and not a:
