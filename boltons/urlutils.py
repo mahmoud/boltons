@@ -1204,8 +1204,9 @@ class OrderedMultiDict(dict):
             seen = set()
             seen_add = seen.add
             for k, v in E:
-                if k not in seen and k in self:
-                    del self[k]
+                if k not in seen:
+                    if k in self:
+                        del self[k]
                     seen_add(k)
                 self_add(k, v)
         for k in F:
