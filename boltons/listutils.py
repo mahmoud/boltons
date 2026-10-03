@@ -156,6 +156,17 @@ class BarrelList(list):
     def extend(self, iterable):
         self.lists[-1].extend(iterable)
 
+    def __imul__(self, count):
+        count = operator.index(count)
+        if len(self.lists) == 1:
+            self.lists[0] *= count
+        else:
+            repeated = list(self)
+            repeated *= count
+            self.lists[:] = [repeated]
+        self._balance_list(0)
+        return self
+
     def pop(self, *a):
         lists = self.lists
         if len(lists) == 1 and not a:
