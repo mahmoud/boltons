@@ -5,6 +5,10 @@ for an average of one 33-commit release about every 9 weeks. Versions
 are named according to the [CalVer](https://calver.org) versioning
 scheme (`YY.MINOR.MICRO`).
 
+## Unreleased
+
+- Fixed [`mathutils.Bits`][mathutils.Bits] right shift past the bit width. `Bits('1') >> 2` had length -1. It is now empty, the same as a shift of the whole width. `Bits('11') >> 1` is still `Bits('1')`.
+
 ## 26.2.0
 
 _(September 7, 2026)_

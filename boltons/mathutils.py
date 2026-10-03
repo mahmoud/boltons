@@ -199,7 +199,12 @@ class Bits:
         return Bits(self.val << other, self.len + other)
 
     def __rshift__(self, other):
-        return Bits(self.val >> other, self.len - other)
+        # A shift past the width is an empty bit string. A negative length
+        # makes as_bin() fail and is not a width this type can hold.
+        new_len = self.len - other
+        if new_len < 0:
+            new_len = 0
+        return Bits(self.val >> other, new_len)
 
     def __hash__(self):
         return hash(self.val)

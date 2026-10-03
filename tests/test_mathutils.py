@@ -97,6 +97,9 @@ def test_bits():
     chk(Bits('01') | Bits('10'), Bits('11'))
     chk(Bits('01') & Bits('10'), Bits('00'))
     chk(Bits('11') >> 1, Bits('1'))
+    chk(Bits('1') >> 2, Bits(0, 0))
+    chk(Bits('11') >> 5, Bits(0, 0))
+    assert (Bits('1') >> 2).as_bin() == ''
     chk(Bits('1') << 1, Bits('10'))
     assert Bits('0') != Bits('00')
     # test roundtrip as_/from_hex
