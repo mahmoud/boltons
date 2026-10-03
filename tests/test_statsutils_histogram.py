@@ -1,4 +1,6 @@
-from boltons.statsutils import Stats
+import pytest
+
+from boltons.statsutils import Stats, format_histogram_counts
 
 
 # [round(random.normalvariate(10, 3), 3) for i in range(100)]
@@ -43,6 +45,20 @@ def test_check_sum():
             assert min(data) >= hist_counts[0][0]
             assert max(data) >= hist_counts[-1][0]
     return
+
+
+@pytest.mark.parametrize('bins', [None, 1, 10])
+def test_format_empty_histogram(bins):
+    assert Stats([]).format_histogram(bins=bins, width=20) == '0.0: 0 |'
+
+
+@pytest.mark.parametrize('bin_counts, expected', [
+    ([(0.0, 0)], '0.0: 0 |'),
+    ([(0.0, 0), (1.0, 0)], '0.0: 0 |\n1.0: 0 |'),
+    ([(0.0, 0), (1.0, 2)], '0.0: 0 |\n1.0: 2 ############'),
+])
+def test_format_histogram_zero_counts(bin_counts, expected):
+    assert format_histogram_counts(bin_counts, width=20) == expected
 
 
 def test_norm_regression():

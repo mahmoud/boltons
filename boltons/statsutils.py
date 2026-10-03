@@ -832,7 +832,7 @@ def format_histogram_counts(bin_counts, width=None, format_bin=None):
     tmp_line = '{}: {} #'.format('x' * label_cols, count_max)
 
     bar_cols = max(width - len(tmp_line), 3)
-    line_k = float(bar_cols) / count_max
+    line_k = float(bar_cols) / count_max if count_max else 0.0
     tmpl = "{label:>{label_cols}}: {count:>{count_cols}} {bar}"
     for label, (bin_val, count) in zip(labels, bin_counts):
         bar_len = int(round(count * line_k))
