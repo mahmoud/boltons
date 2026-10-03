@@ -994,11 +994,14 @@ class ManyToMany:
 
     def replace(self, key, newkey):
         """
-        replace instances of key by newkey
+        replace instances of key by newkey, preserving any relationships
+        already associated with newkey
         """
         if key not in self.data:
             return
-        self.data[newkey] = fwdset = self.data.pop(key)
+        hash(newkey)
+        fwdset = self.data.pop(key)
+        self.data.setdefault(newkey, set()).update(fwdset)
         for val in fwdset:
             revset = self.inv.data[val]
             revset.remove(key)
