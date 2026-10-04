@@ -899,6 +899,14 @@ class OneToOne(dict):
         for key, val in keys_vals:
             self[key] = val
 
+    def __ior__(self, other):
+        if not isinstance(other, dict):
+            # Snapshot iterators without collapsing repeated keys, so update()
+            # can validate and then apply every pair in order.
+            other = dict(other) if hasattr(other, 'keys') else [tuple(pair) for pair in other]
+        self.update(other)
+        return self
+
     def __repr__(self):
         cn = self.__class__.__name__
         dict_repr = dict.__repr__(self)
