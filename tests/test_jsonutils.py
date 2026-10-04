@@ -1,4 +1,7 @@
 import os
+from io import BytesIO
+
+import pytest
 
 from boltons.jsonutils import (JSONLIterator,
                                DEFAULT_BLOCKSIZE,
@@ -120,3 +123,21 @@ def test_reverse_iter_lines_keeps_text_stream_attached(tmp_path):
         assert list(reverse_iter_lines(stream)) == ['second', 'first']
         stream.seek(0)
         assert stream.read() == 'first\nsecond'
+
+
+@pytest.mark.parametrize('blocksize', [1, 2, 4, DEFAULT_BLOCKSIZE])
+@pytest.mark.parametrize('data', [b'\nfirst\nsecond', b'\n\nfirst\nsecond\n',
+                                  b'\n', b'\n\n', b''])
+def test_reverse_iter_lines_leading_empty_lines(data, blocksize):
+    expected = data.split(b'\n')[::-1] if data else []
+    assert list(reverse_iter_lines(BytesIO(data), blocksize=blocksize)) == expected
+
+
+@pytest.mark.parametrize('binary', [False, True])
+@pytest.mark.parametrize('ignore_errors', [False, True])
+def test_jsonl_iterator_reverse_leading_empty_lines(tmp_path, binary, ignore_errors):
+    path = tmp_path / 'leading_empty_lines.jsonl'
+    path.write_bytes(b'\n\n{"n": 1}\n{"n": 2}\n')
+    with path.open('rb' if binary else 'r') as stream:
+        assert list(JSONLIterator(stream, reverse=True, ignore_errors=ignore_errors)) == [
+            {'n': 2}, {'n': 1}]
