@@ -174,6 +174,7 @@ class Stats:
     def __init__(self, data, default=0.0, use_copy=True, is_sorted=False):
         self._use_copy = use_copy
         self._is_sorted = is_sorted
+        self._sorted_data = None
         if use_copy:
             self.data = list(data)
         else:
@@ -193,19 +194,17 @@ class Stats:
         return iter(self.data)
 
     def _get_sorted_data(self):
-        """When using a copy of the data, it's better to have that copy be
-        sorted, but we do it lazily using this method, in case no
-        sorted measures are used. I.e., if median is never called,
-        sorting would be a waste.
-
-        When not using a copy, it's presumed that all optimizations
-        are on the user.
+        """Sort lazily without changing the order of the data, so that
+        order-sensitive measures such as mode remain consistent. Cache
+        the sorted copy only when the data belongs to this Stats object.
         """
         if not self._use_copy:
             return sorted(self.data)
-        elif not self._is_sorted:
-            self.data.sort()
-        return self.data
+        elif self._is_sorted:
+            return self.data
+        elif self._sorted_data is None:
+            self._sorted_data = sorted(self.data)
+        return self._sorted_data
 
     def clear_cache(self):
         """``Stats`` objects automatically cache intermediary calculations
@@ -217,6 +216,7 @@ class Stats:
         call this function to have the cached statistics recomputed.
 
         """
+        self._sorted_data = None
         for attr_name in self._prop_attr_names:
             attr_name = getattr(self.__class__, attr_name).internal_name
             if not hasattr(self, attr_name):
@@ -372,7 +372,7 @@ class Stats:
         24.0
         """
         global median  # defined elsewhere in this file
-        sorted_vals = sorted(self.data)
+        sorted_vals = self._get_sorted_data()
         x = float(median(sorted_vals))
         return median([abs(x - v) for v in sorted_vals])
     median_abs_dev = _StatsProperty('median_abs_dev', _calc_median_abs_dev)
