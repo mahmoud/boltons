@@ -308,6 +308,73 @@ def test_iset_scalar_index_multiple_dead_intervals():
         iset[-96]
 
 
+@mark.parametrize('removed', [(), (5, 20, 40, 60, 80)])
+@mark.parametrize('index', [-1.0, 99.0, 94.0, 0.0, '0'])
+def test_iset_pop_rejects_non_integer_indices(index, removed):
+    items = IndexedSet(range(100))
+    for value in removed:
+        items.remove(value)
+    before = list(items)
+
+    with raises(TypeError):
+        items.pop(index)
+
+    assert list(items) == before
+    for position, value in enumerate(before):
+        assert items[position] == value
+        assert items.index(value) == position
+
+
+@mark.parametrize('removed', [(), (5, 20, 40, 60, 80)])
+@mark.parametrize('index', [0, 1, -1, 10, -20])
+def test_iset_pop_integer_index_protocol(index, removed):
+    class Index:
+        calls = 0
+
+        def __index__(self):
+            self.calls += 1
+            return index
+
+        def __eq__(self, other):
+            raise AssertionError('index must be normalized before comparison')
+
+    items = IndexedSet(range(100))
+    for value in removed:
+        items.remove(value)
+    reference = list(items)
+    requested_index = Index()
+
+    assert items.pop(requested_index) == reference.pop(index)
+    assert requested_index.calls == 1
+    assert list(items) == reference
+    for position, value in enumerate(reference):
+        assert items[position] == value
+        assert items.index(value) == position
+
+
+@mark.parametrize('index', [None, False, True, 0, -1, 1, -3])
+def test_iset_pop_preserves_integer_and_default_indices(index):
+    items = IndexedSet(['a', 'b', 'c'])
+    reference = ['a', 'b', 'c']
+
+    assert items.pop(index) == reference.pop(-1 if index is None else index)
+    assert list(items) == reference
+
+
+@mark.parametrize('index', [100, -101])
+def test_iset_pop_out_of_bounds_integer_index(index):
+    class Index:
+        def __index__(self):
+            return index
+
+    items = IndexedSet(range(100))
+
+    with raises(IndexError):
+        items.pop(Index())
+
+    assert list(items) == list(range(100))
+
+
 def test_bulk_difference_update():
     # removals large enough to take the O(n) bulk path (> _MAX_DEAD_INTERVALS)
     thing = IndexedSet(range(1000))

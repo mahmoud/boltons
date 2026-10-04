@@ -445,6 +445,8 @@ class IndexedSet(MutableSet):
 
     def pop(self, index=None):
         "pop(index) -> remove the item at a given index (-1 by default)"
+        if index is not None:
+            index = operator.index(index)
         item_index_map = self.item_index_map
         len_self = len(item_index_map)
         if index is None or index == -1 or index == len_self - 1:
