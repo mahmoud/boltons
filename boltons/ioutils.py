@@ -449,10 +449,12 @@ class SpooledStringIO(SpooledIOBase):
             self._traverse_codepoints(start_pos, pos)
             self._tell = destination
         elif mode == os.SEEK_END:
-            self.buffer.seek(0)
-            dest_position = self.len - pos
-            self._traverse_codepoints(0, dest_position)
-            self._tell = dest_position
+            start_pos = self.tell()
+            dest_position = self.len + pos
+            if dest_position < 0:
+                self.seek(start_pos)
+                raise ValueError("negative seek position")
+            return self.seek(dest_position)
         else:
             raise ValueError(
                 f"Invalid whence ({mode}, should be 0, 1, or 2)"

@@ -450,6 +450,59 @@ class TestSpooledStringIO(TestCase, BaseTestMixin, AssertionsMixin):
         ret = self.spooled_flo.seek(0, os.SEEK_END)
         self.assertEqual(ret, len(self.test_str))
 
+    def test_seek_end_offsets_use_character_positions(self):
+        for rolled in (False, True):
+            for text in ('abcde', 'aé中😀z', 'first\nlast'):
+                for offset in (-len(text), -2, -1, 0, 1, 2):
+                    with self.subTest(rolled=rolled, text=text, offset=offset):
+                        with ioutils.SpooledStringIO() as stream:
+                            stream.write(text)
+                            stream.seek(1)
+                            if rolled:
+                                stream.rollover()
+                            expected_position = len(text) + offset
+                            self.assertEqual(stream.seek(offset, os.SEEK_END),
+                                             expected_position)
+                            self.assertEqual(stream.tell(), expected_position)
+                            self.assertEqual(stream.read(), text[expected_position:])
+
+    def test_seek_before_start_from_end_preserves_position(self):
+        for rolled in (False, True):
+            for text in ('abcde', 'aé中😀z', ''):
+                for position in (0, len(text), len(text) + 2):
+                    with self.subTest(rolled=rolled, text=text, position=position):
+                        with ioutils.SpooledStringIO() as stream:
+                            stream.write(text)
+                            stream.seek(position)
+                            if rolled:
+                                stream.rollover()
+                            with self.assertRaises(ValueError):
+                                stream.seek(-len(text) - 1, os.SEEK_END)
+                            self.assertEqual(stream.tell(), position)
+                            self.assertEqual(stream.read(), text[position:])
+
+    def test_seek_end_offsets_empty_stream(self):
+        for rolled in (False, True):
+            for offset in (0, 1, 2):
+                with self.subTest(rolled=rolled, offset=offset):
+                    with ioutils.SpooledStringIO() as stream:
+                        if rolled:
+                            stream.rollover()
+                        self.assertEqual(stream.seek(offset, os.SEEK_END), offset)
+                        self.assertEqual(stream.tell(), offset)
+                        self.assertEqual(stream.read(), '')
+
+    def test_seek_end_offset_crosses_read_chunk_boundary(self):
+        text = 'é中😀' * (ioutils.READ_CHUNK_SIZE // 3 + 4)
+        for rolled in (False, True):
+            with self.subTest(rolled=rolled):
+                with ioutils.SpooledStringIO() as stream:
+                    stream.write(text)
+                    if rolled:
+                        stream.rollover()
+                    self.assertEqual(stream.seek(-2, os.SEEK_END), len(text) - 2)
+                    self.assertEqual(stream.read(), text[-2:])
+
     def test_seek_codepoints_large_SEEK_END(self):
         """Make sure seek() moves to codepoints relative to file end"""
         test_str = "".join(random.choice(string.ascii_letters) for
