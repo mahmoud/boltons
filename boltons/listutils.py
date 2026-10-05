@@ -229,6 +229,20 @@ class BarrelList(list):
     def __len__(self):
         return sum([len(l) for l in self.lists])
 
+    def __add__(self, other):
+        if isinstance(other, BarrelList):
+            other = list(other)
+        if not isinstance(other, list):
+            return NotImplemented
+        return list.__add__(list(self), other)
+
+    def __radd__(self, other):
+        if isinstance(other, BarrelList):
+            other = list(other)
+        if not isinstance(other, list):
+            return NotImplemented
+        return list.__add__(other, list(self))
+
     def __contains__(self, item):
         for cur in self.lists:
             if item in cur:

@@ -1,6 +1,77 @@
 import sys
+import pytest
 
 from boltons.listutils import SplayList, BarrelList
+
+
+@pytest.mark.parametrize('left_barrel,right_barrel', [
+    (True, False), (False, True), (True, True),
+])
+@pytest.mark.parametrize('left_values,right_values', [
+    ([], []), ([1], []), ([], [2]), ([1, 2], [3, 4]),
+    ([1, 1], [1]), ([[1]], [[2]]),
+])
+@pytest.mark.parametrize('partitioned', [False, True])
+def test_barrel_list_concatenation(left_barrel, right_barrel, left_values,
+                                 right_values, partitioned):
+    def make_operand(values, barrel):
+        if not barrel:
+            return list(values)
+        result = BarrelList(values)
+        if partitioned:
+            result.lists = [[], values[:1], [], values[1:], []]
+        return result
+
+    left = make_operand(left_values, left_barrel)
+    right = make_operand(right_values, right_barrel)
+    result = left + right
+
+    assert result == left_values + right_values
+    assert type(result) is list
+    assert list(left) == left_values
+    assert list(right) == right_values
+    result.append('new')
+    assert list(left) == left_values
+    assert list(right) == right_values
+
+
+@pytest.mark.parametrize('other', [(), 'text', iter([1]), {1}, 1, None])
+def test_barrel_list_concatenation_rejects_non_lists(other):
+    value = BarrelList([1, 2])
+    with pytest.raises(TypeError):
+        value + other
+    with pytest.raises(TypeError):
+        other + value
+    assert list(value) == [1, 2]
+
+
+def test_barrel_list_concatenation_reflected_dispatch():
+    class Reflected:
+        def __radd__(self, other):
+            return other
+
+    value = BarrelList([1, 2])
+    assert value + Reflected() is value
+
+
+def test_barrel_list_concatenation_with_itself():
+    item = []
+    value = BarrelList([item, 2])
+    result = value + value
+    assert result == [[], 2, [], 2]
+    assert result[0] is result[2] is item
+    assert len(value) == 2
+
+
+def test_barrel_list_concatenation_with_list_subclass():
+    class ListSubclass(list):
+        def __iter__(self):
+            raise AssertionError('list concatenation should use list storage')
+
+    value = BarrelList([1, 2])
+    other = ListSubclass([3, 4])
+    assert value + other == [1, 2, 3, 4]
+    assert other + value == [3, 4, 1, 2]
 
 
 def test_splay_list():
