@@ -291,6 +291,64 @@ class TestSpooledBytesIO(TestCase, BaseTestMixin, AssertionsMixin):
                     self.assertEqual(stream.write(b''), 0)
                     self.assertEqual(stream.getvalue(), b'abc')
 
+    def test_readline_zero_does_not_consume(self):
+        for rolled in (False, True):
+            for payload in (b'', b'first\nlast', b'first\r\nlast', b'no newline'):
+                with self.subTest(rolled=rolled, payload=payload):
+                    with ioutils.SpooledBytesIO() as stream:
+                        stream.write(payload)
+                        if rolled:
+                            stream.rollover()
+                        for position in (0, min(2, len(payload)), len(payload)):
+                            stream.seek(position)
+                            self.assertEqual(stream.readline(0), b'')
+                            self.assertEqual(stream.tell(), position)
+                            self.assertEqual(stream.read(), payload[position:])
+
+    def test_readline_sizes_match_bytesio(self):
+        payload = b'first\nlast'
+        for rolled in (False, True):
+            for size in (None, -1, -2, 0, 1, 3, 100, False, True):
+                with self.subTest(rolled=rolled, size=size):
+                    with ioutils.SpooledBytesIO() as stream:
+                        stream.write(payload)
+                        stream.seek(0)
+                        if rolled:
+                            stream.rollover()
+                        reference = io.BytesIO(payload)
+                        expected = (reference.readline() if size is None
+                                    else reference.readline(size))
+                        self.assertEqual(stream.readline(size), expected)
+                        self.assertEqual(stream.tell(), reference.tell())
+
+    def test_readline_size_uses_integer_index_protocol(self):
+        class Zero:
+            def __index__(self):
+                return 0
+
+        for rolled in (False, True):
+            with self.subTest(rolled=rolled):
+                with ioutils.SpooledBytesIO() as stream:
+                    stream.write(b'first\nlast')
+                    stream.seek(0)
+                    if rolled:
+                        stream.rollover()
+                    self.assertEqual(stream.readline(Zero()), b'')
+                    self.assertEqual(stream.tell(), 0)
+
+    def test_readline_rejects_float_sizes_without_consuming(self):
+        for rolled in (False, True):
+            for size in (0.0, 1.0):
+                with self.subTest(rolled=rolled, size=size):
+                    with ioutils.SpooledBytesIO() as stream:
+                        stream.write(b'first\nlast')
+                        stream.seek(0)
+                        if rolled:
+                            stream.rollover()
+                        with self.assertRaises(TypeError):
+                            stream.readline(size)
+                        self.assertEqual(stream.tell(), 0)
+
     def test_buffered_writer_flush(self):
         for rolled in (False, True):
             with self.subTest(rolled=rolled):

@@ -312,7 +312,7 @@ class SpooledBytesIO(SpooledIOBase):
 
     def readline(self, length=None):
         self._checkClosed()
-        if length:
+        if length is not None:
             return self.buffer.readline(length)
         else:
             return self.buffer.readline()
