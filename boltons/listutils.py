@@ -178,6 +178,9 @@ class BarrelList(list):
                 self._balance_list(list_idx)
         return ret
 
+    def remove(self, item):
+        self.pop(self.index(item))
+
     def iter_slice(self, start, stop, step=None):
         length = len(self)
         start, stop, step = slice(start, stop, step).indices(length)

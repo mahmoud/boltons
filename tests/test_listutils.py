@@ -240,3 +240,61 @@ def test_barrel_list_delete_to_end():
         del reference[10000:stop]
         del value[10000:stop]
         assert list(value) == reference
+
+
+def test_barrel_list_remove_matches_list():
+    for partitions in ([[1, 2, 1, 3]], [[1], [2, 1], [3]]):
+        for item in (1, 2, 3):
+            value = BarrelList()
+            value.lists = [part[:] for part in partitions]
+            reference = list(value)
+            assert value.remove(item) is reference.remove(item) is None
+            assert list(value) == reference
+            assert len(value) == len(reference)
+
+
+def test_barrel_list_remove_unhashable():
+    value = BarrelList([[1], [2], [1]])
+    assert value.remove([1]) is None
+    assert list(value) == [[2], [1]]
+
+
+def test_barrel_list_remove_identity():
+    item = float('nan')
+    value = BarrelList([item, 1, item])
+    assert value.remove(item) is None
+    assert len(value) == 2
+    assert value[0] == 1
+    assert value[1] is item
+
+
+def test_barrel_list_remove_missing():
+    import pytest
+
+    for partitions in ([[]], [[1], [2, 3]]):
+        value = BarrelList()
+        value.lists = [part[:] for part in partitions]
+        with pytest.raises(ValueError):
+            value.remove(4)
+        assert value.lists == partitions
+
+
+def test_barrel_list_remove_drains_barrels():
+    value = BarrelList()
+    value.lists = [[1], [2], [3]]
+    for item in (2, 1, 3):
+        assert value.remove(item) is None
+    assert list(value) == []
+    assert len(value) == 0
+    value.append(4)
+    assert value.index(4) == 0
+    assert value.pop() == 4
+
+
+def test_barrel_list_remove_balanced_storage():
+    value = _multi_sublist_bl()
+    reference = list(value)
+    for item in (0, 10000, 29999):
+        assert value.remove(item) is reference.remove(item) is None
+        assert list(value) == reference
+        assert len(value) == len(reference)
