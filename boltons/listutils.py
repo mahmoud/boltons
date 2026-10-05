@@ -53,7 +53,6 @@ except ImportError:
 __all__ = ['BList', 'BarrelList']
 
 
-# TODO: comparators
 # TODO: keep track of list lengths and bisect to the right list for
 # faster getitem (and slightly slower setitem and delitem ops)
 
@@ -228,6 +227,32 @@ class BarrelList(list):
 
     def __len__(self):
         return sum([len(l) for l in self.lists])
+
+    def _compare(self, other, compare):
+        # Inherited list comparisons inspect the unused base-list storage.
+        if not isinstance(other, list):
+            return NotImplemented
+        if isinstance(other, BarrelList):
+            other = list(other)
+        return compare(list(self), other)
+
+    def __eq__(self, other):
+        return self._compare(other, list.__eq__)
+
+    def __ne__(self, other):
+        return self._compare(other, list.__ne__)
+
+    def __lt__(self, other):
+        return self._compare(other, list.__lt__)
+
+    def __le__(self, other):
+        return self._compare(other, list.__le__)
+
+    def __gt__(self, other):
+        return self._compare(other, list.__gt__)
+
+    def __ge__(self, other):
+        return self._compare(other, list.__ge__)
 
     def __contains__(self, item):
         for cur in self.lists:
