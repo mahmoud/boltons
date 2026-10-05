@@ -16,6 +16,115 @@ class CountingCallable:
         return self.call_count
 
 
+@pytest.mark.parametrize('scoped', [False, True])
+@pytest.mark.parametrize('typed', [False, True])
+@pytest.mark.parametrize('cache_kind', ['attribute', 'callable', 'mapping'])
+@pytest.mark.parametrize('unbound_first', [False, True])
+def test_cachedmethod_bound_and_unbound_share_keys(scoped, typed, cache_kind,
+                                                 unbound_first):
+    cache = {}
+    cache_arg = {'attribute': 'cache',
+                 'callable': lambda obj: obj.cache,
+                 'mapping': cache}[cache_kind]
+
+    class Calculator:
+        def __init__(self):
+            self.cache = cache
+            self.calls = 0
+
+        @cachedmethod(cache_arg, scoped=scoped, typed=typed)
+        def compute(self, value, scale=1):
+            self.calls += 1
+            return value * scale
+
+    obj = Calculator()
+    bound = lambda: obj.compute(3, scale=2)
+    unbound = lambda: Calculator.compute(obj, 3, scale=2)
+    calls = (unbound, bound) if unbound_first else (bound, unbound)
+    assert calls[0]() == calls[1]() == 6
+    assert obj.calls == 1
+    assert len(cache) == 1
+
+
+def test_cachedmethod_unscoped_unbound_accepts_unhashable_instance():
+    class Calculator:
+        __hash__ = None
+
+        def __init__(self):
+            self.cache = {}
+
+        @cachedmethod('cache', scoped=False)
+        def compute(self, value):
+            return value * 2
+
+    obj = Calculator()
+    assert obj.compute(3) == Calculator.compute(obj, 3) == 6
+    assert len(obj.cache) == 1
+
+
+@pytest.mark.parametrize('scoped', [False, True])
+def test_cachedmethod_custom_key_receives_consistent_arguments(scoped):
+    from boltons.cacheutils import make_cache_key
+    seen = []
+
+    def key(args, kwargs, typed):
+        seen.append((args, kwargs.copy(), typed))
+        return make_cache_key(args, kwargs, typed=typed)
+
+    class Calculator:
+        def __init__(self):
+            self.cache = {}
+
+        @cachedmethod('cache', scoped=scoped, typed=True, key=key)
+        def compute(self, value):
+            return value
+
+    obj = Calculator()
+    assert obj.compute(3) == Calculator.compute(obj, 3) == 3
+    assert seen[0] == seen[1]
+    expected_args = (obj, Calculator.compute.func, 3) if scoped else (3,)
+    assert seen[0] == (expected_args, {}, True)
+
+
+@pytest.mark.parametrize('typed', [False, True])
+def test_cachedmethod_mixed_binding_retains_type_distinction(typed):
+    class Calculator:
+        def __init__(self):
+            self.cache = {}
+            self.calls = 0
+
+        @cachedmethod('cache', typed=typed)
+        def compute(self, value):
+            self.calls += 1
+            return type(value)
+
+    obj = Calculator()
+    assert obj.compute(3) is int
+    assert Calculator.compute(obj, 3.0) is (float if typed else int)
+    assert obj.calls == len(obj.cache) == (2 if typed else 1)
+
+
+@pytest.mark.parametrize('scoped', [False, True])
+def test_cachedmethod_mixed_binding_retains_instance_scope(scoped):
+    cache = {}
+
+    class Calculator:
+        def __init__(self, value):
+            self.value = value
+            self.calls = 0
+
+        @cachedmethod(cache, scoped=scoped)
+        def compute(self):
+            self.calls += 1
+            return self.value
+
+    first, second = Calculator('first'), Calculator('second')
+    assert first.compute() == 'first'
+    assert Calculator.compute(second) == ('second' if scoped else 'first')
+    assert second.calls == (1 if scoped else 0)
+    assert len(cache) == (2 if scoped else 1)
+
+
 def test_lru_add():
     cache = LRU(max_size=3)
     for i in range(4):

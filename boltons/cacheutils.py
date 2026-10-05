@@ -511,15 +511,15 @@ class CachedMethod:
 
     def __call__(self, *args, **kwargs):
         obj = args[0] if self.bound_to is None else self.bound_to
+        if self.bound_to is None:
+            args = args[1:]
         cache = self.get_cache(obj)
-        key_args = (self.bound_to, self.func) + args if self.scoped else args
+        key_args = (obj, self.func) + args if self.scoped else args
         key = self.key_func(key_args, kwargs, typed=self.typed)
         try:
             ret = cache[key]
         except KeyError:
-            if self.bound_to is not None:
-                args = (self.bound_to,) + args
-            ret = cache[key] = self.func(*args, **kwargs)
+            ret = cache[key] = self.func(obj, *args, **kwargs)
         return ret
 
     def __repr__(self):
