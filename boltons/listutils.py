@@ -186,16 +186,18 @@ class BarrelList(list):
         return islice(self, start, stop, step)
 
     def del_slice(self, start, stop, step=None):
-        if step is not None and abs(step) > 1:  # punt
-            new_list = chain(self.iter_slice(0, start, step),
-                             self.iter_slice(stop, None, step))
-            self.lists[0][:] = new_list
+        step = 1 if step is None else operator.index(step)
+        if step != 1:  # use the same fallback as extended slice assignment
+            new_list = list(self)
+            del new_list[start:stop:step]
+            self.lists[:] = [new_list]
             self._balance_list(0)
             return
-        if start is None:
-            start = 0
+        start, stop, _ = slice(start, stop).indices(len(self))
+        if start >= stop:
+            return
         start_list_idx, start_rel_idx = self._translate_index(start)
-        if stop is None or stop >= len(self):
+        if stop == len(self):
             stop_list_idx, stop_rel_idx = len(self.lists) - 1, len(self.lists[-1])
         else:
             stop_list_idx, stop_rel_idx = self._translate_index(stop)
