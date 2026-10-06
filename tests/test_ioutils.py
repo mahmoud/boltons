@@ -114,6 +114,19 @@ class BaseTestMixin:
         self.spooled_flo.truncate(10)
         self.assertEqual(self.spooled_flo.getvalue(), self.test_str[:10])
 
+    def test_truncate_preserves_position(self):
+        for rolled in (False, True):
+            for position in (1, 2, 5):
+                with self.subTest(rolled=rolled, position=position):
+                    with type(self.spooled_flo)() as stream:
+                        stream.write(self.test_str)
+                        if rolled:
+                            stream.rollover()
+                        stream.seek(position)
+                        stream.truncate(2)
+                        self.assertEqual(stream.tell(), position)
+                        self.assertEqual(stream.getvalue(), self.test_str[:2])
+
     def test_type_error_too_many_args(self):
         """Make sure TypeError raised if too many args passed to truncate"""
         self.spooled_flo.write(self.test_str)

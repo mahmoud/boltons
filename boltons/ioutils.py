@@ -173,7 +173,7 @@ class SpooledIOBase(IOBase):
 
         Custom version of truncate that takes either no arguments (like the
         real SpooledTemporaryFile) or a single argument that truncates the
-        value to a certain index location.
+        value to a certain index location. The current position is unchanged.
         """
         self._checkClosed()
         if size is None:
@@ -186,8 +186,7 @@ class SpooledIOBase(IOBase):
         pos = self.tell()
         self.seek(size)
         self.buffer.truncate()
-        if pos < size:
-            self.seek(pos)
+        self.seek(pos)
 
     def getvalue(self):
         """Return the entire files contents."""
