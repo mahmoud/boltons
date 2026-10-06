@@ -298,15 +298,17 @@ class BarrelList(list):
     def __repr__(self):
         return f'{self.__class__.__name__}({list(self)!r})'
 
-    def sort(self):
+    def sort(self, *, key=None, reverse=False):
         # poor pythonist's mergesort, it's faster than sorted(self)
         # when the lists' average length is greater than 512.
         if len(self.lists) == 1:
-            self.lists[0].sort()
+            self.lists[0].sort(key=key, reverse=reverse)
         else:
-            for li in self.lists:
-                li.sort()
-            tmp_sorted = sorted(chain.from_iterable(self.lists))
+            if key is None:
+                for li in self.lists:
+                    li.sort(reverse=reverse)
+            # A supplied key must be evaluated only once per item.
+            tmp_sorted = sorted(chain.from_iterable(self.lists), key=key, reverse=reverse)
             del self.lists[:]
             self.lists.append(tmp_sorted)
             self._balance_list(0)
