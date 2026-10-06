@@ -152,3 +152,31 @@ def test_us_timezone_fromutc_sets_fold():
     assert second.replace(tzinfo=None) == datetime(2011, 11, 6, 1, 30)
     assert second.fold == 1
     assert second.tzname() == 'EST'
+
+
+def test_daterange_month_step_clamps_day():
+    # A month step from a day-31 anchor used to raise
+    # ValueError('day is out of range for month'). The day now clamps to
+    # the last day of the target month (the dateutil.relativedelta
+    # convention), and after the first clamp the day keeps tracking the
+    # clamped value. See #500.
+    assert list(daterange(date(2020, 1, 31), date(2020, 6, 30),
+                          step=(0, 1, 0), inclusive=True)) == [
+        date(2020, 1, 31), date(2020, 2, 29), date(2020, 3, 29),
+        date(2020, 4, 29), date(2020, 5, 29), date(2020, 6, 29),
+    ]
+    # Non-leap February clamps to the 28th.
+    assert list(daterange(date(2021, 1, 31), date(2021, 3, 31),
+                          step=(0, 1, 0))) == [
+        date(2021, 1, 31), date(2021, 2, 28), date(2021, 3, 28),
+    ]
+    # A leap-day anchor clamps for a yearly step.
+    assert list(daterange(date(2020, 2, 29), date(2022, 2, 28),
+                          step=(1, 0, 0), inclusive=True)) == [
+        date(2020, 2, 29), date(2021, 2, 28), date(2022, 2, 28),
+    ]
+    # Anchors that exist in every month are unaffected.
+    assert list(daterange(date(2017, 5, 1), date(2017, 8, 1),
+                          step=(0, 1, 0), inclusive=True)) == [
+        date(2017, 5, 1), date(2017, 6, 1), date(2017, 7, 1), date(2017, 8, 1),
+    ]

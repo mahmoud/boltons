@@ -53,6 +53,7 @@ degree of accuracy in corner cases, check out `pytz`_ and `dateutil`_.
 import re
 import time
 import bisect
+import calendar
 import operator
 from datetime import tzinfo, timedelta, date, datetime, timezone
 
@@ -384,8 +385,12 @@ def daterange(start, stop, step=1, inclusive=False):
     def _advance(cur):
         if m_step:
             m_y_step, cur_month = divmod((cur.month - 1) + m_step, 12)
-            cur = cur.replace(year=cur.year + m_y_step,
-                              month=(cur_month + 1))
+            year, month = cur.year + m_y_step, cur_month + 1
+            # Days that don't exist in the target month clamp to its last
+            # day (the dateutil.relativedelta convention), e.g. monthly
+            # steps from a Jan 31 anchor yield Feb 29, then Mar 29, ...
+            day = min(cur.day, calendar.monthrange(year, month)[1])
+            cur = cur.replace(year=year, month=month, day=day)
         return cur + d_step
 
     if stop is None:
