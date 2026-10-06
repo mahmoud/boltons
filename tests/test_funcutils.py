@@ -143,3 +143,34 @@ def test_once_thread_safety():
     assert call_count == 1
     assert all(r == 99 for r in results)
     assert len(results) == 10
+
+
+def test_wraps_preserves_positional_only_marker():
+    # wraps() used to drop the '/' marker from the generated signature, so a
+    # positional-only parameter became positional-or-keyword and valid calls
+    # passing the name inside **kwargs failed (#510).
+    import pytest
+
+    from boltons.funcutils import wraps
+
+    def original(a, /, **kw):
+        return a, kw
+
+    @wraps(original)
+    def wrapped(*args, **kwargs):
+        return original(*args, **kwargs)
+
+    assert wrapped(1, a=2) == (1, {'a': 2})
+
+    # The marker also survives in the rendered signature of mixed shapes.
+    def mixed(a, /, b, *, c=3):
+        return a, b, c
+
+    @wraps(mixed)
+    def wrapped_mixed(*args, **kwargs):
+        return mixed(*args, **kwargs)
+
+    assert wrapped_mixed(1, 2, c=9) == (1, 2, 9)
+    assert wrapped_mixed(1, b=2) == (1, 2, 3)
+    with pytest.raises(TypeError):
+        wrapped_mixed(a=1, b=2)

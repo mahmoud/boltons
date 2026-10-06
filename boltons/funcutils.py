@@ -61,7 +61,8 @@ def inspect_formatargspec(
         formatvarkw=lambda name: '**' + name,
         formatvalue=lambda value: '=' + repr(value),
         formatreturns=lambda text: ' -> ' + text,
-        formatannotation=formatannotation):
+        formatannotation=formatannotation,
+        posonlyargs=()):
     """Copy formatargspec from python 3.7 standard library.
     Python 3 has deprecated formatargspec and requested that Signature
     be used instead, however this requires a full reimplementation
@@ -78,11 +79,14 @@ def inspect_formatargspec(
     specs = []
     if defaults:
         firstdefault = len(args) - len(defaults)
+    n_posonly = len(posonlyargs)
     for i, arg in enumerate(args):
         spec = formatargandannotation(arg)
         if defaults and i >= firstdefault:
             spec = spec + formatvalue(defaults[i - firstdefault])
         specs.append(spec)
+        if n_posonly and i + 1 == n_posonly:
+            specs.append('/')
     if varargs is not None:
         specs.append(formatvarargs(formatargandannotation(varargs)))
     else:
@@ -781,7 +785,8 @@ class FunctionBuilder:
                                      [],
                                      self.kwonlyargs,
                                      {},
-                                     annotations)
+                                     annotations,
+                                     posonlyargs=self.posonlyargs)
 
     def get_invocation_str(self, target=None):
         # Regular args with defaults (and keyword-only args) are forwarded
