@@ -2,7 +2,26 @@ from datetime import timedelta, date, datetime, timezone
 
 import pytest
 
-from boltons.timeutils import daterange, isoparse, Eastern
+from boltons.timeutils import daterange, isoparse, Eastern, parse_timedelta, parse_td
+
+
+@pytest.mark.parametrize('text', ['not a duration', 'days', 'NaN seconds'])
+def test_parse_timedelta_rejects_unmatched_nonempty_input(text):
+    with pytest.raises(ValueError, match='time'):
+        parse_timedelta(text)
+
+
+@pytest.mark.parametrize('text, expected', [
+    ('', timedelta(0)),
+    (' \t\n', timedelta(0)),
+    ('0s', timedelta(0)),
+    ('1d 2h 3.5m 0s', timedelta(days=1, seconds=7410)),
+    ('2 weeks 1 day', timedelta(days=15)),
+    ('-1.5 weeks 3m 20s', timedelta(days=-11, seconds=43400)),
+])
+def test_parse_timedelta_preserves_supported_input(text, expected):
+    assert parse_timedelta(text) == expected
+    assert parse_td(text) == expected
 
 
 def test_daterange_years():

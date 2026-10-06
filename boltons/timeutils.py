@@ -156,7 +156,8 @@ def parse_timedelta(text):
     Returns:
         datetime.timedelta
     Raises:
-        ValueError: on parse failure.
+        ValueError: on parse failure, including nonempty text without a
+            time value and unit. Empty or whitespace-only text returns zero.
 
     >>> parse_td('1d 2h 3.5m 0s') == timedelta(days=1, seconds=7410)
     True
@@ -185,6 +186,8 @@ def parse_timedelta(text):
             raise ValueError('invalid time value for unit %r: %r'
                              % (unit, value))
         td_kwargs[unit_key] = value
+    if not td_kwargs and text.strip():
+        raise ValueError('no time value and unit found in %r' % text)
     return timedelta(**td_kwargs)
 
 
