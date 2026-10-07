@@ -642,6 +642,40 @@ def test_windowed_filled():
     assert list(windowed_iter(range(4), 3, fill=None)) == [(0, 1, 2), (1, 2, 3), (2, 3, None), (3, None, None)]
 # Tests for partition
 
+@pytest.mark.parametrize('reverse', [False, True])
+def test_untyped_sorted_evaluates_key_once(reverse):
+    from boltons.iterutils import untyped_sorted
+
+    values = [3, 'b', 1, 'a', 2]
+    calls = []
+
+    def key(value):
+        calls.append(value)
+        return value
+
+    expected = [1, 2, 3, 'a', 'b']
+    assert untyped_sorted(iter(values), key=key, reverse=reverse) == expected[::(-1 if reverse else 1)]
+    assert calls == values
+
+
+def test_untyped_sorted_singleton_key_error():
+    from boltons.iterutils import untyped_sorted
+
+    def key(value):
+        raise ValueError('invalid key')
+
+    with pytest.raises(ValueError, match='invalid key'):
+        untyped_sorted([1], key=key)
+
+
+def test_untyped_sorted_equal_keys_are_stable():
+    from boltons.iterutils import untyped_sorted
+
+    values = [('first', 1), ('second', 1), ('third', 0)]
+    assert untyped_sorted(values, key=lambda value: value[1]) == [values[2], values[0], values[1]]
+    assert untyped_sorted(values, key=lambda value: value[1], reverse=True) == values
+
+
 def test_partition_default():
     from boltons.iterutils import partition
 

@@ -1606,6 +1606,9 @@ def untyped_sorted(iterable, key=None, reverse=False):
     Note how mutually orderable types are sorted as expected, as in
     the case of the integers and floats above.
 
+    Like :func:`sorted`, a supplied *key* is evaluated once per item,
+    before comparing the resulting keys.
+
     .. note::
 
        Results may vary across Python versions and builds, but the
@@ -1617,11 +1620,11 @@ def untyped_sorted(iterable, key=None, reverse=False):
         slots = ('obj',)
 
         def __init__(self, obj):
-            self.obj = obj
+            self.obj = key(obj) if key is not None else obj
 
         def __lt__(self, other):
-            obj = key(self.obj) if key is not None else self.obj
-            other = key(other.obj) if key is not None else other.obj
+            obj = self.obj
+            other = other.obj
             try:
                 ret = obj < other
             except TypeError:
