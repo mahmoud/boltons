@@ -132,9 +132,9 @@ class GCToggler:
     Two GCTogglers are already present in the ``gcutils`` module:
 
     - :data:`toggle_gc` simply turns off GC at context entrance, and
-      re-enables at exit
+      restores the previous GC state at exit
     - :data:`toggle_gc_postcollect` does the same, but triggers an
-      explicit collection after re-enabling.
+      explicit collection after restoring the previous state.
 
     >>> with toggle_gc:
     ...     x = [object() for i in range(1000)]
@@ -144,12 +144,17 @@ class GCToggler:
     """
     def __init__(self, postcollect=False):
         self.postcollect = postcollect
+        self._enabled_states = []
 
     def __enter__(self):
+        self._enabled_states.append(gc.isenabled())
         gc.disable()
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        gc.enable()
+        if self._enabled_states.pop():
+            gc.enable()
+        else:
+            gc.disable()
         if self.postcollect:
             gc.collect()
 
@@ -161,4 +166,4 @@ toggle_gc = GCToggler()
 
 toggle_gc_postcollect = GCToggler(postcollect=True)
 """A context manager for disabling GC for a code block, and collecting
-before re-enabling. See :class:`GCToggler` for more details."""
+after restoring the previous GC state. See :class:`GCToggler` for more details."""
