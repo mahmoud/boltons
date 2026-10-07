@@ -485,12 +485,11 @@ class Table:
         else:
             raise ValueError("expected one of 'auto', 'vertical', or"
                              " 'horizontal', not %r" % orientation)
+        if wrapped:
+            lines.append(self._html_table_tag_close)
         if with_metadata and self.metadata and with_metadata == 'bottom':
             lines.append('<br />')
             lines.append(metadata_html)
-
-        if wrapped:
-            lines.append(self._html_table_tag_close)
         sep = '\n' if with_newlines else ''
         return sep.join(lines)
 

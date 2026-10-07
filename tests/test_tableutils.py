@@ -85,3 +85,19 @@ def test_to_text_short_headers_padded():
     lines = t.to_text().splitlines()
     header_cells = [c.strip() for c in lines[0].split(' | ')]
     assert header_cells == ['a', 'None']
+
+def test_bottom_metadata_is_outside_the_main_table():
+    table = Table.from_dict({'name': 'example'}, metadata={'source': 'test'})
+    for with_newlines in (True, False):
+        for wrapped in (True, False):
+            sep = '\n' if with_newlines else ''
+            main_html = table.to_html(wrapped=wrapped,
+                                      with_newlines=with_newlines)
+            metadata_html = Table.from_dict(table.metadata).to_html(
+                with_newlines=with_newlines)
+            assert table.to_html(with_metadata='bottom', wrapped=wrapped,
+                                 with_newlines=with_newlines) == sep.join(
+                [main_html, '<br />', metadata_html])
+            assert table.to_html(with_metadata=True, wrapped=wrapped,
+                                 with_newlines=with_newlines) == sep.join(
+                [metadata_html, '<br />', main_html])
