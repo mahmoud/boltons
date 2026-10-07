@@ -697,3 +697,32 @@ def test_frange_xfrange_zero_step():
         frange(10, step=0)
     with pytest.raises(ValueError):
         list(xfrange(10, step=0))
+
+
+def test_bucketize_key_list_accepts_source_iterators():
+    from boltons.iterutils import bucketize
+
+    assert bucketize(iter([1, 2, 3]), key=['a', 'b', 'a']) == {
+        'a': [1, 3], 'b': [2]}
+    assert bucketize(iter([1, 2, 3]), key=['a', 'b', 'a'],
+                     value_transform=lambda x: x * 10,
+                     key_filter=lambda k: k == 'a') == {'a': [10, 30]}
+    assert bucketize(iter([]), key=[]) == {}
+
+
+@pytest.mark.parametrize('values', [[], [1], [1, 2, 3]])
+def test_bucketize_key_list_rejects_mismatched_iterators(values):
+    from boltons.iterutils import bucketize
+
+    with pytest.raises(ValueError, match='same length'):
+        bucketize(iter(values), key=['a', 'b'])
+
+
+def test_bucketize_key_list_bounds_infinite_source_consumption():
+    from itertools import count
+    from boltons.iterutils import bucketize
+
+    source = count()
+    with pytest.raises(ValueError, match='same length'):
+        bucketize(source, key=['a', 'b'])
+    assert next(source) == 3

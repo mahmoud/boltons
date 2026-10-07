@@ -732,7 +732,12 @@ def bucketize(src, key=bool, value_transform=None, key_filter=None):
     if not is_iterable(src):
         raise TypeError('expected an iterable')
     elif isinstance(key, list):
-        if len(key) != len(src):
+        try:
+            src_len = len(src)
+        except TypeError:
+            src = list(itertools.islice(src, len(key) + 1))
+            src_len = len(src)
+        if len(key) != src_len:
             raise ValueError("key and src have to be the same length")
         src = zip(key, src)
 
