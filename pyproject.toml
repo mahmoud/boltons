@@ -34,8 +34,8 @@ license = { file = "LICENSE" }
 Homepage = "https://github.com/mahmoud/boltons"
 
 [tool.flit.sdist]
-include = ["doc/", "tests/", "CHANGELOG.md", "tox.ini"]
-exclude = ["doc/_build"]
+include = ["docs/", "tests/", "CHANGELOG.md", "tox.ini"]
+exclude = ["docs/_build"]
 
 
 [dependency-groups]
