@@ -892,6 +892,7 @@ def redundant(src, key=None, groups=False):
     [['hi', 'Hi', 'HI']]
 
     *key* should also be used when the values in *src* are not hashable.
+    A supplied callable is used regardless of its boolean value.
 
     .. note::
 
@@ -913,7 +914,7 @@ def redundant(src, key=None, groups=False):
     redundant_order = []
     redundant_groups = {}
     for i in src:
-        k = key_func(i) if key else i
+        k = key_func(i) if key is not None else i
         if k not in seen:
             seen[k] = i
         else:

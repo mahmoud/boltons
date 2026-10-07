@@ -642,6 +642,42 @@ def test_windowed_filled():
     assert list(windowed_iter(range(4), 3, fill=None)) == [(0, 1, 2), (1, 2, 3), (2, 3, None), (3, None, None)]
 # Tests for partition
 
+@pytest.mark.parametrize('groups', [False, True])
+def test_redundant_falsey_callable_key(groups):
+    from boltons.iterutils import redundant
+
+    class Key:
+        def __init__(self):
+            self.calls = []
+
+        def __bool__(self):
+            return False
+
+        def __call__(self, value):
+            self.calls.append(value)
+            return value.lower()
+
+    values = ['a', 'A', 'b', 'B', 'a']
+    key = Key()
+    expected = [['a', 'A', 'a'], ['b', 'B']] if groups else ['A', 'B']
+    assert redundant(iter(values), key=key, groups=groups) == expected
+    assert key.calls == values
+
+
+def test_redundant_falsey_key_supports_unhashable_values():
+    from boltons.iterutils import redundant
+
+    class Key:
+        def __len__(self):
+            return 0
+
+        def __call__(self, value):
+            return tuple(value)
+
+    values = [[1], [2], [1]]
+    assert redundant(values, key=Key()) == [[1]]
+
+
 def test_partition_default():
     from boltons.iterutils import partition
 
