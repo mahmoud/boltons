@@ -265,7 +265,7 @@ class Table:
             headers = []
             if data:
                 headers, data = list(data[0]), islice(data, 1, None)
-        self.headers = headers or []
+        self.headers = list(headers) if headers is not None else []
         self.metadata = metadata or {}
         self._data = []
         self._width = 0
@@ -359,6 +359,8 @@ class Table:
         # i.e., it doesn't work if max_depth=0 is passed in
         metadata = kwargs.pop('metadata', None)
         _data_type = kwargs.pop('_data_type', None)
+        if headers is not _MISSING and headers is not None:
+            headers = list(headers)
 
         if max_depth < 1:
             # return data instead?

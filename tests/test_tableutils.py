@@ -85,3 +85,19 @@ def test_to_text_short_headers_padded():
     lines = t.to_text().splitlines()
     header_cells = [c.strip() for c in lines[0].split(' | ')]
     assert header_cells == ['a', 'None']
+
+def test_table_accepts_header_iterators():
+    table = Table([[1, 2], [3, 4]], headers=iter(['a', 'b']))
+    assert table.headers == ['a', 'b']
+    assert table[0] == [1, 2]
+    assert table[1] == [3, 4]
+    assert table.to_text().splitlines()[0] == 'a | b'
+
+
+def test_from_dict_reuses_header_iterators_for_every_row():
+    rows = [{'a': 1, 'b': 2}, {'a': 3, 'b': 4}]
+    table = Table.from_dict(rows, headers=iter(['b', 'a']))
+    assert table.headers == ['b', 'a']
+    assert table[0] == [2, 1]
+    assert table[1] == [4, 3]
+    assert table.to_text().splitlines()[0] == 'b | a'
