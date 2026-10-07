@@ -85,10 +85,10 @@ def get_all(type_obj, include_subtypes=True):
     find all instances of a leaking type and track them down further
     using :func:`gc.get_referrers` and :func:`gc.get_referents`.
 
-    ``get_all()`` is optimized such that getting instances of
-    user-created types is quite fast. Setting *include_subtypes* to
-    ``False`` will further increase performance in cases where
-    instances of subtypes aren't required.
+    Setting *include_subtypes* to ``False`` allows an optimized lookup
+    for user-created types. When subtype instances are required, all
+    GC-tracked objects are checked, since subclass instances do not
+    directly reference the base type.
 
     .. note::
 
@@ -104,7 +104,7 @@ def get_all(type_obj, include_subtypes=True):
         type_is_tracked = gc.is_tracked(type_obj)
     except AttributeError:
         type_is_tracked = False  # Python 2.6 and below don't get the speedup
-    if type_is_tracked:
+    if type_is_tracked and not include_subtypes:
         to_check = gc.get_referrers(type_obj)
     else:
         to_check = gc.get_objects()

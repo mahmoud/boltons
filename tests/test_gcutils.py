@@ -30,3 +30,21 @@ if '__pypy__' not in sys.builtin_module_names:
         with_gc_time = time.time() - start
 
         time_diff = no_gc_time < with_gc_time
+
+
+if '__pypy__' not in sys.builtin_module_names:
+    def test_get_all_includes_subtype_instances():
+        class Base:
+            pass
+
+        class Child(Base):
+            pass
+
+        class Grandchild(Child):
+            pass
+
+        base, child, grandchild = Base(), Child(), Grandchild()
+        assert set(get_all(Base)) == {base, child, grandchild}
+        assert set(get_all(Child)) == {child, grandchild}
+        assert get_all(Base, include_subtypes=False) == [base]
+        assert get_all(Child, include_subtypes=False) == [child]
