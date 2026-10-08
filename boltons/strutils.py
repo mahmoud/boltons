@@ -1149,6 +1149,9 @@ class MultiReplace:
     :type flags: int
     :param flags: flags to pass to the regex engine during compile
 
+    Flags supplied when compiling an input pattern are retained for that
+    pattern only; they do not affect the other replacement patterns.
+
     Dictionary Usage::
 
         from boltons import strutils
@@ -1213,6 +1216,20 @@ class MultiReplace:
                     exp = vals[0]
             else:
                 exp = vals[0].pattern
+                pattern_flags = vals[0].flags
+                # Leading global flags are already recorded in .flags;
+                # move them into the scoped group before embedding.
+                exp = re.sub(r'^(?:\(\?[aiLmsux]+\))+', '', exp)
+                scoped_flags = 'a' if pattern_flags & re.ASCII else 'u'
+                for flag, letter in ((re.I, 'i'), (re.M, 'm'),
+                                     (re.S, 's'), (re.X, 'x')):
+                    if pattern_flags & flag:
+                        scoped_flags += letter
+                # A final verbose-mode comment must not consume the
+                # closing parentheses added by the combined pattern.
+                if pattern_flags & re.X:
+                    exp += '\n'
+                exp = f'(?{scoped_flags}:{exp})'
 
             regex_values.append(f'(?P<{group_name}>{exp})')
             self.group_map[group_name] = vals[1]

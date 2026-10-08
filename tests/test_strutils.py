@@ -101,6 +101,42 @@ def test_format_int_list():
 
 class TestMultiReplace(TestCase):
 
+    def test_compiled_flags_are_scoped_to_each_pattern(self):
+        m = strutils.MultiReplace([
+            (re.compile('cat', re.I), 'dog'),
+            ('bird', 'fish'),
+        ])
+        self.assertEqual(m.sub('CAT cat BIRD bird'), 'dog dog BIRD fish')
+
+    def test_compiled_multiline_and_dotall_flags(self):
+        m = strutils.MultiReplace([
+            (re.compile('^cat$', re.M), 'dog'),
+            (re.compile('a.b', re.S), 'joined'),
+        ])
+        self.assertEqual(m.sub('cat\na\nb'), 'dog\njoined')
+
+    def test_compiled_verbose_pattern_with_trailing_comment(self):
+        m = strutils.MultiReplace([(re.compile('c a t # animal', re.X), 'dog')])
+        self.assertEqual(m.sub('cat'), 'dog')
+
+    def test_compiled_ascii_flag_does_not_leak(self):
+        m = strutils.MultiReplace([
+            (re.compile(r'\w+', re.A), 'ascii'),
+            (re.compile(r'\w+'), 'unicode'),
+        ])
+        self.assertEqual(m.sub('cat é'), 'ascii unicode')
+
+    def test_compiled_leading_inline_flags(self):
+        m = strutils.MultiReplace([(re.compile('(?i)(?m)^cat$'), 'dog')])
+        self.assertEqual(m.sub('CAT\ncat'), 'dog\ndog')
+
+    def test_constructor_flags_still_apply(self):
+        m = strutils.MultiReplace([
+            (re.compile('cat'), 'dog'),
+            ('bird', 'fish'),
+        ], flags=re.I)
+        self.assertEqual(m.sub('CAT BIRD'), 'dog fish')
+
     def test_simple_substitutions(self):
         """Test replacing multiple values."""
         m = strutils.MultiReplace({r'cat': 'kedi', r'purple': 'mor', })
