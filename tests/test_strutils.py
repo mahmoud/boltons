@@ -46,6 +46,19 @@ def test_asciify():
     assert b[-1:].decode('ascii') == 'e'
 
 
+@pytest.mark.parametrize('html, expected', [
+    ('R&D', 'R&D'),
+    ('<p>Hello</p> R&D', 'Hello R&D'),
+    ('fish &amp', 'fish &'),
+    ('fish &#38', 'fish &'),
+    ('fish &#x26', 'fish &'),
+    ('<p>fish &amp; chips</p>', 'fish & chips'),
+    ('', ''),
+])
+def test_html2text_finishes_parsing(html, expected):
+    assert strutils.html2text(html) == expected
+
+
 def test_indent():
     to_indent = '\nabc\ndef\n\nxyz\n'
     ref = '\n  abc\n  def\n\n  xyz\n'

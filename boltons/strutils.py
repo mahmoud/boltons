@@ -620,6 +620,7 @@ def html2text(html):
     # based on answers to http://stackoverflow.com/questions/753052/
     s = HTMLTextExtractor()
     s.feed(html)
+    s.close()
     return s.get_text()
 
 
