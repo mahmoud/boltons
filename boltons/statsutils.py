@@ -215,8 +215,11 @@ class Stats:
 
         If you modify the object by adding additional data points,
         call this function to have the cached statistics recomputed.
+        This also discards the initial ``is_sorted`` hint, since modified
+        data may no longer be sorted.
 
         """
+        self._is_sorted = False
         for attr_name in self._prop_attr_names:
             attr_name = getattr(self.__class__, attr_name).internal_name
             if not hasattr(self, attr_name):

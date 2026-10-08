@@ -43,3 +43,18 @@ def test_histogram_zero_interquartile_range():
     for data in ([5] * 10, [0] * 10 + [100]):
         counts = Stats(data).get_histogram_counts()
         assert counts == [(float(min(data)), len(data))]
+
+
+def test_clear_cache_invalidates_presorted_data():
+    for use_copy in (True, False):
+        stats = Stats([1, 2, 3], use_copy=use_copy, is_sorted=True)
+        assert (stats.min, stats.max, stats.median) == (1, 3, 2)
+        stats.data.append(0)
+        stats.clear_cache()
+        assert (stats.min, stats.max, stats.median) == (0, 3, 1.5)
+        assert stats.get_quantile(0) == 0
+        assert stats.get_quantile(1) == 3
+
+        stats.data.insert(0, 4)
+        stats.clear_cache()
+        assert (stats.min, stats.max, stats.median) == (0, 4, 2)
