@@ -366,6 +366,8 @@ def chunk_ranges(input_size, chunk_size, input_offset=0, overlap_size=0, align=F
     are always at the beginning of the chunk.
 
     Returns an iterator of (start, end) tuples, one tuple per chunk.
+    An empty input yields no chunks. *overlap_size* must be less than
+    *chunk_size*, so each chunk advances through the input.
 
     >>> list(chunk_ranges(input_offset=10, input_size=10, chunk_size=5))
     [(10, 15), (15, 20)]
@@ -393,6 +395,11 @@ def chunk_ranges(input_size, chunk_size, input_offset=0, overlap_size=0, align=F
         input_offset, 'input_offset', strictly_positive=False)
     overlap_size = _validate_positive_int(
         overlap_size, 'overlap_size', strictly_positive=False)
+
+    if overlap_size >= chunk_size:
+        raise ValueError('overlap_size must be less than chunk_size')
+    if input_size == 0:
+        return
 
     input_stop = input_offset + input_size
 

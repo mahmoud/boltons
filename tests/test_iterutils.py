@@ -697,3 +697,20 @@ def test_frange_xfrange_zero_step():
         frange(10, step=0)
     with pytest.raises(ValueError):
         list(xfrange(10, step=0))
+
+
+@pytest.mark.parametrize('align', [False, True])
+@pytest.mark.parametrize('input_offset', [0, 1, 4, 10])
+def test_chunk_ranges_empty(align, input_offset):
+    from boltons.iterutils import chunk_ranges
+
+    assert list(chunk_ranges(0, 5, input_offset=input_offset, align=align)) == []
+
+
+@pytest.mark.parametrize('align', [False, True])
+@pytest.mark.parametrize('overlap_size', [5, 6, 10])
+def test_chunk_ranges_invalid_overlap(align, overlap_size):
+    from boltons.iterutils import chunk_ranges
+
+    with pytest.raises(ValueError, match='overlap_size.*chunk_size'):
+        list(chunk_ranges(12, 5, overlap_size=overlap_size, align=align))
