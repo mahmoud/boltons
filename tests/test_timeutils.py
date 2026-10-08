@@ -1,8 +1,36 @@
-from datetime import timedelta, date, datetime, timezone
+from datetime import timedelta, date, datetime, timezone, tzinfo
 
 import pytest
 
-from boltons.timeutils import daterange, isoparse, Eastern
+from boltons.timeutils import daterange, isoparse, Eastern, dt_to_timestamp
+
+
+def test_timestamp_with_timezone_returning_none():
+    class NaiveTZ(tzinfo):
+        def utcoffset(self, dt):
+            return None
+
+    dt = datetime(1969, 12, 31, 23, 59, 59, 500000, tzinfo=NaiveTZ())
+    assert dt_to_timestamp(dt) == -0.5
+
+
+def test_timestamp_with_falsey_aware_timezone():
+    class FalseyTZ(tzinfo):
+        def __bool__(self):
+            return False
+
+        def utcoffset(self, dt):
+            return timedelta(hours=2)
+
+    dt = datetime(1970, 1, 1, 2, 0, 0, 500000, tzinfo=FalseyTZ())
+    assert dt_to_timestamp(dt) == 0.5
+
+
+@pytest.mark.parametrize('offset', [-5, 0, 5.5])
+def test_timestamp_standard_timezone_offsets(offset):
+    dt = datetime(2020, 1, 1, 12, 30, 0, 123456,
+                  tzinfo=timezone(timedelta(hours=offset)))
+    assert dt_to_timestamp(dt) == dt.timestamp()
 
 
 def test_daterange_years():

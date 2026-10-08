@@ -83,8 +83,11 @@ def dt_to_timestamp(dt):
     :meth:`datetime.datetime.replace` method with ``tzinfo=``
     :class:`LocalTZ` object in this module, then pass the result of
     that to ``dt_to_timestamp``.
+
+    A datetime is naïve when its ``utcoffset()`` returns ``None``, even
+    if it has a ``tzinfo`` object. Such values also use the UTC assumption.
     """
-    if dt.tzinfo:
+    if dt.utcoffset() is not None:
         td = dt - EPOCH_AWARE
     else:
         td = dt.replace(tzinfo=timezone.utc) - EPOCH_AWARE
