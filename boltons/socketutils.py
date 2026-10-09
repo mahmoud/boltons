@@ -379,6 +379,8 @@ class BufferedSocket:
         :exc:`ConnectionClosed` will be raised.
         """
         with self._recv_lock:
+            if size == 0:
+                return b''
             if timeout is _UNSET:
                 timeout = self.timeout
             chunks = []

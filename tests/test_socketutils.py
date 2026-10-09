@@ -104,6 +104,25 @@ def test_buffers():
     return
 
 
+@pytest.mark.parametrize('state', ['empty', 'buffered', 'pending', 'closed'])
+def test_recv_size_zero(state):
+    x, y = socket.socketpair()
+    with x, y:
+        bs = BufferedSocket(x, timeout=0)
+        if state in ('buffered', 'pending'):
+            y.sendall(b'data')
+        if state == 'buffered':
+            assert bs.peek(4) == b'data'
+        elif state == 'closed':
+            y.close()
+
+        before = bs.getrecvbuffer()
+        assert bs.recv_size(0) == b''
+        assert bs.getrecvbuffer() == before
+        if state in ('buffered', 'pending'):
+            assert bs.recv_size(4) == b'data'
+
+
 def test_client_disconnecting():
     def get_bs_pair():
         x, y = socket.socketpair()
