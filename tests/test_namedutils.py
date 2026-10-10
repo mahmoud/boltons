@@ -46,3 +46,28 @@ def test_empty_type_name_raises_value_error(factory):
 def test_invalid_character_still_raises_value_error(factory):
     with pytest.raises(ValueError):
         factory('Point', ['x', 'y-z'])
+
+
+@pytest.mark.parametrize('factory', [namedtuple, namedlist])
+@pytest.mark.parametrize('name', ['value²', 'value½'])
+def test_non_identifier_alphanumeric_field_name(factory, name):
+    with pytest.raises(ValueError):
+        factory('Record', ['x', name])
+
+
+@pytest.mark.parametrize('factory', [namedtuple, namedlist])
+@pytest.mark.parametrize('name', ['Record²', 'Record½'])
+def test_non_identifier_alphanumeric_type_name(factory, name):
+    with pytest.raises(ValueError):
+        factory(name, ['x'])
+
+
+@pytest.mark.parametrize('factory', [namedtuple, namedlist])
+@pytest.mark.parametrize('name', ['value²', 'value½'])
+def test_rename_non_identifier_alphanumeric_field_name(factory, name):
+    record_type = factory('Record', ['x', name, 'α'], rename=True)
+    assert record_type._fields == ('x', '_1', 'α')
+    value = record_type(1, 2, 3)
+    assert value.x == 1
+    assert value._1 == 2
+    assert value.α == 3
