@@ -375,6 +375,26 @@ def test_normalize_with_case():
     assert url1 == url2
 
 
+@pytest.mark.parametrize('netloc_states', [(True, False), (False, True, False)])
+def test_register_scheme_replaces_netloc_behavior(monkeypatch, netloc_states):
+    # 2026-10-11: Re-registration must supersede the previous scheme definition.
+    monkeypatch.setattr(urlutils, 'SCHEME_PORT_MAP', urlutils.SCHEME_PORT_MAP.copy())
+    monkeypatch.setattr(urlutils, 'NO_NETLOC_SCHEMES', urlutils.NO_NETLOC_SCHEMES.copy())
+    scheme = 'test-reregister'
+    for uses_netloc in netloc_states:
+        port = 1234 if uses_netloc else None
+        urlutils.register_scheme(scheme, uses_netloc=uses_netloc, default_port=port)
+        if uses_netloc:
+            url = URL(scheme + '://example.com:1234/path')
+            expected = scheme + '://example.com/path'
+        else:
+            url = URL(scheme + ':/path')
+            expected = scheme + ':/path'
+        assert url.uses_netloc is uses_netloc
+        assert url.default_port == port
+        assert url.to_text() == expected
+
+
 def test_netloc_slashes():
     # basic sanity checks
     url = URL('mailto:mahmoud@hatnote.com')

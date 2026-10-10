@@ -354,12 +354,15 @@ def register_scheme(text, uses_netloc=None, default_port=None):
             raise ValueError('default_port expected integer or None, not %r'
                              % (default_port,))
 
+    # 2026-10-11: Replacing a scheme must remove its previous netloc classification.
     if uses_netloc is True:
+        NO_NETLOC_SCHEMES.discard(text)
         SCHEME_PORT_MAP[text] = default_port
     elif uses_netloc is False:
         if default_port is not None:
             raise ValueError('unexpected default port while specifying'
                              ' non-netloc scheme: %r' % default_port)
+        SCHEME_PORT_MAP.pop(text, None)
         NO_NETLOC_SCHEMES.add(text)
     elif uses_netloc is not None:
         raise ValueError('uses_netloc expected True, False, or None')
