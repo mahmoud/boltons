@@ -792,27 +792,42 @@ def describe(data: Iterable[float], quantiles: Iterable[float] | None = None, fo
     return Stats(data).describe(quantiles=quantiles, format=format)
 
 
-def _get_conv_func(attr_name):
-    def stats_helper(data, default=0.0):
-        return getattr(Stats(data, default=default, use_copy=False),
-                       attr_name)
-    return stats_helper
 
 
-for attr_name, attr in list(Stats.__dict__.items()):
-    if isinstance(attr, _StatsProperty):
-        if attr_name in ('max', 'min', 'count'):  # don't shadow builtins
-            continue
-        if attr_name in ('mad',):  # convenience aliases
-            continue
-        func = _get_conv_func(attr_name)
-        func.__doc__ = attr.func.__doc__
-        globals()[attr_name] = func
-        delattr(Stats, '_calc_' + attr_name)
-# cleanup
-del attr
-del attr_name
-del func
+if TYPE_CHECKING:
+    # Static declarations for the convenience functions generated below
+    def mean(data: Iterable[float], default: float = 0.0) -> float: ...
+    def median(data: Iterable[float], default: float = 0.0) -> float: ...
+    def mode(data: Iterable[float], default: float = 0.0) -> float: ...
+    def iqr(data: Iterable[float], default: float = 0.0) -> float: ...
+    def trimean(data: Iterable[float], default: float = 0.0) -> float: ...
+    def variance(data: Iterable[float], default: float = 0.0) -> float: ...
+    def std_dev(data: Iterable[float], default: float = 0.0) -> float: ...
+    def median_abs_dev(data: Iterable[float], default: float = 0.0) -> float: ...
+    def rel_std_dev(data: Iterable[float], default: float = 0.0) -> float: ...
+    def skewness(data: Iterable[float], default: float = 0.0) -> float: ...
+    def kurtosis(data: Iterable[float], default: float = 0.0) -> float: ...
+    def pearson_type(data: Iterable[float], default: float = 0.0) -> float: ...
+else:
+    def _get_conv_func(attr_name):
+        def stats_helper(data, default=0.0):
+            return getattr(Stats(data, default=default, use_copy=False),
+                        attr_name)
+        return stats_helper
+    for attr_name, attr in list(Stats.__dict__.items()):
+        if isinstance(attr, _StatsProperty):
+            if attr_name in ('max', 'min', 'count'):  # don't shadow builtins
+                continue
+            if attr_name in ('mad',):  # convenience aliases
+                continue
+            func = _get_conv_func(attr_name)
+            func.__doc__ = attr.func.__doc__
+            globals()[attr_name] = func
+            delattr(Stats, '_calc_' + attr_name)
+    # cleanup
+    del attr
+    del attr_name
+    del func
 
 def format_histogram_counts(bin_counts: Iterable[tuple[float, int]], width: int | None = None, format_bin: Callable | None = None) -> str:
     """The formatting logic behind :meth:`Stats.format_histogram`, which
