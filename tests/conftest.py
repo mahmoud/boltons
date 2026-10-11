@@ -5,12 +5,12 @@ import re
 _VERSION_MARKER = re.compile(r'_py(?P<major_version>\d)(?P<minor_version>\d)?')
 
 
-def pytest_ignore_collect(path, config):
+def pytest_ignore_collect(collection_path, config):
     """
     Ignore tests that end with _pyX, where X does not equal this
     interpreter's major version.
     """
-    filename = path.basename
+    filename = collection_path.name
     modulename = filename.split('.', 1)[0]
     match = _VERSION_MARKER.search(modulename)
     if not match:

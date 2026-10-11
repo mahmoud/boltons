@@ -1,7 +1,7 @@
 import pytest
 
 from boltons import urlutils
-from boltons.urlutils import URL, _URL_RE, find_all_links
+from boltons.urlutils import URL, QueryParamDict, _URL_RE, find_all_links
 
 
 # fully quoted urls that should round trip
@@ -95,6 +95,23 @@ def test_query_params(test_url):
     assert test_url.endswith(qp_text)
 
 
+def test_parse_qsl_encoding():
+    # %E9 is 'e' with an acute accent in latin-1, and not valid utf-8
+    qs = 'k=%E9'
+    assert urlutils.parse_qsl(qs, encoding='latin-1') == [('k', '\xe9')]
+    # the default is unchanged: undecodable bytes become the replacement char
+    assert urlutils.parse_qsl(qs) == [('k', '\ufffd')]
+    # keys are decoded with the same encoding as values
+    assert urlutils.parse_qsl('%E9=v', encoding='latin-1') == [('\xe9', 'v')]
+
+
+def test_query_param_dict_eq_with_dict():
+    qpd = QueryParamDict([('a', '1'), ('b', '2')])
+    assert qpd == {'a': '1', 'b': '2'}
+    assert qpd != {'a': '999', 'b': '2'}
+    assert not (qpd == {'a': '999', 'b': '2'})
+
+
 def test_iri_query():
     url = URL('http://minerals.mountain.ore/?rock=\N{SHAMROCK}')
     assert url.query_params['rock'] == '\N{SHAMROCK}'
@@ -180,6 +197,15 @@ def test_userinfo():
     assert url.username == 'someuser'
     assert url.password == 'somepassword'
     assert url.to_text() == 'http://someuser:somepassword@example.com/some-segment@ignore'
+
+
+def test_password_without_username():
+    url = URL('http://:secret@example.com/path')
+    assert url.to_text() == 'http://:secret@example.com/path'
+    assert url.get_authority(with_userinfo=True) == ':secret@example.com'
+    assert url.get_authority() == 'example.com'
+    url.password = 'p@ss'
+    assert url.to_text(full_quote=True) == 'http://:p%40ss@example.com/path'
 
 
 def test_quoted_userinfo():

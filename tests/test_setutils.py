@@ -1,4 +1,4 @@
-from pytest import raises
+from pytest import mark, raises
 
 from boltons.setutils import IndexedSet, _MISSING, complement
 
@@ -26,6 +26,25 @@ def test_indexed_set_rsub():
     assert (set('abc') - IndexedSet('bcd')) == {'a'}
     assert (IndexedSet('abc') - IndexedSet('bcd')) == IndexedSet(['a'])
     assert (frozenset('abc') - IndexedSet('bcd')) == frozenset(['a'])
+
+
+@mark.parametrize('iterable_type', [list, tuple, iter])
+def test_indexed_set_update_multiple_iterables(iterable_type):
+    items = IndexedSet([1])
+
+    result = items.update(iterable_type([2, 1, 3]), iterable_type([]),
+                          iterable_type([3, 4, 2]))
+
+    assert result is None
+    assert list(items) == [1, 2, 3, 4]
+
+
+def test_indexed_set_update_multiple_iterables_with_tuple_items():
+    items = IndexedSet()
+
+    items.update([(1, 2)], [(3, 4), (1, 2)])
+
+    assert list(items) == [(1, 2), (3, 4)]
 
 
 def test_indexed_set_mutate():
@@ -102,6 +121,22 @@ def test_complement_set():
     assert (cab | cbc) > cab
     assert cc > sab
     assert not (cab > sab)
+    # <= / >= between two complement sets (comp(X) <= comp(Y) iff Y subset X)
+    assert cab <= complement('a')
+    assert not (complement('a') <= cab)
+    assert cab <= cab
+    assert complement('a') >= cab
+    assert cab >= cab
+    # double-complemented (included-form) sets dispatch to the + +
+    # branches of __le__/__ge__: comp(comp(X)) behaves like X
+    ccab = complement(complement(set('ab')))
+    cca = complement(complement(set('a')))
+    assert ccab >= cca
+    assert not (cca >= ccab)
+    assert cca <= ccab
+    assert not (ccab <= cca)
+    assert ccab >= ccab
+    assert ccab <= ccab
     assert not cab.isdisjoint(cc)  # complements never disjoint
     assert cab.isdisjoint(sab)
     assert not cab.isdisjoint(sc)
@@ -203,3 +238,96 @@ def test_iset_index_method():
         if i % 3:
             index = indexed_list.index(i)
             assert i == indexed_list.pop(index)
+
+
+def test_iset_slice_after_removal():
+    # PR #423: slice bounds were mapped into item_list space while islice
+    # consumed the apparent (dead-slot-free) stream, so any removal made
+    # slices over-count.
+    x = IndexedSet(range(10))
+    x.pop(2)  # leaves [0, 1, 3, 4, 5, 6, 7, 8, 9] with a dead slot
+    assert list(x[1:4]) == [1, 3, 4]
+    assert list(x[-3:]) == [7, 8, 9]
+    assert list(x[2:-1]) == [3, 4, 5, 6, 7, 8]
+    assert isinstance(x[1:4], IndexedSet)
+
+
+def test_iset_slice_agreement():
+    # Slicing must not depend on dead slots: a set with removals must slice
+    # identically to a freshly-built set with the same contents (all steps,
+    # including the reversed-window negative-step semantics), and positive
+    # steps must match list slicing exactly.
+    bounds = (None, -12, -9, -5, -1, 0, 1, 4, 8, 9, 12)
+    steps = (None, 1, 2, 3, -1, -2, -3)
+    for pops in ([], [2], [0, 1, 2], [7, 8, 9], [0, 3, 6, 9], [1, 2, 5, 6]):
+        iset = IndexedSet(range(10))
+        for p in pops:
+            iset.discard(p)
+        fresh = IndexedSet(iset)  # same contents, no dead slots
+        ref = list(iset)
+        for start in bounds:
+            for stop in bounds:
+                for step in steps:
+                    s = slice(start, stop, step)
+                    assert list(iset[s]) == list(fresh[s]), (pops, s)
+                    if step is None or step > 0:
+                        assert list(iset[s]) == ref[s], (pops, s)
+
+
+def test_iset_scalar_index_bounds():
+    # Out-of-range negatives used to wrap silently: __getitem__ normalized
+    # the index and _get_real_index normalized it AGAIN, so x[-10] on a
+    # 9-element set returned x[-1], and pop(-15) removed a middle element.
+    x = IndexedSet(range(10))
+    x.pop(2)  # len 9, one dead slot
+    assert x[-1] == 9
+    assert x[-9] == 0
+    with raises(IndexError):
+        x[9]
+    with raises(IndexError):
+        x[-10]
+    with raises(IndexError):
+        x.pop(-15)
+    assert 4 in x  # pop(-15) formerly silently removed 4
+    with raises(IndexError):
+        IndexedSet()[0]
+
+
+def test_iset_scalar_index_multiple_dead_intervals():
+    # exercise the _get_real_index interval walk across several dead ranges
+    iset = IndexedSet(range(100))
+    for p in (5, 20, 40, 60, 80):
+        iset.discard(p)
+    assert len(iset.dead_indices) == 5  # below compaction threshold (100/8)
+    ref = list(iset)
+    for i in list(range(-95, 95, 7)) + [0, -1, 94, -95]:
+        assert iset[i] == ref[i]
+    with raises(IndexError):
+        iset[95]
+    with raises(IndexError):
+        iset[-96]
+
+
+def test_bulk_difference_update():
+    # removals large enough to take the O(n) bulk path (> _MAX_DEAD_INTERVALS)
+    thing = IndexedSet(range(1000))
+    thing.difference_update(set(range(0, 1000, 2)))
+    assert list(thing) == list(range(1, 1000, 2))
+    assert thing[0] == 1 and thing[-1] == 999
+    assert thing.index(501) == 250
+    thing.add(0)
+    assert thing[-1] == 0
+
+
+def test_bulk_intersection_update():
+    thing = IndexedSet(range(1000))
+    thing.intersection_update(set(range(500, 2000)))
+    assert list(thing) == list(range(500, 1000))
+    assert thing[0] == 500 and thing.index(750) == 250
+
+
+def test_small_difference_update_unchanged():
+    # small removals keep the incremental path
+    thing = IndexedSet(range(100))
+    thing.difference_update({1, 3, 5})
+    assert list(thing)[:5] == [0, 2, 4, 6, 7]

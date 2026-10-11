@@ -61,6 +61,20 @@ def test_eq():
     assert omd != omd3
 
 
+def test_eq_with_dict():
+    # OMD on the left dispatches to OMD.__eq__, which has to compare values
+    # against a plain mapping, not just keys.
+    omd = OMD([('a', 1), ('b', 2)])
+    assert omd == {'a': 1, 'b': 2}
+    assert not (omd != {'a': 1, 'b': 2})
+
+    assert omd != {'a': 999, 'b': 2}
+    assert not (omd == {'a': 999, 'b': 2})
+
+    # same number of keys but a different key
+    assert omd != {'a': 1, 'c': 2}
+
+
 def test_copy():
     for itemset in _ITEMSETS:
         omd = OMD(itemset)
@@ -82,9 +96,32 @@ def test_omd_pickle():
 
     nonempty = OMD([('a', 1), ('b', 2), ('b', 3)])
 
-    roundtripped = pickle.loads(pickle.dumps(nonempty)) 
+    roundtripped = pickle.loads(pickle.dumps(nonempty))
     assert roundtripped == nonempty
     assert roundtripped.getlist('b') == [2, 3]
+
+
+def test_omd_copy_module():
+    # copy.copy / copy.deepcopy must preserve multiple values per key. The
+    # inherited dict __reduce_ex__ used to reapply a dictitems iterator after
+    # __setstate__, collapsing each key down to a single value.
+    import copy
+
+    omd = OMD([('a', 1), ('a', 2), ('b', 3)])
+
+    shallow = copy.copy(omd)
+    assert shallow == omd
+    assert shallow.getlist('a') == [1, 2]
+
+    deep = copy.deepcopy(omd)
+    assert deep == omd
+    assert deep.getlist('a') == [1, 2]
+
+    # deepcopy must not share mutable values with the original
+    nested = OMD([('x', [1]), ('x', [2])])
+    nested_copy = copy.deepcopy(nested)
+    nested_copy.getlist('x')[0].append(99)
+    assert nested.getlist('x') == [[1], [2]]
 
 
 
@@ -231,6 +268,26 @@ def test_addlist():
     e_omd.addlist('a', [])
     assert e_omd.keys() == []
     assert len(list(e_omd.iteritems(multi=True))) == 0
+
+
+def test_addlist_iterator():
+    # the docstring promises "tuples and other sequences and iterables work",
+    # and a one-shot iterator used to leave the OMD internally inconsistent
+    omd = OMD()
+    omd.addlist('a', iter([1, 2, 3]))
+    omd.addlist('b', (x for x in [4, 5]))
+
+    assert omd.keys() == ['a', 'b']
+    assert omd.getlist('a') == [1, 2, 3]
+    assert omd.getlist('b') == [4, 5]
+    assert omd.get('a') == 3
+    assert len(list(omd.iteritems(multi=True))) == 5
+
+    e_omd = OMD()
+    e_omd.addlist('a', (x for x in []))
+    assert len(e_omd) == 0
+    assert e_omd.keys() == []
+    assert e_omd.get('a') is None
 
 
 def test_pop_all():

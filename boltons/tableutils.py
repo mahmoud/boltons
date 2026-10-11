@@ -290,7 +290,7 @@ class Table:
         if self.headers:
             self._width = len(self.headers)
             return
-        self._width = max([len(d) for d in self._data])
+        self._width = max([len(d) for d in self._data], default=0)
 
     def _fill(self):
         width, filler = self._width, [None]
@@ -566,16 +566,21 @@ class Table:
         lines = []
         widths = []
         headers = list(self.headers)
+        if with_headers and headers:
+            headers.extend([None] * (self._width - len(headers)))
+        else:
+            headers = []
+        text_headers = [to_text(h, maxlen=maxlen) for h in headers]
         text_data = [[to_text(cell, maxlen=maxlen) for cell in row]
                      for row in self._data]
         for idx in range(self._width):
             cur_widths = [len(row[idx]) for row in text_data]
-            if with_headers:
-                cur_widths.append(len(to_text(headers[idx], maxlen=maxlen)))
-            widths.append(max(cur_widths))
-        if with_headers:
+            if text_headers:
+                cur_widths.append(len(text_headers[idx]))
+            widths.append(max(cur_widths, default=0))
+        if text_headers:
             lines.append(' | '.join([h.center(widths[i])
-                                     for i, h in enumerate(headers)]))
+                                     for i, h in enumerate(text_headers)]))
             lines.append('-|-'.join(['-' * w for w in widths]))
         for row in text_data:
             lines.append(' | '.join([cell.center(widths[j])

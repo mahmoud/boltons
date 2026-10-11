@@ -14,7 +14,6 @@
 import os
 import sys
 import sphinx
-from pprint import pprint
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
@@ -24,8 +23,6 @@ PROJECT_PATH = os.path.abspath(CUR_PATH + '/../')
 PACKAGE_PATH = os.path.abspath(CUR_PATH + '/../boltons/')
 sys.path.insert(0, PROJECT_PATH)
 sys.path.insert(0, PACKAGE_PATH)
-
-pprint(os.environ)
 
 
 def get_mod_stats():
@@ -99,8 +96,9 @@ project = 'boltons'
 copyright = '2025, Mahmoud Hashemi'
 author = 'Mahmoud Hashemi'
 
-version = '25.0'
-release = '25.0.0'
+import boltons
+release = boltons.__version__
+version = '.'.join(release.split('.')[:2])
 
 if os.name != 'nt':
     today_fmt = '%B %d, %Y'

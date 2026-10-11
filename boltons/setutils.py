@@ -68,6 +68,7 @@ __all__ = ['IndexedSet', 'complement']
 
 
 _COMPACTION_FACTOR = 8
+_MAX_DEAD_INTERVALS = 384
 
 # TODO: inherit from set()
 # TODO: .discard_many(), .remove_many()
@@ -160,7 +161,7 @@ class IndexedSet(MutableSet):
         if not ii_map:
             del items[:]
             del ded[:]
-        elif len(ded) > 384:
+        elif len(ded) > _MAX_DEAD_INTERVALS:
             self._compact()
         elif self._dead_index_count > (len(items) / _COMPACTION_FACTOR):
             self._compact()
@@ -175,6 +176,8 @@ class IndexedSet(MutableSet):
     def _get_real_index(self, index):
         if index < 0:
             index += len(self)
+        if index < 0 or index >= len(self):
+            raise IndexError('IndexedSet index out of range')
         if not self.dead_indices:
             return index
         real_index = index
@@ -216,6 +219,19 @@ class IndexedSet(MutableSet):
         else:
             dints.insert(int_idx, cand_int)
         return
+
+    def _bulk_discard(self, to_remove):
+        """Remove many items in a single O(n) pass.
+
+        Removing k scattered items via repeated :meth:`discard` triggers a
+        full O(n) compaction every ``_MAX_DEAD_INTERVALS`` removals, i.e.
+        O(n * k) overall. Rebuilding once keeps bulk updates linear.
+        """
+        self.item_list = [item for item in self.item_list
+                          if item is not _MISSING and item not in to_remove]
+        self.item_index_map = {item: i
+                               for i, item in enumerate(self.item_list)}
+        del self.dead_indices[:]
 
     # common operations (shared by set and list)
     def __len__(self) -> int:
@@ -364,20 +380,28 @@ class IndexedSet(MutableSet):
         elif len(others) == 1:
             other = others[0]
         else:
-            other = chain(others)
+            other = chain.from_iterable(others)
         for o in other:
             self.add(o)
 
     def intersection_update(self, *others: Iterable) -> None:
         "intersection_update(*others) -> discard self.difference(*others)"
-        for val in self.difference(*others):
+        to_remove = self.difference(*others)
+        if len(to_remove) > _MAX_DEAD_INTERVALS:
+            self._bulk_discard(to_remove)
+            return
+        for val in to_remove:
             self.discard(val)
 
     def difference_update(self, *others: Container) -> None:
         "difference_update(*others) -> discard self.intersection(*others)"
         if self in others:
             self.clear()
-        for val in self.intersection(*others):
+        to_remove = self.intersection(*others)
+        if len(to_remove) > _MAX_DEAD_INTERVALS:
+            self._bulk_discard(to_remove)
+            return
+        for val in to_remove:
             self.discard(val)
 
     def symmetric_difference_update(self, other: Iterable) -> None:  # note singular 'other'
@@ -409,10 +433,16 @@ class IndexedSet(MutableSet):
     def iter_slice(self, start: int | None, stop: int | None, step: int | None = None) -> islice:
         "iterate over a slice of the set"
         iterable = self
-        if start is not None:
-            start = self._get_real_index(start)
-        if stop is not None:
-            stop = self._get_real_index(stop)
+        # start/stop are apparent (dead-slot-free) indices, the same space
+        # islice consumes; mapping them through _get_real_index() (item_list
+        # space) over-counted by the dead slots before each bound. Only
+        # negatives need normalizing, as islice rejects them.
+        # NB: a negative step slices the reversed stream with forward bounds
+        # (x[2:4:-1] == reversed(x)[2:4]), behavior since 2013.
+        if start is not None and start < 0:
+            start = max(len(self) + start, 0)
+        if stop is not None and stop < 0:
+            stop = max(len(self) + stop, 0)
         if step is not None and step < 0:
             step = -step
             iterable = reversed(self)
@@ -431,14 +461,8 @@ class IndexedSet(MutableSet):
         else:
             iter_slice = self.iter_slice(start, stop, step)
             return self.from_iterable(iter_slice)
-        if index < 0:
-            index += len(self)
         real_index = self._get_real_index(index)
-        try:
-            ret = self.item_list[real_index]
-        except IndexError:
-            raise IndexError('IndexedSet index out of range')
-        return ret
+        return self.item_list[real_index]
 
     def pop(self, index: int | None = None):
         "pop(index) -> remove the item at a given index (-1 by default)"
@@ -837,13 +861,11 @@ class _ComplementSet:
         inc, exc = _norm_args_notimplemented(other)
         if inc is NotImplemented:
             return NotImplemented
-        if inc is NotImplemented:
-            return NotImplemented
         if self._included is None:
             if exc is None:  # - +
                 return False
             else:  # - -
-                return self._excluded.issupserset(exc)
+                return self._excluded.issuperset(exc)
         else:
             if inc is None:  # + -
                 return self._included.isdisjoint(exc)
@@ -852,8 +874,6 @@ class _ComplementSet:
 
     def __lt__(self, other: set | frozenset | _ComplementSet) -> bool:
         inc, exc = _norm_args_notimplemented(other)
-        if inc is NotImplemented:
-            return NotImplemented
         if inc is NotImplemented:
             return NotImplemented
         if self._included is None:
@@ -887,7 +907,7 @@ class _ComplementSet:
             if inc is None:  # + -
                 return False
             else:  # + +
-                return self._included.issupserset(inc)
+                return self._included.issuperset(inc)
 
     def __gt__(self, other: set | frozenset | _ComplementSet) -> bool:
         inc, exc = _norm_args_notimplemented(other)

@@ -35,10 +35,10 @@ correcting Python's standard metaprogramming facilities.
 """
 
 import sys
-import re
 import inspect
 import functools
 import itertools
+import threading
 from inspect import formatannotation
 from types import FunctionType, MethodType
 
@@ -601,10 +601,11 @@ def update_wrapper(wrapper, func, injected=None, expected=None, build_from=None,
     for arg, default in expected_items:
         fb.add_arg(arg, default)  # may raise ExistingArgument
 
+    invocation_str = fb.get_invocation_str(target=wrapper)
     if fb.is_async:
-        fb.body = 'return await _call(%s)' % fb.get_invocation_str()
+        fb.body = 'return await _call(%s)' % invocation_str
     else:
-        fb.body = 'return _call(%s)' % fb.get_invocation_str()
+        fb.body = 'return _call(%s)' % invocation_str
 
     execdict = dict(_call=wrapper, _func=func)
     fully_wrapped = fb.get_func(execdict, with_dict=update_dict)
@@ -742,6 +743,7 @@ class FunctionBuilder:
                  'body': lambda: 'pass',
                  'indent': lambda: 4,
                  "annotations": dict,
+                 'posonlyargs': list,
                  'filename': lambda: 'boltons.funcutils.FunctionBuilder'}
 
     _defaults.update(_argspec_defaults)
@@ -781,31 +783,50 @@ class FunctionBuilder:
                                      {},
                                      annotations)
 
-    _KWONLY_MARKER = re.compile(r"""
-    \*     # a star
-    \s*    # followed by any amount of whitespace
-    ,      # followed by a comma
-    \s*    # followed by any amount of whitespace
-    """, re.VERBOSE)
-
-    def get_invocation_str(self):
-        kwonly_pairs = None
-        formatters = {}
-        if self.kwonlyargs:
-            kwonly_pairs = {arg: arg
-                                for arg in self.kwonlyargs}
-            formatters['formatvalue'] = lambda value: '=' + value
-
-        sig = inspect_formatargspec(self.args,
-                                    self.varargs,
-                                    self.varkw,
-                                    [],
-                                    kwonly_pairs,
-                                    kwonly_pairs,
-                                    {},
-                                    **formatters)
-        sig = self._KWONLY_MARKER.sub('', sig)
-        return sig[1:-1]
+    def get_invocation_str(self, target=None):
+        # Regular args with defaults (and keyword-only args) are forwarded
+        # as keywords (name=name), so values callers pass by keyword reach
+        # the wrapper's **kwargs instead of being silently flattened into
+        # *args (#343). Two classes must stay positional: positional-only
+        # params (keywords are rejected outright), and every regular arg
+        # when *varargs is present (a keyword-forwarded arg that precedes
+        # *varargs collides with non-empty varargs).
+        #
+        # When *target* -- the callable the generated invocation will
+        # actually call -- is provided, any argument that target only
+        # accepts as a keyword is forwarded as a keyword regardless of
+        # the rules above, since positional forwarding could never bind
+        # it (#261). Targets without introspectable signatures fall
+        # back to signature-based forwarding alone.
+        target_kwonly = frozenset()
+        if target is not None:
+            try:
+                target_params = inspect.signature(target).parameters
+            except (ValueError, TypeError):
+                pass
+            else:
+                target_kwonly = frozenset(
+                    p.name for p in target_params.values()
+                    if p.kind is inspect.Parameter.KEYWORD_ONLY)
+        defaults = self.defaults or ()
+        args = list(self.args or ())
+        n_positional = len(args) - len(defaults)
+        parts, kw_parts = [], []
+        for i, arg in enumerate(args):
+            if arg in target_kwonly:
+                kw_parts.append(arg + '=' + arg)
+            elif (i >= n_positional and not self.varargs
+                    and arg not in self.posonlyargs):
+                kw_parts.append(arg + '=' + arg)
+            else:
+                parts.append(arg)
+        if self.varargs:
+            parts.append('*' + self.varargs)
+        parts += kw_parts
+        parts += [arg + '=' + arg for arg in self.kwonlyargs or ()]
+        if self.varkw:
+            parts.append('**' + self.varkw)
+        return ', '.join(parts)
 
     @classmethod
     def from_func(cls, func):
@@ -832,6 +853,15 @@ class FunctionBuilder:
                       'dict': getattr(func, '__dict__', {})}
 
         kwargs.update(cls._argspec_to_dict(func))
+
+        # getfullargspec merges positional-only params into args; recover
+        # them from the code object so they are never keyword-forwarded.
+        # (functools.partial objects have no __code__; posonly detection
+        # is skipped for them, preserving today's behavior.)
+        n_posonly = getattr(getattr(func, '__code__', None),
+                            'co_posonlyargcount', 0)
+        if n_posonly:
+            kwargs['posonlyargs'] = list(kwargs['args'][:n_posonly])
 
         if inspect.iscoroutinefunction(func):
             kwargs['is_async'] = True
@@ -1003,5 +1033,50 @@ def noop(*args, **kwargs):
         post_func()
     """
     return None
+
+
+
+
+
+def once(func):
+    """Decorator that ensures a function is only executed once, caching
+    the result for all subsequent calls. Thread-safe: concurrent callers
+    block until the first execution completes, then all receive the
+    cached result.
+
+    This is especially useful in cases like logging, where multiple
+    initializations can cause problems.
+
+    The decorated function must take no arguments.
+
+    >>> call_count = 0
+    >>> @once
+    ... def expensive_setup():
+    ...     global call_count
+    ...     call_count += 1
+    ...     return 'initialized'
+    >>> expensive_setup()
+    'initialized'
+    >>> expensive_setup()
+    'initialized'
+    >>> call_count
+    1
+    """
+    _UNSET = object()
+    lock = threading.Lock()
+    result = _UNSET
+
+    @functools.wraps(func)
+    def wrapper():
+        nonlocal result
+        if result is not _UNSET:
+            return result
+        with lock:
+            if result is not _UNSET:
+                return result
+            result = func()
+            return result
+
+    return wrapper
 
 # end funcutils.py

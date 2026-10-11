@@ -162,10 +162,10 @@ def namedtuple(typename: str, field_names: str | Iterable[str], verbose: bool = 
                 field_names[index] = '_%d' % index
             seen.add(name)
     for name in [typename] + field_names:
-        if not all(c.isalnum() or c == '_' for c in name):
-            raise ValueError('Type names and field names can only contain '
-                             'alphanumeric characters and underscores: %r'
-                             % name)
+        if not name or not all(c.isalnum() or c == '_' for c in name):
+            raise ValueError('Type names and field names must be non-empty '
+                             'and can only contain alphanumeric characters '
+                             'and underscores: %r' % name)
         if _iskeyword(name):
             raise ValueError('Type names and field names cannot be a '
                              'keyword: %r' % name)
@@ -321,10 +321,10 @@ def namedlist(typename: str, field_names: str | Iterable[str], verbose: bool = F
                 field_names[index] = '_%d' % index
             seen.add(name)
     for name in [typename] + field_names:
-        if not all(c.isalnum() or c == '_' for c in name):
-            raise ValueError('Type names and field names can only contain '
-                             'alphanumeric characters and underscores: %r'
-                             % name)
+        if not name or not all(c.isalnum() or c == '_' for c in name):
+            raise ValueError('Type names and field names must be non-empty '
+                             'and can only contain alphanumeric characters '
+                             'and underscores: %r' % name)
         if _iskeyword(name):
             raise ValueError('Type names and field names cannot be a '
                              'keyword: %r' % name)

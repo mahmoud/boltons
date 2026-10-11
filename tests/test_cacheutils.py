@@ -471,6 +471,8 @@ def test_threshold_counter():
     assert tc.get_uncommon_count() == 1  # bc the initial 1 was dropped
     assert round(tc.get_commonality(), 2) == 0.92
     assert tc.most_common(2) == [(2, 10), (5, 1)]
+    assert tc.most_common() == [(2, 10), (5, 1)]
+    assert tc.most_common(0) == []
     assert list(tc.elements()) == ([2] * 10) + [5]
 
     assert tc[2] == 10
@@ -478,3 +480,41 @@ def test_threshold_counter():
     assert sorted(tc.keys()) == [2, 5]
     assert sorted(tc.values()) == [1, 10]
     assert sorted(tc.items()) == [(2, 10), (5, 1)]
+
+
+def test_threshold_counter_update_mapping_counts():
+    tc = ThresholdCounter()
+    tc.add('a')
+    tc.update({'a': 3, 'b': 2, 'zero': 0})
+    assert dict(tc.items()) == {'a': 4, 'b': 2}
+    assert tc.total == 6
+
+
+def test_threshold_counter_update_keyword_counts():
+    tc = ThresholdCounter()
+    tc.update(['a'], a=3, b=2, zero=0)
+    assert dict(tc.items()) == {'a': 4, 'b': 2}
+    assert tc.total == 6
+
+
+def test_threshold_counter_update_mapping_compaction():
+    tc = ThresholdCounter(threshold=0.1)
+    expected = ThresholdCounter(threshold=0.1)
+    tc.add('rare')
+    expected.add('rare')
+    tc.update({'a': 10, 'b': 5})
+    expected.update(['a'] * 10 + ['b'] * 5)
+    assert dict(tc.items()) == dict(expected.items())
+    assert tc.total == expected.total == 16
+    assert tc.get_uncommon_count() == expected.get_uncommon_count()
+
+
+@pytest.mark.parametrize('cache_type', [LRI, LRU])
+def test_cache_update_optional_source(cache_type):
+    cache = cache_type(values={'existing': 0})
+    cache.update()
+    assert dict(cache) == {'existing': 0}
+    cache.update(a=1)
+    assert dict(cache) == {'existing': 0, 'a': 1}
+    cache.update(cache, a=2)
+    assert dict(cache) == {'existing': 0, 'a': 2}

@@ -51,6 +51,25 @@ def test_barrel_list():
     bl3[:20:2] = range(0, -10, -1)
     assert bl3[6] == -3  # some truly tricky stepping/slicing works
 
+
+def test_barrel_list_insert_before_start_matches_list():
+    bl = BarrelList(range(int(1e5)))
+    bl._balance_list(0)
+
+    bl.insert(-int(1e9), 'start')
+
+    assert bl[0] == 'start'
+    assert len(bl) == int(1e5) + 1
+
+
+def test_sort_barrel_list():
+    bl = BarrelList(reversed(range(100000)))
+    bl.pop(50000)
+    assert len(bl.lists) > 1
+    bl.sort()
+    assert bl[0] == 0
+    assert bl[-1] == 99999
+
 # roughly increasing random integers
 # [ord(i) * x for i, x in zip(os.urandom(1024), range(1024))]
 TEST_INTS = [0, 74, 96, 183, 456, 150, 1098, 665, 1752, 1053, 190,
@@ -80,8 +99,6 @@ TEST_INTS = [0, 74, 96, 183, 456, 150, 1098, 665, 1752, 1053, 190,
              5616, 46607, 2310, 41356, 26712, 8733, 43442, 33755,
              21384, 40145, 26160, 46428, 30360]
 
-
-test_barrel_list()
 
 if __name__ == '__main__':
     _TUNE_SETUP = """\
@@ -121,3 +138,105 @@ bl.extend(range(int(%s)))
     except Exception as e:
         import pdb;pdb.post_mortem()
         raise
+
+
+def _multi_sublist_bl(n=30000):
+    # BarrelList only splits into sublists after a mutating op triggers
+    # _balance_list; a single indexed pop on a freshly-built list does it
+    bl = BarrelList(range(n))
+    bl.pop(0)
+    bl.insert(0, 0)
+    assert len(bl.lists) > 1
+    assert list(bl) == list(range(n))
+    return bl
+
+
+def test_barrel_list_getitem_past_end():
+    # bl[len(bl)] used to return an element from the middle
+    bl = _multi_sublist_bl()
+    try:
+        bl[len(bl)]
+    except IndexError:
+        pass
+    else:
+        assert False, 'expected IndexError'
+
+
+def test_barrel_list_insert_at_end():
+    # insert(len(bl), x) used to insert mid-list; list.insert clamps to append
+    bl = _multi_sublist_bl()
+    bl.insert(len(bl), 'end')
+    assert bl[-1] == 'end'
+    bl.insert(len(bl) + 100, 'past_end')
+    assert bl[-1] == 'past_end'
+    bl.insert(-len(bl) - 100, 'front')
+    assert bl[0] == 'front'
+
+
+def test_barrel_list_pop_after_tail_drained():
+    # pop() used to raise IndexError on a non-empty BarrelList whose tail
+    # sublist had been emptied by indexed pops
+    bl = _multi_sublist_bl()
+    for _ in range(len(bl.lists[-1])):
+        bl.pop(len(bl) - 1)
+    expected = bl[-1]
+    assert bl.pop() == expected
+
+
+def test_barrel_list_matches_list():
+    import random
+    rng = random.Random(7)
+    ref, bl = list(range(2000)), BarrelList(range(2000))
+    for _ in range(4000):
+        op = rng.random()
+        if op < 0.3 and ref:
+            i = rng.randrange(-len(ref), len(ref))
+            assert ref.pop(i) == bl.pop(i)
+        elif op < 0.5 and ref:
+            assert ref.pop() == bl.pop()
+        elif op < 0.8:
+            i = rng.randrange(-len(ref) - 2, len(ref) + 2)
+            v = rng.random()
+            ref.insert(i, v)
+            bl.insert(i, v)
+        elif ref:
+            i = rng.randrange(-len(ref), len(ref))
+            assert ref[i] == bl[i]
+        assert len(ref) == len(bl)
+    assert list(bl) == ref
+
+
+def test_barrellist_slicing_matches_list():
+    import itertools
+    import pytest
+
+    for size in (0, 1, 8):
+        reference = list(range(size))
+        value = BarrelList(reference)
+        for start, stop, step in itertools.product(
+            (None, -20, -2, 0, 2, 20), (None, -20, -2, 0, 2, 20), (None, -3, -1, 1, 2)
+        ):
+            key = slice(start, stop, step)
+            assert list(value[key]) == reference[key], key
+        with pytest.raises(ValueError):
+            value[::0]
+
+
+def test_barrellist_delete_across_multiple_barrels():
+    for start, stop in ((2, 10), (1, 7), (4, 10), (2, 4)):
+        reference = list(range(12))
+        value = BarrelList()
+        value.lists = [reference[i : i + 3] for i in range(0, 12, 3)]
+        del reference[start:stop]
+        del value[start:stop]
+        assert list(value) == reference
+        assert len(value) == len(reference)
+
+
+def test_barrel_list_delete_to_end():
+    for stop in (None, 30000, 40000):
+        reference = list(range(30000))
+        value = _multi_sublist_bl()
+        del reference[10000:stop]
+        del value[10000:stop]
+        assert list(value) == reference

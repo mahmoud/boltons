@@ -1,9 +1,12 @@
+import threading
+import time
 from boltons.funcutils import (copy_function,
                                total_ordering,
                                format_invocation,
                                InstancePartial,
                                CachedInstancePartial,
-                               noop)
+                               noop,
+                               once)
 
 
 class Greeter:
@@ -82,3 +85,61 @@ def test_noop():
     assert noop() is None
     assert noop(1, 2) is None
     assert noop(a=1, b=2) is None
+
+
+def test_once_executes_only_once():
+    call_count = 0
+
+    @once
+    def get_value():
+        nonlocal call_count
+        call_count += 1
+        return 42
+
+    assert get_value() == 42
+    assert get_value() == 42
+    assert get_value() == 42
+    assert call_count == 1
+
+
+def test_once_caches_result():
+    @once
+    def get_list():
+        return [1, 2, 3]
+
+    result1 = get_list()
+    result2 = get_list()
+    assert result1 is result2
+
+
+def test_once_thread_safety():
+    call_count = 0
+    barrier = threading.Barrier(10)
+
+    @once
+    def slow_computation():
+        nonlocal call_count
+        call_count += 1
+        time.sleep(0.5)
+        return 99
+
+    results = []
+    errors = []
+
+    def worker():
+        try:
+            barrier.wait()
+            results.append(slow_computation())
+        except Exception as e:
+            errors.append(e)
+
+    threads = [threading.Thread(target=worker) for _ in range(10)]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join()
+
+    assert not errors
+    assert call_count == 1
+    assert all(r == 99 for r in results)
+    assert len(results) == 10

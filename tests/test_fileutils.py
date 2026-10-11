@@ -1,6 +1,5 @@
 import os.path
-
-
+import pathlib
 
 
 
@@ -28,6 +27,20 @@ def test_fileperms():
     assert oct(int(up)) == '0o770'
 
     assert int(FilePerms()) == 0
+
+
+def test_atomicsaver_pathlike(tmp_path):
+    dest = tmp_path / 'output.bin'
+    with fileutils.AtomicSaver(dest) as f:
+        f.write(b'pathlike works')
+    assert dest.read_bytes() == b'pathlike works'
+
+
+def test_iter_find_files_pathlike():
+    boltons_path = pathlib.Path(BOLTONS_PATH)
+    results = list(iter_find_files(boltons_path, patterns=['*.py']))
+    basenames = [os.path.basename(p) for p in results]
+    assert 'fileutils.py' in basenames
 
 
 def test_iter_find_files():

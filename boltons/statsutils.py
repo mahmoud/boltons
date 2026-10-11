@@ -30,7 +30,7 @@
 
 """``statsutils`` provides tools aimed primarily at descriptive
 statistics for data analysis, such as :func:`mean` (average),
-:func:`median`, :func:`variance`, and many others,
+:func:`median`, :func:`mode`, :func:`variance`, and many others,
 
 The :class:`Stats` type provides all the main functionality of the
 ``statsutils`` module. A :class:`Stats` object wraps a given dataset,
@@ -303,6 +303,27 @@ class Stats:
         return self._get_quantile(self._get_sorted_data(), 0.5)
     median = _StatsProperty('median', _calc_median)
 
+    def _calc_mode(self):
+        """
+        The mode is the value that appears most frequently in the
+        data. Unlike the mean and median, the mode is well-defined for
+        non-numeric, categorical data, too.
+
+        >>> mode([2, 1, 3, 1])
+        1
+        >>> mode(['a', 'b', 'b', 'c', 'c', 'c'])
+        'c'
+
+        When several values are equally common, the one appearing
+        first in the data is returned, matching the standard library's
+        :func:`statistics.mode`.
+
+        >>> mode([1, 1, 2, 2, 3])
+        1
+        """
+        return Counter(self.data).most_common(1)[0][0]
+    mode = _StatsProperty('mode', _calc_mode)
+
     def _calc_iqr(self):
         """Inter-quartile range (IQR) is the difference between the 75th
         percentile and 25th percentile. IQR is a robust measure of
@@ -460,9 +481,19 @@ class Stats:
         elif round(c2, precision) == 0:
             return 3  # Gamma
         else:
+            if c0 == 0:
+                # At exact zero, c2's sign selects the limiting Type I/VI.
+                return 1 if c2 < 0 else 6
             k = c1 ** 2 / (4 * c0 * c2)
             if k < 0:
                 return 1  # Beta
+            # The existing precision also widens the Type V boundary.
+            elif round(k, precision) == 1:
+                return 5  # Type V
+            elif k < 1:
+                return 4  # Type IV
+            else:
+                return 6  # Type VI
         raise RuntimeError('missed a spot')
     pearson_type = _StatsProperty('pearson_type', _calc_pearson_type)
 
@@ -555,6 +586,8 @@ class Stats:
             # freedman algorithm for fixed-width bin selection
             q25, q75 = self.get_quantile(0.25), self.get_quantile(0.75)
             dx = 2 * (q75 - q25) / (len_data ** (1 / 3.0))
+            if dx == 0:
+                return [float(min_data), float(max_data)] if with_max else [float(min_data)]
             bin_count = max(1, int(ceil((max_data - min_data) / dx)))
             bins = [min_data + (dx * i) for i in range(bin_count + 1)]
             bins = [b for b in bins if b < max_data]

@@ -281,6 +281,40 @@ class TestSpooledBytesIO(TestCase, BaseTestMixin, AssertionsMixin):
         self.spooled_flo.rollover()
         self.assertIsNone(self.spooled_flo.flush())
 
+    def test_write_returns_byte_count(self):
+        for rolled in (False, True):
+            with self.subTest(rolled=rolled):
+                with ioutils.SpooledBytesIO() as stream:
+                    if rolled:
+                        stream.rollover()
+                    self.assertEqual(stream.write(b'abc'), 3)
+                    self.assertEqual(stream.write(b''), 0)
+                    self.assertEqual(stream.getvalue(), b'abc')
+
+    def test_buffered_writer_flush(self):
+        for rolled in (False, True):
+            with self.subTest(rolled=rolled):
+                stream = ioutils.SpooledBytesIO()
+                if rolled:
+                    stream.rollover()
+                writer = io.BufferedWriter(stream)
+                try:
+                    writer.write(b'payload')
+                    writer.flush()
+                    self.assertEqual(stream.getvalue(), b'payload')
+                finally:
+                    try:
+                        writer.close()
+                    except BlockingIOError:
+                        stream.close()
+
+    def test_buffer_write_rollover_uses_byte_count(self):
+        with ioutils.SpooledBytesIO(max_size=4) as stream:
+            with memoryview(bytearray(b'abcd')).cast('I') as view:
+                self.assertEqual(stream.write(view), 4)
+            self.assertTrue(stream._rolled)
+            self.assertEqual(stream.getvalue(), b'abcd')
+
     def test_zip_compat(self):
         """Make sure object is compatible with ZipFile library"""
         self.spooled_flo.seek(0)
@@ -356,6 +390,42 @@ class TestSpooledStringIO(TestCase, BaseTestMixin, AssertionsMixin):
     def test_invalid_type(self):
         """Ensure TypeError raised when writing bytes to SpooledStringIO"""
         self.assertRaises(TypeError, self.spooled_flo.write, b"hi")
+
+    def test_write_returns_character_count(self):
+        for rolled in (False, True):
+            with self.subTest(rolled=rolled):
+                with ioutils.SpooledStringIO() as stream:
+                    if rolled:
+                        stream.rollover()
+                    self.assertEqual(stream.write('a\u2603b'), 3)
+                    self.assertEqual(stream.write(''), 0)
+                    self.assertEqual(stream.getvalue(), 'a\u2603b')
+
+    def test_relative_backwards_seek_uses_character_position(self):
+        for rolled in (False, True):
+            with self.subTest(rolled=rolled):
+                with ioutils.SpooledStringIO() as stream:
+                    stream.write('a\u2603bc')
+                    if rolled:
+                        stream.rollover()
+                    stream.seek(3)
+                    self.assertEqual(stream.seek(-2, os.SEEK_CUR), 1)
+                    self.assertEqual(stream.read(2), '\u2603b')
+                    self.assertEqual(stream.tell(), 3)
+
+    def test_negative_destination_rejected_without_moving(self):
+        for rolled in (False, True):
+            for offset, whence in ((-1, os.SEEK_SET), (-3, os.SEEK_CUR)):
+                with self.subTest(rolled=rolled, offset=offset, whence=whence):
+                    with ioutils.SpooledStringIO() as stream:
+                        stream.write('a\u2603bc')
+                        if rolled:
+                            stream.rollover()
+                        stream.seek(2)
+                        with self.assertRaises(ValueError):
+                            stream.seek(offset, whence)
+                        self.assertEqual(stream.tell(), 2)
+                        self.assertEqual(stream.read(), 'bc')
 
     def test_tell_codepoints(self):
         """Verify tell() returns codepoint position, not bytes position"""

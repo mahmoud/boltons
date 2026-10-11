@@ -67,8 +67,8 @@ def reverse_iter_lines(file_obj: IO[bytes] | IO[str], blocksize: int = DEFAULT_B
         file_obj (file): An open file object. Note that
             ``reverse_iter_lines`` mutably reads from the file and
             other functions should not mutably interact with the file
-            object after being passed. Files can be opened in bytes or
-            text mode.
+            object during iteration. Files can be opened in bytes or
+            text mode. Seek before reusing a text stream after iteration.
         blocksize (int): The block size to pass to
           :meth:`file.read()`. Warning: keep this a fairly large
           multiple of 2, defaults to 4096.
@@ -78,21 +78,17 @@ def reverse_iter_lines(file_obj: IO[bytes] | IO[str], blocksize: int = DEFAULT_B
             file cursor is already in position, either at the end of
             the file or in the middle for relative reverse line
             generation.
+        encoding (str): Text encoding used to decode lines. Defaults to the
+            file's encoding, or returns bytes when neither is specified.
 
     """
     # This function is a bit of a pain because it attempts to be byte/text agnostic
-    try:
-        encoding = encoding or file_obj.encoding
-    except AttributeError:
-        # BytesIO
-        encoding = None
-    else:
-        encoding = 'utf-8'
+    encoding = encoding or getattr(file_obj, 'encoding', None)
 
     # need orig_obj to keep alive otherwise __del__ on the TextWrapper will close the file
     orig_obj = file_obj
     try:
-        file_obj = orig_obj.detach()
+        file_obj = orig_obj.buffer
     except (AttributeError, io.UnsupportedOperation):
         pass
 
@@ -161,11 +157,11 @@ class JSONLIterator:
         if rel_seek is None:
             if reverse:
                 rel_seek = 1.0
-        elif not -1.0 < rel_seek < 1.0:
+        elif not -1.0 < rel_seek <= 1.0:
             raise ValueError("'rel_seek' expected a float between"
                              " -1.0 and 1.0, not %r" % rel_seek)
         elif rel_seek < 0:
-            rel_seek = 1.0 - rel_seek
+            rel_seek = 1.0 + rel_seek
         self._rel_seek = rel_seek
         self._blocksize = 4096
         if rel_seek is not None:
@@ -185,15 +181,18 @@ class JSONLIterator:
     def _align_to_newline(self):
         "Aligns the file object's position to the next newline."
         fo, bsize = self._file_obj, self._blocksize
-        cur, total_read = '', 0
+        newline = b'\n' if isinstance(fo.read(0), bytes) else '\n'
+        cur, total_read = newline[:0], 0
         cur_pos = fo.tell()
-        while '\n' not in cur:
+        while newline not in cur:
             cur = fo.read(bsize)
+            if not cur:
+                # no newline until EOF; a partial trailing line was
+                # never yieldable from a mid-line seek anyway
+                fo.seek(0, os.SEEK_END)
+                return
             total_read += bsize
-        try:
-            newline_offset = cur.index('\n') + total_read - bsize
-        except ValueError:
-            raise  # TODO: seek to end?
+        newline_offset = cur.index(newline) + total_read - bsize
         fo.seek(cur_pos + newline_offset)
 
     def _init_rel_seek(self):

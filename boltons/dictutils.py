@@ -199,6 +199,14 @@ class OrderedMultiDict(Dict[_KT, _VT]):
         self.clear()
         self.update_extend(state)
 
+    def __reduce__(self):
+        # The default dict-subclass reduce includes a dictitems iterator
+        # whose entries are reapplied via __setitem__ after __setstate__,
+        # collapsing each key's multiple values down to a single value.
+        # __getstate__/__setstate__ already round-trip the full (multi) state,
+        # so omit dictitems by returning a plain (callable, args, state) tuple.
+        return (self.__class__, (), self.__getstate__())
+
     def _clear_ll(self):
         try:
             _map = self._map
@@ -236,6 +244,9 @@ class OrderedMultiDict(Dict[_KT, _VT]):
         Called ``addlist`` for consistency with :meth:`getlist`, but
         tuples and other sequences and iterables work.
         """
+        # materialize first: the values are traversed twice below, and a
+        # one-shot iterator would be empty by the second pass
+        v = list(v)
         if not v:
             return
         self_insert = self._insert
@@ -385,7 +396,8 @@ class OrderedMultiDict(Dict[_KT, _VT]):
         elif hasattr(other, 'keys'):
             for selfk in self:
                 try:
-                    other[selfk] == self[selfk]
+                    if other[selfk] != self[selfk]:
+                        return False
                 except KeyError:
                     return False
             return True

@@ -2,6 +2,8 @@ import re
 import uuid
 from unittest import TestCase
 
+import pytest
+
 from boltons import strutils
 
 
@@ -48,6 +50,26 @@ def test_indent():
     to_indent = '\nabc\ndef\n\nxyz\n'
     ref = '\n  abc\n  def\n\n  xyz\n'
     assert strutils.indent(to_indent, '  ') == ref
+
+
+@pytest.mark.parametrize('line_ending', ['\u2028', '\u2029'])
+def test_iter_splitlines_unicode_line_endings(line_ending):
+    text = line_ending + 'first' + line_ending + 'second' + line_ending
+
+    assert list(strutils.iter_splitlines(text)) == ['', 'first', 'second', '']
+
+
+def test_iter_splitlines_preserves_numbers_after_spaces():
+    text = 'February 28, or February 29 in a leap year'
+
+    assert list(strutils.iter_splitlines(text)) == [text]
+
+
+def test_indent_unicode_line_endings():
+    text = 'February 28\u2028February 29\u2029March 1\r\nMarch 2'
+
+    assert strutils.indent(text, '  ') == (
+        '  February 28\n  February 29\n  March 1\n  March 2')
 
 
 def test_is_uuid():
@@ -142,8 +164,236 @@ class TestMultiReplace(TestCase):
         self.assertEqual(m.sub('The cat.+ is purple'), 'The kedi is mor')
 
 
+def test_human_readable_list():
+    """Test the human_readable_list function with various inputs."""
+    
+    # Test empty list
+    assert strutils.human_readable_list([]) == ''
+    
+    # Test single item
+    assert strutils.human_readable_list(['apple']) == 'apple'
+    
+    # Test two items (no Oxford comma applies)
+    assert strutils.human_readable_list(['apple', 'banana']) == 'apple and banana'
+    
+    # Test three items with Oxford comma (default)
+    assert strutils.human_readable_list(['apple', 'banana', 'cherry']) == 'apple, banana, and cherry'
+    
+    # Test three items without Oxford comma
+    assert strutils.human_readable_list(['apple', 'banana', 'cherry'], oxford=False) == 'apple, banana and cherry'
+    
+    # Test four items with Oxford comma
+    assert strutils.human_readable_list(['apple', 'banana', 'cherry', 'date']) == 'apple, banana, cherry, and date'
+    
+    # Test four items without Oxford comma
+    assert strutils.human_readable_list(['apple', 'banana', 'cherry', 'date'], oxford=False) == 'apple, banana, cherry and date'
+    
+    # Test custom delimiter
+    assert strutils.human_readable_list(['apple', 'banana', 'cherry'], delimiter=';') == 'apple; banana; and cherry'
+    
+    # Test custom conjunction
+    assert strutils.human_readable_list(['apple', 'banana', 'cherry'], conjunction='or') == 'apple, banana, or cherry'
+    
+    # Test custom delimiter and conjunction
+    assert strutils.human_readable_list(['apple', 'banana', 'cherry'], delimiter='|', conjunction='plus') == 'apple| banana| plus cherry'
+    
+    # Test custom conjunction without Oxford comma
+    assert strutils.human_readable_list(['apple', 'banana', 'cherry'], conjunction='or', oxford=False) == 'apple, banana or cherry'
+    
+    # Test delimiter with extra spaces (should be stripped)
+    assert strutils.human_readable_list(['apple', 'banana', 'cherry'], delimiter=' , ') == 'apple, banana, and cherry'
+    
+    # Test conjunction with extra spaces (should be stripped)
+    assert strutils.human_readable_list(['apple', 'banana', 'cherry'], conjunction=' or ') == 'apple, banana, or cherry'
+    
+    # Test with empty strings in the list
+    assert strutils.human_readable_list(['apple', '', 'cherry']) == 'apple, , and cherry'
+    
+    # Test with whitespace strings
+    assert strutils.human_readable_list(['apple', '  ', 'cherry']) == 'apple,   , and cherry'
+    
+    # Test with special characters
+    assert strutils.human_readable_list(['apple & pear', 'banana/plantain', 'cherry-bomb']) == 'apple & pear, banana/plantain, and cherry-bomb'
+    
+    # Test with unicode characters
+    assert strutils.human_readable_list(['🍎', '🍌', '🍒']) == '🍎, 🍌, and 🍒'
+    
+    # Test with numbers as strings
+    assert strutils.human_readable_list(['1', '2', '3']) == '1, 2, and 3'
+    
+    # Test edge case with only delimiter character as items
+    assert strutils.human_readable_list([',', ',', ',']) == ',, ,, and ,'
+    
+    # Test long list to ensure pattern consistency
+    long_list = ['a', 'b', 'c', 'd', 'e', 'f']
+    assert strutils.human_readable_list(long_list) == 'a, b, c, d, e, and f'
+    assert strutils.human_readable_list(long_list, oxford=False) == 'a, b, c, d, e and f'
+
+    # Edge cases
+    # Test with empty delimiter
+    assert strutils.human_readable_list(['apple', 'banana', 'cherry'], delimiter='') == 'applebananaand cherry'
+    
+    # Test with empty conjunction
+    assert strutils.human_readable_list(['apple', 'banana', 'cherry'], conjunction='') == 'apple, banana,  cherry'
+    
+    # Test two items with custom delimiter and conjunction
+    assert strutils.human_readable_list(['apple', 'banana'], delimiter=';', conjunction='or') == 'apple or banana'
+    
+    # Test single item with custom parameters (should ignore them)
+    assert strutils.human_readable_list(['apple'], delimiter='|', conjunction='plus', oxford=False) == 'apple'
+    
+    # Test very long strings
+    long_item1 = 'a' * 100
+    long_item2 = 'b' * 100
+    result = strutils.human_readable_list([long_item1, long_item2])
+    assert result == f'{long_item1} and {long_item2}'
+
+
+def test_human_readable_list_type_annotations():
+    """Test that the function works with different sequence types."""
+    
+    # Test with tuple
+    assert strutils.human_readable_list(('apple', 'banana', 'cherry')) == 'apple, banana, and cherry'
+    
+    # Test with list (already tested above, but for completeness)
+    assert strutils.human_readable_list(['apple', 'banana', 'cherry']) == 'apple, banana, and cherry'
+    
+    # Test with generator (converted to list for the test)
+    def fruit_generator():
+        yield 'apple'
+        yield 'banana' 
+        yield 'cherry'
+    
+    # Convert generator to list since the function expects a Sequence
+    fruits = list(fruit_generator())
+    assert strutils.human_readable_list(fruits) == 'apple, banana, and cherry'
+
+
 def test_roundzip():
     aaa = b'a' * 10000
     assert strutils.gunzip_bytes(strutils.gzip_bytes(aaa)) == aaa
 
     assert strutils.gunzip_bytes(strutils.gzip_bytes(b'')) == b''
+
+
+def test_bytes2human():
+    b2h = strutils.bytes2human
+    # Exact powers of 1024 must roll over to the next unit, not show the
+    # previous unit times 1024.
+    assert b2h(1024) == '1K'
+    assert b2h(1024 ** 2) == '1M'
+    assert b2h(1024 ** 3) == '1G'
+    assert b2h(1024 ** 4) == '1T'
+    assert b2h(1024 ** 8) == '1Y'
+    # Just below a boundary stays in the smaller unit.
+    assert b2h(1023) == '1023B'
+    assert b2h(1024 ** 2 - 1, 1) == '1024.0K'
+    # Ordinary mid-range values are unaffected.
+    assert b2h(0) == '0B'
+    assert b2h(2048) == '2K'
+    assert b2h(128991) == '126K'
+    # Sign is preserved and negative magnitudes scale like positives.
+    assert b2h(-1024) == '-1K'
+    assert b2h(-(1024 ** 2)) == '-1M'
+    # ndigits controls the fractional part.
+    assert b2h(1024, 2) == '1.00K'
+
+
+def test_singularize_double_s():
+    singularize = strutils.singularize
+    # Words ending in a double 's' are already singular (their plurals end
+    # in 'sses'), so singularize must not strip the trailing 's' and produce
+    # 'glas'/'bos'/'kis'. Regression for the branch that blindly did word[:-1].
+    assert singularize('glass') == 'glass'
+    assert singularize('boss') == 'boss'
+    assert singularize('class') == 'class'
+    assert singularize('kiss') == 'kiss'
+    assert singularize('address') == 'address'
+    assert singularize('business') == 'business'
+    # Case pattern is preserved, like the rest of singularize().
+    assert singularize('Glass') == 'Glass'
+    assert singularize('BOSS') == 'BOSS'
+    # The real plurals of these words still singularize correctly (the 'sses'
+    # -> 'ss' branch runs before the new guard, so nothing regresses).
+    assert singularize('glasses') == 'glass'
+    assert singularize('bosses') == 'boss'
+    assert singularize('classes') == 'class'
+    assert singularize('addresses') == 'address'
+    # singularize() is now idempotent for these words: feeding its own output
+    # back in is a no-op (previously 'Glasses' -> 'Glass' -> 'Glas').
+    assert singularize(singularize('Glasses')) == 'Glass'
+
+
+def test_pluralize_x():
+    pluralize = strutils.pluralize
+    # Words ending in 'x' take an '-es' plural, like the 's'/'ch'/'sh' cases
+    # already handled; previously they wrongly got a bare 's' ('boxs').
+    assert pluralize('box') == 'boxes'
+    assert pluralize('fox') == 'foxes'
+    assert pluralize('tax') == 'taxes'
+    assert pluralize('prefix') == 'prefixes'
+    # Case pattern is preserved, like the rest of pluralize().
+    assert pluralize('Box') == 'Boxes'
+    assert pluralize('FOX') == 'FOXES'
+    # Irregular '-x' words are unaffected (handled before the rule).
+    assert pluralize('ox') == 'oxen'
+
+
+
+def test_multi_replace_empty_mapping():
+    # An empty substitution map is a no-op; previously the empty combined
+    # pattern matched everywhere with lastgroup None, raising KeyError.
+    assert strutils.MultiReplace({}).sub('foo bar') == 'foo bar'
+    assert strutils.MultiReplace([]).sub('foo bar') == 'foo bar'
+    assert strutils.multi_replace('foo bar', {}) == 'foo bar'
+
+
+def test_ellipsize():
+    ellipsize = strutils.ellipsize
+
+    # short enough text is returned unchanged
+    assert ellipsize('Hello, World!') == 'Hello, World!'
+    # exact boundary is still a no-op
+    assert ellipsize('Hello, World!', 13) == 'Hello, World!'
+
+    # cut lands on the last space boundary, never mid-word
+    assert ellipsize('The quick brown fox jumps', 16) == 'The quick brown…'
+
+    # trailing sentence punctuation at the cut is stripped
+    res = ellipsize('Beautiful is better than ugly. Explicit is better.', 31)
+    assert res == 'Beautiful is better than ugly…'
+
+    # a decimal point is not sentence punctuation; numbers stay whole
+    res = ellipsize('rates around 6.5% this week', 20)
+    assert res == 'rates around 6.5%…'
+    assert '6.5%' in res
+
+    # no space at all: hard cut at the limit
+    assert ellipsize('antidisestablishmentarianism', 10) == 'antidises…'
+
+    # custom ellipsis string
+    assert ellipsize('The quick brown fox jumps', 18, ellipsis='...') == 'The quick brown...'
+
+    # every result respects max_len
+    text = 'the wheels on the bus go round and round'
+    for max_len in range(2, len(text) + 1):
+        assert len(ellipsize(text, max_len)) <= max_len
+
+    # max_len must exceed the length of the ellipsis
+    with pytest.raises(ValueError):
+        ellipsize('anything', 1)
+    with pytest.raises(ValueError):
+        ellipsize('anything', 3, ellipsis='...')
+
+
+def test_args2sh_sep():
+    assert strutils.args2sh(['aa', 'bb']) == 'aa bb'
+    assert strutils.args2sh(['aa', 'bb'], sep='|') == 'aa|bb'
+    # escaping is unaffected by the separator
+    assert strutils.args2sh(['a a', 'bb'], sep='|') == "'a a'|bb"
+
+
+def test_args2cmd_sep():
+    assert strutils.args2cmd(['aa', 'bb']) == 'aa bb'
+    assert strutils.args2cmd(['aa', 'bb'], sep='|') == 'aa|bb'
+    assert strutils.args2cmd(['a a', 'bb'], sep='|') == '"a a"|bb'

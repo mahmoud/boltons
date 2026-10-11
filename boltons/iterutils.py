@@ -159,7 +159,7 @@ def split_iter(src, sep=None, maxsplit=None) -> Generator:
     if maxsplit is not None:
         maxsplit = int(maxsplit)
         if maxsplit == 0:
-            yield [src]
+            yield list(src)
             return
 
     if callable(sep):
@@ -527,8 +527,9 @@ def xfrange(stop, start=None, step: float = 1.0) -> Generator:
     else:
         # swap when all args are used
         stop, start = start * 1.0, stop * 1.0
+    count = int(math.ceil((stop - start) / step))
     cur = start
-    while cur < stop:
+    for _ in range(count):
         yield cur
         cur += step
 
@@ -649,8 +650,14 @@ def backoff_iter(start, stop, count=None, factor: float = 2.0, jitter: bool = Fa
         raise ValueError('expected stop >= start, not %r' % stop)
     if count is None:
         denom = start if start else 1
-        count = 1 + math.ceil(math.log(stop/denom, factor))
-        count = count if start else count + 1
+        if factor == 1.0:
+            if start != stop:
+                raise ValueError('expected factor > 1.0 when count is None'
+                                 ' and start != stop, not %r' % factor)
+            count = 1
+        else:
+            count = 1 + math.ceil(math.log(stop/denom, factor))
+            count = count if start else count + 1
     if count != 'repeat' and count < 0:
         raise ValueError('count must be positive or "repeat", not %r' % count)
     if jitter:
@@ -755,10 +762,15 @@ def bucketize(src, key=bool, value_transform=None, key_filter=None):
     return ret
 
 
-def partition(src, key=bool):
+def partition(src, key=bool, *keys):
     """No relation to :meth:`str.partition`, ``partition`` is like
-    :func:`bucketize`, but for added convenience returns a tuple of
-    ``(truthy_values, falsy_values)``.
+    :func:`bucketize`, but for added convenience returns a collection for
+    each predicate passed.
+
+    ``partition`` now accepts multiple *key* functions and will return
+    ``N + 1`` lists for ``N`` predicates. Each value from *src* is placed
+    into the first list whose predicate evaluates to ``True`` with values
+    that match none of the predicates placed in the last list.
 
     >>> nonempty, empty = partition(['', '', 'hi', '', 'bye'])
     >>> nonempty
@@ -773,9 +785,37 @@ def partition(src, key=bool):
     >>> decimal_digits, hexletters = partition(string.hexdigits, is_digit)
     >>> ''.join(decimal_digits), ''.join(hexletters)
     ('0123456789', 'abcdefABCDEF')
+
+    Multiple predicates may be supplied to divide into more buckets:
+
+    >>> positive, negative, zero = partition(range(-1, 2),
+    ...                                     lambda i: i > 0,
+    ...                                     lambda i: i < 0)
+    >>> positive, negative, zero
+    ([1], [-1], [0])
     """
-    bucketized = bucketize(src, key)
-    return bucketized.get(True, []), bucketized.get(False, [])
+    if not is_iterable(src):
+        raise TypeError('expected an iterable')
+
+    def _make_key_func(k):
+        if isinstance(k, str):
+            return lambda x, k=k: getattr(x, k, False)
+        if callable(k):
+            return k
+        raise TypeError('expected key to be callable or a string')
+
+    key_funcs = [_make_key_func(key)] + [_make_key_func(k) for k in keys]
+    parts = [[] for _ in range(len(key_funcs) + 1)]
+
+    for val in src:
+        for idx, func in enumerate(key_funcs):
+            if func(val):
+                parts[idx].append(val)
+                break
+        else:
+            parts[-1].append(val)
+
+    return tuple(parts)
 
 
 def unique(src, key=None):
@@ -1056,8 +1096,14 @@ def default_exit(path, key, old_parent, new_parent, new_items):
     return ret
 
 
-def remap(root, visit=default_visit, enter=default_enter, exit=default_exit,
-          **kwargs):
+def remap(
+        root,
+        visit=default_visit,
+        enter=default_enter,
+        exit=default_exit,
+        cache: bool = True,
+        **kwargs,
+):
     """The remap ("recursive map") function is used to traverse and
     transform nested structures. Lists, tuples, sets, and dictionaries
     are just a few of the data structures nested into heterogeneous
@@ -1131,6 +1177,10 @@ def remap(root, visit=default_visit, enter=default_enter, exit=default_exit,
             :class:`namedtuple`, must be recreated from scratch, but
             use the same type as the new parent passed back from the
             *enter* function.
+        cache (bool): Controls whether to cache transformed
+            objects. Uses object identity for the cache. For example
+            this is turned off for applications like `research` which
+            need to traverse all trees.
         reraise_visit (bool): A pragmatic convenience for the *visit*
             callable. When set to ``False``, remap ignores any errors
             raised by the *visit* callback. Items causing exceptions
@@ -1196,7 +1246,7 @@ def remap(root, visit=default_visit, enter=default_enter, exit=default_exit,
             registry[id_value] = value
             if not new_items_stack:
                 continue
-        elif id_value in registry:
+        elif cache and id_value in registry:
             value = registry[id_value]
         else:
             if trace_enter:
@@ -1389,7 +1439,7 @@ def research(root, query=lambda p, k, v: True, reraise=False, enter=default_ente
                 raise
         return enter(path, key, value)
 
-    remap(root, enter=_enter)
+    remap(root, enter=_enter, cache=False)
     return ret
 
 
@@ -1424,7 +1474,7 @@ class GUIDerator:
     def __init__(self, size=24):
         self.size = size
         if size < 20 or size > 36:
-            raise ValueError('expected 20 < size <= 36')
+            raise ValueError('expected 20 <= size <= 36')
         import hashlib
         self._sha1 = hashlib.sha1
         self.count = itertools.count()

@@ -1,6 +1,7 @@
 name: Tests
 on:
   push:
+    branches: [master]
     paths-ignore:
       - "docs/**"
       - "*.md"
@@ -10,6 +11,10 @@ on:
       - "docs/**"
       - "*.md"
       - "*.rst"
+  workflow_dispatch:
+permissions:
+  contents: read
+
 jobs:
   tests:
     name: ${{ matrix.name }}
@@ -18,9 +23,10 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - { name: Windows, python: "3.13", os: windows-latest, tox: py313 }
-          - { name: Mac, python: "3.13", os: macos-latest, tox: py313 }
-          - { name: Linux, python: "3.13", os: ubuntu-latest, tox: "py313,mypy" }
+          - { name: Linux, python: "3.14", os: ubuntu-latest, tox: py314 }
+          - { name: Windows, python: "3.14", os: windows-latest, tox: py314 }
+          - { name: Mac, python: "3.14", os: macos-latest, tox: "py314,mypy" }
+          - { name: "3.13", python: "3.13", os: ubuntu-latest, tox: "py313,mypy" }
           - { name: "3.12", python: "3.12", os: ubuntu-latest, tox: "py312,mypy" }
           - { name: "3.11", python: "3.11", os: ubuntu-latest, tox: "py311,mypy" }
           - { name: "3.10", python: "3.10", os: ubuntu-latest, tox: "py310,mypy" }
@@ -29,24 +35,10 @@ jobs:
           - { name: "3.7", python: "3.7", os: ubuntu-22.04, tox: py37 }
           - { name: "PyPy3", python: "pypy-3.9", os: ubuntu-latest, tox: pypy3 }
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - uses: astral-sh/setup-uv@11f9893b081a58869d3b5fccaea48c9e9e46f990 # v8.3.2
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
         with:
           python-version: ${{ matrix.python }}
-      - name: update pip
-        run: |
-          pip install -U wheel
-          pip install -U setuptools
-          python -m pip install -U pip
-      - name: get pip cache dir
-        id: pip-cache
-        shell: bash
-        run: |
-          echo "dir=$(pip cache dir)" >> "$GITHUB_OUTPUT"
-      - name: cache pip
-        uses: actions/cache@v4
-        with:
-          path: ${{ steps.pip-cache.outputs.dir }}
-          key: pip|${{ runner.os }}|${{ matrix.python }}|${{ hashFiles('pyproject.toml') }}|${{ hashFiles('requirements/*.txt') }}
-      - run: pip install tox
-      - run: tox -e ${{ matrix.tox }}
+          allow-prereleases: true
+      - run: uvx --with tox-uv tox -e ${{ matrix.tox }}

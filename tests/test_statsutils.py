@@ -1,4 +1,4 @@
-from boltons.statsutils import Stats
+from boltons.statsutils import Stats, mode
 
 
 def test_stats_basic():
@@ -11,21 +11,35 @@ def test_stats_basic():
     assert da.median == 9.5
 
 
-def test_pearson():
-    import random
+def test_pearson_type_covers_kappa_ge_zero():
+    assert Stats([8, 4, 4, 4, 5, 1, 6, 5]).pearson_type == 4
+    assert Stats([5, 5, 2, 4, 5, 9, 5, 5]).pearson_type == 5
+    assert Stats([0, 0, 0, 0, 0, 0, -11, 17]).pearson_type == 6
 
-    def get_pt(dist):
-        vals = [dist() for x in range(10000)]
-        pt = Stats(vals).pearson_type
-        return pt
 
-    for x in range(3):
-        # pt = get_pt(dist=lambda: random.normalvariate(15, 5))  # expect 0, normal
-        # pt = get_pt(dist=lambda: random.weibullvariate(2, 3))  # gets 1, beta, weibull not specifically supported
-        # pt = get_pt(dist=lambda: random.gammavariate(2, 3))  # expect 3, gamma
-        # pt = get_pt(dist=lambda: random.betavariate(2, 3))  # expect 1, beta
-        # pt = get_pt(dist=lambda: random.expovariate(0.2))  # expect 3, beta
-        pt = get_pt(dist=lambda: random.uniform(0.0, 10.0))  # gets 2
-        print('pearson type:', pt)
+def test_mode():
+    assert Stats([2, 1, 3, 1]).mode == 1
+    # ties resolve to the value seen first in the data
+    assert mode([1, 1, 2, 2, 3]) == 1
+    # non-numeric, categorical data is supported
+    assert mode(['a', 'b', 'b', 'c', 'c', 'c']) == 'c'
+    # empty data falls back to the configured default
+    assert Stats([], default=None).mode is None
 
-        # import pdb;pdb.set_trace()
+
+def test_pearson_type_zero_denominator():
+    # Supply exact moments to exercise c0 == 0, c2 == 0, and the
+    # normal-distribution boundary without sampling noise.
+    for skewness, kurtosis, expected in ((2.0, 3.0, 1),
+                                         (2.0, 9.0, 3),
+                                         (0.0, 3.0, 0)):
+        stats = Stats([0])
+        stats.skewness = skewness
+        stats.kurtosis = kurtosis
+        assert stats.pearson_type == expected
+
+
+def test_histogram_zero_interquartile_range():
+    for data in ([5] * 10, [0] * 10 + [100]):
+        counts = Stats(data).get_histogram_counts()
+        assert counts == [(float(min(data)), len(data))]

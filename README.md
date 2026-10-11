@@ -25,7 +25,7 @@ in the same spirit as — and yet conspicuously missing from —
 **[Full and extensive docs are available on Read The Docs.][rtd]** See
 what's new [by checking the CHANGELOG][changelog].
 
-Boltons is tested against Python 3.7-3.13, as well as PyPy3.
+Boltons is tested against Python 3.7-3.14, as well as PyPy3.
 
 [stdlib]: https://docs.python.org/3/library/index.html
 [rtd]: https://boltons.readthedocs.org/en/latest/
@@ -95,8 +95,10 @@ library worth mentioning, see the next section!
 
 Found something missing in the standard library that should be in
 `boltons`? Found something missing in `boltons`? First, take a
-moment to read the very brief [architecture statement][architecture] to make
-sure the functionality would be a good fit.
+moment to read the very brief [architecture statement][architecture]
+to make sure the functionality would be a good fit. It covers the
+design philosophy, what belongs in boltons, and how modules are
+organized.
 
 Then, if you are very motivated, submit [a Pull Request][prs]. Otherwise,
 submit a short feature request on [the Issues page][issues], and we will
@@ -105,3 +107,23 @@ figure something out.
 [architecture]: https://boltons.readthedocs.org/en/latest/architecture.html
 [issues]: https://github.com/mahmoud/boltons/issues
 [prs]: https://github.com/mahmoud/boltons/pulls
+
+## Development
+
+Install [uv](https://docs.astral.sh/uv/), then set up a dev environment:
+
+```bash
+uv venv && uv pip install -e .
+```
+
+Run the test suite (includes doctests):
+
+```bash
+uvx --with tox-uv tox -e py314
+```
+
+Run all environments in parallel:
+
+```bash
+uvx --with tox-uv tox -p auto
+```
