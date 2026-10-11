@@ -45,7 +45,9 @@ in a tree, graph, or other mutable data structure. If you want an even
 skinnier approach, you'll probably have to look to C.
 """
 
+from __future__ import annotations
 
+from collections.abc import Iterable
 import sys as _sys
 from collections import OrderedDict
 from keyword import iskeyword as _iskeyword
@@ -120,7 +122,7 @@ class {typename}(tuple):
 {field_defs}
 '''
 
-def namedtuple(typename, field_names, verbose=False, rename=False):
+def namedtuple(typename: str, field_names: str | Iterable[str], verbose: bool = False, rename: bool = False):
     """Returns a new subclass of tuple with named fields.
 
     >>> Point = namedtuple('Point', ['x', 'y'])
@@ -279,7 +281,7 @@ class {typename}(list):
 '''
 
 
-def namedlist(typename, field_names, verbose=False, rename=False):
+def namedlist(typename: str, field_names: str | Iterable[str], verbose: bool = False, rename: bool = False):
     """Returns a new subclass of list with named fields.
 
     >>> Point = namedlist('Point', ['x', 'y'])

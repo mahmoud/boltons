@@ -65,9 +65,14 @@ format strings:
 # TODO: also include percent-formatting utils?
 # TODO: include lithoxyl.formatters.Formatter (or some adaptation)?
 
+from __future__ import annotations
 
+from collections.abc import Callable
 import re
 from string import Formatter
+from typing import Generic, TypeVar
+
+_T = TypeVar("_T")
 
 __all__ = ['DeferredValue', 'get_format_args', 'tokenize_format_str',
            'construct_format_field_str', 'infer_positional_format_args',
@@ -79,7 +84,7 @@ _pos_farg_re = re.compile('({{)|'         # escaped open-brace
                           r'({[:!.\[}])')  # anon positional format arg
 
 
-def construct_format_field_str(fname, fspec, conv):
+def construct_format_field_str(fname: str | None, fspec: str | None, conv: str | None) -> str:
     """
     Constructs a format field string from the field name, spec, and
     conversion character (``fname``, ``fspec``, ``conv``). See Python
@@ -112,7 +117,7 @@ def split_format_str(fstr):
     return ret
 
 
-def infer_positional_format_args(fstr):
+def infer_positional_format_args(fstr: str) -> str:
     """Takes format strings with anonymous positional arguments, (e.g.,
     "{}" and {:d}), and converts them into numbered ones for explicitness and
     compatibility with 2.6.
@@ -140,12 +145,12 @@ def infer_positional_format_args(fstr):
 # This approach is hardly exhaustive but it works for most builtins
 _INTCHARS = 'bcdoxXn'
 _FLOATCHARS = 'eEfFgGn%'
-_TYPE_MAP = dict([(x, int) for x in _INTCHARS] +
+_TYPE_MAP: dict[str, type] = dict([(x, int) for x in _INTCHARS] +
                  [(x, float) for x in _FLOATCHARS])
 _TYPE_MAP['s'] = str
 
 
-def get_format_args(fstr):
+def get_format_args(fstr: str) -> tuple[list[tuple[int, type]], list[tuple[str, type]]]:
     """
     Turn a format string into two lists of arguments referenced by the
     format string. One is positional arguments, and the other is named
@@ -192,7 +197,7 @@ def get_format_args(fstr):
     return fargs, fkwargs
 
 
-def tokenize_format_str(fstr, resolve_pos=True):
+def tokenize_format_str(fstr: str, resolve_pos: bool = True) -> list[str | BaseFormatField]:
     """Takes a format string, turns it into a list of alternating string
     literals and :class:`BaseFormatField` tokens. By default, also
     infers anonymous positional references into explicit, numbered
@@ -222,25 +227,25 @@ class BaseFormatField:
 
     .. _Format String Syntax: https://docs.python.org/2/library/string.html#string-formatting
     """
-    def __init__(self, fname, fspec='', conv=None):
+    def __init__(self, fname: str, fspec: str = '', conv: str | None = None):
         self.set_fname(fname)
         self.set_fspec(fspec)
         self.set_conv(conv)
 
-    def set_fname(self, fname):
+    def set_fname(self, fname: str) -> None:
         "Set the field name."
 
-        path_list = re.split('[.[]', fname)  # TODO
+        path_list: list[str] = re.split('[.[]', fname)  # TODO
 
         self.base_name = path_list[0]
         self.fname = fname
         self.subpath = path_list[1:]
         self.is_positional = not self.base_name or self.base_name.isdigit()
 
-    def set_fspec(self, fspec):
+    def set_fspec(self, fspec: str) -> None:
         "Set the field spec."
         fspec = fspec or ''
-        subfields = []
+        subfields: list[str] = []
         for sublit, subfname, _, _ in Formatter().parse(fspec):
             if subfname is not None:
                 subfields.append(subfname)
@@ -249,7 +254,7 @@ class BaseFormatField:
         self.type_char = fspec[-1:]
         self.type_func = _TYPE_MAP.get(self.type_char, str)
 
-    def set_conv(self, conv):
+    def set_conv(self, conv: str | None) -> None:
         """There are only two built-in converters: ``s`` and ``r``. They are
         somewhat rare and appearlike ``"{ref!r}"``."""
         # TODO
@@ -257,7 +262,7 @@ class BaseFormatField:
         self.conv_func = None  # TODO
 
     @property
-    def fstr(self):
+    def fstr(self) -> str:
         "The current state of the field in string format."
         return construct_format_field_str(self.fname, self.fspec, self.conv)
 
@@ -274,11 +279,10 @@ class BaseFormatField:
     def __str__(self):
         return self.fstr
 
-
 _UNSET = object()
 
 
-class DeferredValue:
+class DeferredValue(Generic[_T]):
     """:class:`DeferredValue` is a wrapper type, used to defer computing
     values which would otherwise be expensive to stringify and
     format. This is most valuable in areas like logging, where one
@@ -307,12 +311,12 @@ class DeferredValue:
     PROTIP: To keep lines shorter, use: ``from formatutils import
     DeferredValue as DV``
     """
-    def __init__(self, func, cache_value=True):
+    def __init__(self, func: Callable[[], _T], cache_value: bool = True):
         self.func = func
         self.cache_value = cache_value
-        self._value = _UNSET
+        self._value: _T = _UNSET
 
-    def get_value(self):
+    def get_value(self) -> _T:
         """Computes, optionally caches, and returns the value of the
         *func*. If ``get_value()`` has been called before, a cached
         value may be returned depending on the *cache_value* option
@@ -326,22 +330,22 @@ class DeferredValue:
                 self._value = value
         return value
 
-    def __int__(self):
+    def __int__(self) -> int:
         return int(self.get_value())
 
-    def __float__(self):
+    def __float__(self) -> float:
         return float(self.get_value())
 
-    def __str__(self):
+    def __str__(self) -> str:
         return str(self.get_value())
 
-    def __unicode__(self):
+    def __unicode__(self) -> str:
         return str(self.get_value())
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return repr(self.get_value())
 
-    def __format__(self, fmt):
+    def __format__(self, fmt: str) -> str:
         value = self.get_value()
 
         pt = fmt[-1:]  # presentation type

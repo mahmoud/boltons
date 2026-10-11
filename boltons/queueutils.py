@@ -61,7 +61,7 @@ application use cases.
 3
 
 """
-
+from __future__ import annotations
 
 from heapq import heappush, heappop
 from bisect import insort
@@ -121,7 +121,7 @@ class BasePriorityQueue:
     def _pop_entry(backend):
         pass  # abstract
 
-    def add(self, task, priority=None):
+    def add(self, task, priority: int | None = None) -> None:
         """
         Add a task to the queue, or change the *task*'s priority if *task*
         is already in the queue. *task* can be any hashable object,
@@ -137,7 +137,7 @@ class BasePriorityQueue:
         self._entry_map[task] = entry
         self._push_entry(self._pq, entry)
 
-    def remove(self, task):
+    def remove(self, task) -> None:
         """Remove a task from the priority queue. Raises :exc:`KeyError` if
         the *task* is absent.
         """
@@ -184,7 +184,7 @@ class BasePriorityQueue:
             raise IndexError('pop on empty queue')
         return task
 
-    def __len__(self):
+    def __len__(self) -> int:
         "Return the number of tasks in the queue."
         return len(self._entry_map)
 

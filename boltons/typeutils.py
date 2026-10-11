@@ -33,13 +33,16 @@ utilities on top of Python's first-class function support.
 ``typeutils`` attempts to do the same for metaprogramming with types
 and instances.
 """
+from __future__ import annotations
+
 import sys
 from collections import deque
+
 
 _issubclass = issubclass
 
 
-def make_sentinel(name='_MISSING', var_name=None):
+def make_sentinel(name: str = "_MISSING", var_name: str | None = None) -> object:
     """Creates and returns a new **instance** of a new class, suitable for
     usage as a "sentinel", a kind of singleton often used to indicate
     a value is missing when ``None`` is a valid input.
@@ -72,7 +75,7 @@ def make_sentinel(name='_MISSING', var_name=None):
 
     """
     class Sentinel:
-        def __init__(self):
+        def __init__(self) -> None:
             self.name = name
             self.var_name = var_name
 
@@ -105,7 +108,7 @@ def make_sentinel(name='_MISSING', var_name=None):
     return Sentinel()
 
 
-def issubclass(subclass, baseclass):
+def issubclass(subclass: type, baseclass: type) -> bool:
     """Just like the built-in :func:`issubclass`, this function checks
     whether *subclass* is inherited from *baseclass*. Unlike the
     built-in function, this ``issubclass`` will simply return
@@ -130,7 +133,7 @@ def issubclass(subclass, baseclass):
         return False
 
 
-def get_all_subclasses(cls):
+def get_all_subclasses(cls: type) -> list[type]:
     """Recursively finds and returns a :class:`list` of all types
     inherited from *cls*.
 

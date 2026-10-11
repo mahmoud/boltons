@@ -168,7 +168,7 @@ class ListInputType(InputType):
     def check_type(self, obj):
         return isinstance(obj, MutableSequence)
 
-    def guess_headers(self, obj):
+    def guess_headers(self, obj) -> None:
         return None
 
     def get_entry(self, obj, headers):
@@ -182,7 +182,7 @@ class TupleInputType(InputType):
     def check_type(self, obj):
         return isinstance(obj, tuple)
 
-    def guess_headers(self, obj):
+    def guess_headers(self, obj) -> None:
         return None
 
     def get_entry(self, obj, headers):
@@ -272,7 +272,7 @@ class Table:
 
         self.extend(data)
 
-    def extend(self, data):
+    def extend(self, data) -> None:
         """
         Append the given data to the end of the Table.
         """

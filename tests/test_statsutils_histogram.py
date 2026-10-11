@@ -1,5 +1,10 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
 from boltons.statsutils import Stats
 
+if TYPE_CHECKING:
+    from typing_extensions import Never
 
 # [round(random.normalvariate(10, 3), 3) for i in range(100)]
 NORM_DATA = [12.975, 8.341, 12.27, 12.799, 15.443, 6.739, 10.572,
@@ -24,7 +29,7 @@ LAYER_RANGE_DATA = (list(range(100))
                     + list(range(20, 80))
                     + list(range(40, 60)))
 
-EMPTY_DATA = []
+EMPTY_DATA: list[Never] = []
 
 ALL_DATASETS = [EMPTY_DATA, LAYER_RANGE_DATA, SIMPLE_RANGE_DATA, NORM_DATA]
 

@@ -98,7 +98,7 @@ class SpooledIOBase(IOBase):
     def readlines(self, sizehint=0):
         """Returns a list of all lines from the current position forward"""
 
-    def writelines(self, lines):
+    def writelines(self, lines) -> None:
         """
         Write lines to the file from an interable.
 
@@ -232,7 +232,7 @@ class SpooledIOBase(IOBase):
         self._checkClosed()
         return self
 
-    def __exit__(self, *args):
+    def __exit__(self, *args) -> None:
         self._file.close()
 
     def __eq__(self, other):
@@ -270,7 +270,7 @@ class SpooledIOBase(IOBase):
     def __bool__(self):
         return True
 
-    def __del__(self):
+    def __del__(self) -> None:
         """Can fail when called at program exit so suppress traceback."""
         try:
             self.close()
@@ -299,7 +299,7 @@ class SpooledBytesIO(SpooledIOBase):
         self._checkClosed()
         return self.buffer.read(n)
 
-    def write(self, s):
+    def write(self, s) -> None:
         self._checkClosed()
         with memoryview(s) as view:
             if self.tell() + view.nbytes >= self._max_size:
@@ -320,7 +320,7 @@ class SpooledBytesIO(SpooledIOBase):
     def readlines(self, sizehint=0):
         return self.buffer.readlines(sizehint)
 
-    def rollover(self):
+    def rollover(self) -> None:
         """Roll the StringIO over to a TempFile"""
         if not self._rolled:
             tmp = TemporaryFile(dir=self._dir)
@@ -388,7 +388,7 @@ class SpooledStringIO(SpooledIOBase):
         self._tell = self.tell() + len(ret)
         return ret
 
-    def write(self, s):
+    def write(self, s) -> None:
         self._checkClosed()
         if not isinstance(s, str):
             raise TypeError("str expected, got {}".format(
@@ -482,7 +482,7 @@ class SpooledStringIO(SpooledIOBase):
     def _rolled(self):
         return not isinstance(self.buffer.stream, BytesIO)
 
-    def rollover(self):
+    def rollover(self) -> None:
         """Roll the buffer over to a TempFile"""
         if not self._rolled:
             tmp = EncodedFile(TemporaryFile(dir=self._dir),
@@ -513,7 +513,7 @@ class SpooledStringIO(SpooledIOBase):
         return total
 
 
-def is_text_fileobj(fileobj):
+def is_text_fileobj(fileobj) -> bool:
     if getattr(fileobj, 'encoding', False):
         # codecs.open and io.TextIOBase
         return True
@@ -578,7 +578,7 @@ class MultiFileReader:
             amt -= got
         return self._joiner.join(parts)
 
-    def seek(self, offset, whence=os.SEEK_SET):
+    def seek(self, offset, whence=os.SEEK_SET) -> None:
         """Enables setting position of the file cursor to a given
         *offset*. Currently only supports ``offset=0``.
         """

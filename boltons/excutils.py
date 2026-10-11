@@ -28,11 +28,16 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+from __future__ import annotations
 
 import sys
 import traceback
 import linecache
 from collections import namedtuple
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from typing_extensions import Self
 
 # TODO: last arg or first arg?  (last arg makes it harder to *args
 #       into, but makes it more readable in the default exception
@@ -63,7 +68,7 @@ class ExceptionCauseMixin(Exception):
 
     cause = None
 
-    def __new__(cls, *args, **kw):
+    def __new__(cls, *args, **kw) -> Self:
         cause = None
         if args and isinstance(args[0], Exception):
             cause, args = args[0], args[1:]
@@ -99,7 +104,7 @@ class ExceptionCauseMixin(Exception):
             del exc_tb
         return ret
 
-    def get_str(self):
+    def get_str(self) -> str:
         """
         Get formatted the formatted traceback and exception
         message. This function exists separately from __str__()

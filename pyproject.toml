@@ -12,6 +12,7 @@ classifiers = [
     "Topic :: Software Development :: Libraries",
     "Development Status :: 5 - Production/Stable",
     "Operating System :: OS Independent",
+    "Typing :: Typed",
     # List of python versions and their support status:
     # https://en.wikipedia.org/wiki/CPython#Version_history
     "Programming Language :: Python :: 3",
@@ -40,6 +41,7 @@ exclude = ["doc/_build"]
 
 [dependency-groups]
 dev = [
+    "mypy[faster-cache]==1.14.1; implementation_name != 'pypy' and python_version >= '3.8'", # mypy isn't tested on 3.7
     "pytest>=7,<8; python_version < '3.8'",
     "pytest>=8; python_version >= '3.8'",
 ]
