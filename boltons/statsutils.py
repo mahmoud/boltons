@@ -791,9 +791,6 @@ def describe(data: Iterable[float], quantiles: Iterable[float] | None = None, fo
     """
     return Stats(data).describe(quantiles=quantiles, format=format)
 
-
-
-
 if TYPE_CHECKING:
     # Static declarations for the convenience functions generated below
     def mean(data: Iterable[float], default: float = 0.0) -> float: ...
