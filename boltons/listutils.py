@@ -157,11 +157,13 @@ class BarrelList(list):
         self.lists[-1].extend(iterable)
 
     def pop(self, *a):
+        if len(a) > 1:
+            raise TypeError(f'pop expected at most 1 argument, got {len(a)}')
+        index = operator.index(a[0]) if a else -1
         lists = self.lists
         if len(lists) == 1 and not a:
             return self.lists[0].pop()
-        index = a and a[0]
-        if index == () or index is None or index == -1:
+        if index == -1:
             while len(lists) > 1 and not lists[-1]:
                 lists.pop()  # clean up empty tail sublists first
             ret = lists[-1].pop()
