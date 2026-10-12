@@ -199,6 +199,29 @@ def test_userinfo():
     assert url.to_text() == 'http://someuser:somepassword@example.com/some-segment@ignore'
 
 
+def test_userinfo_unencoded_qmark_in_password():
+    # Regression test for https://github.com/mahmoud/boltons/issues/309
+    # An unencoded '?' in the password previously pushed the credential
+    # '@' into the query string, so parse_url tried to parse the password
+    # as the port and raised URLParseError.
+    url = URL('http://username:password?@www.proxy.com:443')
+    assert url.username == 'username'
+    assert url.password == 'password?'
+    assert url.host == 'www.proxy.com'
+    assert url.port == 443
+
+
+def test_userinfo_unencoded_slash_in_password():
+    # Same as above, but the unencoded special character in the password
+    # is '/', which lands the credential '@' at the start of the path.
+    url = URL('http://user:pass/@www.example.com:8080')
+    assert url.username == 'user'
+    assert url.password == 'pass/'
+    assert url.host == 'www.example.com'
+    assert url.port == 8080
+
+
+
 def test_password_without_username():
     url = URL('http://:secret@example.com/path')
     assert url.to_text() == 'http://:secret@example.com/path'

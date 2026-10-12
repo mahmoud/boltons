@@ -917,6 +917,22 @@ def parse_url(url_text):
         if sep:
             # TODO: empty userinfo error?
             user, _, pw = userinfo.partition(':')
+        elif (gs['query'] or '').startswith('@'):
+            # The password contained an unencoded '?'. RFC 3986 requires
+            # '?' inside credentials to be percent-encoded, but be tolerant
+            # of common real-world URLs: the '@' that separates userinfo
+            # from hostinfo ended up at the start of the query string.
+            userinfo = au_text + '?'
+            hostinfo = gs['query'][1:]
+            gs['query'] = ''
+            user, _, pw = userinfo.partition(':')
+        elif gs['path'].startswith('/@'):
+            # Same idea, but the password contained an unencoded '/',
+            # pushing the credential '@' into the path.
+            userinfo = au_text + '/'
+            hostinfo = gs['path'][2:]
+            gs['path'] = ''
+            user, _, pw = userinfo.partition(':')
 
     host, port = None, None
     if hostinfo:
