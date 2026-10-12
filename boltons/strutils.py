@@ -43,9 +43,8 @@ import sys
 import typing
 import unicodedata
 import uuid
-import zlib
 from collections.abc import Mapping
-from gzip import GzipFile
+from gzip import GzipFile, decompress
 from html import entities as htmlentitydefs
 from html.parser import HTMLParser
 from io import BytesIO as StringIO
@@ -639,7 +638,7 @@ def gunzip_bytes(bytestring):
     >>> gunzip_bytes(_NON_EMPTY_GZIP_BYTES).rstrip() == b'bytesahoy!'
     True
     """
-    return zlib.decompress(bytestring, 16 + zlib.MAX_WBITS)
+    return decompress(bytestring)
 
 
 def gzip_bytes(bytestring, level=6):
