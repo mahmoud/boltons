@@ -331,3 +331,27 @@ def test_small_difference_update_unchanged():
     thing = IndexedSet(range(100))
     thing.difference_update({1, 3, 5})
     assert list(thing)[:5] == [0, 2, 4, 6, 7]
+
+
+@mark.parametrize('method', ['remove', 'discard'])
+@mark.parametrize('size, removed', [
+    (39, (0, 37, 36, 38)),
+    (80, (0, 78, 77, 76, 79)),
+    (39, (0, 36, 37, 38)),
+])
+def test_iset_add_after_trimming_dead_tail(method, size, removed):
+    iset = IndexedSet(range(size))
+    expected = list(range(size))
+    for value in removed:
+        getattr(iset, method)(value)
+        expected.remove(value)
+    assert list(iset) == expected
+
+    for value in (size, size + 1):
+        iset.add(value)
+        expected.append(value)
+        assert iset.index(value) == len(expected) - 1
+        assert list(iset) == expected
+        assert [iset[i] for i in range(len(iset))] == expected
+        assert [iset[i] for i in range(-len(iset), 0)] == expected
+        assert [iset.index(item) for item in expected] == list(range(len(expected)))

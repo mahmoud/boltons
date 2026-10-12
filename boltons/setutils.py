@@ -152,9 +152,10 @@ class IndexedSet(MutableSet):
             num_dead = 1
             while items[-(num_dead + 1)] is _MISSING:
                 num_dead += 1
-            if ded and ded[-1][1] == len(items):
-                del ded[-1]
             del items[-num_dead:]
+            # The dead tail may span several adjacent, unmerged intervals.
+            while ded and ded[-1][0] >= len(items):
+                del ded[-1]
 
     def _get_real_index(self, index):
         if index < 0:
