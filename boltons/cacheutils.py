@@ -310,12 +310,6 @@ class LRI(dict):
 
     def __eq__(self, other):
         with self._lock:
-            if self is other:
-                return True
-            if len(other) != len(self):
-                return False
-            if not isinstance(other, LRI):
-                return other == self
             return super().__eq__(other)
 
     def __ne__(self, other):

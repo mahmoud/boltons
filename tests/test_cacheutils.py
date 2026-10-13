@@ -16,6 +16,42 @@ class CountingCallable:
         return self.call_count
 
 
+@pytest.mark.parametrize('cache_type', [LRI, LRU])
+@pytest.mark.parametrize('other', [None, 1, object(), [], ['a'], 'a'])
+def test_cache_equality_with_non_mapping(cache_type, other):
+    cache = cache_type(values={'a': 1})
+    assert (cache == other) is False
+    assert (other == cache) is False
+    assert (cache != other) is True
+    assert (other != cache) is True
+
+
+@pytest.mark.parametrize('cache_type', [LRI, LRU])
+def test_cache_equality_reflected(cache_type):
+    class EqualToCache:
+        def __eq__(self, other):
+            return isinstance(other, cache_type)
+
+    cache = cache_type(values={'a': 1})
+    other = EqualToCache()
+    assert cache == other
+    assert other == cache
+    assert not cache != other
+
+
+@pytest.mark.parametrize('cache_type', [LRI, LRU])
+def test_cache_equality_with_dict(cache_type):
+    from types import MappingProxyType
+
+    cache = cache_type(values={'a': 1})
+    assert cache == {'a': 1}
+    assert cache == MappingProxyType({'a': 1})
+    assert cache != {'a': 2}
+    assert cache != {}
+    assert cache == cache_type(values={'a': 1})
+    assert (cache.hit_count, cache.miss_count) == (0, 0)
+
+
 def test_lru_add():
     cache = LRU(max_size=3)
     for i in range(4):
