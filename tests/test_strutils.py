@@ -130,6 +130,11 @@ class TestMultiReplace(TestCase):
         m = strutils.MultiReplace([(re.compile('(?i)(?m)^cat$'), 'dog')])
         self.assertEqual(m.sub('CAT\ncat'), 'dog\ndog')
 
+    def test_compiled_verbose_flags_separated_by_comments(self):
+        pattern = re.compile('(?x) # comment\n (?i) foo')
+        m = strutils.MultiReplace([(pattern, 'X'), ('bar', 'Y')])
+        self.assertEqual(m.sub('FOO BAR bar'), 'X BAR Y')
+
     def test_constructor_flags_still_apply(self):
         m = strutils.MultiReplace([
             (re.compile('cat'), 'dog'),

@@ -1219,7 +1219,10 @@ class MultiReplace:
                 pattern_flags = vals[0].flags
                 # Leading global flags are already recorded in .flags;
                 # move them into the scoped group before embedding.
-                exp = re.sub(r'^(?:\(\?[aiLmsux]+\))+', '', exp)
+                prefix = r'\(\?[aiLmsux]+\)'
+                if pattern_flags & re.X:
+                    prefix += r'|[ \t\n\r\f\v]+|#[^\n]*(?:\n|$)'
+                exp = re.sub(f'^(?:{prefix})+', '', exp)
                 scoped_flags = 'a' if pattern_flags & re.ASCII else 'u'
                 for flag, letter in ((re.I, 'i'), (re.M, 'm'),
                                      (re.S, 's'), (re.X, 'x')):
