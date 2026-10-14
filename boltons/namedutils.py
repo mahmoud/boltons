@@ -50,6 +50,7 @@ import sys as _sys
 from collections import OrderedDict
 from keyword import iskeyword as _iskeyword
 from operator import itemgetter as _itemgetter
+from unicodedata import normalize as _normalize
 
 
 __all__ = ['namedlist', 'namedtuple']
@@ -151,15 +152,16 @@ def namedtuple(typename, field_names, verbose=False, rename=False):
     if rename:
         seen = set()
         for index, name in enumerate(field_names):
+            normalized_name = _normalize('NFKC', name)
             if (not all(c.isalnum() or c == '_' for c in name)
                 or not name.isidentifier()
                 or _iskeyword(name)
                 or not name
                 or name[0].isdigit()
                 or name.startswith('_')
-                or name in seen):
+                or normalized_name in seen):
                 field_names[index] = '_%d' % index
-            seen.add(name)
+            seen.add(_normalize('NFKC', field_names[index]))
     for name in [typename] + field_names:
         if (not name or not all(c.isalnum() or c == '_' for c in name)
             or not name.isidentifier()):
@@ -174,12 +176,13 @@ def namedtuple(typename, field_names, verbose=False, rename=False):
                              'a number: %r' % name)
     seen = set()
     for name in field_names:
+        normalized_name = _normalize('NFKC', name)
         if name.startswith('_') and not rename:
             raise ValueError('Field names cannot start with an underscore: '
                              '%r' % name)
-        if name in seen:
+        if normalized_name in seen:
             raise ValueError('Encountered duplicate field name: %r' % name)
-        seen.add(name)
+        seen.add(normalized_name)
 
     # Fill-in the class template
     fmt_kw = {'typename': typename}
@@ -312,15 +315,16 @@ def namedlist(typename, field_names, verbose=False, rename=False):
     if rename:
         seen = set()
         for index, name in enumerate(field_names):
+            normalized_name = _normalize('NFKC', name)
             if (not all(c.isalnum() or c == '_' for c in name)
                 or not name.isidentifier()
                 or _iskeyword(name)
                 or not name
                 or name[0].isdigit()
                 or name.startswith('_')
-                or name in seen):
+                or normalized_name in seen):
                 field_names[index] = '_%d' % index
-            seen.add(name)
+            seen.add(_normalize('NFKC', field_names[index]))
     for name in [typename] + field_names:
         if (not name or not all(c.isalnum() or c == '_' for c in name)
             or not name.isidentifier()):
@@ -335,12 +339,13 @@ def namedlist(typename, field_names, verbose=False, rename=False):
                              'a number: %r' % name)
     seen = set()
     for name in field_names:
+        normalized_name = _normalize('NFKC', name)
         if name.startswith('_') and not rename:
             raise ValueError('Field names cannot start with an underscore: '
                              '%r' % name)
-        if name in seen:
+        if normalized_name in seen:
             raise ValueError('Encountered duplicate field name: %r' % name)
-        seen.add(name)
+        seen.add(normalized_name)
 
     # Fill-in the class template
     fmt_kw = {'typename': typename}

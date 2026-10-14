@@ -71,3 +71,26 @@ def test_rename_non_identifier_alphanumeric_field_name(factory, name):
     assert value.x == 1
     assert value._1 == 2
     assert value.α == 3
+
+
+@pytest.mark.parametrize('factory', [namedtuple, namedlist])
+@pytest.mark.parametrize('field_names', [('K', 'K'), ('a', 'ａ'), ('K', 'K'), ('ａ', 'a')])
+def test_normalized_duplicate_field_names(factory, field_names):
+    with pytest.raises(ValueError, match='duplicate field name'):
+        factory('Record', field_names)
+
+
+@pytest.mark.parametrize('factory', [namedtuple, namedlist])
+@pytest.mark.parametrize('field_names, attribute', [
+    (('K', 'K'), 'K'),
+    (('a', 'ａ'), 'a'),
+    (('K', 'K'), 'K'),
+    (('ａ', 'a'), 'a'),
+])
+def test_rename_normalized_duplicate_field_names(factory, field_names, attribute):
+    record_type = factory('Record', field_names, rename=True)
+    assert record_type._fields == (field_names[0], '_1')
+    value = record_type(1, 2)
+    assert tuple(value) == (1, 2)
+    assert getattr(value, attribute) == 1
+    assert value._1 == 2
