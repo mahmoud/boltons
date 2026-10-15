@@ -490,6 +490,10 @@ class SpooledStringIO(SpooledIOBase):
             pos = self.buffer.tell()
             tmp.write(self.buffer.getvalue())
             tmp.seek(pos)
+            # The decoder may have read ahead of the logical text position.
+            tmp.reader.bytebuffer = self.buffer.reader.bytebuffer
+            tmp.reader.charbuffer = self.buffer.reader.charbuffer
+            tmp.reader.linebuffer = self.buffer.reader.linebuffer
             self.buffer.close()
             self._buffer = tmp
 

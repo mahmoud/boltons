@@ -376,6 +376,47 @@ class TestSpooledStringIO(TestCase, BaseTestMixin, AssertionsMixin):
             f.write(test_str)
             self.assertEqual(f.getvalue(), test_str)
 
+    def test_rollover_preserves_read_ahead(self):
+        for text in ('first\nlast', 'first\nsecond\nlast',
+                     'head\n' + '\u2603' * 100):
+            for method in ('rollover', 'fileno'):
+                with self.subTest(text=text, method=method):
+                    with ioutils.SpooledStringIO() as stream:
+                        stream.write(text)
+                        stream.seek(0)
+                        first, remaining = text.split('\n', 1)
+                        self.assertEqual(stream.readline(), first + '\n')
+                        position = stream.tell()
+                        getattr(stream, method)()
+                        self.assertEqual(stream.tell(), position)
+                        self.assertEqual(stream.read(), remaining)
+                        stream.seek(0)
+                        self.assertEqual(stream.read(), text)
+
+    def test_rollover_after_length_query(self):
+        with ioutils.SpooledStringIO() as stream:
+            stream.write('first\nlast')
+            stream.seek(2)
+            self.assertEqual(len(stream), 10)
+            position = stream.tell()
+            stream.rollover()
+            self.assertEqual(stream.tell(), position)
+            self.assertEqual(stream.read(), 'rst\nlast')
+
+    def test_rollover_preserves_mixed_read_write_state(self):
+        with ioutils.SpooledStringIO() as control:
+            with ioutils.SpooledStringIO(max_size=11) as stream:
+                for current in (control, stream):
+                    current.write('first\nlast')
+                    current.seek(0)
+                    current.readline()
+                for current in (control, stream):
+                    current.write('!')
+                self.assertTrue(stream._rolled)
+                self.assertEqual(stream.tell(), control.tell())
+                self.assertEqual(stream.read(), control.read())
+                self.assertEqual(stream.getvalue(), control.getvalue())
+
     def test_len_no_rollover(self):
         """Make sure len property works with in-memory flo"""
         self.spooled_flo.write(self.test_str)
