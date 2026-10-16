@@ -397,3 +397,10 @@ def test_args2cmd_sep():
     assert strutils.args2cmd(['aa', 'bb']) == 'aa bb'
     assert strutils.args2cmd(['aa', 'bb'], sep='|') == 'aa|bb'
     assert strutils.args2cmd(['a a', 'bb'], sep='|') == '"a a"|bb'
+
+
+def test_pluralize_z():
+    pluralize = strutils.pluralize
+    assert pluralize('buzz') == 'buzzes'
+    assert pluralize('waltz') == 'waltzes'
+    assert pluralize('Fizz') == 'Fizzes'
