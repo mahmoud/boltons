@@ -1,3 +1,4 @@
+import collections
 import os
 
 import pytest
@@ -342,6 +343,34 @@ class TestRemap:
 
         fs = frozenset([1, 2, 3])
         assert remap(fs) == fs
+
+    @pytest.mark.parametrize('make_nt', [namedtuple, collections.namedtuple])
+    def test_remap_namedtuple(self, make_nt):
+        Point = make_nt('Point', 'x y')
+        orig = {'a': Point(1, [2, 3])}
+        remapped = remap(orig)
+        assert remapped == orig
+        assert type(remapped['a']) is Point
+        assert remapped['a'][1] is not orig['a'][1]
+
+        def visit(path, key, value):
+            if isinstance(value, int):
+                return key, value * 10
+            return key, value
+        remapped = remap(orig, visit=visit)
+        assert remapped == {'a': Point(10, [20, 30])}
+        assert type(remapped['a']) is Point
+
+        # namedtuple with defaults can be built empty
+        Pair = collections.namedtuple('Pair', 'x y', defaults=(0, 0))
+        assert remap([Pair(1, 2)]) == [Pair(1, 2)]
+        assert type(remap([Pair(1, 2)])[0]) is Pair
+
+    def test_remap_unbuildable_sequences(self):
+        orig = {'r': range(3), 'm': memoryview(b'abc')}
+        remapped = remap(orig)
+        assert remapped['r'] is orig['r']
+        assert remapped['m'] is orig['m']
 
     def test_remap_file(self):
         with open(CUR_PATH, 'rb') as f:
