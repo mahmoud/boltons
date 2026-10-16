@@ -404,3 +404,5 @@ def test_pluralize_z():
     assert pluralize('buzz') == 'buzzes'
     assert pluralize('waltz') == 'waltzes'
     assert pluralize('Fizz') == 'Fizzes'
+    assert pluralize('quiz') == 'quizzes'
+    assert strutils.singularize('quizzes') == 'quiz'

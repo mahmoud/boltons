@@ -303,6 +303,7 @@ _IRR_S2P = {'addendum': 'addenda', 'alga': 'algae', 'alumna': 'alumnae',
             'octopus': 'octopi', 'offspring': 'offspring', 'ovum': 'ova',
             'ox': 'oxen', 'paralysis': 'paralyses', 'parenthesis': 'parentheses',
             'person': 'people', 'phenomenon': 'phenomena', 'potato': 'potatoes',
+            'quiz': 'quizzes',
             'radius': 'radii', 'scarf': 'scarves', 'scissors': 'scissors',
             'self': 'selves', 'sense': 'senses', 'series': 'series', 'sheep':
             'sheep', 'shelf': 'shelves', 'species': 'species', 'stimulus':
