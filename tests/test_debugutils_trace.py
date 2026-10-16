@@ -1,6 +1,6 @@
 from collections import namedtuple
 
-from pytest import raises
+from pytest import mark, raises
 
 from boltons.debugutils import wrap_trace
 
@@ -49,6 +49,45 @@ def test_trace_exc():
         raise wrapped
     except TestException as te:
         assert te.args == target.args
+
+
+@mark.parametrize('events', [None, ['raise'], ['raise', 'return']])
+def test_trace_suppressed_method_exception(events):
+    error = ValueError('method failed')
+    recorded = []
+
+    class Target:
+        def fail(self):
+            raise error
+
+    def hook(event, *args, **kwargs):
+        recorded.append((event, kwargs.get('result')))
+        return event == 'raise'
+
+    wrapped = wrap_trace(Target(), hook=hook, events=events, which='fail')
+    assert wrapped.fail() is None
+    raised = [result for event, result in recorded if event == 'raise']
+    assert len(raised) == 1
+    assert raised[0][0] is ValueError
+    assert raised[0][1] is error
+    if events is None or 'return' in events:
+        assert recorded[-1] == ('return', None)
+
+
+def test_trace_method_exception_is_reraised():
+    error = ValueError('method failed')
+
+    class Target:
+        def fail(self):
+            raise error
+
+    def hook(event, *args, **kwargs):
+        return False
+
+    wrapped = wrap_trace(Target(), hook=hook, which='fail')
+    with raises(ValueError) as caught:
+        wrapped.fail()
+    assert caught.value is error
 
 
 def test_trace_which():

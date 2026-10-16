@@ -164,6 +164,9 @@ def wrap_trace(obj, hook=trace_print_hook,
     :func:`isinstance` checks, as it is a new instance of a new
     subtype of the object passed.
 
+    A truthy return from *hook* for a ``'raise'`` event suppresses the
+    exception, and the traced method returns ``None``.
+
     """
     # other actions: pdb.set_trace, print, aggregate, aggregate_return
     # (like aggregate but with the return value)
@@ -205,6 +208,7 @@ def wrap_trace(obj, hook=trace_print_hook,
                                 attr_name=attr_name, args=a, kwargs=kw,
                                 result=sys.exc_info()):
                         raise
+                    ret = None
             else:
                 ret = func(*a, **kw)
             if do_return:
