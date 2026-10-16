@@ -1063,7 +1063,17 @@ def default_enter(path, key, value):
     elif isinstance(value, Mapping):
         return value.__class__(), ItemsView(value)
     elif isinstance(value, Sequence):
-        return value.__class__(), enumerate(value)
+        try:
+            new_parent = value.__class__()
+        except TypeError:
+            if not hasattr(value, '_make'):
+                # sequences that can't be built from their items,
+                # like range and memoryview, are not traversed
+                return value, False
+            # namedtuples can't be created empty, the old parent
+            # stands in for its type until exit rebuilds it
+            new_parent = value
+        return new_parent, enumerate(value)
     elif isinstance(value, Set):
         return value.__class__(), enumerate(value)
     else:
@@ -1083,7 +1093,10 @@ def default_exit(path, key, old_parent, new_parent, new_items):
         try:
             new_parent.extend(vals)
         except AttributeError:
-            ret = new_parent.__class__(vals)  # tuples
+            if hasattr(new_parent, '_make'):
+                ret = new_parent._make(vals)  # namedtuples
+            else:
+                ret = new_parent.__class__(vals)  # tuples
     elif isinstance(new_parent, Set):
         vals = [v for i, v in new_items]
         try:
