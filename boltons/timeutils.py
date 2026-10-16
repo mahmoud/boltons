@@ -166,6 +166,11 @@ def parse_timedelta(text):
     >>> parse_td('2 weeks 1 day') == timedelta(days=15)
     True
 
+    Repeated units are added together:
+
+    >>> parse_td('1h 30m 2h') == timedelta(hours=3, minutes=30)
+    True
+
     Negative times are supported, too:
 
     >>> parse_td('-1.5 weeks 3m 20s') == timedelta(days=-11, seconds=43400)
@@ -184,7 +189,7 @@ def parse_timedelta(text):
         except ValueError:
             raise ValueError('invalid time value for unit %r: %r'
                              % (unit, value))
-        td_kwargs[unit_key] = value
+        td_kwargs[unit_key] = td_kwargs.get(unit_key, 0) + value
     return timedelta(**td_kwargs)
 
 

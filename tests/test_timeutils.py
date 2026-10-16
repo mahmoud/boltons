@@ -2,7 +2,7 @@ from datetime import timedelta, date, datetime, timezone
 
 import pytest
 
-from boltons.timeutils import daterange, isoparse, Eastern
+from boltons.timeutils import daterange, isoparse, Eastern, parse_timedelta
 
 
 def test_daterange_years():
@@ -152,3 +152,14 @@ def test_us_timezone_fromutc_sets_fold():
     assert second.replace(tzinfo=None) == datetime(2011, 11, 6, 1, 30)
     assert second.fold == 1
     assert second.tzname() == 'EST'
+
+
+@pytest.mark.parametrize('text, expected', [
+    ('1h 30m 2h', timedelta(hours=3, minutes=30)),
+    ('1 day 2 days', timedelta(days=3)),
+    ('1.5h -0.5h', timedelta(hours=1)),
+    ('2s -2s', timedelta(0)),
+    ('1w 2d 3h 4m 5s', timedelta(weeks=1, days=2, hours=3, minutes=4, seconds=5)),
+])
+def test_parse_timedelta_repeated_units(text, expected):
+    assert parse_timedelta(text) == expected
