@@ -920,6 +920,12 @@ def parse_url(url_text):
 
     host, port = None, None
     if hostinfo:
+        # Unclosed IPv6 literals like "[::1" confuse the first ":" split and
+        # surface as a bogus "expected integer for port" error. Reject them
+        # explicitly before port parsing (matches urllib3/yarl messaging).
+        if hostinfo.startswith('[') and ']' not in hostinfo:
+            raise URLParseError('unclosed IPv6 address literal')
+
         host, sep, port_str = hostinfo.partition(':')
         if sep:
             if host and host[0] == '[' and ']' in port_str:

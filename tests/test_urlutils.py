@@ -135,6 +135,13 @@ def test_invalid_port():
         URL('http://reader.googlewebsite.com:neverforget')
 
 
+def test_unclosed_ipv6_address():
+    # Unclosed brackets previously raised a misleading "expected integer for port"
+    for url in ('http://[::1', 'http://[::1/path', 'http://user@[::1'):
+        with pytest.raises(urlutils.URLParseError, match='unclosed IPv6'):
+            URL(url)
+
+
 def test_invalid_ipv6():
     invalid_ipv6_ips = ['2001::0234:C1ab::A0:aabc:003F',
                         '2001::1::3F']
