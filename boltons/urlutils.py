@@ -189,10 +189,12 @@ def find_all_links(text, with_text=False, default_scheme='https', schemes=()):
                 if default_scheme:
                     cur_url = URL(default_scheme + '://' + cur_url_text)
                 else:
-                    _add_text(text[start:end])
+                    if with_text:
+                        _add_text(text[start:end])
                     continue
             if schemes and cur_url.scheme not in schemes:
-                _add_text(text[start:end])
+                if with_text:
+                    _add_text(text[start:end])
             else:
                 _add(cur_url)
         except URLParseError:

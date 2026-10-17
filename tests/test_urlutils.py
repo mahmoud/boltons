@@ -487,6 +487,27 @@ def test_find_all_links():
         assert link_tokens[-1].endswith(suffix)
 
 
+@pytest.mark.parametrize('filtered_url, options', [
+    ('http://filtered.example', {'schemes': ['https']}),
+    ('www.filtered.example', {'default_scheme': False}),
+])
+@pytest.mark.parametrize('with_text', [False, True])
+def test_find_all_links_filtered(filtered_url, options, with_text):
+    accepted_url = 'https://accepted.example'
+    prefix = 'Before ' + filtered_url + ', between '
+    suffix = ', after ' + filtered_url + '.'
+    text = prefix + accepted_url + suffix
+
+    links = find_all_links(text, with_text=with_text, **options)
+    if with_text:
+        assert ''.join(str(token) for token in links) == text
+        links = [token for token in links if isinstance(token, URL)]
+    assert links == [URL(accepted_url)]
+
+    expected = [filtered_url] if with_text else []
+    assert find_all_links(filtered_url, with_text=with_text, **options) == expected
+
+
 def test_unicodey():
     unicodey = ('http://\N{LATIN SMALL LETTER E WITH ACUTE}.com/'
                 '\N{LATIN SMALL LETTER E}\N{COMBINING ACUTE ACCENT}'
