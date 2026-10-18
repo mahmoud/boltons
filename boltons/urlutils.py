@@ -692,6 +692,7 @@ class URL:
                               fragment=dest.fragment,
                               username=dest.username or self.username,
                               password=dest.password or self.password)
+        ret.family = dest.family if dest.host else self.family
         ret.normalize()
         return ret
 
