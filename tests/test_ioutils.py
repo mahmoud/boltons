@@ -518,6 +518,19 @@ class TestSpooledStringIO(TestCase, BaseTestMixin, AssertionsMixin):
         self.spooled_flo.writelines(lines)
         self.assertEqual(self.spooled_flo.getvalue(), expected)
 
+    def test_rollover_preserves_position_after_readline(self):
+        """Regression test for issue #581: rollover() preserves read position after readline()"""
+        with ioutils.SpooledStringIO() as stream:
+            stream.write('first\nlast')
+            stream.seek(0)
+            self.assertEqual(stream.readline(), 'first\n')
+            self.assertEqual(stream.tell(), 6)
+            stream.rollover()
+            self.assertEqual(stream.tell(), 6)
+            self.assertEqual(stream.read(), 'last')
+            stream.seek(0)
+            self.assertEqual(stream.read(), 'first\nlast')
+
 
 class TestMultiFileReader(TestCase):
     def test_read_seek_bytes(self):

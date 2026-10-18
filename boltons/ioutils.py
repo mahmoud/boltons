@@ -487,11 +487,11 @@ class SpooledStringIO(SpooledIOBase):
         if not self._rolled:
             tmp = EncodedFile(TemporaryFile(dir=self._dir),
                               data_encoding='utf-8')
-            pos = self.buffer.tell()
+            char_pos = self._tell
             tmp.write(self.buffer.getvalue())
-            tmp.seek(pos)
             self.buffer.close()
             self._buffer = tmp
+            self.seek(char_pos)
 
     def tell(self):
         """Return the codepoint position"""
