@@ -885,7 +885,8 @@ class FunctionBuilder:
         To see an example of usage, see the implementation of
         :func:`~boltons.funcutils.wraps`.
         """
-        execdict = execdict or {}
+        if execdict is None:
+            execdict = {}
         body = self.body or self._default_body
 
         tmpl = 'def {name}{sig_str}:'

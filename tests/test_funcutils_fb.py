@@ -142,6 +142,19 @@ def test_FunctionBuilder_invalid_body():
         FunctionBuilder(name="fails", body="*").get_func()
 
 
+@pytest.mark.parametrize('initial_scope', [{}, {'existing': 1}])
+def test_FunctionBuilder_preserves_execdict(initial_scope):
+    scope = initial_scope.copy()
+    fb = FunctionBuilder('read_value', body='return value')
+    func = fb.get_func(execdict=scope)
+
+    scope['value'] = 42
+    assert func() == 42
+    scope['value'] = 43
+    assert func() == 43
+    assert scope['read_value'] is func
+
+
 def test_FunctionBuilder_modify():
     fb = FunctionBuilder('return_five', doc='returns the integer 5',
                          body='return 5')
