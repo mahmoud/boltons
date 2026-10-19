@@ -82,6 +82,45 @@ def test_isoparse_fraction_overprecise():
     assert isoparse('2020-01-01T00:00:00.123456789').microsecond == 123456
 
 
+def test_isoparse_utc_designator():
+    # the 'Z' UTC designator yields a UTC-aware datetime
+    assert isoparse('2020-01-02T03:04:05Z') == datetime(
+        2020, 1, 2, 3, 4, 5, tzinfo=timezone.utc)
+    assert isoparse('2020-01-02T03:04:05.5Z') == datetime(
+        2020, 1, 2, 3, 4, 5, 500000, tzinfo=timezone.utc)
+
+
+def test_isoparse_numeric_offset():
+    plus_530 = timezone(timedelta(hours=5, minutes=30))
+    minus_8 = timezone(timedelta(hours=-8))
+
+    assert isoparse('2020-01-02T03:04:05+00:00') == datetime(
+        2020, 1, 2, 3, 4, 5, tzinfo=timezone.utc)
+    assert isoparse('2020-01-02T03:04:05+05:30') == datetime(
+        2020, 1, 2, 3, 4, 5, tzinfo=plus_530)
+    assert isoparse('2020-01-02T03:04:05-08:00') == datetime(
+        2020, 1, 2, 3, 4, 5, tzinfo=minus_8)
+    # the basic (colon-less) offset form is equivalent
+    assert isoparse('2020-01-02T03:04:05+0530') == isoparse(
+        '2020-01-02T03:04:05+05:30')
+
+
+def test_isoparse_aware_roundtrip():
+    # the isoformat() of a tz-aware datetime round-trips, matching the
+    # function's documented contract for naive datetimes
+    for tz in (timezone.utc,
+               timezone(timedelta(hours=5, minutes=30)),
+               timezone(timedelta(hours=-8))):
+        dt = datetime(2020, 1, 2, 3, 4, 5, 123456, tzinfo=tz)
+        assert isoparse(dt.isoformat()) == dt
+
+
+def test_isoparse_invalid_offset():
+    with pytest.raises(ValueError):
+        isoparse('2020-01-02T03:04:05+25:00')
+
+
+
 def test_daterange_step_does_not_advance():
     start, stop = date(2020, 1, 1), date(2020, 3, 1)
 

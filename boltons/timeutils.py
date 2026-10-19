@@ -93,6 +93,32 @@ def dt_to_timestamp(dt):
 
 _NONDIGIT_RE = re.compile(r'\D')
 
+# A trailing UTC designator ('Z') or numeric offset ('+HH:MM', '-HH:MM:SS'),
+# as emitted by datetime.isoformat() for timezone-aware datetimes.  Split off
+# before the date/time body so its digits and signs don't reach the body parser.
+_TZ_RE = re.compile(r'(?:Z|[+-]\d{2}:?\d{2}(?::?\d{2}(?:\.\d+)?)?)$')
+
+
+def _parse_tz(tz_str):
+    """Turns an ISO8601 trailing timezone designator into a tzinfo."""
+    if tz_str == 'Z':
+        return timezone.utc
+    sign = 1 if tz_str[0] == '+' else -1
+    # Accept both the colon-separated form isoformat() emits ('+05:30') and
+    # the basic form ('+0530'); split the digits off the fractional seconds.
+    digits, _, fraction = tz_str[1:].partition('.')
+    digits = digits.replace(':', '')
+    hours = int(digits[0:2])
+    minutes = int(digits[2:4])
+    seconds = int(digits[4:6]) if len(digits) > 4 else 0
+    microseconds = int(fraction.ljust(6, '0')[:6]) if fraction else 0
+    offset = sign * timedelta(hours=hours, minutes=minutes,
+                              seconds=seconds, microseconds=microseconds)
+    # datetime rejects a fixed offset of 24 hours or more.
+    if abs(offset) >= timedelta(hours=24):
+        raise ValueError(f'invalid timezone offset: {tz_str}')
+    return timezone(offset)
+
 
 def isoparse(iso_str):
     """Parses the limited subset of `ISO8601-formatted time`_ strings as
@@ -109,6 +135,13 @@ def isoparse(iso_str):
     >>> utcnow == isoparse(utcnow.isoformat())
     True
 
+    A trailing timezone, either the ``Z`` UTC designator or a numeric
+    ``+HH:MM`` offset, is parsed into a timezone-aware
+    :class:`~datetime.datetime`:
+
+    >>> isoparse('1970-01-01T00:00:00+00:00')
+    datetime.datetime(1970, 1, 1, 0, 0, tzinfo=datetime.timezone.utc)
+
     For further datetime parsing, see the `iso8601`_ package for strict
     ISO parsing and `dateutil`_ package for loose parsing and more.
 
@@ -120,6 +153,12 @@ def isoparse(iso_str):
     datetime.datetime(1970, 1, 1, 0, 0, 0, 851000)
 
     """
+    tzinfo = None
+    tz_match = _TZ_RE.search(iso_str)
+    if tz_match:
+        tzinfo = _parse_tz(tz_match.group())
+        iso_str = iso_str[:tz_match.start()]
+
     parts = _NONDIGIT_RE.split(iso_str)
     dt_args = [int(p) for p in parts]
     if len(parts) > 6:
@@ -127,7 +166,7 @@ def isoparse(iso_str):
         # '.851' means 851000us, not 851us. Digits past microsecond
         # precision are truncated (e.g. nanosecond timestamps).
         dt_args[6] = int(parts[6].ljust(6, '0')[:6])
-    return datetime(*dt_args)
+    return datetime(*dt_args, tzinfo=tzinfo)
 
 
 _BOUNDS = [(0, timedelta(seconds=1), 'second'),
