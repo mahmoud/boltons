@@ -237,7 +237,7 @@ class LRI(dict):
                 link = self._link_lookup[key]
             except KeyError:
                 self.miss_count += 1
-                if not self.on_miss:
+                if self.on_miss is None:
                     raise
                 ret = self[key] = self.on_miss(key)
                 return ret
@@ -368,7 +368,7 @@ class LRU(LRI):
                 link = self._get_link_and_move_to_front_of_ll(key)
             except KeyError:
                 self.miss_count += 1
-                if not self.on_miss:
+                if self.on_miss is None:
                     raise
                 ret = self[key] = self.on_miss(key)
                 return ret

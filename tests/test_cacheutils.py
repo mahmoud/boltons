@@ -16,6 +16,43 @@ class CountingCallable:
         return self.call_count
 
 
+class FalseBoolMissCallback:
+    def __init__(self):
+        self.calls = []
+
+    def __bool__(self):
+        return False
+
+    def __call__(self, key):
+        self.calls.append(key)
+        return key.upper()
+
+
+class EmptyMissCallback(dict):
+    def __init__(self):
+        super().__init__()
+        self.calls = []
+
+    def __call__(self, key):
+        self.calls.append(key)
+        return key.upper()
+
+
+@pytest.mark.parametrize('cache_type', [LRI, LRU])
+@pytest.mark.parametrize('callback_type', [FalseBoolMissCallback, EmptyMissCallback])
+@pytest.mark.parametrize('method', ['__getitem__', 'get', 'setdefault'])
+def test_falsey_on_miss(cache_type, callback_type, method):
+    callback = callback_type()
+    cache = cache_type(on_miss=callback)
+    lookup = getattr(cache, method)
+
+    assert lookup('key') == 'KEY'
+    assert lookup('key') == 'KEY'
+    assert callback.calls == ['key']
+    assert dict(cache) == {'key': 'KEY'}
+    assert (cache.hit_count, cache.miss_count, cache.soft_miss_count) == (1, 1, 0)
+
+
 def test_lru_add():
     cache = LRU(max_size=3)
     for i in range(4):
