@@ -142,7 +142,12 @@ class Bits:
             if type(val) is list:
                 val = ''.join(['1' if e else '0' for e in val])
             if type(val) is bytes:
-                val = val.decode('ascii')
+                # Each byte is 8 bits of raw data, so route it through the
+                # same hex path as from_bytes(). Decoding as ASCII instead
+                # (the old behavior) raised on any byte outside '0'/'1'.
+                if len_ is None:
+                    len_ = 8 * len(val)
+                val = int.from_bytes(val, 'big')
             if type(val) is str:
                 if len_ is None:
                     len_ = len(val)

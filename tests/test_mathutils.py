@@ -145,3 +145,19 @@ def test_empty_bits_rejects_non_hex_inputs():
     for value in (None, 0, False):
         with raises(AttributeError):
             Bits.from_hex(value)
+
+
+def test_bits_from_bytes_constructor():
+    # Bits(bytes) treats each byte as 8 bits of raw data, matching
+    # from_bytes(). Previously it decoded the bytes as ASCII and parsed the
+    # characters as binary digits, which raised on any byte outside '0'/'1'.
+    for raw in (b'\x00', b'\xff', b'\xab\xcd', b'\x00\x01', bytes(range(5))):
+        from_ctor = Bits(raw)
+        assert from_ctor == Bits.from_bytes(raw)
+        assert len(from_ctor) == 8 * len(raw)
+        assert from_ctor.as_bytes() == raw
+    # specific values
+    assert Bits(b'\xff').as_bin() == '11111111'
+    assert Bits(b'\x00').as_bin() == '00000000'
+    # empty bytes yield an empty Bits
+    assert Bits(b'') == Bits('')
