@@ -319,14 +319,31 @@ class BarrelList(list):
     def count(self, item):
         return sum([cur.count(item) for cur in self.lists])
 
-    def index(self, item):
+    def index(self, item, start=0, stop=_MISSING):
+        """Return the first index of *item* between *start* and *stop*.
+
+        Bounds follow :meth:`list.index`: *start* is inclusive, *stop* is
+        exclusive, and negative bounds are relative to the end of the list.
+        Raise :exc:`ValueError` if *item* is not found in that range.
+
+        >>> BarrelList([1, 2, 1]).index(1, 1)
+        2
+        """
+        start = operator.index(start)
+        stop = len(self) if stop is _MISSING else operator.index(stop)
+        start, stop, _ = slice(start, stop).indices(len(self))
         len_accum = 0
         for cur in self.lists:
-            try:
-                rel_idx = cur.index(item)
-                return len_accum + rel_idx
-            except ValueError:
-                len_accum += len(cur)
+            if len_accum >= stop:
+                break
+            if len_accum + len(cur) > start:
+                try:
+                    rel_idx = cur.index(item, max(0, start - len_accum),
+                                        stop - len_accum)
+                    return len_accum + rel_idx
+                except ValueError:
+                    pass
+            len_accum += len(cur)
         raise ValueError(f'{item!r} is not in list')
 
 

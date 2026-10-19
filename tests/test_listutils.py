@@ -1,5 +1,7 @@
 import sys
 
+import pytest
+
 from boltons.listutils import SplayList, BarrelList
 
 
@@ -69,6 +71,46 @@ def test_sort_barrel_list():
     bl.sort()
     assert bl[0] == 0
     assert bl[-1] == 99999
+
+
+@pytest.mark.parametrize('split', [False, True])
+def test_barrel_list_index_bounds_match_list(split):
+    reference = [0, 1, 2, 0, 1, 2, 0, 1, 2]
+    value = BarrelList(reference)
+    if split:
+        value.lists = [reference[:3], [], reference[3:6], reference[6:]]
+
+    bounds = (-100, -9, -5, -1, 0, 1, 3, 5, 9, 100)
+    for item in (0, 1, 2, 3):
+        for start in bounds:
+            for stop in bounds:
+                try:
+                    expected = reference.index(item, start, stop)
+                except ValueError:
+                    with pytest.raises(ValueError):
+                        value.index(item, start, stop)
+                else:
+                    assert value.index(item, start, stop) == expected
+
+    assert value.index(0) == reference.index(0)
+    assert value.index(0, 1) == reference.index(0, 1)
+    with pytest.raises(ValueError):
+        BarrelList().index(0, 0, 1)
+
+
+def test_barrel_list_index_bound_types():
+    class Index:
+        def __index__(self):
+            return 2
+
+    value = BarrelList([1, 2, 1, 2])
+    assert value.index(1, Index()) == 2
+    assert value.index(2, 0, Index()) == 1
+    for bound in (None, 1.5, '1'):
+        with pytest.raises(TypeError):
+            value.index(1, bound)
+        with pytest.raises(TypeError):
+            value.index(1, 0, bound)
 
 # roughly increasing random integers
 # [ord(i) * x for i, x in zip(os.urandom(1024), range(1024))]
