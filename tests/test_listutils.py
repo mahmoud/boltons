@@ -3,6 +3,10 @@ import sys
 from boltons.listutils import SplayList, BarrelList
 
 
+class SubBarrelList(BarrelList):
+    """Module level so that instances are picklable."""
+
+
 def test_splay_list():
     splay = SplayList(range(10))
     splay.swap(0, 9)
@@ -240,3 +244,48 @@ def test_barrel_list_delete_to_end():
         del reference[10000:stop]
         del value[10000:stop]
         assert list(value) == reference
+
+
+def test_barrel_list_copy_and_pickle():
+    # BarrelList keeps its values in `lists`, so the storage inherited from
+    # list is always empty. The inherited list reduction reported that empty
+    # storage as listitems, so pickling raised AttributeError,
+    # copy.deepcopy() silently duplicated every value, and copy.copy() looped
+    # forever appending the empty inherited contents to the new instance.
+    import copy
+    import pickle
+
+    bl = BarrelList(range(12))
+    expected = list(range(12))
+    assert list(bl) == expected
+
+    loaded = pickle.loads(pickle.dumps(bl))
+    assert type(loaded) is BarrelList
+    assert list(loaded) == expected
+
+    dup = copy.copy(bl)
+    assert type(dup) is BarrelList
+    assert list(dup) == expected
+    dup.append('only in the copy')
+    assert list(bl) == expected
+
+    deep = copy.deepcopy(bl)
+    assert type(deep) is BarrelList
+    assert list(deep) == expected
+
+    # an empty BarrelList must round-trip too, and subclasses must keep
+    # their own type
+    assert list(pickle.loads(pickle.dumps(BarrelList()))) == []
+    assert list(copy.copy(BarrelList())) == []
+    assert list(copy.deepcopy(BarrelList())) == []
+
+    sub = pickle.loads(pickle.dumps(SubBarrelList(range(5))))
+    assert type(sub) is SubBarrelList
+    assert list(sub) == [0, 1, 2, 3, 4]
+    assert list(copy.deepcopy(SubBarrelList(range(5)))) == [0, 1, 2, 3, 4]
+
+    # many values across several sublists
+    big = _multi_sublist_bl()
+    assert len(big.lists) > 1
+    assert copy.deepcopy(big) == big
+    assert pickle.loads(pickle.dumps(big)) == big

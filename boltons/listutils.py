@@ -220,6 +220,13 @@ class BarrelList(list):
     def from_iterable(cls, it):
         return cls(it)
 
+    def __reduce__(self):
+        # The inherited list reduction reports the base list's (always
+        # empty) contents as listitems, so unpickling raises AttributeError
+        # and copy.copy() recurses until the process runs out of memory.
+        # Rebuild from the values actually held in the sublists.
+        return (self.__class__, (list(self),))
+
     def __iter__(self):
         return chain.from_iterable(self.lists)
 
