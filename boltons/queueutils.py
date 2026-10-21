@@ -102,7 +102,12 @@ class BasePriorityQueue:
 
     """
     # negating priority means larger numbers = higher priority
-    _default_priority_key = staticmethod(lambda p: -float(p or 0))
+    @staticmethod
+    def _default_priority_key(priority):
+        # Preserve integer precision (e.g., nanosecond timestamps).
+        if isinstance(priority, int):
+            return -priority
+        return -float(priority or 0)
     _backend_type = list
 
     def __init__(self, **kw):
