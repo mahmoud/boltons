@@ -518,3 +518,19 @@ def test_cache_update_optional_source(cache_type):
     assert dict(cache) == {'existing': 0, 'a': 1}
     cache.update(cache, a=2)
     assert dict(cache) == {'existing': 0, 'a': 2}
+
+
+@pytest.mark.parametrize('threshold, pattern', [
+    (0.6, 'a'), (0.4, 'ab'), (0.3, 'abc'),
+])
+def test_threshold_counter_nonintegral_bucket_width(threshold, pattern):
+    tc = ThresholdCounter(threshold=threshold)
+    exact = {}
+    for key in pattern * 20:
+        exact[key] = exact.get(key, 0) + 1
+        tc.add(key)
+        for item, count in exact.items():
+            # Lossy counting may underestimate, but not by more than epsilon*N.
+            assert 0 <= count - tc.get(item) <= threshold * tc.total
+            if count > threshold * tc.total:
+                assert item in tc

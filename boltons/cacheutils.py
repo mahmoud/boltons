@@ -64,6 +64,7 @@ Learn more about `caching algorithms on Wikipedia
 
 
 import heapq
+import math
 import weakref
 import itertools
 from operator import attrgetter
@@ -689,7 +690,7 @@ class ThresholdCounter:
         self.total = 0
         self._count_map = {}
         self._threshold = threshold
-        self._thresh_count = int(1 / threshold)
+        self._thresh_count = math.ceil(1 / threshold)
         self._cur_bucket = 1
 
     @property
@@ -700,7 +701,7 @@ class ThresholdCounter:
         """Increment the count of *key* by 1, automatically adding it if it
         does not exist.
 
-        Cache compaction is triggered every *1/threshold* additions.
+        Cache compaction is triggered every *ceil(1/threshold)* additions.
         """
         self.total += 1
         try:
