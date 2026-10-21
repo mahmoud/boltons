@@ -357,14 +357,14 @@ class OrderedMultiDict(dict):
         if isinstance(other, OrderedMultiDict):
             selfi = self.iteritems(multi=True)
             otheri = other.iteritems(multi=True)
-            zipped_items = zip_longest(selfi, otheri, fillvalue=(None, None))
-            for (selfk, selfv), (otherk, otherv) in zipped_items:
+            zipped_items = zip_longest(selfi, otheri, fillvalue=_MISSING)
+            for selfitem, otheritem in zipped_items:
+                if selfitem is _MISSING or otheritem is _MISSING:
+                    return False
+                selfk, selfv = selfitem
+                otherk, otherv = otheritem
                 if selfk != otherk or selfv != otherv:
                     return False
-            if not(next(selfi, _MISSING) is _MISSING
-                   and next(otheri, _MISSING) is _MISSING):
-                # leftovers  (TODO: watch for StopIteration?)
-                return False
             return True
         elif hasattr(other, 'keys'):
             for selfk in self:

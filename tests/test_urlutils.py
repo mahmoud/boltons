@@ -502,3 +502,15 @@ def test_unicodey():
 
 def test_str_repr():
     assert str(URL("http://googlewebsite.com/e-shops.aspx")) == "http://googlewebsite.com/e-shops.aspx"
+
+
+def test_multidict_equality_distinguishes_trailing_none_items():
+    from boltons.urlutils import OrderedMultiDict, QueryParamDict
+
+    for cls in (OrderedMultiDict, QueryParamDict):
+        shorter = cls([(None, None)])
+        longer = cls([(None, None), (None, None)])
+        assert shorter != longer
+        assert longer != shorter
+        assert not (shorter == longer)
+        assert shorter == cls([(None, None)])

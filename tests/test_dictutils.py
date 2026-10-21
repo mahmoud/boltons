@@ -599,3 +599,18 @@ def test_frozendict_api():
 
     import copy
     assert copy.copy(fd) is fd
+
+
+@pytest.mark.parametrize('extra', [1, 2])
+def test_equality_distinguishes_trailing_none_items(extra):
+    from boltons.dictutils import FastIterOrderedMultiDict
+
+    for cls in (OMD, FastIterOrderedMultiDict):
+        pairs = [('a', 1), (None, None)]
+        shorter = cls(pairs)
+        longer = cls(pairs + [(None, None)] * extra)
+        assert shorter != longer
+        assert longer != shorter
+        assert not (shorter == longer)
+        assert shorter == cls(pairs)
+        assert longer == cls(pairs + [(None, None)] * extra)
