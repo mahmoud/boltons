@@ -882,6 +882,24 @@ def parse_host(host):
     return family, host
 
 
+def _is_truncated_userinfo(authority):
+    """Whether *authority* looks like a userinfo cut short by an unencoded
+    special character, rather than a complete ``host[:port]`` authority.
+
+    The authority regex stops at the first ``/``, ``?`` or ``#``, so a
+    password containing one of those unencoded leaves the remainder of the
+    userinfo (and the host) in the path or query. Such a truncated userinfo
+    always contains a ``:`` (``user:password``), while an ordinary
+    ``host:port`` authority has digits after its last ``:``.
+    """
+    if authority.startswith('['):
+        return False  # IPv6 literal, e.g. "[::1]:8080"
+    _, sep, maybe_password = authority.rpartition(':')
+    # A host-only authority (no ':') is complete, and digits after the ':'
+    # mark a port rather than a password.
+    return bool(sep) and bool(maybe_password) and not maybe_password.isdigit()
+
+
 def parse_url(url_text):
     """\
     Used to parse the text for a single URL into a dictionary, used
@@ -917,7 +935,7 @@ def parse_url(url_text):
         if sep:
             # TODO: empty userinfo error?
             user, _, pw = userinfo.partition(':')
-        elif (gs['query'] or '').startswith('@'):
+        elif (gs['query'] or '').startswith('@') and _is_truncated_userinfo(au_text):
             # The password contained an unencoded '?'. RFC 3986 requires
             # '?' inside credentials to be percent-encoded, but be tolerant
             # of common real-world URLs: the '@' that separates userinfo
@@ -926,7 +944,7 @@ def parse_url(url_text):
             hostinfo = gs['query'][1:]
             gs['query'] = ''
             user, _, pw = userinfo.partition(':')
-        elif gs['path'].startswith('/@'):
+        elif gs['path'].startswith('/@') and _is_truncated_userinfo(au_text):
             # Same idea, but the password contained an unencoded '/',
             # pushing the credential '@' into the path.
             userinfo = au_text + '/'

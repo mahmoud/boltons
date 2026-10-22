@@ -221,6 +221,49 @@ def test_userinfo_unencoded_slash_in_password():
     assert url.port == 8080
 
 
+def test_at_sign_in_query_or_path_is_not_userinfo():
+    # An ordinary host-only URL whose query or path happens to start with
+    # '@' must keep its host: the authority contains no ':' and therefore
+    # cannot be a truncated "user:password" userinfo.
+    # https://github.com/mahmoud/boltons/pull/578
+    url = URL('http://example.com?@other.example')
+    assert url.host == 'example.com'
+    assert not url.username
+    assert not url.password
+    assert url.query_params['@other.example'] is None
+
+    url = URL('http://example.com/@other.example')
+    assert url.host == 'example.com'
+    assert not url.username
+    assert not url.password
+    assert url.path == '/@other.example'
+
+
+def test_host_port_authority_with_at_sign_is_not_userinfo():
+    # Same as above, but the authority also carries a port: digits after
+    # the last ':' mark a host:port authority, not a password.
+    # https://github.com/mahmoud/boltons/pull/578
+    url = URL('http://example.com:8080?@other.example')
+    assert url.host == 'example.com'
+    assert url.port == 8080
+    assert not url.username
+    assert not url.password
+
+    url = URL('http://example.com:8080/@other.example')
+    assert url.host == 'example.com'
+    assert url.port == 8080
+    assert not url.username
+    assert not url.password
+
+
+def test_ipv6_authority_with_at_sign_is_not_userinfo():
+    # An IPv6 literal authority contains ':' but is not userinfo.
+    # https://github.com/mahmoud/boltons/pull/578
+    url = URL('http://[::1]?@other.example')
+    assert url.host == '::1'
+    assert not url.username
+    assert not url.password
+
 
 def test_password_without_username():
     url = URL('http://:secret@example.com/path')
