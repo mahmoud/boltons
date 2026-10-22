@@ -156,6 +156,14 @@ class BarrelList(list):
     def extend(self, iterable):
         self.lists[-1].extend(iterable)
 
+    def __mul__(self, count):
+        """Return a plain list containing the repeated contents."""
+        return list(self) * count
+
+    def __rmul__(self, count):
+        """Return a plain list containing the repeated contents."""
+        return count * list(self)
+
     def pop(self, *a):
         lists = self.lists
         if len(lists) == 1 and not a:

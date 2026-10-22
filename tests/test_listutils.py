@@ -62,6 +62,25 @@ def test_barrel_list_insert_before_start_matches_list():
     assert len(bl) == int(1e5) + 1
 
 
+def test_barrel_list_repetition_matches_list():
+    """Repetition must use the partitioned contents, not base-list storage."""
+    bl = BarrelList([1, 2, 3])
+    assert bl * 2 == [1, 2, 3, 1, 2, 3]
+    assert 2 * bl == [1, 2, 3, 1, 2, 3]
+    assert bl * 0 == []
+    assert bl * -1 == []
+    assert list(bl) == [1, 2, 3]
+
+
+def test_barrel_list_repetition_after_partitioning():
+    """Repetition must preserve values spread across multiple sublists."""
+    bl = BarrelList(range(100000))
+    bl.pop(50000)
+    expected = list(bl) * 2
+    assert bl * 2 == expected
+    assert 2 * bl == expected
+
+
 def test_sort_barrel_list():
     bl = BarrelList(reversed(range(100000)))
     bl.pop(50000)
