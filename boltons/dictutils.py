@@ -977,6 +977,7 @@ class ManyToMany:
         return
 
     def add(self, key, val):
+        hash(val)
         if key not in self.data:
             self.data[key] = set()
         self.data[key].add(val)
