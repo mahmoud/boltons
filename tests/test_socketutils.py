@@ -17,6 +17,42 @@ pytestmark = pytest.mark.skipif(getattr(socket, 'socketpair', None) is None,
                                 reason='no socketpair (likely Py2 on Windows)')
 
 
+@pytest.mark.parametrize('configuration', ['constructor', 'setter', 'call'])
+@pytest.mark.parametrize('timeout', [1.0, None])
+def test_netstring_read_timeout_applies_to_each_part(configuration, timeout):
+    class StagedSocket:
+        def __init__(self):
+            self.timeout = 37.0
+            self.chunks = iter([b'3:', b'abc', b','])
+            self.read_timeouts = []
+
+        def gettimeout(self):
+            return self.timeout
+
+        def settimeout(self, value):
+            self.timeout = value
+
+        def recv(self, size):
+            self.read_timeouts.append(self.timeout)
+            return next(self.chunks)
+
+    sock = StagedSocket()
+    if configuration == 'constructor':
+        ns = NetstringSocket(sock, timeout=timeout)
+    else:
+        ns = NetstringSocket(sock)
+        if configuration == 'setter':
+            ns.settimeout(timeout)
+
+    kwargs = {'timeout': timeout} if configuration == 'call' else {}
+    assert ns.read_ns(**kwargs) == b'abc'
+    assert len(sock.read_timeouts) == 3
+    if timeout is None:
+        assert sock.read_timeouts == [None, None, None]
+    else:
+        assert all(0 < value <= timeout for value in sock.read_timeouts)
+
+
 def test_short_lines():
     for ms in (2, 4, 6, 1024, None):
         x, y = socket.socketpair()

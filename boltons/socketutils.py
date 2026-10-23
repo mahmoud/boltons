@@ -690,8 +690,8 @@ class NetstringSocket:
 
         if size > maxsize:
             raise NetstringMessageTooLong(size, maxsize)
-        payload = self.bsock.recv_size(size)
-        if self.bsock.recv(1) != b',':
+        payload = self.bsock.recv_size(size, timeout=timeout)
+        if self.bsock.recv(1, timeout=timeout) != b',':
             raise NetstringProtocolError("expected trailing ',' after message")
 
         return payload
