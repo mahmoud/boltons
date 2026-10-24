@@ -46,6 +46,32 @@ def test_asciify():
     assert b[-1:].decode('ascii') == 'e'
 
 
+@pytest.mark.parametrize('text, expected', [
+    ('', b''),
+    ('plain ASCII', b'plain ASCII'),
+    ('Beyoncé', b'Beyonce'),
+    ('Straße', b'Strasse'),
+    ('snowman ☃', b'snowman ?'),
+])
+@pytest.mark.parametrize('as_bytes', [False, True])
+def test_asciify_text_and_utf8_bytes(text, expected, as_bytes):
+    value = text.encode('utf-8') if as_bytes else text
+    assert strutils.asciify(value) == expected
+
+
+@pytest.mark.parametrize('as_bytes', [False, True])
+def test_asciify_ignore_untransliterated_characters(as_bytes):
+    text = 'Beyoncé ☃'
+    value = text.encode('utf-8') if as_bytes else text
+    assert strutils.asciify(value, ignore=True) == b'Beyonce '
+
+
+@pytest.mark.parametrize('ignore', [False, True])
+def test_asciify_rejects_invalid_utf8_bytes(ignore):
+    with pytest.raises(UnicodeDecodeError):
+        strutils.asciify(b'\xff', ignore=ignore)
+
+
 def test_indent():
     to_indent = '\nabc\ndef\n\nxyz\n'
     ref = '\n  abc\n  def\n\n  xyz\n'

@@ -423,20 +423,18 @@ def asciify(text, ignore=False):
     **with** unicode, not against it.
 
     Args:
-        text (str): The string to be asciified.
+        text (str or bytes): The string to be asciified. Bytes are decoded
+            as UTF-8; invalid UTF-8 raises :exc:`UnicodeDecodeError`.
         ignore (bool): Configures final encoding to ignore remaining
             unasciified string instead of replacing it.
 
     >>> asciify('Beyoncé') == b'Beyonce'
     True
     """
+    if isinstance(text, bytes):
+        text = text.decode('utf-8')
     try:
-        try:
-            return text.encode('ascii')
-        except UnicodeDecodeError:
-            # this usually means you passed in a non-unicode string
-            text = text.decode('utf-8')
-            return text.encode('ascii')
+        return text.encode('ascii')
     except UnicodeEncodeError:
         mode = 'replace'
         if ignore:
