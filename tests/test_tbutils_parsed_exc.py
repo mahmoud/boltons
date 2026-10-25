@@ -107,3 +107,35 @@ Traceback (most recent call last):
                                  'filepath': 'main.py',
                                  'lineno': '3',
                                  'funcname': '<module>'}]
+
+
+# captured from CPython 3.14, which shows every row of a multiline expression
+_MULTILINE_TB_STR = """\
+Traceback (most recent call last):
+  File "/tmp/tbcap/ml.py", line 6, in <module>
+    f({})
+    ~^^^^
+  File "/tmp/tbcap/ml.py", line 2, in f
+    y = x["b"
+        ~^^^^
+    ]
+    ^
+KeyError: 'b'"""
+
+
+def test_parsed_exc_multiline_source():
+    parsed_tb = ParsedException.from_string(_MULTILINE_TB_STR)
+
+    assert parsed_tb.exc_type == 'KeyError'
+    assert parsed_tb.exc_msg == "'b'"
+    assert parsed_tb.frames[-1] == {'source_line': 'y = x["b"',
+                                    'source_line_anchor': '    ~^^^^',
+                                    'source_line_continuations': [']', '^'],
+                                    'filepath': '/tmp/tbcap/ml.py',
+                                    'lineno': '2',
+                                    'funcname': 'f'}
+    assert parsed_tb.to_string() == _MULTILINE_TB_STR
+
+    indented = ParsedException.from_string(
+        '\n'.join('    ' + line for line in _MULTILINE_TB_STR.splitlines()))
+    assert indented.frames == parsed_tb.frames
