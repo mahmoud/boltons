@@ -240,3 +240,87 @@ def test_barrel_list_delete_to_end():
         del reference[10000:stop]
         del value[10000:stop]
         assert list(value) == reference
+
+
+def _small_multi_bl(values):
+    bl = BarrelList()
+    bl.lists = [list(values[i:i + 3]) for i in range(0, len(values), 3)] or [[]]
+    return bl
+
+
+def _bl_variants(values):
+    # same contents, single- and multi-barrel layouts
+    return [BarrelList(values), _small_multi_bl(values)]
+
+
+def test_barrel_list_list_compat_matches_list():
+    import copy
+    import pickle
+    import pytest
+
+    ref = [5, 3, 8, 1, 9, 3, 7, 2, 6, 0, 4, 3]
+    for bl in _bl_variants(ref):
+        # comparisons (#544)
+        assert bl == ref and not (bl != ref)
+        assert bl == BarrelList(ref) and bl != BarrelList([1])
+        assert (bl < [6], bl <= ref, bl > [5], bl >= ref) == (True, True, True, True)
+        assert BarrelList([1]) < bl
+        assert bl != 3 and not (bl == [])
+        # concatenation and repetition (#540, #532)
+        assert bl + [1] == ref + [1] and [1] + bl == [1] + ref
+        assert type(bl + bl) is list and bl + bl == ref + ref
+        assert bl * 2 == ref * 2 and 2 * bl == 2 * ref
+        # pickle and copy (#596)
+        for dup in (pickle.loads(pickle.dumps(bl)), copy.copy(bl),
+                    copy.deepcopy(bl), bl.copy()):
+            assert type(dup) is BarrelList and list(dup) == ref
+        # index with bounds (#592)
+        for args in ((3,), (3, 2), (3, 6), (3, -1), (3, 6, 12), (3, -7, -1)):
+            assert bl.index(*args) == ref.index(*args), args
+        for args in ((3, 12), (3, 6, 11), (8, 3), (3, 1, 1)):
+            with pytest.raises(ValueError):
+                bl.index(*args)
+        # pop argument validation (#575)
+        for bad in ((None,), (1.0,), (0, 1)):
+            with pytest.raises(TypeError):
+                bl.pop(*bad)
+        assert list(bl) == ref
+
+    for bl in _bl_variants(ref):
+        r = list(ref)
+        bl += [10]  # in-place ops
+        r += [10]
+        bl *= 2
+        r *= 2
+        assert list(bl) == r
+        bl.remove(3)  # #538
+        r.remove(3)
+        assert list(bl) == r
+        bl.extend(bl)  # #517, used to hang
+        r.extend(r)
+        assert list(bl) == r
+        bl.sort(key=lambda x: -x % 5, reverse=True)  # #550
+        r.sort(key=lambda x: -x % 5, reverse=True)
+        assert list(bl) == r
+        bl.clear()  # #530
+        assert list(bl) == [] and len(bl) == 0
+
+    big = _multi_sublist_bl()
+    big_ref = list(big)
+    big.sort(reverse=True)
+    assert list(big) == sorted(big_ref, reverse=True)
+    assert pickle.loads(pickle.dumps(big)) == big
+
+
+def test_barrel_list_del_stepped_slice_matches_list():
+    # #549: stepped deletes kept the wrong items
+    for size in (0, 1, 8, 12):
+        values = list(range(size))
+        for start in (None, -20, -2, 0, 2, 20):
+            for stop in (None, -20, -2, 0, 2, 20):
+                for step in (None, -3, -1, 1, 2, 3):
+                    for bl in _bl_variants(values):
+                        ref = list(values)
+                        del ref[start:stop:step]
+                        del bl[start:stop:step]
+                        assert list(bl) == ref, (size, start, stop, step)

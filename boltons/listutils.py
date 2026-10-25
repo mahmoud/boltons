@@ -53,7 +53,6 @@ except ImportError:
 __all__ = ['BList', 'BarrelList']
 
 
-# TODO: comparators
 # TODO: keep track of list lengths and bisect to the right list for
 # faster getitem (and slightly slower setitem and delitem ops)
 
@@ -154,14 +153,18 @@ class BarrelList(list):
         self.lists[-1].append(item)
 
     def extend(self, iterable):
+        if iterable is self:
+            iterable = list(self)
         self.lists[-1].extend(iterable)
 
     def pop(self, *a):
+        if len(a) > 1:
+            raise TypeError(f'pop expected at most 1 argument, got {len(a)}')
+        index = operator.index(a[0]) if a else -1
         lists = self.lists
-        if len(lists) == 1 and not a:
-            return self.lists[0].pop()
-        index = a and a[0]
-        if index == () or index is None or index == -1:
+        if index == -1:
+            if len(lists) == 1:
+                return lists[0].pop()
             while len(lists) > 1 and not lists[-1]:
                 lists.pop()  # clean up empty tail sublists first
             ret = lists[-1].pop()
@@ -186,16 +189,21 @@ class BarrelList(list):
         return islice(self, start, stop, step)
 
     def del_slice(self, start, stop, step=None):
-        if step is not None and abs(step) > 1:  # punt
-            new_list = chain(self.iter_slice(0, start, step),
-                             self.iter_slice(stop, None, step))
-            self.lists[0][:] = new_list
+        step = 1 if step is None else operator.index(step)
+        if step == 0:
+            raise ValueError('slice step cannot be zero')
+        if step != 1:  # punt
+            tmp = list(self)
+            del tmp[start:stop:step]
+            self.lists[:] = [tmp]
             self._balance_list(0)
             return
-        if start is None:
-            start = 0
+        len_self = len(self)
+        start, stop, _ = slice(start, stop, 1).indices(len_self)
+        if start >= stop:
+            return
         start_list_idx, start_rel_idx = self._translate_index(start)
-        if stop is None or stop >= len(self):
+        if stop == len_self:
             stop_list_idx, stop_rel_idx = len(self.lists) - 1, len(self.lists[-1])
         else:
             stop_list_idx, stop_rel_idx = self._translate_index(stop)
@@ -298,15 +306,80 @@ class BarrelList(list):
     def __repr__(self):
         return f'{self.__class__.__name__}({list(self)!r})'
 
-    def sort(self):
+    def __reduce__(self):
+        return (self.__class__, (list(self),))
+
+    @staticmethod
+    def _as_list(other):
+        return list(other) if isinstance(other, BarrelList) else other
+
+    def __eq__(self, other):
+        return list(self).__eq__(self._as_list(other))
+
+    def __ne__(self, other):
+        return list(self).__ne__(self._as_list(other))
+
+    def __lt__(self, other):
+        return list(self).__lt__(self._as_list(other))
+
+    def __le__(self, other):
+        return list(self).__le__(self._as_list(other))
+
+    def __gt__(self, other):
+        return list(self).__gt__(self._as_list(other))
+
+    def __ge__(self, other):
+        return list(self).__ge__(self._as_list(other))
+
+    __hash__ = None
+
+    def __add__(self, other):
+        if not isinstance(other, list):
+            return NotImplemented
+        return list(self) + self._as_list(other)
+
+    def __radd__(self, other):
+        if not isinstance(other, list):
+            return NotImplemented
+        return self._as_list(other) + list(self)
+
+    def __iadd__(self, other):
+        self.extend(other)
+        return self
+
+    def __mul__(self, count):
+        return list(self) * operator.index(count)
+
+    __rmul__ = __mul__
+
+    def __imul__(self, count):
+        tmp = list(self) * operator.index(count)
+        self.lists[:] = [tmp]
+        self._balance_list(0)
+        return self
+
+    def remove(self, item):
+        self.pop(self.index(item))
+
+    def clear(self):
+        for cur in self.lists:
+            cur.clear()
+        self.lists[:] = [[]]
+
+    def copy(self):
+        return self.__class__(self)
+
+    def sort(self, *, key=None, reverse=False):
         # poor pythonist's mergesort, it's faster than sorted(self)
         # when the lists' average length is greater than 512.
         if len(self.lists) == 1:
-            self.lists[0].sort()
+            self.lists[0].sort(key=key, reverse=reverse)
         else:
-            for li in self.lists:
-                li.sort()
-            tmp_sorted = sorted(chain.from_iterable(self.lists))
+            if key is None:  # with a key, call it only once per item
+                for li in self.lists:
+                    li.sort(reverse=reverse)
+            tmp_sorted = sorted(chain.from_iterable(self.lists),
+                                key=key, reverse=reverse)
             del self.lists[:]
             self.lists.append(tmp_sorted)
             self._balance_list(0)
@@ -319,14 +392,21 @@ class BarrelList(list):
     def count(self, item):
         return sum([cur.count(item) for cur in self.lists])
 
-    def index(self, item):
-        len_accum = 0
+    def index(self, item, start=0, stop=None):
+        start, stop, _ = slice(start, stop).indices(len(self))
+        offset = 0
         for cur in self.lists:
-            try:
-                rel_idx = cur.index(item)
-                return len_accum + rel_idx
-            except ValueError:
-                len_accum += len(cur)
+            len_cur = len(cur)
+            if offset >= stop:
+                break
+            if offset + len_cur > start:
+                try:
+                    rel_idx = cur.index(item, max(start - offset, 0), stop - offset)
+                except ValueError:
+                    pass
+                else:
+                    return offset + rel_idx
+            offset += len_cur
         raise ValueError(f'{item!r} is not in list')
 
 
