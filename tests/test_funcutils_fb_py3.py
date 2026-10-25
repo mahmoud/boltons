@@ -151,6 +151,37 @@ def test_FunctionBuilder_add_arg_kwonly():
     return
 
 
+def test_get_func_uses_empty_execdict():
+    # an explicitly passed empty execdict is the function's globals
+    scope = {}
+    func = FunctionBuilder('f', body='return x').get_func(execdict=scope)
+    scope['x'] = 'set later'
+    assert func() == 'set later'
+
+
+def test_wraps_expected_kwonly_triple():
+    def func(a, b):
+        return (a, b)
+
+    def deco(f):
+        @wraps(f, expected=[('c', 5, True), ('d', 6, False)])
+        def wrapper(a, b, d, *, c):
+            return (f(a, b), c, d)
+        return wrapper
+
+    wrapped = deco(func)
+    params = inspect.signature(wrapped, follow_wrapped=False).parameters
+    assert params['c'].kind is inspect.Parameter.KEYWORD_ONLY
+    assert params['d'].kind is inspect.Parameter.POSITIONAL_OR_KEYWORD
+    assert wrapped(1, 2) == ((1, 2), 5, 6)
+    assert wrapped(1, 2, c=7) == ((1, 2), 7, 6)
+    with pytest.raises(TypeError):
+        wrapped(1, 2, 3, 4)
+
+    with pytest.raises(ValueError):
+        wraps(func, expected=[('c', 5, True, 'extra')])(func)
+
+
 @pytest.mark.parametrize(
     "args, varargs, varkw, defaults, kwonlyargs, kwonlydefaults, invocation_str, sig_str",
     [
@@ -329,6 +360,42 @@ def test_wraps_posonly_defaulted_arg():
 
     assert deco(func)(1, 5) == (1, 5, 3)
     assert deco(func)(1, 5, z=7) == (1, 5, 7)
+
+
+@pytest.mark.skipif(sys.version_info < (3, 8),
+                    reason='positional-only params require 3.8+')
+def test_wraps_posonly_marker():
+    # issue #510: the wrapper keeps the "/" marker, so a positional-only
+    # name can still arrive via **kw
+    ns = {}
+    exec('def original(a, /, **kw):\n    return (a, kw)', ns)
+    original = ns['original']
+
+    def deco(f):
+        @wraps(f)
+        def wrapper(*args, **kwargs):
+            return f(*args, **kwargs)
+        return wrapper
+
+    wrapped = deco(original)
+    sig = inspect.signature(wrapped, follow_wrapped=False)
+    assert str(sig) == '(a, /, **kw)'
+    assert wrapped(1, a=2) == (1, {'a': 2})
+
+
+@pytest.mark.skipif(sys.version_info < (3, 8),
+                    reason='positional-only params require 3.8+')
+def test_remove_arg_posonly():
+    ns = {}
+    exec('def func(a, b, /, c):\n    return (a, b, c)', ns)
+    func = ns['func']
+
+    fb = FunctionBuilder.from_func(func)
+    fb.remove_arg('b')
+    assert fb.posonlyargs == ['a']
+    assert fb.get_sig_str() == '(a, /, c)'
+    fb.remove_arg('a')
+    assert fb.get_sig_str() == '(c)'
 
 
 def test_wraps_target_kwonly_arg():
