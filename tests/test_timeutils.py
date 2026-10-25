@@ -1,8 +1,9 @@
-from datetime import timedelta, date, datetime, timezone
+from datetime import timedelta, date, datetime, timezone, tzinfo
 
 import pytest
 
-from boltons.timeutils import daterange, isoparse, Eastern
+from boltons.timeutils import (daterange, isoparse, Eastern, dt_to_timestamp,
+                               parse_timedelta)
 
 
 def test_daterange_years():
@@ -80,6 +81,43 @@ def test_isoparse_fraction_overprecise():
     # digits past microsecond precision (e.g. nanosecond timestamps)
     # truncate rather than raise
     assert isoparse('2020-01-01T00:00:00.123456789').microsecond == 123456
+
+
+def test_isoparse_timezone_suffix():
+    assert isoparse('2020-01-02T03:04:05Z') == datetime(
+        2020, 1, 2, 3, 4, 5, tzinfo=timezone.utc)
+    assert isoparse('2020-01-02T03:04:05+05:30').utcoffset() == timedelta(
+        hours=5, minutes=30)
+    assert isoparse('2020-01-02T03:04:05.250-0800').utcoffset() == timedelta(
+        hours=-8)
+    dt = datetime(2020, 1, 2, 3, 4, 5, 6,
+                  tzinfo=timezone(timedelta(hours=-3, minutes=-30)))
+    assert isoparse(dt.isoformat()) == dt
+    with pytest.raises(ValueError):
+        isoparse('2020-01-02T03:04:05+25:00')
+
+
+def test_dt_to_timestamp_naive_tzinfo():
+    # a tzinfo whose utcoffset() is None makes the datetime naive (PEP 495)
+    class NaiveTZ(tzinfo):
+        def utcoffset(self, dt):
+            return None
+
+    assert dt_to_timestamp(datetime(1970, 1, 1, tzinfo=NaiveTZ())) == 0
+
+
+def test_parse_timedelta_rejects_garbage():
+    with pytest.raises(ValueError):
+        parse_timedelta('not a duration')
+    assert parse_timedelta('') == timedelta(0)
+    assert parse_timedelta('  ') == timedelta(0)
+
+
+def test_daterange_month_step_clamps_day():
+    # issue #500: stepping by months from the 31st clamps to month end
+    res = list(daterange(date(2020, 1, 31), date(2020, 4, 1), step=(0, 1, 0)))
+    assert res == [date(2020, 1, 31), date(2020, 2, 29), date(2020, 3, 29)]
+
 
 
 def test_daterange_step_does_not_advance():
