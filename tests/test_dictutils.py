@@ -222,6 +222,15 @@ def test_update_extend():
         assert orig_keys <= set(omd1)
 
 
+@pytest.mark.parametrize('cls', [OMD, QueryParamDict])
+def test_update_extend_self(cls):
+    # extending with itself appends every value, like any other multidict
+    omd = cls([('a', 1), ('b', 2), ('a', 3)])
+    items = omd.items(multi=True)
+    omd.update_extend(omd)
+    assert omd.items(multi=True) == items + items
+
+
 def test_invert():
     for items in _ITEMSETS:
         omd = OMD(items)

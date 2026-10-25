@@ -1226,7 +1226,7 @@ class OrderedMultiDict(dict):
         instead of overwriting them.
         """
         if E is self:
-            iterator = iter(E.items())
+            iterator = iter(E.items(multi=True))
         elif isinstance(E, OrderedMultiDict):
             iterator = E.iteritems(multi=True)
         elif hasattr(E, 'keys'):
