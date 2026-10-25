@@ -430,10 +430,11 @@ def chunk_ranges(input_size, chunk_size, input_offset=0, overlap_size=0, align=F
     overlap_size = _validate_positive_int(
         overlap_size, 'overlap_size', strictly_positive=False)
     if overlap_size >= chunk_size:
-        raise ValueError('expected overlap_size < chunk_size, not %r'
-                         % overlap_size)
+        raise ValueError('expected overlap_size (%r) to be smaller than chunk_size (%r)'
+                          % (overlap_size, chunk_size))
     if input_size == 0:
         return
+
     input_stop = input_offset + input_size
 
     if align:
