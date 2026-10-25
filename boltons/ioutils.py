@@ -461,6 +461,11 @@ class SpooledStringIO(SpooledIOBase):
 
     def readline(self, length=None):
         self._checkClosed()
+        if length == 0:
+            # codecs.StreamReader.readline() treats size=0 as "use the
+            # default read size" (``size or 72``), so an explicit zero is
+            # handled here to keep parity with StringIO, which returns ''.
+            return ''
         ret = self.buffer.readline(length).decode('utf-8')
         self._tell = self.tell() + len(ret)
         return ret
