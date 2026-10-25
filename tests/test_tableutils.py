@@ -85,3 +85,31 @@ def test_to_text_short_headers_padded():
     lines = t.to_text().splitlines()
     header_cells = [c.strip() for c in lines[0].split(' | ')]
     assert header_cells == ['a', 'None']
+
+
+def test_iterator_headers():
+    # see #561
+    t = Table([[1, 2]], headers=iter(['a', 'b']))
+    assert t.headers == ['a', 'b']
+    assert t.to_text().splitlines()[0] == 'a | b'
+
+    t = Table.from_data([[1, 2]], headers=iter(['a', 'b']))
+    assert t.headers == ['a', 'b']
+    assert t.to_text().splitlines()[-1] == '1 | 2'
+
+
+def test_headerless_extend_wider_row():
+    # see #497
+    t = Table([[1]], headers=[])
+    t.extend([[2, 3]])
+    assert t.to_text().splitlines() == ['1 | None', '2 |  3  ']
+
+
+def test_to_html_bottom_metadata_after_table():
+    # see #558
+    t = Table([[1, 2]], headers=['a', 'b'], metadata={'k': 'v'})
+    html = t.to_html(with_metadata='bottom')
+    main_close = html.index('</table>')
+    assert main_close < html.index('<br />') < html.index('<th>k</th>')
+    assert html.endswith('</table>')
+    assert html.count('<table>') == html.count('</table>') == 2
