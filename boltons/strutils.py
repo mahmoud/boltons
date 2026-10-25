@@ -1390,6 +1390,7 @@ def ellipsize(text, max_len=160, *, ellipsis='…'):
         return text[:limit] + ellipsis
     return text[:end] + ellipsis
 
+
 def shorten_chars(text, width, placeholder='...'):
     """Shorten text by characters, reserving space for the placeholder."""
     if not text:
