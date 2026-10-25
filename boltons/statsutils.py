@@ -174,6 +174,7 @@ class Stats:
     def __init__(self, data, default=0.0, use_copy=True, is_sorted=False):
         self._use_copy = use_copy
         self._is_sorted = is_sorted
+        self._sorted_data = None
         if use_copy:
             self.data = list(data)
         else:
@@ -193,19 +194,23 @@ class Stats:
         return iter(self.data)
 
     def _get_sorted_data(self):
-        """When using a copy of the data, it's better to have that copy be
-        sorted, but we do it lazily using this method, in case no
-        sorted measures are used. I.e., if median is never called,
-        sorting would be a waste.
+        """When using a copy of the data, it's better to keep a sorted
+        copy around, but we create it lazily using this method, in
+        case no sorted measures are used. I.e., if median is never
+        called, sorting would be a waste. ``self.data`` itself is
+        never reordered, so insertion-order measures such as
+        :attr:`mode` are unaffected.
 
         When not using a copy, it's presumed that all optimizations
         are on the user.
         """
         if not self._use_copy:
             return sorted(self.data)
-        elif not self._is_sorted:
-            self.data.sort()
-        return self.data
+        if self._is_sorted:
+            return self.data
+        if self._sorted_data is None:
+            self._sorted_data = sorted(self.data)
+        return self._sorted_data
 
     def clear_cache(self):
         """``Stats`` objects automatically cache intermediary calculations
@@ -222,6 +227,8 @@ class Stats:
             if not hasattr(self, attr_name):
                 continue
             delattr(self, attr_name)
+        self._sorted_data = None
+        self._is_sorted = False
         return
 
     def _calc_count(self):
@@ -372,7 +379,7 @@ class Stats:
         24.0
         """
         global median  # defined elsewhere in this file
-        sorted_vals = sorted(self.data)
+        sorted_vals = self._get_sorted_data()
         x = float(median(sorted_vals))
         return median([abs(x - v) for v in sorted_vals])
     median_abs_dev = _StatsProperty('median_abs_dev', _calc_median_abs_dev)
@@ -832,7 +839,7 @@ def format_histogram_counts(bin_counts, width=None, format_bin=None):
     tmp_line = '{}: {} #'.format('x' * label_cols, count_max)
 
     bar_cols = max(width - len(tmp_line), 3)
-    line_k = float(bar_cols) / count_max
+    line_k = float(bar_cols) / count_max if count_max else 0.0
     tmpl = "{label:>{label_cols}}: {count:>{count_cols}} {bar}"
     for label, (bin_val, count) in zip(labels, bin_counts):
         bar_len = int(round(count * line_k))

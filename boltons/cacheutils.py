@@ -64,6 +64,7 @@ Learn more about `caching algorithms on Wikipedia
 
 
 import heapq
+import math
 import weakref
 import itertools
 from operator import attrgetter
@@ -237,7 +238,7 @@ class LRI(dict):
                 link = self._link_lookup[key]
             except KeyError:
                 self.miss_count += 1
-                if not self.on_miss:
+                if self.on_miss is None:
                     raise
                 ret = self[key] = self.on_miss(key)
                 return ret
@@ -282,7 +283,10 @@ class LRI(dict):
             self._init_ll()
 
     def copy(self):
-        return self.__class__(max_size=self.max_size, values=self)
+        with self._lock:
+            return self.__class__(max_size=self.max_size,
+                                  values=self._get_flattened_ll()[1:],
+                                  on_miss=self.on_miss)
 
     def setdefault(self, key, default=None):
         with self._lock:
@@ -308,18 +312,13 @@ class LRI(dict):
                 setitem(k, F[k])
             return
 
+    def __ior__(self, other):
+        self.update(other)
+        return self
+
     def __eq__(self, other):
         with self._lock:
-            if self is other:
-                return True
-            if len(other) != len(self):
-                return False
-            if not isinstance(other, LRI):
-                return other == self
             return super().__eq__(other)
-
-    def __ne__(self, other):
-        return not (self == other)
 
     def __repr__(self):
         cn = self.__class__.__name__
@@ -368,7 +367,7 @@ class LRU(LRI):
                 link = self._get_link_and_move_to_front_of_ll(key)
             except KeyError:
                 self.miss_count += 1
-                if not self.on_miss:
+                if self.on_miss is None:
                     raise
                 ret = self[key] = self.on_miss(key)
                 return ret
@@ -460,7 +459,8 @@ class CachedFunction:
 
     def __call__(self, *args, **kwargs):
         cache = self.get_cache()
-        key = self.key_func(args, kwargs, typed=self.typed)
+        key_args = (self.func,) + args if self.scoped else args
+        key = self.key_func(key_args, kwargs, typed=self.typed)
         try:
             ret = cache[key]
         except KeyError:
@@ -510,16 +510,17 @@ class CachedMethod:
         return ret
 
     def __call__(self, *args, **kwargs):
-        obj = args[0] if self.bound_to is None else self.bound_to
+        if self.bound_to is None:
+            obj, args = args[0], args[1:]
+        else:
+            obj = self.bound_to
         cache = self.get_cache(obj)
-        key_args = (self.bound_to, self.func) + args if self.scoped else args
+        key_args = (obj, self.func) + args if self.scoped else args
         key = self.key_func(key_args, kwargs, typed=self.typed)
         try:
             ret = cache[key]
         except KeyError:
-            if self.bound_to is not None:
-                args = (self.bound_to,) + args
-            ret = cache[key] = self.func(*args, **kwargs)
+            ret = cache[key] = self.func(obj, *args, **kwargs)
         return ret
 
     def __repr__(self):
@@ -689,7 +690,7 @@ class ThresholdCounter:
         self.total = 0
         self._count_map = {}
         self._threshold = threshold
-        self._thresh_count = int(1 / threshold)
+        self._thresh_count = math.ceil(1 / threshold)
         self._cur_bucket = 1
 
     @property
@@ -700,7 +701,7 @@ class ThresholdCounter:
         """Increment the count of *key* by 1, automatically adding it if it
         does not exist.
 
-        Cache compaction is triggered every *1/threshold* additions.
+        Cache compaction is triggered every *ceil(1/threshold)* additions.
         """
         self.total += 1
         try:

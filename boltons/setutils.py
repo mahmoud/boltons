@@ -152,9 +152,10 @@ class IndexedSet(MutableSet):
             num_dead = 1
             while items[-(num_dead + 1)] is _MISSING:
                 num_dead += 1
-            if ded and ded[-1][1] == len(items):
-                del ded[-1]
             del items[-num_dead:]
+            # the trimmed tail may span several (unmerged) dead intervals
+            while ded and ded[-1][0] >= len(items):
+                del ded[-1]
 
     def _get_real_index(self, index):
         if index < 0:
@@ -307,8 +308,16 @@ class IndexedSet(MutableSet):
         "union(*others) -> return a new set containing this set and others"
         return self.from_iterable(chain(self, *others))
 
+    def _as_container(self, other):
+        # membership-safe view of other: one-shot iterators would be
+        # consumed by repeated ``in`` checks, and lists are O(n) lookups
+        if isinstance(other, (set, frozenset, IndexedSet, dict)):
+            return other
+        return self.from_iterable(other)
+
     def iter_intersection(self, *others):
         "iter_intersection(*others) -> iterate over elements also in others"
+        others = [self._as_container(other) for other in others]
         for k in self:
             for other in others:
                 if k not in other:
@@ -320,12 +329,13 @@ class IndexedSet(MutableSet):
     def intersection(self, *others):
         "intersection(*others) -> get a set with overlap of this and others"
         if len(others) == 1:
-            other = others[0]
+            other = self._as_container(others[0])
             return self.from_iterable(k for k in self if k in other)
         return self.from_iterable(self.iter_intersection(*others))
 
     def iter_difference(self, *others):
         "iter_difference(*others) -> iterate over elements not in others"
+        others = [self._as_container(other) for other in others]
         for k in self:
             for other in others:
                 if k in other:
@@ -337,12 +347,13 @@ class IndexedSet(MutableSet):
     def difference(self, *others):
         "difference(*others) -> get a new set with elements not in others"
         if len(others) == 1:
-            other = others[0]
+            other = self._as_container(others[0])
             return self.from_iterable(k for k in self if k not in other)
         return self.from_iterable(self.iter_difference(*others))
 
     def symmetric_difference(self, *others):
         "symmetric_difference(*others) -> XOR set of this and others"
+        others = [self._as_container(other) for other in others]
         ret = self.union(*others)
         return ret.difference(self.intersection(*others))
 
@@ -368,21 +379,22 @@ class IndexedSet(MutableSet):
             self.add(o)
 
     def intersection_update(self, *others):
-        "intersection_update(*others) -> discard self.difference(*others)"
-        to_remove = self.difference(*others)
-        if len(to_remove) > _MAX_DEAD_INTERVALS:
-            self._bulk_discard(to_remove)
-            return
-        for val in to_remove:
-            self.discard(val)
+        "intersection_update(*others) -> discard items missing from any other"
+        others = [self._as_container(other) for other in others]
+        to_remove = [item for item in self
+                     if any(item not in other for other in others)]
+        self._discard_many(to_remove)
 
     def difference_update(self, *others):
-        "difference_update(*others) -> discard self.intersection(*others)"
-        if self in others:
-            self.clear()
-        to_remove = self.intersection(*others)
+        "difference_update(*others) -> discard items present in any other"
+        others = [self._as_container(other) for other in others]
+        to_remove = [item for item in self
+                     if any(item in other for other in others)]
+        self._discard_many(to_remove)
+
+    def _discard_many(self, to_remove):
         if len(to_remove) > _MAX_DEAD_INTERVALS:
-            self._bulk_discard(to_remove)
+            self._bulk_discard(set(to_remove))
             return
         for val in to_remove:
             self.discard(val)
@@ -391,7 +403,8 @@ class IndexedSet(MutableSet):
         "symmetric_difference_update(other) -> in-place XOR with other"
         if self is other:
             self.clear()
-        for val in other:
+            return
+        for val in self._as_container(other):
             if val in self:
                 self.discard(val)
             else:
@@ -445,6 +458,8 @@ class IndexedSet(MutableSet):
 
     def pop(self, index=None):
         "pop(index) -> remove the item at a given index (-1 by default)"
+        if index is not None:
+            index = operator.index(index)
         item_index_map = self.item_index_map
         len_self = len(item_index_map)
         if index is None or index == -1 or index == len_self - 1:
@@ -675,7 +690,7 @@ class _ComplementSet:
                 return _ComplementSet(excluded=self._excluded.union(other._excluded))
         else:
             if inc is None:  # + -
-                return _ComplementSet(included=exc - self._included)
+                return _ComplementSet(included=self._included - exc)
             else:  # + +
                 return _ComplementSet(included=self._included.intersection(inc))
 
@@ -687,13 +702,12 @@ class _ComplementSet:
             return NotImplemented
         if self._included is None:
             if exc is None:  # - +
-                self._excluded = inc - self._excluded  # TODO: do this in place?
+                self._included, self._excluded = inc - self._excluded, None
             else:  # - -
                 self._excluded |= exc
         else:
             if inc is None:  # + -
                 self._included -= exc
-                self._included, self._excluded = None, self._included
             else:  # + +
                 self._included &= inc
         return self
@@ -788,12 +802,12 @@ class _ComplementSet:
             return NotImplemented
         if self._included is None:
             if exc is None:  # - +
-                return _ComplementSet(excluded=self._excluded - inc)
+                return _ComplementSet(excluded=self._excluded ^ inc)
             else:  # - -
                 return _ComplementSet(included=self._excluded.symmetric_difference(exc))
         else:
             if inc is None:  # + -
-                return _ComplementSet(excluded=exc - self._included)
+                return _ComplementSet(excluded=exc ^ self._included)
             else:  # + +
                 return _ComplementSet(included=self._included.symmetric_difference(inc))
 
@@ -803,13 +817,13 @@ class _ComplementSet:
         inc, exc = _norm_args_typeerror(other)
         if self._included is None:
             if exc is None:  # - +
-                self._excluded |= inc
+                self._excluded ^= inc
             else:  # - -
                 self._excluded.symmetric_difference_update(exc)
                 self._included, self._excluded = self._excluded, None
         else:
             if inc is None:  # + -
-                self._included |= exc
+                self._included ^= exc
                 self._included, self._excluded = None, self._included
             else:  # + +
                 self._included.symmetric_difference_update(inc)

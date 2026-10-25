@@ -53,6 +53,7 @@ degree of accuracy in corner cases, check out `pytz`_ and `dateutil`_.
 import re
 import time
 import bisect
+import calendar
 import operator
 from datetime import tzinfo, timedelta, date, datetime, timezone
 
@@ -83,8 +84,11 @@ def dt_to_timestamp(dt):
     :meth:`datetime.datetime.replace` method with ``tzinfo=``
     :class:`LocalTZ` object in this module, then pass the result of
     that to ``dt_to_timestamp``.
+
+    A datetime is naïve when its :meth:`~datetime.datetime.utcoffset`
+    returns ``None``, even if it has a ``tzinfo`` object.
     """
-    if dt.tzinfo:
+    if dt.utcoffset() is not None:
         td = dt - EPOCH_AWARE
     else:
         td = dt.replace(tzinfo=timezone.utc) - EPOCH_AWARE
@@ -92,6 +96,7 @@ def dt_to_timestamp(dt):
 
 
 _NONDIGIT_RE = re.compile(r'\D')
+_ISO_TZ_RE = re.compile(r'(Z|[+-]\d{2}:?\d{2}(?::?\d{2}(?:\.\d+)?)?)$')
 
 
 def isoparse(iso_str):
@@ -119,7 +124,31 @@ def isoparse(iso_str):
     >>> isoparse('1970-01-01T00:00:00.851')
     datetime.datetime(1970, 1, 1, 0, 0, 0, 851000)
 
+    Timezone suffixes (``Z``, ``+HH:MM``, ``-HHMM``, and so on) yield
+    timezone-aware datetimes, so aware
+    :meth:`~datetime.datetime.isoformat` output round-trips, too.
+
+    >>> isoparse('1970-01-01T00:00:00+05:30')
+    datetime.datetime(1970, 1, 1, 0, 0, tzinfo=datetime.timezone(datetime.timedelta(seconds=19800)))
+    >>> aware_now = datetime.now(timezone.utc)
+    >>> aware_now == isoparse(aware_now.isoformat())
+    True
+
     """
+    tzinfo = None
+    tz_match = _ISO_TZ_RE.search(iso_str)
+    if tz_match:
+        iso_str = iso_str[:tz_match.start()]
+        tz = tz_match.group(1)
+        if tz == 'Z':
+            tzinfo = timezone.utc
+        else:
+            digits = tz[1:].replace(':', '').split('.')[0]
+            hh, mm = int(digits[0:2]), int(digits[2:4])
+            ss = int(digits[4:6] or 0)
+            sign = -1 if tz[0] == '-' else 1
+            tzinfo = timezone(sign * timedelta(hours=hh, minutes=mm,
+                                               seconds=ss))
     parts = _NONDIGIT_RE.split(iso_str)
     dt_args = [int(p) for p in parts]
     if len(parts) > 6:
@@ -127,7 +156,7 @@ def isoparse(iso_str):
         # '.851' means 851000us, not 851us. Digits past microsecond
         # precision are truncated (e.g. nanosecond timestamps).
         dt_args[6] = int(parts[6].ljust(6, '0')[:6])
-    return datetime(*dt_args)
+    return datetime(*dt_args, tzinfo=tzinfo)
 
 
 _BOUNDS = [(0, timedelta(seconds=1), 'second'),
@@ -156,7 +185,9 @@ def parse_timedelta(text):
     Returns:
         datetime.timedelta
     Raises:
-        ValueError: on parse failure.
+        ValueError: on parse failure. Empty or whitespace-only text
+            returns a zero timedelta; other text without a recognized
+            value and unit raises.
 
     >>> parse_td('1d 2h 3.5m 0s') == timedelta(days=1, seconds=7410)
     True
@@ -185,6 +216,8 @@ def parse_timedelta(text):
             raise ValueError('invalid time value for unit %r: %r'
                              % (unit, value))
         td_kwargs[unit_key] = value
+    if not td_kwargs and text.strip():
+        raise ValueError('no time value and unit found in %r' % (text,))
     return timedelta(**td_kwargs)
 
 
@@ -384,8 +417,9 @@ def daterange(start, stop, step=1, inclusive=False):
     def _advance(cur):
         if m_step:
             m_y_step, cur_month = divmod((cur.month - 1) + m_step, 12)
-            cur = cur.replace(year=cur.year + m_y_step,
-                              month=(cur_month + 1))
+            year, month = cur.year + m_y_step, cur_month + 1
+            day = min(cur.day, calendar.monthrange(year, month)[1])
+            cur = cur.replace(year=year, month=month, day=day)
         return cur + d_step
 
     if stop is None:

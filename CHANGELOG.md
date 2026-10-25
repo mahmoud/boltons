@@ -5,6 +5,99 @@ for an average of one 33-commit release about every 9 weeks. Versions
 are named according to the [CalVer](https://calver.org) versioning
 scheme (`YY.MINOR.MICRO`).
 
+## 26.3.0
+
+_(unreleased)_
+
+- Added `key` and `reverse` support to [`listutils.BarrelList.sort`][listutils.BarrelList.sort] ([#550](https://github.com/mahmoud/boltons/pull/550))
+- Added `start` and `stop` support to [`listutils.BarrelList.index`][listutils.BarrelList.index] ([#592](https://github.com/mahmoud/boltons/pull/592))
+- Added timezone suffix support (`Z`, `+HH:MM`, `-HHMM`, optional seconds) to [`timeutils.isoparse`][timeutils.isoparse], returning aware datetimes so aware `isoformat()` output round-trips ([#594](https://github.com/mahmoud/boltons/pull/594))
+- Added keyword-only support to [`funcutils.wraps`][funcutils.wraps] `expected` via `(name, default, kwonly)` triples ([#522](https://github.com/mahmoud/boltons/pull/522))
+- Added [`iterutils.chunked_filter`][iterutils.chunked_filter], which filters an iterable in batches, calling the predicate once per batch ([#491](https://github.com/mahmoud/boltons/pull/491))
+- Fixed [`listutils.BarrelList`][listutils.BarrelList] pickling and `copy.copy`/`copy.deepcopy` (hang/duplication) by adding `__reduce__` ([#596](https://github.com/mahmoud/boltons/pull/596))
+- Fixed [`listutils.BarrelList`][listutils.BarrelList] rich comparisons (`==`, `!=`, `<`, `<=`, `>`, `>=`) comparing empty base-list storage instead of contents ([#544](https://github.com/mahmoud/boltons/pull/544))
+- Fixed [`listutils.BarrelList`][listutils.BarrelList] `+`, `+=`, `*` and `*=` operating on empty base-list storage ([#540](https://github.com/mahmoud/boltons/pull/540), [#532](https://github.com/mahmoud/boltons/pull/532))
+- Fixed [`listutils.BarrelList`][listutils.BarrelList] `remove()`, `clear()` and `copy()` operating on empty base-list storage ([#538](https://github.com/mahmoud/boltons/pull/538), [#530](https://github.com/mahmoud/boltons/pull/530))
+- Fixed [`listutils.BarrelList`][listutils.BarrelList] `extend(self)` looping forever ([#517](https://github.com/mahmoud/boltons/pull/517))
+- Fixed [`listutils.BarrelList`][listutils.BarrelList] `pop()` accepting `None`, floats and extra arguments instead of raising `TypeError` ([#575](https://github.com/mahmoud/boltons/pull/575))
+- Fixed [`listutils.BarrelList`][listutils.BarrelList] stepped slice deletion (`del bl[a:b:s]`) removing the wrong items ([#549](https://github.com/mahmoud/boltons/pull/549), [#514](https://github.com/mahmoud/boltons/pull/514))
+- Fixed [`setutils.IndexedSet`][setutils.IndexedSet] leaving stale dead intervals when trimming a tail removed out of order, which corrupted later indexing ([#577](https://github.com/mahmoud/boltons/pull/577))
+- Fixed [`setutils.IndexedSet.pop`][setutils.IndexedSet.pop] accepting non-integer indexes like `3.0` ([#535](https://github.com/mahmoud/boltons/pull/535))
+- Fixed [`setutils.IndexedSet`][setutils.IndexedSet] `difference_update` and `intersection_update` computing each other's result when given multiple arguments ([#494](https://github.com/mahmoud/boltons/pull/494))
+- Fixed [`setutils.IndexedSet`][setutils.IndexedSet] set operations consuming one-shot iterator operands, and `symmetric_difference_update` toggling repeated input values more than once ([#503](https://github.com/mahmoud/boltons/pull/503))
+- Fixed [`setutils.complement`][setutils.complement] sets giving wrong results for `&` and `&=` across mixed complemented/uncomplemented operands ([#516](https://github.com/mahmoud/boltons/pull/516))
+- Fixed [`setutils.complement`][setutils.complement] sets giving wrong results for `^` and `^=` across mixed complemented/uncomplemented operands ([#487](https://github.com/mahmoud/boltons/pull/487))
+- Fixed [`dictutils.OrderedMultiDict`][dictutils.OrderedMultiDict] equality treating `(None, None)` items as missing, so dicts with different item counts compared equal; mirrored in `urlutils.QueryParamDict` ([#599](https://github.com/mahmoud/boltons/pull/599))
+- Fixed [`dictutils.OrderedMultiDict.update`][dictutils.OrderedMultiDict.update] keeping only the last value when an iterable repeats a key not already present; mirrored in `urlutils.QueryParamDict` ([#531](https://github.com/mahmoud/boltons/pull/531))
+- Fixed [`dictutils.OneToOne.update`][dictutils.OneToOne] dropping the first pair of an iterator input and only validating hashability of part of the input ([#523](https://github.com/mahmoud/boltons/pull/523))
+- Fixed [`dictutils.OneToOne`][dictutils.OneToOne] in-place `|=` bypassing the inverse mapping ([#537](https://github.com/mahmoud/boltons/pull/537))
+- Fixed [`dictutils.ManyToMany`][dictutils.ManyToMany] `add` leaving an empty key behind when the value is unhashable ([#601](https://github.com/mahmoud/boltons/pull/601))
+- Fixed [`dictutils.ManyToMany`][dictutils.ManyToMany] copy construction and `update` sharing internal sets with the source ([#526](https://github.com/mahmoud/boltons/pull/526))
+- Fixed [`dictutils.ManyToMany`][dictutils.ManyToMany] `replace` discarding the destination key's existing relations ([#528](https://github.com/mahmoud/boltons/pull/528))
+- Fixed [`urlutils.URL`][urlutils.URL] dropping an explicit port 0 when serializing ([#499](https://github.com/mahmoud/boltons/pull/499))
+- Fixed [`urlutils.find_all_links`][urlutils.find_all_links] returning rejected URLs as plain strings when `with_text=False` ([#588](https://github.com/mahmoud/boltons/pull/588))
+- Fixed [`urlutils.URL.navigate`][urlutils.URL.navigate] losing IPv6 brackets on relative navigation ([#589](https://github.com/mahmoud/boltons/pull/589)) and not normalizing absolute destinations as documented ([#489](https://github.com/mahmoud/boltons/pull/489))
+- Fixed [`urlutils.register_scheme`][urlutils.register_scheme] leaving stale netloc/port classification when a scheme is re-registered ([#574](https://github.com/mahmoud/boltons/pull/574))
+- Fixed [`cacheutils.cached`][cacheutils.cached] ignoring its documented `scoped=True` default, so functions sharing a cache read each other's entries; pass `scoped=False` to share ([#498](https://github.com/mahmoud/boltons/pull/498))
+- Fixed [`cacheutils.LRI`][cacheutils.LRI] and [`cacheutils.LRU`][cacheutils.LRU] skipping falsey `on_miss` callables ([#593](https://github.com/mahmoud/boltons/pull/593))
+- Fixed [`cacheutils.cachedmethod`][cacheutils.cachedmethod] using different cache keys for bound (`obj.m(x)`) and unbound (`C.m(obj, x)`) calls ([#541](https://github.com/mahmoud/boltons/pull/541))
+- Fixed [`cacheutils.LRI`][cacheutils.LRI] `copy()` inflating hit counts, reordering `LRU` eviction order, and dropping `on_miss` ([#506](https://github.com/mahmoud/boltons/pull/506))
+- Fixed [`cacheutils.LRI`][cacheutils.LRI] and [`cacheutils.LRU`][cacheutils.LRU] `|=` bypassing `max_size` and the eviction bookkeeping ([#490](https://github.com/mahmoud/boltons/pull/490))
+- Fixed [`cacheutils.LRI`][cacheutils.LRI] equality raising `TypeError`/`RecursionError` when compared to non-mappings such as `None` or lists ([#580](https://github.com/mahmoud/boltons/pull/580))
+- Fixed [`cacheutils.ThresholdCounter`][cacheutils.ThresholdCounter] evicting frequent keys for thresholds whose reciprocal is not an integer (bucket width is now `ceil(1/threshold)`) ([#598](https://github.com/mahmoud/boltons/pull/598))
+- Fixed [`queueutils.BasePriorityQueue`][queueutils.BasePriorityQueue] `peek()`/`pop()` docs to say `IndexError`, not `KeyError` ([#556](https://github.com/mahmoud/boltons/pull/556))
+- Fixed [`gcutils.get_all`][gcutils.get_all] missing instances of subtypes when `include_subtypes=True` (the default) ([#560](https://github.com/mahmoud/boltons/pull/560))
+- Fixed [`gcutils.GCToggler`][gcutils.GCToggler] (`toggle_gc`, `toggle_gc_postcollect`) unconditionally re-enabling GC on exit; it now restores the previous state and nests ([#559](https://github.com/mahmoud/boltons/pull/559))
+- Fixed [`typeutils.get_all_subclasses`][typeutils.get_all_subclasses] raising `TypeError` for metaclasses ([#505](https://github.com/mahmoud/boltons/pull/505))
+- Fixed [`debugutils.wrap_trace`][debugutils.wrap_trace] raising `UnboundLocalError` when a hook suppresses a `'raise'` event; the traced method now returns `None` ([#584](https://github.com/mahmoud/boltons/pull/584))
+- Fixed [`tbutils.ParsedException.from_string`][tbutils.ParsedException.from_string] misparsing Python 3.13+ multiline source blocks into the exception type; extra rows round-trip via `source_line_continuations` ([#520](https://github.com/mahmoud/boltons/pull/520))
+- Fixed [`excutils.ExceptionCauseMixin`][excutils.ExceptionCauseMixin] raising `AttributeError` from `str()` when the cause was wrapped outside an active exception handler ([#562](https://github.com/mahmoud/boltons/pull/562))
+- Fixed [`ioutils.SpooledStringIO`][ioutils.SpooledStringIO] losing the read position on `rollover()` after `readline()` ([#591](https://github.com/mahmoud/boltons/pull/591))
+- Fixed [`ioutils.SpooledStringIO`][ioutils.SpooledStringIO] `len` moving the current position ([#527](https://github.com/mahmoud/boltons/pull/527))
+- Fixed [`ioutils.SpooledStringIO`][ioutils.SpooledStringIO] `seek(offset, SEEK_END)` subtracting the offset instead of adding it; negative destinations now raise `ValueError` ([#543](https://github.com/mahmoud/boltons/pull/543))
+- Fixed [`ioutils.SpooledBytesIO`][ioutils.SpooledBytesIO] and [`ioutils.SpooledStringIO`][ioutils.SpooledStringIO] `truncate(size)` moving the position when it was past *size* ([#545](https://github.com/mahmoud/boltons/pull/545))
+- Fixed [`ioutils.SpooledBytesIO`][ioutils.SpooledBytesIO] `readline(0)` reading a full line ([#542](https://github.com/mahmoud/boltons/pull/542))
+- Fixed [`ioutils.MultiFileReader`][ioutils.MultiFileReader] `read(0)` reading everything, `read()` rereading consumed files, and `seek(0)` not resetting to the first file ([#512](https://github.com/mahmoud/boltons/pull/512))
+- Updated the [`ioutils`][ioutils] docs to use `SpooledStringIO` for text and drop Python 2 `cStringIO` references ([#555](https://github.com/mahmoud/boltons/pull/555))
+- Fixed [`jsonutils.reverse_iter_lines`][jsonutils.reverse_iter_lines] merging lines into one chunk for files starting with blank lines ([#536](https://github.com/mahmoud/boltons/pull/536))
+- Fixed [`jsonutils.reverse_iter_lines`][jsonutils.reverse_iter_lines] raising `TypeError` on text streams without a `.buffer`, like `io.StringIO` ([#488](https://github.com/mahmoud/boltons/pull/488))
+- Fixed [`jsonutils.JSONLIterator`][jsonutils.JSONLIterator] `cur_byte_pos` raising `OSError` during forward iteration over text files ([#519](https://github.com/mahmoud/boltons/pull/519))
+- Fixed [`socketutils.BufferedSocket.recv_size`][socketutils.BufferedSocket.recv_size] performing socket I/O for `size=0` ([#572](https://github.com/mahmoud/boltons/pull/572))
+- Fixed [`socketutils.NetstringSocket.read_ns`][socketutils.NetstringSocket.read_ns] ignoring its *timeout* for the payload and trailing comma ([#602](https://github.com/mahmoud/boltons/pull/602))
+- Fixed [`strutils.slugify`][strutils.slugify] and [`strutils.split_punct_ws`][strutils.split_punct_ws] not treating backslash as punctuation ([#492](https://github.com/mahmoud/boltons/pull/492))
+- Fixed [`strutils.strip_ansi`][strutils.strip_ansi] crashing on non-UTF-8 bytes (e.g. cp437 ANSI art); bytes now round-trip via latin-1 ([#501](https://github.com/mahmoud/boltons/pull/501))
+- Fixed [`strutils.html2text`][strutils.html2text] dropping trailing text containing `&` ([#571](https://github.com/mahmoud/boltons/pull/571))
+- Fixed [`strutils.pluralize`][strutils.pluralize] for words ending in `z` (`buzz` → `buzzes`, `quiz` → `quizzes`) ([#586](https://github.com/mahmoud/boltons/pull/586))
+- Fixed [`strutils.gunzip_bytes`][strutils.gunzip_bytes] ignoring all but the first member of concatenated gzip data ([#576](https://github.com/mahmoud/boltons/pull/576))
+- Fixed [`strutils.MultiReplace`][strutils.MultiReplace] dropping the flags of precompiled regex patterns ([#567](https://github.com/mahmoud/boltons/pull/567))
+- Fixed [`strutils.bytes2human`][strutils.bytes2human] returning `'nanY'`/`'infY'` for non-finite floats; it now raises `ValueError` ([#508](https://github.com/mahmoud/boltons/pull/508))
+- Changed [`strutils.bytes2human`][strutils.bytes2human] to choose the unit after rounding, so `1048575` renders as `'1M'` rather than `'1024K'` ([#525](https://github.com/mahmoud/boltons/pull/525))
+- Fixed [`mathutils.Bits`][mathutils.Bits] accepting a negative length, and right shifts past the bit width producing an invalid negative-length `Bits` ([#604](https://github.com/mahmoud/boltons/pull/604), [#495](https://github.com/mahmoud/boltons/pull/495))
+- Fixed [`timeutils.dt_to_timestamp`][timeutils.dt_to_timestamp] treating datetimes as aware based on `tzinfo` truthiness instead of `utcoffset()` ([#568](https://github.com/mahmoud/boltons/pull/568))
+- Fixed [`timeutils.parse_timedelta`][timeutils.parse_timedelta] silently returning a zero timedelta for unparseable text; it now raises `ValueError` (empty or whitespace text still returns zero) ([#548](https://github.com/mahmoud/boltons/pull/548))
+- Fixed [`timeutils.daterange`][timeutils.daterange] crashing on month steps from days missing in the target month; the day now clamps to month end ([#546](https://github.com/mahmoud/boltons/pull/546), [#507](https://github.com/mahmoud/boltons/pull/507))
+- Fixed [`funcutils.wraps`][funcutils.wraps] dropping the `/` positional-only marker from wrapper signatures; `FunctionBuilder.remove_arg` now also keeps `posonlyargs` in sync ([#511](https://github.com/mahmoud/boltons/pull/511))
+- Fixed [`funcutils.FunctionBuilder.get_func`][funcutils.FunctionBuilder] discarding an explicitly passed empty `execdict` ([#590](https://github.com/mahmoud/boltons/pull/590))
+- Fixed [`iterutils.remap`][iterutils.remap] crashing on namedtuples (now rebuilt via `_make`) and on non-constructible sequences like `range` and `memoryview` (now left untraversed) ([#585](https://github.com/mahmoud/boltons/pull/585))
+- Fixed [`iterutils.chunk_ranges`][iterutils.chunk_ranges] yielding a spurious `(0, 0)` range for empty input, and raising inconsistent errors when `overlap_size >= chunk_size` (now `ValueError`) ([#569](https://github.com/mahmoud/boltons/pull/569))
+- Fixed [`iterutils.bucketize`][iterutils.bucketize] raising `TypeError` when *src* is an iterator and *key* is a list ([#563](https://github.com/mahmoud/boltons/pull/563))
+- Fixed [`iterutils.redundant`][iterutils.redundant] ignoring a falsey callable *key* ([#554](https://github.com/mahmoud/boltons/pull/554))
+- Fixed [`iterutils.untyped_sorted`][iterutils.untyped_sorted] calling *key* on every comparison instead of once per item ([#552](https://github.com/mahmoud/boltons/pull/552))
+- Fixed [`iterutils.split`][iterutils.split] treating a negative *maxsplit* as zero instead of unlimited, like `str.split` ([#502](https://github.com/mahmoud/boltons/pull/502))
+- Fixed [`iterutils.backoff`][iterutils.backoff] miscounting steps when *start* is 0 and *stop* is below 1 ([#496](https://github.com/mahmoud/boltons/pull/496))
+- Fixed [`statsutils.Stats`][statsutils.Stats] sorting `data` in place for median/quantile measures, which broke `mode`'s first-appearance tie-break; `clear_cache()` now also drops the sorted copy and the `is_sorted` hint ([#534](https://github.com/mahmoud/boltons/pull/534), [#570](https://github.com/mahmoud/boltons/pull/570))
+- Fixed [`statsutils.format_histogram_counts`][statsutils.format_histogram_counts] raising `ZeroDivisionError` when every bin count is zero ([#529](https://github.com/mahmoud/boltons/pull/529))
+- Fixed [`tableutils.Table`][tableutils.Table] and `Table.from_data` mishandling iterator *headers* ([#561](https://github.com/mahmoud/boltons/pull/561))
+- Fixed [`tableutils.Table.extend`][tableutils.Table.extend] not widening headerless tables for wider rows ([#497](https://github.com/mahmoud/boltons/pull/497))
+- Fixed [`tableutils.Table.to_html`][tableutils.Table.to_html] nesting bottom metadata inside the main `</table>` ([#558](https://github.com/mahmoud/boltons/pull/558))
+- Fixed [`fileutils.FilePerms.from_int`][fileutils.FilePerms.from_int] shifting permission groups when the leading groups were zero, e.g. `0o007` became `0o700` ([#484](https://github.com/mahmoud/boltons/pull/484))
+- Fixed [`fileutils.FilePerms`][fileutils.FilePerms] attribute assignment never clearing old bits, so revoking permissions left them set in the integer value ([#518](https://github.com/mahmoud/boltons/pull/518))
+- Fixed [`fileutils.iter_find_files`][fileutils.iter_find_files] miscounting `max_depth` when *directory* has a trailing separator ([#485](https://github.com/mahmoud/boltons/pull/485))
+- Fixed [`fileutils.AtomicSaver`][fileutils.AtomicSaver] leaving the part file open and on disk when flush, fsync, or close fails ([#539](https://github.com/mahmoud/boltons/pull/539))
+- Fixed [`pathutils.shrinkuser`][pathutils.shrinkuser] not shrinking paths when the home directory is the filesystem root ([#504](https://github.com/mahmoud/boltons/pull/504))
+- Fixed [`namedutils.namedtuple`][namedutils.namedtuple] and [`namedutils.namedlist`][namedutils.namedlist] accepting alphanumeric names that are not valid identifiers (e.g. `value²`), which raised `SyntaxError` instead of `ValueError` and defeated `rename=True` ([#573](https://github.com/mahmoud/boltons/pull/573))
+- Fixed the sdist omitting the `docs/` directory ([#557](https://github.com/mahmoud/boltons/pull/557))
+
 ## 26.2.0
 
 _(September 7, 2026)_
@@ -1321,3 +1414,23 @@ added in this release.
 [strutils.MultiReplace]: https://boltons.readthedocs.io/en/latest/strutils.html#boltons.strutils.MultiReplace
 [setutils.IndexedSet]: https://boltons.readthedocs.io/en/latest/setutils.html#boltons.setutils.IndexedSet
 [statsutils.Stats.pearson_type]: https://boltons.readthedocs.io/en/latest/statsutils.html#boltons.statsutils.Stats.pearson_type
+[debugutils.wrap_trace]: https://boltons.readthedocs.io/en/latest/debugutils.html#boltons.debugutils.wrap_trace
+[dictutils.OrderedMultiDict.update]: https://boltons.readthedocs.io/en/latest/dictutils.html#boltons.dictutils.OrderedMultiDict.update
+[excutils.ExceptionCauseMixin]: https://boltons.readthedocs.io/en/latest/excutils.html#boltons.excutils.ExceptionCauseMixin
+[fileutils.FilePerms.from_int]: https://boltons.readthedocs.io/en/latest/fileutils.html#boltons.fileutils.FilePerms.from_int
+[iterutils.chunked_filter]: https://boltons.readthedocs.io/en/latest/iterutils.html#boltons.iterutils.chunked_filter
+[iterutils.redundant]: https://boltons.readthedocs.io/en/latest/iterutils.html#boltons.iterutils.redundant
+[listutils.BarrelList.index]: https://boltons.readthedocs.io/en/latest/listutils.html#boltons.listutils.BarrelList.index
+[listutils.BarrelList.sort]: https://boltons.readthedocs.io/en/latest/listutils.html#boltons.listutils.BarrelList.sort
+[queueutils.BasePriorityQueue]: https://boltons.readthedocs.io/en/latest/queueutils.html#boltons.queueutils.BasePriorityQueue
+[setutils.IndexedSet.pop]: https://boltons.readthedocs.io/en/latest/setutils.html#boltons.setutils.IndexedSet.pop
+[socketutils.BufferedSocket.recv_size]: https://boltons.readthedocs.io/en/latest/socketutils.html#boltons.socketutils.BufferedSocket.recv_size
+[socketutils.NetstringSocket.read_ns]: https://boltons.readthedocs.io/en/latest/socketutils.html#boltons.socketutils.NetstringSocket.read_ns
+[statsutils.format_histogram_counts]: https://boltons.readthedocs.io/en/latest/statsutils.html#boltons.statsutils.format_histogram_counts
+[strutils.split_punct_ws]: https://boltons.readthedocs.io/en/latest/strutils.html#boltons.strutils.split_punct_ws
+[tableutils.Table.extend]: https://boltons.readthedocs.io/en/latest/tableutils.html#boltons.tableutils.Table.extend
+[tableutils.Table.to_html]: https://boltons.readthedocs.io/en/latest/tableutils.html#boltons.tableutils.Table.to_html
+[tbutils.ParsedException.from_string]: https://boltons.readthedocs.io/en/latest/tbutils.html#boltons.tbutils.ParsedException.from_string
+[urlutils.URL]: https://boltons.readthedocs.io/en/latest/urlutils.html#boltons.urlutils.URL
+[urlutils.URL.navigate]: https://boltons.readthedocs.io/en/latest/urlutils.html#boltons.urlutils.URL.navigate
+[urlutils.register_scheme]: https://boltons.readthedocs.io/en/latest/urlutils.html#boltons.urlutils.register_scheme

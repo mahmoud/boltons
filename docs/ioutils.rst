@@ -7,16 +7,11 @@ Spooled Temporary Files
 -----------------------
 Spooled Temporary Files are file-like objects that start out mapped to
 in-memory objects, but automatically roll over to a temporary file once they
-reach a certain (configurable) threshold. Unfortunately the built-in
-SpooledTemporaryFile class in Python does not implement the exact API that some
-common classes like StringIO do. SpooledTemporaryFile also spools all of it's
-in-memory files as cStringIO instances. cStringIO instances cannot be
-deep-copied, and they don't work with the zip library either. This along with
-the incompatible api makes it useless for several use-cases.
-
-To combat this but still gain the memory savings and usefulness of a true
-spooled file-like-object, two custom classes have been implemented which have
-a compatible API.
+reach a certain (configurable) threshold. Boltons provides two of them, with
+the same API as their :mod:`io` counterparts: :ref:`spooledbytesio` for binary
+data, like :class:`io.BytesIO`, and :ref:`spooledstringio` for text, like
+:class:`io.StringIO`. ``SpooledBytesIO.write()`` takes bytes;
+``SpooledStringIO.write()`` takes strings.
 
 .. _spooledbytesio:
 
@@ -33,30 +28,32 @@ SpooledStringIO
 
 Examples
 --------
-It's not uncommon to find excessive usage of StringIO in older Python code. A
-SpooledTemporaryFile would be a nice replacement if one wanted to reduce memory
-overhead, but unfortunately its api differs too much. This is a good candidate
-for :ref:`spooledbytesio` as it is api compatible and thus may be used as a
-drop-in replacement.
+When text held in an :class:`io.StringIO` may grow large,
+:ref:`spooledstringio` is a drop-in replacement that reduces memory overhead
+by rolling over to a temporary file.
 
 Old Code::
 
+    from io import StringIO
+
+    gigantic_string = 'example text ' * 100000
     flo = StringIO()
     flo.write(gigantic_string)
 
 Updated::
 
-    from boltons.ioutils import SpooledBytesIO
+    from boltons.ioutils import SpooledStringIO
 
-    flo = SpooledBytesIO()
+    gigantic_string = 'example text ' * 100000
+    flo = SpooledStringIO()
     flo.write(gigantic_string)
 
 
 Another good use case is downloading a file from some remote location. It's
 nice to keep it in memory if it's small, but writing a large file into memory
 can make servers quite grumpy. If the file being downloaded happens to be a zip
-file then things are worse. You can't use a normal SpooledTemporaryFile because
-it isn't compatible. A :ref:`spooledbytesio` instance is a good alternative.
+file, the stream must hold bytes and support seeking. A :ref:`spooledbytesio`
+instance works well here, as does a binary :class:`tempfile.SpooledTemporaryFile`.
 Here is a simple example using the requests library to download a zip file::
 
     from zipfile import ZipFile

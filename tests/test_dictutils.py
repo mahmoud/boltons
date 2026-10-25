@@ -2,6 +2,7 @@ import sys
 import pytest
 
 from boltons.dictutils import OMD, OneToOne, ManyToMany, FrozenDict, subdict, FrozenHashError
+from boltons.urlutils import QueryParamDict
 
 
 _ITEMSETS = [[],
@@ -363,6 +364,27 @@ def test_ior():
     assert omd_a_id == id(omd_a)
     assert omd_a == omd_c
 
+
+def test_eq_none_items():
+    # (None, None) items used to collide with the zip_longest fill value
+    assert OMD([(None, None)]) != OMD([(None, None), (None, None)])
+    assert OMD([(None, None), (None, None)]) != OMD([(None, None)])
+    assert QueryParamDict([(None, None)]) != QueryParamDict([(None, None), (None, None)])
+
+
+@pytest.mark.parametrize('omd_type', [OMD, QueryParamDict])
+def test_update_iterable_repeated_new_key(omd_type):
+    omd = omd_type()
+    omd.update([('a', 1), ('a', 3)])
+    assert omd.getlist('a') == [1, 3]
+
+    omd = omd_type([('a', 0), ('b', 0)])
+    omd.update([('a', 1), ('c', 2), ('a', 3), ('c', 4)])
+    assert omd.getlist('a') == [1, 3]
+    assert omd.getlist('c') == [2, 4]
+    assert omd.getlist('b') == [0]
+
+
 ## END OMD TESTS
 
 import string
@@ -442,6 +464,27 @@ def test_one_to_one():
     return
 
 
+def test_one_to_one_update_iterator():
+    oto = OneToOne()
+    oto.update(iter([('a', 1), ('b', 2)]))
+    assert oto == {'a': 1, 'b': 2}
+    assert oto.inv == {1: 'a', 2: 'b'}
+
+    # an unhashable value anywhere in the input leaves the mapping unchanged
+    with pytest.raises(TypeError):
+        oto.update([('c', 3), ('d', [])])
+    assert oto == {'a': 1, 'b': 2}
+
+
+def test_one_to_one_ior():
+    oto = OneToOne({'a': 1})
+    oto_id = id(oto)
+    oto |= {'c': 2, 'd': 1}
+    assert id(oto) == oto_id
+    assert oto == {'c': 2, 'd': 1}
+    assert oto.inv == {1: 'd', 2: 'c'}
+
+
 def test_many_to_many():
     m2m = ManyToMany()
     assert len(m2m) == 0
@@ -473,6 +516,33 @@ def test_many_to_many():
     # also test the repr while we're at it
     assert repr(m2m) == repr(ManyToMany([("B", "b")]))
     assert repr(m2m).startswith('ManyToMany(') and 'B' in repr(m2m)
+
+
+def test_many_to_many_add_unhashable():
+    m2m = ManyToMany()
+    with pytest.raises(TypeError):
+        m2m.add('new', [])
+    assert len(m2m) == 0
+    assert 'new' not in m2m
+
+
+def test_many_to_many_copy_independent():
+    orig = ManyToMany([('a', 1)])
+    copied = ManyToMany(orig)
+    copied.add('a', 2)
+    assert orig['a'] == frozenset([1])
+    assert orig.inv[1] == frozenset(['a'])
+    orig.inv.add(1, 'z')
+    assert copied.inv[1] == frozenset(['a'])
+
+
+def test_many_to_many_replace_existing_key():
+    m2m = ManyToMany([('a', 1), ('new', 2)])
+    m2m.replace('a', 'new')
+    assert 'a' not in m2m
+    assert m2m['new'] == frozenset([1, 2])
+    assert m2m.inv[1] == frozenset(['new'])
+    assert m2m.inv[2] == frozenset(['new'])
 
 
 def test_frozendict():

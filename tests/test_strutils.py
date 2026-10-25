@@ -287,7 +287,11 @@ def test_bytes2human():
     assert b2h(1024 ** 8) == '1Y'
     # Just below a boundary stays in the smaller unit.
     assert b2h(1023) == '1023B'
-    assert b2h(1024 ** 2 - 1, 1) == '1024.0K'
+    assert b2h(1024 ** 2 - 1, 1) == '1.0M'
+    # The unit is chosen after rounding, so values that round up to 1024 of
+    # one unit display as 1 of the next.
+    assert b2h(1048575) == '1M'
+    assert b2h(1023.6) == '1K'
     # Ordinary mid-range values are unaffected.
     assert b2h(0) == '0B'
     assert b2h(2048) == '2K'
@@ -297,6 +301,10 @@ def test_bytes2human():
     assert b2h(-(1024 ** 2)) == '-1M'
     # ndigits controls the fractional part.
     assert b2h(1024, 2) == '1.00K'
+    # Non-finite floats have no sensible unit.
+    for bad in (float('nan'), float('inf'), float('-inf')):
+        with pytest.raises(ValueError):
+            b2h(bad)
 
 
 def test_singularize_double_s():
@@ -339,6 +347,14 @@ def test_pluralize_x():
     assert pluralize('ox') == 'oxen'
 
 
+def test_pluralize_z():
+    pluralize = strutils.pluralize
+    assert pluralize('buzz') == 'buzzes'
+    assert pluralize('waltz') == 'waltzes'
+    assert pluralize('quiz') == 'quizzes'
+    assert strutils.singularize('quizzes') == 'quiz'
+
+
 
 def test_multi_replace_empty_mapping():
     # An empty substitution map is a no-op; previously the empty combined
@@ -346,6 +362,36 @@ def test_multi_replace_empty_mapping():
     assert strutils.MultiReplace({}).sub('foo bar') == 'foo bar'
     assert strutils.MultiReplace([]).sub('foo bar') == 'foo bar'
     assert strutils.multi_replace('foo bar', {}) == 'foo bar'
+
+
+def test_multi_replace_compiled_flags():
+    # Flags on precompiled patterns apply to that pattern only.
+    mr = strutils.MultiReplace({re.compile('abc', re.I): 'X', 'def': 'Y'})
+    assert mr.sub('ABC abc DEF def') == 'X X DEF Y'
+    verbose = re.compile(r'a b  # trailing comment', re.X)
+    mr = strutils.MultiReplace([(verbose, 'X'), ('c', 'Y')])
+    assert mr.sub('ab a b c') == 'X a b Y'
+
+
+def test_slugify_backslash():
+    assert strutils.slugify('a\\b') == 'a_b'
+    assert strutils.split_punct_ws('a\\b]c') == ['a', 'b', 'c']
+
+
+def test_strip_ansi_non_utf8_bytes():
+    # cp437 block characters are not valid UTF-8
+    assert strutils.strip_ansi(b'\x1b[31m\xdb\x1b[0m') == b'\xdb'
+    assert strutils.strip_ansi(bytearray(b'\x1b[31m\xdb\xb0')) == bytearray(b'\xdb\xb0')
+
+
+def test_html2text_trailing_ampersand():
+    assert strutils.html2text('text R&D') == 'text R&D'
+    assert strutils.html2text('<p>a &amp; b</p> R&D') == 'a & b R&D'
+
+
+def test_gunzip_bytes_multi_member():
+    data = strutils.gzip_bytes(b'a') + strutils.gzip_bytes(b'b')
+    assert strutils.gunzip_bytes(data) == b'ab'
 
 
 def test_ellipsize():

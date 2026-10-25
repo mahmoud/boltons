@@ -259,10 +259,10 @@ def test_cached_dec():
 def test_unscoped_cached_dec():
     lru = LRU()
     inner_func = CountingCallable()
-    func = cached(lru)(inner_func)
+    func = cached(lru, scoped=False)(inner_func)
 
     other_inner_func = CountingCallable()
-    other_func = cached(lru)(other_inner_func)
+    other_func = cached(lru, scoped=False)(other_inner_func)
 
     assert inner_func.call_count == 0
     func('a')
@@ -272,6 +272,23 @@ def test_unscoped_cached_dec():
     other_func('a')
     assert other_inner_func.call_count == 0
     return
+
+
+def test_scoped_cached_dec():
+    lru = LRU()
+    inner_func = CountingCallable()
+    func = cached(lru)(inner_func)
+
+    other_inner_func = CountingCallable()
+    other_func = cached(lru)(other_inner_func)
+
+    func('a')
+    func('a')
+    other_func('a')
+    other_func('a')
+    assert inner_func.call_count == 1
+    assert other_inner_func.call_count == 1
+    assert len(lru) == 2
 
 
 def test_callable_cached_dec():
@@ -518,3 +535,76 @@ def test_cache_update_optional_source(cache_type):
     assert dict(cache) == {'existing': 0, 'a': 1}
     cache.update(cache, a=2)
     assert dict(cache) == {'existing': 0, 'a': 2}
+
+
+class _FalseyCallable:
+    def __bool__(self):
+        return False
+
+    def __call__(self, key):
+        return 'miss'
+
+
+@pytest.mark.parametrize('cache_type', [LRI, LRU])
+def test_cache_falsey_on_miss(cache_type):
+    cache = cache_type(on_miss=_FalseyCallable())
+    assert cache['x'] == 'miss'
+    assert dict(cache) == {'x': 'miss'}
+
+
+def test_cachedmethod_bound_unbound_share_key():
+    class C:
+        def __init__(self):
+            self.cache = {}
+            self.calls = 0
+
+        @cachedmethod('cache')
+        def m(self, x):
+            self.calls += 1
+            return x * 2
+
+    c = C()
+    assert c.m(3) == 6
+    assert C.m(c, 3) == 6
+    assert c.calls == 1
+    assert len(c.cache) == 1
+
+
+@pytest.mark.parametrize('cache_type', [LRI, LRU])
+def test_cache_copy(cache_type):
+    on_miss = lambda k: k.upper()
+    cache = cache_type(max_size=2, on_miss=on_miss)
+    cache['a'] = 1
+    cache['b'] = 2
+    copied = cache.copy()
+    assert cache.hit_count == 0
+    assert copied.on_miss is on_miss
+    assert copied == {'a': 1, 'b': 2}
+    # insertion/access order is preserved: 'a' is evicted first
+    copied['c'] = 3
+    assert dict(copied) == {'b': 2, 'c': 3}
+
+
+@pytest.mark.parametrize('cache_type', [LRI, LRU])
+def test_cache_ior(cache_type):
+    cache = cache_type(max_size=2)
+    cache |= {'a': 1, 'b': 2, 'c': 3}
+    assert len(cache) == 2
+    assert dict(cache) == {'b': 2, 'c': 3}
+    assert list(cache._link_lookup) == ['b', 'c']
+
+
+def test_cache_eq_non_mapping():
+    cache = LRI()
+    assert (cache == None) is False
+    assert cache != None
+    assert (LRI(values={'a': 1}) == [1]) is False
+    assert LRI(values={'a': 1}) == {'a': 1}
+    assert LRI(values={'a': 1}) == LRU(values={'a': 1})
+
+
+def test_threshold_counter_non_reciprocal_threshold():
+    tc = ThresholdCounter(0.6)
+    for _ in range(20):
+        tc.add('a')
+    assert tc.get('a') == 20

@@ -719,7 +719,9 @@ class ParsedException:
            Anchor lines (e.g., ``~~~~~^^``, present in tracebacks from
            Python 3.11+) round-trip: they are parsed into each frame's
            ``source_line_anchor`` and re-emitted aligned beneath the
-           frame's source line.
+           frame's source line. For multiline expressions (Python
+           3.13+), the rows after the first source/anchor pair are kept
+           in ``source_line_continuations``, in display order.
         """
         lines = ['Traceback (most recent call last):']
 
@@ -733,6 +735,8 @@ class ParsedException:
                 anchor = frame.get('source_line_anchor')
                 if anchor:
                     lines.append(f'    {anchor}')
+                for continuation in frame.get('source_line_continuations', ()):
+                    lines.append(f'    {continuation}')
         if self.exc_msg:
             lines.append(f'{self.exc_type}: {self.exc_msg}')
         else:
@@ -802,6 +806,12 @@ class ParsedException:
                 ):
                     frame_dict['source_line'] = ''
                 else:
+                    # rows of a source block are displayed two spaces
+                    # deeper than the File line, whatever the tb's indent
+                    frame_line_raw = tb_lines[line_no]
+                    src_indent = (len(frame_line_raw)
+                                  - len(frame_line_raw.lstrip()) + 2)
+                    src_no = line_no + 1
                     frame_dict['source_line'] = next_line_stripped
                     line_no += 1
                     if (line_no + 1 < len(tb_lines)
@@ -814,6 +824,25 @@ class ParsedException:
                         if anchor:
                             frame_dict['source_line_anchor'] = anchor
                         line_no += 1
+                    # Python 3.13+ shows every row of a multiline
+                    # expression, each optionally followed by an anchor
+                    src_prefix = ' ' * src_indent
+                    continuations = []
+                    while (next_line.startswith(src_prefix)
+                           and line_no + 1 < len(tb_lines)
+                           and tb_lines[line_no + 1].startswith(src_prefix)):
+                        line_no += 1
+                        continuations.append(
+                            tb_lines[line_no][src_indent:].rstrip())
+                    if continuations:
+                        # keep the block's relative indentation, in case
+                        # the first row is indented more than later rows
+                        frame_dict['source_line'] = (
+                            next_line[src_indent:].rstrip())
+                        if 'source_line_anchor' in frame_dict:
+                            frame_dict['source_line_anchor'] = (
+                                tb_lines[src_no + 1][src_indent:].rstrip())
+                        frame_dict['source_line_continuations'] = continuations
             else:
                 break
             line_no += 1

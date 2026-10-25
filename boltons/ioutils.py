@@ -173,7 +173,8 @@ class SpooledIOBase(IOBase):
 
         Custom version of truncate that takes either no arguments (like the
         real SpooledTemporaryFile) or a single argument that truncates the
-        value to a certain index location.
+        value to a certain index location. Like :meth:`io.IOBase.truncate`,
+        the current position is left unchanged.
         """
         self._checkClosed()
         if size is None:
@@ -186,8 +187,7 @@ class SpooledIOBase(IOBase):
         pos = self.tell()
         self.seek(size)
         self.buffer.truncate()
-        if pos < size:
-            self.seek(pos)
+        self.seek(pos)
 
     def getvalue(self):
         """Return the entire files contents."""
@@ -312,7 +312,7 @@ class SpooledBytesIO(SpooledIOBase):
 
     def readline(self, length=None):
         self._checkClosed()
-        if length:
+        if length is not None:
             return self.buffer.readline(length)
         else:
             return self.buffer.readline()
@@ -449,10 +449,10 @@ class SpooledStringIO(SpooledIOBase):
             self._traverse_codepoints(start_pos, pos)
             self._tell = destination
         elif mode == os.SEEK_END:
-            self.buffer.seek(0)
-            dest_position = self.len - pos
-            self._traverse_codepoints(0, dest_position)
-            self._tell = dest_position
+            dest_position = self.len + pos
+            if dest_position < 0:
+                raise ValueError("negative seek position")
+            return self.seek(dest_position)
         else:
             raise ValueError(
                 f"Invalid whence ({mode}, should be 0, 1, or 2)"
@@ -487,11 +487,11 @@ class SpooledStringIO(SpooledIOBase):
         if not self._rolled:
             tmp = EncodedFile(TemporaryFile(dir=self._dir),
                               data_encoding='utf-8')
-            pos = self.buffer.tell()
+            char_pos = self._tell
             tmp.write(self.buffer.getvalue())
-            tmp.seek(pos)
             self.buffer.close()
             self._buffer = tmp
+            self.seek(char_pos)
 
     def tell(self):
         """Return the codepoint position"""
@@ -505,7 +505,7 @@ class SpooledStringIO(SpooledIOBase):
         self.buffer.seek(0)
         total = 0
         while True:
-            ret = self.read(READ_CHUNK_SIZE)
+            ret = self.buffer.reader.read(READ_CHUNK_SIZE, READ_CHUNK_SIZE)
             if not ret:
                 break
             total += len(ret)
@@ -567,8 +567,11 @@ class MultiFileReader:
         for the input, and returns an empty string when the files are
         exhausted.
         """
-        if not amt:
-            return self._joiner.join(f.read() for f in self._fileobjs)
+        if amt is None or amt < 0:
+            ret = self._joiner.join(f.read()
+                                    for f in self._fileobjs[self._index:])
+            self._index = len(self._fileobjs)
+            return ret
         parts = []
         while amt > 0 and self._index < len(self._fileobjs):
             parts.append(self._fileobjs[self._index].read(amt))
@@ -590,3 +593,4 @@ class MultiFileReader:
                 'MultiFileReader only supports seeking to start at this time')
         for f in self._fileobjs:
             f.seek(0)
+        self._index = 0

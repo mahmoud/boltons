@@ -32,6 +32,10 @@ class TestSplit:
         assert split(values, maxsplit=0) == [values]
         assert split(iter(values), maxsplit=0) == [values]
 
+    def test_negative_maxsplit_is_unlimited(self):
+        # see #502
+        assert split([1, None, 2, None, 3], maxsplit=-1) == [[1], [2], [3]]
+
 
 class TestFirst:
     def test_empty_iterables(self):
@@ -70,8 +74,6 @@ class TestFirst:
 
 
 class TestRemap:
-    # TODO: test namedtuples and other immutable containers
-
     def test_basic_clone(self):
         orig = {"a": "b", "c": [1, 2]}
         assert orig == remap(orig)
@@ -137,24 +139,24 @@ class TestRemap:
         assert remapped[0] is not duperef[0]
 
     def test_namedtuple(self):
-        """TODO: this fails right now because namedtuples' __new__ is
-        overridden to accept arguments. remap's default_enter tries
-        to create an empty namedtuple and gets a TypeError.
-
-        Could make it so that immutable types actually don't create a
-        blank new parent and instead use the old_parent as a
-        placeholder, creating a new one at exit-time from the value's
-        __class__ (how default_exit works now). But even then it would
-        have to *args in the values, as namedtuple constructors don't
-        take an iterable.
-        """
-
+        # see #585
         Point = namedtuple('Point', 'x y')
         point_map = {'origin': [Point(0, 0)]}
 
-        with pytest.raises(TypeError):
-            remapped = remap(point_map)
-            assert isinstance(remapped['origin'][0], Point)
+        remapped = remap(point_map)
+        assert remapped == point_map
+        assert isinstance(remapped['origin'][0], Point)
+
+        doubled = remap({'p': Point(1, 2)},
+                        visit=lambda p, k, v: (k, v * 2 if isinstance(v, int) else v))
+        assert doubled['p'] == Point(2, 4)
+        assert isinstance(doubled['p'], Point)
+
+    def test_unconstructible_sequences(self):
+        # see #585
+        r = range(3)
+        remapped = remap({'r': r})
+        assert remapped['r'] is r
 
     def test_path(self):
         path_map = {}
@@ -474,6 +476,13 @@ def test_backoff_zero_start():
     assert slow_backoff == [0.0, 1.0, 1.2, 1.44, 1.73, 2.07, 2.49, 2.9]
 
 
+def test_backoff_zero_start_fractional_stop():
+    # see #496
+    from boltons.iterutils import backoff
+
+    assert backoff(0, 0.5) == [0.0, 0.5]
+
+
 def test_backoff_validation():
     from boltons.iterutils import backoff
 
@@ -592,6 +601,80 @@ def test_chunk_ranges():
     assert list(chunk_ranges(input_offset=2, input_size=15, chunk_size=5, overlap_size=1, align=True)) == [(2, 5), (4, 9), (8, 13), (12, 17)]
     assert list(chunk_ranges(input_offset=3, input_size=15, chunk_size=5, overlap_size=1, align=True)) == [(3, 5), (4, 9), (8, 13), (12, 17), (16, 18)]
     assert list(chunk_ranges(input_offset=3, input_size=2, chunk_size=5, overlap_size=1, align=True)) == [(3, 5)]
+
+
+def test_chunk_ranges_edges():
+    # see #569
+    from boltons.iterutils import chunk_ranges
+
+    assert list(chunk_ranges(0, 5, align=True)) == []
+    with pytest.raises(ValueError):
+        list(chunk_ranges(10, 2, overlap_size=2))
+
+
+def test_chunked_filter():
+    # see #491
+    from boltons.iterutils import chunked_filter
+
+    calls = []
+    processed_ids = {2, 5}
+
+    def is_new(batch):
+        calls.append(list(batch))
+        return [i not in processed_ids for i in batch]
+
+    assert list(chunked_filter(range(1, 8), 3, key=is_new)) == [1, 3, 4, 6, 7]
+    assert calls == [[1, 2, 3], [4, 5, 6], [7]]
+    assert list(chunked_filter([0, 1, '', 'a'], 3)) == [1, 'a']
+
+    with pytest.raises(ValueError):
+        list(chunked_filter(range(4), 2, key=lambda batch: [True]))
+    with pytest.raises(TypeError):
+        list(chunked_filter(range(4), 2, key='nope'))
+
+
+def test_bucketize_iterator_with_key_list():
+    # see #563
+    from boltons.iterutils import bucketize
+
+    assert bucketize(iter([1, 2, 3]), key=['a', 'b', 'a']) == {'a': [1, 3], 'b': [2]}
+    with pytest.raises(ValueError):
+        bucketize(iter([1, 2, 3, 4]), key=['a', 'b', 'a'])
+
+
+class _FalseyCallable:
+    def __init__(self, func):
+        self.func = func
+        self.calls = 0
+
+    def __call__(self, x):
+        self.calls += 1
+        return self.func(x)
+
+    def __bool__(self):
+        return False
+
+
+def test_redundant_falsey_key():
+    # see #554
+    from boltons.iterutils import redundant
+
+    assert redundant([1, 3, 2], key=_FalseyCallable(lambda x: x % 2)) == [3]
+
+
+def test_untyped_sorted_key_called_once_per_item():
+    # see #552
+    from boltons.iterutils import untyped_sorted
+
+    key = _FalseyCallable(lambda x: -x)
+    assert untyped_sorted([3, 1, 2], key=key) == [3, 2, 1]
+    assert key.calls == 3
+
+    def bad_key(x):
+        raise ZeroDivisionError()
+
+    with pytest.raises(ZeroDivisionError):
+        untyped_sorted([1], key=bad_key)
 
 
 def test_lstrip():

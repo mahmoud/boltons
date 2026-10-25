@@ -157,7 +157,7 @@ class BasePriorityQueue:
 
     def peek(self, default=_REMOVED):
         """Read the next value in the queue without removing it. Returns
-        *default* on an empty queue, or raises :exc:`KeyError` if
+        *default* on an empty queue, or raises :exc:`IndexError` if
         *default* is not set.
         """
         try:
@@ -171,7 +171,7 @@ class BasePriorityQueue:
 
     def pop(self, default=_REMOVED):
         """Remove and return the next value in the queue. Returns *default* on
-        an empty queue, or raises :exc:`KeyError` if *default* is not
+        an empty queue, or raises :exc:`IndexError` if *default* is not
         set.
         """
         try:

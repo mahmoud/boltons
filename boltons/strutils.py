@@ -37,15 +37,15 @@ provided by ``strutils``.
 
 import builtins
 import collections
+import math
 import re
 import string
 import sys
 import typing
 import unicodedata
 import uuid
-import zlib
 from collections.abc import Mapping
-from gzip import GzipFile
+from gzip import GzipFile, decompress
 from html import entities as htmlentitydefs
 from html.parser import HTMLParser
 from io import BytesIO as StringIO
@@ -62,7 +62,7 @@ __all__ = ['camel2under', 'under2camel', 'slugify', 'split_punct_ws',
 
 
 _punct_ws_str = string.punctuation + string.whitespace
-_punct_re = re.compile('[' + _punct_ws_str + ']+')
+_punct_re = re.compile('[' + re.escape(_punct_ws_str) + ']+')
 _camel2under_re = re.compile('((?<=[a-z0-9])[A-Z]|(?!^)[A-Z](?=[a-z]))')
 
 
@@ -258,7 +258,7 @@ def pluralize(word):
         plural = irr_plural
     elif word.endswith('y') and word[-2:-1] not in 'aeiou':
         plural = word[:-1] + 'ies'
-    elif word[-1] in 'sx' or word.endswith('ch') or word.endswith('sh'):
+    elif word[-1] in 'sxz' or word.endswith('ch') or word.endswith('sh'):
         plural = word if word.endswith('es') else word + 'es'
     else:
         plural = word + 's'
@@ -303,7 +303,8 @@ _IRR_S2P = {'addendum': 'addenda', 'alga': 'algae', 'alumna': 'alumnae',
             'octopus': 'octopi', 'offspring': 'offspring', 'ovum': 'ova',
             'ox': 'oxen', 'paralysis': 'paralyses', 'parenthesis': 'parentheses',
             'person': 'people', 'phenomenon': 'phenomena', 'potato': 'potatoes',
-            'radius': 'radii', 'scarf': 'scarves', 'scissors': 'scissors',
+            'quiz': 'quizzes', 'radius': 'radii', 'scarf': 'scarves',
+            'scissors': 'scissors',
             'self': 'selves', 'sense': 'senses', 'series': 'series', 'sheep':
             'sheep', 'shelf': 'shelves', 'species': 'species', 'stimulus':
             'stimuli', 'stratum': 'strata', 'syllabus': 'syllabi', 'symposium':
@@ -402,19 +403,19 @@ def strip_ansi(text):
     # Unicode type aliased to str is code-smell for Boltons in Python 3 env.
     if isinstance(text, (bytes, bytearray)):
         target_type = type(text)
-        text = text.decode('utf-8')
+        text = text.decode('latin-1')
 
     cleaned = ANSI_SEQUENCES.sub('', text)
 
     # Transform back the result to the same bytearray type provided by the user.
     if target_type and target_type != type(cleaned):
-        cleaned = target_type(cleaned, 'utf-8')
+        cleaned = target_type(cleaned, 'latin-1')
 
     return cleaned
 
 
 def asciify(text, ignore=False):
-    """Converts a unicode or bytestring, *text*, into a bytestring with
+    """Converts a string, *text*, into a bytestring with
     just ascii characters. Performs basic deaccenting for all you
     Europhiles out there.
 
@@ -431,12 +432,7 @@ def asciify(text, ignore=False):
     True
     """
     try:
-        try:
-            return text.encode('ascii')
-        except UnicodeDecodeError:
-            # this usually means you passed in a non-unicode string
-            text = text.decode('utf-8')
-            return text.encode('ascii')
+        return text.encode('ascii')
     except UnicodeEncodeError:
         mode = 'replace'
         if ignore:
@@ -572,9 +568,12 @@ def bytes2human(nbytes, ndigits=0):
     >>> bytes2human(1024 ** 8)
     '1Y'
     """
+    if isinstance(nbytes, float) and not math.isfinite(nbytes):
+        raise ValueError(f'expected a finite number of bytes, not {nbytes!r}')
     abs_bytes = abs(nbytes)
+    # pick the unit after rounding, so e.g. 1023.99K displays as 1M
     for (size, symbol), (next_size, next_symbol) in _SIZE_RANGES:
-        if abs_bytes < next_size:
+        if round(abs_bytes / size, ndigits) < 1024:
             break
     hnbytes = float(nbytes) / size
     return '{hnbytes:.{ndigits}f}{symbol}'.format(hnbytes=hnbytes,
@@ -620,6 +619,7 @@ def html2text(html):
     # based on answers to http://stackoverflow.com/questions/753052/
     s = HTMLTextExtractor()
     s.feed(html)
+    s.close()
     return s.get_text()
 
 
@@ -639,7 +639,7 @@ def gunzip_bytes(bytestring):
     >>> gunzip_bytes(_NON_EMPTY_GZIP_BYTES).rstrip() == b'bytesahoy!'
     True
     """
-    return zlib.decompress(bytestring, 16 + zlib.MAX_WBITS)
+    return decompress(bytestring)
 
 
 def gzip_bytes(bytestring, level=6):
@@ -1133,6 +1133,11 @@ def int_ranges_from_int_list(range_string, delim=',', range_delim='-'):
     return tuple(int_tuples)
 
 
+_SCOPED_FLAG_LETTERS = ((re.ASCII, 'a'), (re.IGNORECASE, 'i'),
+                        (re.MULTILINE, 'm'), (re.DOTALL, 's'),
+                        (re.VERBOSE, 'x'))
+
+
 class MultiReplace:
     """
     MultiReplace is a tool for doing multiple find/replace actions in one pass.
@@ -1212,7 +1217,17 @@ class MultiReplace:
                 else:
                     exp = vals[0]
             else:
+                # Compiled pattern: scope its flags to its own group so
+                # they survive being combined into one expression.
                 exp = vals[0].pattern
+                flag_letters = ''.join(
+                    letter for flag, letter in _SCOPED_FLAG_LETTERS
+                    if vals[0].flags & flag)
+                if flag_letters:
+                    if vals[0].flags & re.VERBOSE:
+                        # end any trailing comment before the closing paren
+                        exp += '\n'
+                    exp = f'(?{flag_letters}:{exp})'
 
             regex_values.append(f'(?P<{group_name}>{exp})')
             self.group_map[group_name] = vals[1]

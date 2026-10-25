@@ -265,7 +265,7 @@ class Table:
             headers = []
             if data:
                 headers, data = list(data[0]), islice(data, 1, None)
-        self.headers = headers or []
+        self.headers = list(headers) if headers else []
         self.metadata = metadata or {}
         self._data = []
         self._width = 0
@@ -279,7 +279,7 @@ class Table:
         if not data:
             return
         self._data.extend(data)
-        self._set_width()
+        self._set_width(reset=not self.headers)
         self._fill()
 
     def _set_width(self, reset=False):
@@ -359,6 +359,9 @@ class Table:
         # i.e., it doesn't work if max_depth=0 is passed in
         metadata = kwargs.pop('metadata', None)
         _data_type = kwargs.pop('_data_type', None)
+        if headers is not _MISSING and headers is not None \
+                and not isinstance(headers, str):
+            headers = list(headers)
 
         if max_depth < 1:
             # return data instead?
@@ -485,12 +488,11 @@ class Table:
         else:
             raise ValueError("expected one of 'auto', 'vertical', or"
                              " 'horizontal', not %r" % orientation)
+        if wrapped:
+            lines.append(self._html_table_tag_close)
         if with_metadata and self.metadata and with_metadata == 'bottom':
             lines.append('<br />')
             lines.append(metadata_html)
-
-        if wrapped:
-            lines.append(self._html_table_tag_close)
         sep = '\n' if with_newlines else ''
         return sep.join(lines)
 

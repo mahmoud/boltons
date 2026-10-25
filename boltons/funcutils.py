@@ -56,6 +56,7 @@ except ImportError:
 def inspect_formatargspec(
         args, varargs=None, varkw=None, defaults=None,
         kwonlyargs=(), kwonlydefaults={}, annotations={},
+        posonlyargs=(),
         formatarg=str,
         formatvarargs=lambda name: '*' + name,
         formatvarkw=lambda name: '**' + name,
@@ -83,6 +84,8 @@ def inspect_formatargspec(
         if defaults and i >= firstdefault:
             spec = spec + formatvalue(defaults[i - firstdefault])
         specs.append(spec)
+        if posonlyargs and arg == posonlyargs[-1]:
+            specs.append('/')
     if varargs is not None:
         specs.append(formatvarargs(formatargandannotation(varargs)))
     else:
@@ -544,8 +547,10 @@ def update_wrapper(wrapper, func, injected=None, expected=None, build_from=None,
         injected (list): An optional list of argument names which
             should not appear in the new wrapper's signature.
         expected (list): An optional list of argument names (or (name,
-            default) pairs) representing new arguments introduced by
-            the wrapper (the opposite of *injected*). See
+            default) pairs, or (name, default, kwonly) triples)
+            representing new arguments introduced by the wrapper (the
+            opposite of *injected*). Pass ``kwonly=True`` in a triple
+            to add a keyword-only argument. See
             :meth:`FunctionBuilder.add_arg()` for more details.
         build_from (function): The callable from which the new wrapper
             is built. Defaults to *func*, unless *wrapper* is partial object
@@ -598,8 +603,8 @@ def update_wrapper(wrapper, func, injected=None, expected=None, build_from=None,
                 continue  # keyword arg will be caught by the varkw
             raise
 
-    for arg, default in expected_items:
-        fb.add_arg(arg, default)  # may raise ExistingArgument
+    for arg, default, kwonly in expected_items:
+        fb.add_arg(arg, default, kwonly=kwonly)  # may raise ExistingArgument
 
     invocation_str = fb.get_invocation_str(target=wrapper)
     if fb.is_async:
@@ -633,9 +638,11 @@ def _parse_wraps_expected(expected):
         expected_iter = iter(expected)
     except TypeError as e:
         raise ValueError('"expected" takes string name, sequence of string names,'
-                         ' iterable of (name, default) pairs, or a mapping of '
-                         ' {name: default}, not %r (got: %r)' % (expected, e))
+                         ' iterable of (name, default) pairs or (name, default,'
+                         ' kwonly) triples, or a mapping of {name: default},'
+                         ' not %r (got: %r)' % (expected, e))
     for argname in expected_iter:
+        kwonly = False
         if isinstance(argname, str):
             # dict keys and bare strings
             try:
@@ -643,17 +650,24 @@ def _parse_wraps_expected(expected):
             except TypeError:
                 default = NO_DEFAULT
         else:
-            # pairs
+            # pairs and triples
             try:
-                argname, default = argname
-            except (TypeError, ValueError):
+                item = tuple(argname)
+            except TypeError:
+                item = ()
+            if len(item) == 2:
+                argname, default = item
+            elif len(item) == 3:
+                argname, default, kwonly = item
+            else:
                 raise ValueError('"expected" takes string name, sequence of string names,'
-                                 ' iterable of (name, default) pairs, or a mapping of '
-                                 ' {name: default}, not %r')
+                                 ' iterable of (name, default) pairs or (name, default,'
+                                 ' kwonly) triples, or a mapping of {name: default},'
+                                 ' not %r' % (argname,))
         if not isinstance(argname, str):
             raise ValueError(f'all "expected" argnames must be strings, not {argname!r}')
 
-        expected_items.append((argname, default))
+        expected_items.append((argname, default, bool(kwonly)))
 
     return expected_items
 
@@ -781,7 +795,8 @@ class FunctionBuilder:
                                      [],
                                      self.kwonlyargs,
                                      {},
-                                     annotations)
+                                     annotations,
+                                     posonlyargs=self.posonlyargs)
 
     def get_invocation_str(self, target=None):
         # Regular args with defaults (and keyword-only args) are forwarded
@@ -885,7 +900,8 @@ class FunctionBuilder:
         To see an example of usage, see the implementation of
         :func:`~boltons.funcutils.wraps`.
         """
-        execdict = execdict or {}
+        if execdict is None:
+            execdict = {}
         body = self.body or self._default_body
 
         tmpl = 'def {name}{sig_str}:'
@@ -983,6 +999,8 @@ class FunctionBuilder:
         else:
             d_dict.pop(arg_name, None)
             self.defaults = tuple([d_dict[a] for a in args if a in d_dict])
+            if arg_name in self.posonlyargs:
+                self.posonlyargs.remove(arg_name)
         return
 
     def _compile(self, src, execdict):
