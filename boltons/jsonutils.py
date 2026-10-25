@@ -83,11 +83,17 @@ def reverse_iter_lines(file_obj, blocksize=DEFAULT_BLOCKSIZE, preseek=True, enco
     except (AttributeError, io.UnsupportedOperation):
         pass
 
-    empty_bytes, newline_bytes, empty_text = b'', b'\n', ''
+    # read(0) reveals whether the stream yields text (e.g., io.StringIO,
+    # which has no .buffer to unwrap) or bytes
+    empty = file_obj.read(0)
+    is_text = isinstance(empty, str)
+    newline = '\n' if is_text else b'\n'
+    decode = bool(encoding) and not is_text
+    empty_line = '' if (decode or is_text) else b''
 
     if preseek:
         file_obj.seek(0, os.SEEK_END)
-    buff = empty_bytes
+    buff = empty
     cur_pos = file_obj.tell()
     while 0 < cur_pos:
         read_size = min(blocksize, cur_pos)
@@ -97,15 +103,16 @@ def reverse_iter_lines(file_obj, blocksize=DEFAULT_BLOCKSIZE, preseek=True, enco
         buff = cur + buff
         lines = buff.splitlines()
 
-        if len(lines) < 2 or lines[0] == empty_bytes:
+        # until the start of the file, the first line may be partial
+        if cur_pos and (len(lines) < 2 or lines[0] == empty):
             continue
-        if buff[-1:] == newline_bytes:
-            yield empty_text if encoding else empty_bytes
-        for line in lines[:0:-1]:
-            yield line.decode(encoding) if encoding else line
-        buff = lines[0]
+        if buff[-1:] == newline:
+            yield empty_line
+        for line in reversed(lines[1:] if cur_pos else lines):
+            yield line.decode(encoding) if decode else line
+        buff = lines[0] if cur_pos else empty
     if buff:
-        yield buff.decode(encoding) if encoding else buff
+        yield buff.decode(encoding) if decode else buff
 
 
 
@@ -162,7 +169,9 @@ class JSONLIterator:
                                                  blocksize=self._blocksize,
                                                  preseek=False)
         else:
-            self._line_iter = iter(self._file_obj)
+            # readline() (unlike next()) keeps tell() usable on text files
+            self._line_iter = iter(self._file_obj.readline,
+                                   self._file_obj.read(0))
 
     @property
     def cur_byte_pos(self):

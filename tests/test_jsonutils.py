@@ -120,3 +120,29 @@ def test_reverse_iter_lines_keeps_text_stream_attached(tmp_path):
         assert list(reverse_iter_lines(stream)) == ['second', 'first']
         stream.seek(0)
         assert stream.read() == 'first\nsecond'
+
+
+def test_reverse_iter_lines_leading_empty_lines():
+    from io import BytesIO
+    data = b'\n\nfirst\nsecond\n'
+    for blocksize in (2, 4, 4096):
+        rev = list(reverse_iter_lines(BytesIO(data), blocksize=blocksize))
+        assert rev == [b'', b'second', b'first', b'', b'']
+        assert b'\n'.join(reversed(rev)) == data
+    assert list(reverse_iter_lines(BytesIO(b'\n'))) == [b'', b'']
+
+
+def test_reverse_iter_lines_stringio():
+    from io import StringIO
+    assert list(reverse_iter_lines(StringIO('a\nb\n'))) == ['', 'b', 'a']
+    assert list(reverse_iter_lines(StringIO('x\ny'), blocksize=2)) == ['y', 'x']
+
+
+def test_jsonl_iterator_text_cur_byte_pos(tmp_path):
+    path = tmp_path / 'records.jsonl'
+    path.write_bytes(b'{"1": 1}\n{"2": 2}\n')  # no CRLF translation on Windows
+    with path.open() as stream:
+        jsonl_iter = JSONLIterator(stream)
+        assert next(jsonl_iter) == {'1': 1}
+        assert jsonl_iter.cur_byte_pos == len('{"1": 1}\n')
+        assert list(jsonl_iter) == [{'2': 2}]
