@@ -145,3 +145,15 @@ def test_empty_bits_rejects_non_hex_inputs():
     for value in (None, 0, False):
         with raises(AttributeError):
             Bits.from_hex(value)
+
+
+def test_bits_negative_len():
+    with raises(ValueError):
+        Bits(0, -1)
+
+
+def test_bits_rshift_past_width():
+    shifted = Bits('101') >> 4
+    assert len(shifted) == 0
+    assert shifted.as_bin() == ''
+    assert Bits('101') >> 1 == Bits('10')

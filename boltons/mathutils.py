@@ -161,6 +161,8 @@ class Bits:
             raise ValueError('Bits cannot represent negative values')
         if len_ is None:
             len_ = len(f'{val:b}')
+        if len_ < 0:
+            raise ValueError(f'Bits length must be non-negative, not {len_!r}')
         if val >= 2 ** len_:
             raise ValueError(f'value {val} cannot be represented with {len_} bits')
         self.val = val  # data is stored internally as integer
@@ -199,7 +201,7 @@ class Bits:
         return Bits(self.val << other, self.len + other)
 
     def __rshift__(self, other):
-        return Bits(self.val >> other, self.len - other)
+        return Bits(self.val >> other, max(0, self.len - other))
 
     def __hash__(self):
         return hash(self.val)
