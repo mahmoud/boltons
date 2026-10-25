@@ -51,6 +51,15 @@ def test_trace_exc():
         assert te.args == target.args
 
 
+def test_trace_raise_suppressed():
+    class Target:
+        def boom(self):
+            raise ValueError('boom')
+
+    wrapped = wrap_trace(Target(), hook=lambda **kw: True, events='raise')
+    assert wrapped.boom() is None
+
+
 def test_trace_which():
     class Config:
         def __init__(self, value):

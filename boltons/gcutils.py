@@ -105,7 +105,12 @@ def get_all(type_obj, include_subtypes=True):
     except AttributeError:
         type_is_tracked = False  # Python 2.6 and below don't get the speedup
     if type_is_tracked:
-        to_check = gc.get_referrers(type_obj)
+        # instances reference their own type, so subtype instances are
+        # referrers of the subtype, not of type_obj
+        if include_subtypes:
+            to_check = gc.get_referrers(*_all_types(type_obj))
+        else:
+            to_check = gc.get_referrers(type_obj)
     else:
         to_check = gc.get_objects()
 
@@ -113,6 +118,20 @@ def get_all(type_obj, include_subtypes=True):
         ret = [x for x in to_check if isinstance(x, type_obj)]
     else:
         ret = [x for x in to_check if type(x) is type_obj]
+    return ret
+
+
+def _all_types(type_obj):
+    # type_obj and all its subtypes; type.__subclasses__ also works
+    # for metaclasses, where cls.__subclasses__ is unbound
+    ret, seen, to_check = [], set(), [type_obj]
+    while to_check:
+        cur = to_check.pop()
+        if cur in seen:
+            continue
+        seen.add(cur)
+        ret.append(cur)
+        to_check.extend(type.__subclasses__(cur))
     return ret
 
 
@@ -132,24 +151,30 @@ class GCToggler:
     Two GCTogglers are already present in the ``gcutils`` module:
 
     - :data:`toggle_gc` simply turns off GC at context entrance, and
-      re-enables at exit
+      restores the previous GC state at exit
     - :data:`toggle_gc_postcollect` does the same, but triggers an
-      explicit collection after re-enabling.
+      explicit collection after restoring.
 
     >>> with toggle_gc:
     ...     x = [object() for i in range(1000)]
 
     Between those two instances, the ``GCToggler`` type probably won't
     be used much directly, but is documented for inheritance purposes.
+
+    GCTogglers can be nested; each exit restores the state GC was in
+    at the matching entrance.
     """
     def __init__(self, postcollect=False):
         self.postcollect = postcollect
+        self._was_enabled = []
 
     def __enter__(self):
+        self._was_enabled.append(gc.isenabled())
         gc.disable()
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        gc.enable()
+        if self._was_enabled.pop():
+            gc.enable()
         if self.postcollect:
             gc.collect()
 
