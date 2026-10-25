@@ -189,10 +189,12 @@ def find_all_links(text, with_text=False, default_scheme='https', schemes=()):
                 if default_scheme:
                     cur_url = URL(default_scheme + '://' + cur_url_text)
                 else:
-                    _add_text(text[start:end])
+                    if with_text:
+                        _add_text(text[start:end])
                     continue
             if schemes and cur_url.scheme not in schemes:
-                _add_text(text[start:end])
+                if with_text:
+                    _add_text(text[start:end])
             else:
                 _add(cur_url)
         except URLParseError:
@@ -356,11 +358,13 @@ def register_scheme(text, uses_netloc=None, default_port=None):
 
     if uses_netloc is True:
         SCHEME_PORT_MAP[text] = default_port
+        NO_NETLOC_SCHEMES.discard(text)
     elif uses_netloc is False:
         if default_port is not None:
             raise ValueError('unexpected default port while specifying'
                              ' non-netloc scheme: %r' % default_port)
         NO_NETLOC_SCHEMES.add(text)
+        SCHEME_PORT_MAP.pop(text, None)
     elif uses_netloc is not None:
         raise ValueError('uses_netloc expected True, False, or None')
 
@@ -670,7 +674,9 @@ class URL:
         if dest.scheme and dest.host:
             # absolute URLs replace everything, but don't make an
             # extra copy if we don't have to
-            return URL(dest) if orig_dest is None else dest
+            ret = URL(dest) if orig_dest is None else dest
+            ret.normalize()
+            return ret
         query_params = dest.query_params
 
         if dest.path:
@@ -692,6 +698,7 @@ class URL:
                               fragment=dest.fragment,
                               username=dest.username or self.username,
                               password=dest.password or self.password)
+        ret.family = dest.family if dest.host else self.family
         ret.normalize()
         return ret
 
@@ -736,8 +743,7 @@ class URL:
                 _add(self.host.encode('idna').decode('ascii'))
             else:
                 _add(self.host)
-            # TODO: 0 port?
-            if self.port and self.port != self.default_port:
+            if self.port is not None and self.port != self.default_port:
                 _add(':')
                 _add(str(self.port))
         return ''.join(parts)

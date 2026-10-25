@@ -330,6 +330,46 @@ def test_navigate():
     assert navd.to_text() == _dest_text
 
 
+def test_navigate_absolute_normalizes():
+    url = URL('http://x.com')
+    navd = url.navigate('HTTPS://EXAMPLE.ORG/a/./b/../c')
+    assert navd.to_text() == 'https://example.org/a/c'
+
+    dest = URL('HTTPS://EXAMPLE.ORG/a/./b/../c')
+    navd = url.navigate(dest)
+    assert navd.to_text() == 'https://example.org/a/c'
+    assert dest.to_text() == 'HTTPS://EXAMPLE.ORG/a/./b/../c'  # input not mutated
+
+
+def test_navigate_ipv6_keeps_brackets():
+    url = URL('https://[::1]/a/b')
+    assert url.navigate('child').to_text() == 'https://[::1]/a/child'
+    assert url.navigate('//example.com/x').to_text() == 'https://example.com/x'
+
+
+def test_port_zero_roundtrips():
+    url = URL('http://example.com:0/path')
+    assert url.port == 0
+    assert url.to_text() == 'http://example.com:0/path'
+
+
+def test_register_scheme_reclassify():
+    scheme = 'boltons-test-reclassify'
+    try:
+        urlutils.register_scheme(scheme, uses_netloc=True, default_port=9999)
+        urlutils.register_scheme(scheme, uses_netloc=False)
+        assert scheme not in urlutils.SCHEME_PORT_MAP
+        assert scheme in urlutils.NO_NETLOC_SCHEMES
+
+        urlutils.register_scheme(scheme, uses_netloc=True, default_port=9998)
+        assert urlutils.SCHEME_PORT_MAP[scheme] == 9998
+        assert scheme not in urlutils.NO_NETLOC_SCHEMES
+    finally:
+        urlutils.SCHEME_PORT_MAP.pop(scheme, None)
+        urlutils.NO_NETLOC_SCHEMES.discard(scheme)
+
+
+
 @pytest.mark.parametrize(
     ('expected', 'base', 'paths'), [
     ('https://host/b', 'https://host', ('a', '/b', )),
@@ -485,6 +525,20 @@ def test_find_all_links():
         link_tokens = find_all_links(text, with_text=True)
         assert link_tokens[0].startswith(prefix)
         assert link_tokens[-1].endswith(suffix)
+
+
+def test_find_all_links_rejected_without_text():
+    text = 'http://example.com and https://example.org'
+    links = find_all_links(text, schemes=['https'], with_text=False)
+    assert links == [URL('https://example.org')]
+
+    links = find_all_links('see www.example.com', default_scheme=False)
+    assert links == []
+
+    # with_text still keeps the rejected URL as text
+    tokens = find_all_links(text, schemes=['https'], with_text=True)
+    assert tokens[0] == 'http://example.com'
+    assert tokens[-1] == URL('https://example.org')
 
 
 def test_unicodey():
