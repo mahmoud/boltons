@@ -110,11 +110,11 @@ def isoparse(iso_str):
     True
 
     For further datetime parsing, see the `iso8601`_ package for strict
-    ISO parsing and `dateutil`_ package for loose parsing and more.
+    ISO parsing and `dateutil <https://pypi.python.org/pypi/python-dateutil>`__
+    package for loose parsing and more.
 
     .. _ISO8601-formatted time: https://en.wikipedia.org/wiki/ISO_8601
     .. _iso8601: https://pypi.python.org/pypi/iso8601
-    .. _dateutil: https://pypi.python.org/pypi/python-dateutil
 
     >>> isoparse('1970-01-01T00:00:00.851')
     datetime.datetime(1970, 1, 1, 0, 0, 0, 851000)
