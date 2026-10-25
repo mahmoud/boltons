@@ -114,6 +114,19 @@ class BaseTestMixin:
         self.spooled_flo.truncate(10)
         self.assertEqual(self.spooled_flo.getvalue(), self.test_str[:10])
 
+    def test_truncate_keeps_position(self):
+        """truncate() never moves the position, like io.IOBase"""
+        for rolled in (False, True):
+            with self.subTest(rolled=rolled):
+                flo = type(self.spooled_flo)()
+                flo.write(self.test_str)
+                if rolled:
+                    flo.rollover()
+                flo.seek(15)
+                flo.truncate(10)
+                self.assertEqual(flo.tell(), 15)
+                self.assertEqual(flo.getvalue(), self.test_str[:10])
+
     def test_type_error_too_many_args(self):
         """Make sure TypeError raised if too many args passed to truncate"""
         self.spooled_flo.write(self.test_str)
@@ -337,6 +350,12 @@ class TestSpooledBytesIO(TestCase, BaseTestMixin, AssertionsMixin):
         self.spooled_flo.writelines(lines)
         self.assertEqual(self.spooled_flo.getvalue(), expected)
 
+    def test_readline_zero_length(self):
+        self.spooled_flo.write(b"a\nb")
+        self.spooled_flo.seek(0)
+        self.assertEqual(self.spooled_flo.readline(0), b"")
+        self.assertEqual(self.spooled_flo.readline(), b"a\n")
+
 
 class TestSpooledStringIO(TestCase, BaseTestMixin, AssertionsMixin):
     linesep = os.linesep
@@ -426,6 +445,40 @@ class TestSpooledStringIO(TestCase, BaseTestMixin, AssertionsMixin):
                             stream.seek(offset, whence)
                         self.assertEqual(stream.tell(), 2)
                         self.assertEqual(stream.read(), 'bc')
+
+    def test_len_keeps_position(self):
+        for rolled in (False, True):
+            with self.subTest(rolled=rolled):
+                with ioutils.SpooledStringIO() as stream:
+                    stream.write('a\u2603bcd')
+                    if rolled:
+                        stream.rollover()
+                    stream.seek(1)
+                    self.assertEqual(stream.len, 5)
+                    self.assertEqual(stream.tell(), 1)
+                    self.assertEqual(stream.read(), '\u2603bcd')
+
+    def test_seek_SEEK_END_negative_offset(self):
+        for rolled in (False, True):
+            with self.subTest(rolled=rolled):
+                with ioutils.SpooledStringIO() as stream:
+                    stream.write('a\u2603cde')
+                    if rolled:
+                        stream.rollover()
+                    self.assertEqual(stream.seek(-2, os.SEEK_END), 3)
+                    self.assertEqual(stream.read(), 'de')
+                    with self.assertRaises(ValueError):
+                        stream.seek(-6, os.SEEK_END)
+                    self.assertEqual(stream.tell(), 5)
+
+    def test_rollover_after_readline_keeps_position(self):
+        with ioutils.SpooledStringIO() as stream:
+            stream.write('fir\u2603t\nlast')
+            stream.seek(0)
+            self.assertEqual(stream.readline(), 'fir\u2603t\n')
+            stream.rollover()
+            self.assertEqual(stream.tell(), 6)
+            self.assertEqual(stream.read(), 'last')
 
     def test_tell_codepoints(self):
         """Verify tell() returns codepoint position, not bytes position"""
@@ -534,6 +587,15 @@ class TestMultiFileReader(TestCase):
                          list(iter(lambda: r.read(3), '')))
         r.seek(0)
         self.assertEqual('narftroz', r.read())
+
+    def test_read_zero_and_negative(self):
+        r = ioutils.MultiFileReader(io.BytesIO(b'narf'), io.BytesIO(b'troz'))
+        self.assertEqual(r.read(0), b'')
+        self.assertEqual(r.read(5), b'narft')
+        self.assertEqual(r.read(-1), b'roz')
+        self.assertEqual(r.read(), b'')
+        r.seek(0)
+        self.assertEqual(r.read(3), b'nar')
 
     def test_no_mixed_bytes_and_text(self):
         self.assertRaises(ValueError, ioutils.MultiFileReader,
