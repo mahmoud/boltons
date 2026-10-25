@@ -221,6 +221,34 @@ def test_update_extend():
         assert orig_keys <= set(omd1)
 
 
+def test_update_extend_self():
+    omd = OMD([('a', 1), ('b', 2), ('a', 3)])
+    original_items = omd.items(multi=True)
+
+    omd.update_extend(omd)
+
+    assert omd.items(multi=True) == original_items + original_items
+
+
+def test_update_extend_empty_self():
+    omd = OMD()
+
+    omd.update_extend(omd)
+
+    assert omd.items(multi=True) == []
+
+
+def test_update_extend_other_ordered_multidict():
+    omd = OMD([('a', 1), ('b', 2)])
+    source = OMD([('b', 3), ('a', 4), ('b', 5)])
+
+    omd.update_extend(source)
+
+    assert omd.items(multi=True) == [
+        ('a', 1), ('b', 2), ('b', 3), ('a', 4), ('b', 5),
+    ]
+
+
 def test_invert():
     for items in _ITEMSETS:
         omd = OMD(items)
