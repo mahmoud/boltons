@@ -150,7 +150,8 @@ class FilePerms:
             for symbol in value:
                 bit = 2 ** key.index(symbol)
                 mode |= (bit << (self.offset * 3))
-            fp_obj._integer |= mode
+            mask = _SINGLE_FULL_PERM << (self.offset * 3)
+            fp_obj._integer = (fp_obj._integer & ~mask) | mode
 
     def __init__(self, user='', group='', other=''):
         self._user, self._group, self._other = '', '', ''
@@ -169,7 +170,7 @@ class FilePerms:
         i &= FULL_PERMS
         key = ('', 'x', 'w', 'xw', 'r', 'rx', 'rw', 'rwx')
         parts = []
-        while i:
+        for _ in range(3):
             parts.append(key[i & _SINGLE_FULL_PERM])
             i >>= 3
         parts.reverse()
@@ -464,28 +465,27 @@ class AtomicSaver:
         return self.part_file
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        if self.part_file:
-            # Ensure data is flushed and synced to disk before closing
-            self.part_file.flush()
-            os.fsync(self.part_file.fileno())
-            self.part_file.close()
-        if exc_type:
-            if self.rm_part_on_exc:
-                try:
-                    os.unlink(self.part_path)
-                except Exception:
-                    pass  # avoid masking original error
-            return
+        failed = exc_type is not None
         try:
-            atomic_rename(self.part_path, self.dest_path,
-                          overwrite=self.overwrite)
-        except OSError:
-            if self.rm_part_on_exc:
+            if self.part_file:
+                # Ensure data is flushed and synced to disk before closing
+                try:
+                    self.part_file.flush()
+                    os.fsync(self.part_file.fileno())
+                finally:
+                    self.part_file.close()
+            if not failed:
+                atomic_rename(self.part_path, self.dest_path,
+                              overwrite=self.overwrite)
+        except BaseException:
+            failed = True
+            raise  # could not save destination file
+        finally:
+            if failed and self.rm_part_on_exc:
                 try:
                     os.unlink(self.part_path)
                 except Exception:
                     pass  # avoid masking original error
-            raise  # could not save destination file
         return
 
 
@@ -531,10 +531,12 @@ def iter_find_files(directory, patterns, ignored=None, include_dirs=False, max_d
         ignored = [ignored]
     ign_re = re.compile('|'.join([fnmatch.translate(p) for p in ignored]))
     directory = os.fspath(directory)
-    start_depth = len(directory.split(os.path.sep))
     for root, dirs, files in os.walk(directory):
-        if max_depth is not None and (len(root.split(os.path.sep)) - start_depth) > max_depth:
-            continue
+        if max_depth is not None:
+            rel_root = os.path.relpath(root, directory)
+            depth = 0 if rel_root == os.curdir else rel_root.count(os.path.sep) + 1
+            if depth > max_depth:
+                continue
         if include_dirs:
             for basename in dirs:
                 if pats_re.match(basename):

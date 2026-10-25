@@ -29,6 +29,60 @@ def test_fileperms():
     assert int(FilePerms()) == 0
 
 
+def test_fileperms_from_int_leading_zero_groups():
+    assert int(FilePerms.from_int(0o007)) == 0o007
+    assert FilePerms.from_int(0o070).group == 'rwx'
+    assert FilePerms.from_int(0o070).user == ''
+
+
+def test_fileperms_revoke():
+    fp = FilePerms(user='rw', other='r')
+    fp.other = ''
+    assert int(fp) == 0o600
+    fp.user = 'r'
+    assert int(fp) == 0o400
+
+
+class _FlushFailingFile:
+    def __init__(self, f):
+        self.f = f
+
+    def write(self, data):
+        return self.f.write(data)
+
+    def fileno(self):
+        return self.f.fileno()
+
+    def flush(self):
+        raise OSError('simulated flush failure')
+
+    def close(self):
+        self.f.close()
+
+
+class _FlushFailingSaver(fileutils.AtomicSaver):
+    def _open_part_file(self):
+        super()._open_part_file()
+        self.real_part_file = self.part_file
+        self.part_file = _FlushFailingFile(self.real_part_file)
+
+
+def test_atomicsaver_flush_failure_cleans_up(tmp_path):
+    dest = tmp_path / 'output.bin'
+    saver = _FlushFailingSaver(str(dest))
+    try:
+        with saver as f:
+            f.write(b'data')
+    except OSError as e:
+        assert 'simulated flush failure' in str(e)
+    else:
+        raise AssertionError('expected OSError from flush')
+    assert saver.real_part_file.closed
+    assert not os.path.exists(saver.part_path)
+    assert not dest.exists()
+
+
+
 def test_atomicsaver_pathlike(tmp_path):
     dest = tmp_path / 'output.bin'
     with fileutils.AtomicSaver(dest) as f:
@@ -52,6 +106,20 @@ def test_iter_find_files():
     boltons_parent = os.path.dirname(BOLTONS_PATH)
     assert 'fileutils.py' in _to_baseless_list(iter_find_files(boltons_parent, patterns=['*.py']))
     assert 'fileutils.py' not in _to_baseless_list(iter_find_files(boltons_parent, patterns=['*.py'], max_depth=0))
+
+
+def test_iter_find_files_trailing_sep(tmp_path):
+    sub2 = tmp_path / 'sub' / 'sub2'
+    sub2.mkdir(parents=True)
+    for path in (tmp_path / 'a.txt', tmp_path / 'sub' / 'b.txt', sub2 / 'c.txt'):
+        path.write_text('x')
+
+    def _names(directory):
+        return sorted(os.path.basename(p) for p in
+                      iter_find_files(directory, '*.txt', max_depth=1))
+
+    assert _names(str(tmp_path)) == ['a.txt', 'b.txt']
+    assert _names(str(tmp_path) + os.path.sep) == ['a.txt', 'b.txt']
 
 
 def test_rotate_file_no_rotation(tmp_path):

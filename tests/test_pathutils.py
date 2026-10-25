@@ -1,4 +1,11 @@
+import os
+import subprocess
+import sys
 from os.path import expanduser, join, normpath
+
+import pytest
+
+import boltons
 
 from boltons.pathutils import augpath, shrinkuser, expandpath
 
@@ -29,6 +36,18 @@ def test_shrinkuser():
     assert shrinkuser(home + '/projects', home='$HOME') == join('$HOME', 'projects')
     assert shrinkuser(home, home='$HOME') == '$HOME'
     assert shrinkuser('/etc/passwd') == normpath('/etc/passwd')
+
+
+@pytest.mark.skipif(os.name != 'posix', reason='HOME drives expanduser on POSIX only')
+def test_shrinkuser_root_home():
+    # A subprocess with HOME=/ avoids patching os.environ in this process.
+    code = ("from boltons.pathutils import shrinkuser; "
+            "print(shrinkuser('/project/file')); print(shrinkuser('/'))")
+    env = dict(os.environ, HOME='/')
+    boltons_parent = os.path.dirname(os.path.dirname(os.path.abspath(boltons.__file__)))
+    env['PYTHONPATH'] = os.pathsep.join(filter(None, [boltons_parent, env.get('PYTHONPATH')]))
+    out = subprocess.check_output([sys.executable, '-c', code], env=env, text=True)
+    assert out.splitlines() == ['~/project/file', '~']
 
 
 def test_expandpath(monkeypatch):
