@@ -134,6 +134,8 @@ class Bits:
     * list of bools -- good for iterating over or treating as flags
     * hex/bin string -- good for human readability
 
+    An explicit *len_* must be non-negative; zero represents an empty bit string.
+
     '''
     __slots__ = ('val', 'len')
 
@@ -161,6 +163,8 @@ class Bits:
             raise ValueError('Bits cannot represent negative values')
         if len_ is None:
             len_ = len(f'{val:b}')
+        if len_ < 0:
+            raise ValueError('Bits length must be non-negative')
         if val >= 2 ** len_:
             raise ValueError(f'value {val} cannot be represented with {len_} bits')
         self.val = val  # data is stored internally as integer

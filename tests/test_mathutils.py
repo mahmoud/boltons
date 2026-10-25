@@ -1,4 +1,4 @@
-from pytest import raises
+from pytest import raises, mark
 from boltons.mathutils import clamp, ceil, floor, Bits
 import math
 
@@ -127,6 +127,23 @@ def test_bits_len_bound():
         Bits(4, 2)
     with raises(ValueError):
         Bits(1, 0)
+
+
+@mark.parametrize('value', [0, '', '0', '0x0', b'0', [], [False]])
+@mark.parametrize('length', [-1, -2, -1000])
+def test_bits_rejects_negative_length(value, length):
+    with raises(ValueError, match='length must be non-negative'):
+        Bits(value, length)
+
+
+def test_bits_explicit_non_negative_length():
+    assert Bits(0, 0) == Bits('')
+    assert Bits(0, 1) == Bits('0')
+    assert Bits(0, 4) == Bits('0000')
+    assert Bits(3, 4) == Bits('0011')
+    assert Bits.from_int(0, 0) == Bits('')
+    with raises(ValueError, match='length must be non-negative'):
+        Bits.from_int(0, -1)
 
 
 def test_empty_bits_conversions():
