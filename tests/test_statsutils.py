@@ -43,3 +43,28 @@ def test_histogram_zero_interquartile_range():
     for data in ([5] * 10, [0] * 10 + [100]):
         counts = Stats(data).get_histogram_counts()
         assert counts == [(float(min(data)), len(data))]
+
+
+def test_sorted_measures_keep_data_order():
+    # see #534
+    stats = Stats([2, 1, 2, 1])
+    assert stats.median == 1.5
+    assert stats.mode == 2
+    assert stats.data == [2, 1, 2, 1]
+
+
+def test_clear_cache_resets_is_sorted():
+    # see #570
+    stats = Stats([1, 2, 3], is_sorted=True)
+    assert stats.min == 1
+    stats.data.append(0)
+    stats.clear_cache()
+    assert stats.min == 0
+    assert stats.median == 1.5
+
+
+def test_format_histogram_counts_all_zero():
+    # see #529
+    from boltons.statsutils import format_histogram_counts
+
+    assert format_histogram_counts([(0.0, 0), (1.0, 0)]) == '0.0: 0 |\n1.0: 0 |'
