@@ -401,6 +401,42 @@ class TestSpooledStringIO(TestCase, BaseTestMixin, AssertionsMixin):
                     self.assertEqual(stream.write(''), 0)
                     self.assertEqual(stream.getvalue(), 'a\u2603b')
 
+    def test_readline_zero_returns_empty_and_does_not_consume(self):
+        """readline(0) must return '' without consuming input (StringIO parity)"""
+        for rolled in (False, True):
+            for payload in ('', 'first\nlast', 'first\r\nlast', 'no newline',
+                            'e\u2603\nlast'):
+                with self.subTest(rolled=rolled, payload=payload):
+                    with ioutils.SpooledStringIO() as stream:
+                        stream.write(payload)
+                        if rolled:
+                            stream.rollover()
+                        for position in (0, min(2, len(payload)), len(payload)):
+                            stream.seek(position)
+                            self.assertEqual(stream.readline(0), '')
+                            self.assertEqual(stream.tell(), position)
+                            self.assertEqual(stream.read(), payload[position:])
+
+    def test_readline_sizes_match_stringio(self):
+        """readline sizes behave like StringIO in memory and on disk"""
+        import io as _io
+        payload = 'first\nlast'
+        for rolled in (False, True):
+            for size in (None, -1, -2, 0, 1, 3, 100):
+                with self.subTest(rolled=rolled, size=size):
+                    with ioutils.SpooledStringIO() as stream:
+                        stream.write(payload)
+                        stream.seek(0)
+                        if rolled:
+                            stream.rollover()
+                        reference = _io.StringIO(payload)
+                        expected = (reference.readline() if size is None
+                                    else reference.readline(size))
+                        got = (stream.readline() if size is None
+                               else stream.readline(size))
+                        self.assertEqual(got, expected)
+                        self.assertEqual(stream.tell(), reference.tell())
+
     def test_relative_backwards_seek_uses_character_position(self):
         for rolled in (False, True):
             with self.subTest(rolled=rolled):
