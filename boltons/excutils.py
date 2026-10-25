@@ -124,7 +124,7 @@ class ExceptionCauseMixin(Exception):
     def _get_trace_str(self):
         if not self.cause:
             return super().__repr__()
-        if self.full_trace:
+        if getattr(self, 'full_trace', None):
             return ''.join(traceback.format_list(self.full_trace))
         return ''
 
