@@ -157,7 +157,9 @@ def split_iter(src, sep=None, maxsplit=None):
 
     if maxsplit is not None:
         maxsplit = int(maxsplit)
-        if maxsplit == 0:
+        if maxsplit < 0:
+            maxsplit = None
+        elif maxsplit == 0:
             yield list(src)
             return
 
@@ -358,6 +360,40 @@ def chunked_iter(src, size, **kw):
     return
 
 
+def chunked_filter(src, size, key=None):
+    """Filters *src* in *size*-sized batches, calling *key* once per
+    batch rather than once per item. *key* receives a list of up to
+    *size* items and must return an iterable of the same length, one
+    truthy or falsy flag per item; items with a truthy flag are
+    yielded. If *key* is ``None``, items are filtered by their own
+    truthiness.
+
+    This is useful when the predicate is expensive per call but cheap
+    per item, such as a database or API lookup:
+
+    >>> processed_ids = {2, 5}
+    >>> def is_new(batch):
+    ...     return [item_id not in processed_ids for item_id in batch]
+    >>> list(chunked_filter(range(1, 8), 3, key=is_new))
+    [1, 3, 4, 6, 7]
+    >>> list(chunked_filter([0, 1, '', 'a', None], 2))
+    [1, 'a']
+
+    See :func:`chunked_iter` for more on how *src* is chunked.
+    """
+    if key is not None and not callable(key):
+        raise TypeError('expected key to be callable or None, not: %r' % key)
+    for chunk in chunked_iter(src, size):
+        allowed = chunk if key is None else list(key(chunk))
+        if len(allowed) != len(chunk):
+            raise ValueError('expected key to return %d flags, got %d'
+                             % (len(chunk), len(allowed)))
+        for item, keep in zip(chunk, allowed):
+            if keep:
+                yield item
+    return
+
+
 def chunk_ranges(input_size, chunk_size, input_offset=0, overlap_size=0, align=False):
     """Generates *chunk_size*-sized chunk ranges for an input with length *input_size*.
     Optionally, a start of the input can be set via *input_offset*, and
@@ -393,7 +429,11 @@ def chunk_ranges(input_size, chunk_size, input_offset=0, overlap_size=0, align=F
         input_offset, 'input_offset', strictly_positive=False)
     overlap_size = _validate_positive_int(
         overlap_size, 'overlap_size', strictly_positive=False)
-
+    if overlap_size >= chunk_size:
+        raise ValueError('expected overlap_size < chunk_size, not %r'
+                         % overlap_size)
+    if input_size == 0:
+        return
     input_stop = input_offset + input_size
 
     if align:
@@ -648,7 +688,7 @@ def backoff_iter(start, stop, count=None, factor=2.0, jitter=False):
     if stop < start:
         raise ValueError('expected stop >= start, not %r' % stop)
     if count is None:
-        denom = start if start else 1
+        denom = start if start else min(stop, 1.0)
         if factor == 1.0:
             if start != stop:
                 raise ValueError('expected factor > 1.0 when count is None'
@@ -732,7 +772,12 @@ def bucketize(src, key=bool, value_transform=None, key_filter=None):
     if not is_iterable(src):
         raise TypeError('expected an iterable')
     elif isinstance(key, list):
-        if len(key) != len(src):
+        try:
+            src_len = len(src)
+        except TypeError:
+            src = list(itertools.islice(src, len(key) + 1))
+            src_len = len(src)
+        if len(key) != src_len:
             raise ValueError("key and src have to be the same length")
         src = zip(key, src)
 
@@ -913,7 +958,7 @@ def redundant(src, key=None, groups=False):
     redundant_order = []
     redundant_groups = {}
     for i in src:
-        k = key_func(i) if key else i
+        k = key_func(i) if key is not None else i
         if k not in seen:
             seen[k] = i
         else:
@@ -1063,7 +1108,15 @@ def default_enter(path, key, value):
     elif isinstance(value, Mapping):
         return value.__class__(), ItemsView(value)
     elif isinstance(value, Sequence):
-        return value.__class__(), enumerate(value)
+        try:
+            new_parent = value.__class__()
+        except TypeError:
+            if not hasattr(value, '_make'):
+                # range, memoryview, and other sequences that can't
+                # be built empty are not traversed
+                return value, False
+            new_parent = value  # namedtuple, rebuilt in default_exit
+        return new_parent, enumerate(value)
     elif isinstance(value, Set):
         return value.__class__(), enumerate(value)
     else:
@@ -1080,6 +1133,8 @@ def default_exit(path, key, old_parent, new_parent, new_items):
         new_parent.update(new_items)
     elif isinstance(new_parent, Sequence):
         vals = [v for i, v in new_items]
+        if hasattr(new_parent, '_make'):
+            return new_parent._make(vals)  # namedtuples
         try:
             new_parent.extend(vals)
         except AttributeError:
@@ -1617,11 +1672,11 @@ def untyped_sorted(iterable, key=None, reverse=False):
         slots = ('obj',)
 
         def __init__(self, obj):
-            self.obj = obj
+            self.obj = key(obj) if key is not None else obj
 
         def __lt__(self, other):
-            obj = key(self.obj) if key is not None else self.obj
-            other = key(other.obj) if key is not None else other.obj
+            obj = self.obj
+            other = other.obj
             try:
                 ret = obj < other
             except TypeError:
