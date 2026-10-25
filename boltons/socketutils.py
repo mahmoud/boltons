@@ -379,6 +379,8 @@ class BufferedSocket:
         :exc:`ConnectionClosed` will be raised.
         """
         with self._recv_lock:
+            if size == 0:
+                return b''
             if timeout is _UNSET:
                 timeout = self.timeout
             chunks = []
@@ -690,8 +692,8 @@ class NetstringSocket:
 
         if size > maxsize:
             raise NetstringMessageTooLong(size, maxsize)
-        payload = self.bsock.recv_size(size)
-        if self.bsock.recv(1) != b',':
+        payload = self.bsock.recv_size(size, timeout=timeout)
+        if self.bsock.recv(1, timeout=timeout) != b',':
             raise NetstringProtocolError("expected trailing ',' after message")
 
         return payload

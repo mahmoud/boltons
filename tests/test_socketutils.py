@@ -220,6 +220,18 @@ def test_basic_nonblocking():
     return
 
 
+def test_recv_size_zero():
+    x, y = socket.socketpair()
+    x.setblocking(0)
+    bs = BufferedSocket(x)
+    assert bs.recv_size(0) == b''
+
+    y.sendall(b'abc')
+    assert bs.recv_size(1) == b'a'
+    assert bs.recv_size(0) == b''
+    assert bs.recv_size(2) == b'bc'
+
+
 def test_simple_buffered_socket_passthroughs():
     x, y = socket.socketpair()
     bs = BufferedSocket(x)
@@ -423,3 +435,17 @@ def test_socketutils_netstring_timeout():
 
     client.write_ns(b'shutdown')
     print("no timeout occurred - all good.")
+
+
+def test_netstring_read_ns_timeout_covers_payload():
+    # the read_ns timeout must apply to the payload and trailing
+    # comma, not just the size prefix (the underlying BufferedSocket
+    # defaults to a 10 second timeout)
+    for partial in (b'5:hel', b'5:hello'):
+        x, y = socket.socketpair()
+        ns = NetstringSocket(x)
+        y.sendall(partial)
+        start = time.time()
+        with pytest.raises(Timeout):
+            ns.read_ns(timeout=0.05)
+        assert time.time() - start < 2
