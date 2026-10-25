@@ -306,8 +306,9 @@ class OrderedMultiDict(dict):
             seen = set()
             seen_add = seen.add
             for k, v in E:
-                if k not in seen and k in self:
-                    del self[k]
+                if k not in seen:
+                    if k in self:
+                        del self[k]
                     seen_add(k)
                 self_add(k, v)
         for k in F:
@@ -357,14 +358,13 @@ class OrderedMultiDict(dict):
         if isinstance(other, OrderedMultiDict):
             selfi = self.iteritems(multi=True)
             otheri = other.iteritems(multi=True)
-            zipped_items = zip_longest(selfi, otheri, fillvalue=(None, None))
-            for (selfk, selfv), (otherk, otherv) in zipped_items:
+            zipped_items = zip_longest(selfi, otheri, fillvalue=_MISSING)
+            for selfitem, otheritem in zipped_items:
+                if selfitem is _MISSING or otheritem is _MISSING:
+                    return False
+                (selfk, selfv), (otherk, otherv) = selfitem, otheritem
                 if selfk != otherk or selfv != otherv:
                     return False
-            if not(next(selfi, _MISSING) is _MISSING
-                   and next(otheri, _MISSING) is _MISSING):
-                # leftovers  (TODO: watch for StopIteration?)
-                return False
             return True
         elif hasattr(other, 'keys'):
             for selfk in self:
@@ -883,21 +883,20 @@ class OneToOne(dict):
         return self[key]
 
     def update(self, dict_or_iterable, **kw):
-        keys_vals = []
-        if isinstance(dict_or_iterable, dict):
-            for val in dict_or_iterable.values():
-                hash(val)
-                keys_vals = list(dict_or_iterable.items())
+        if callable(getattr(dict_or_iterable, 'keys', None)):
+            keys_vals = [(k, dict_or_iterable[k]) for k in dict_or_iterable.keys()]
         else:
-            for key, val in dict_or_iterable:
-                hash(key)
-                hash(val)
-                keys_vals = list(dict_or_iterable)
-        for val in kw.values():
-            hash(val)
+            keys_vals = list(dict_or_iterable)
         keys_vals.extend(kw.items())
         for key, val in keys_vals:
+            hash(key)
+            hash(val)
+        for key, val in keys_vals:
             self[key] = val
+
+    def __ior__(self, other):
+        self.update(other)
+        return self
 
     def __repr__(self):
         cn = self.__class__.__name__
@@ -960,12 +959,12 @@ class ManyToMany:
             other = iterable
             for k in other.data:
                 if k not in self.data:
-                    self.data[k] = other.data[k]
+                    self.data[k] = other.data[k].copy()
                 else:
                     self.data[k].update(other.data[k])
             for k in other.inv.data:
                 if k not in self.inv.data:
-                    self.inv.data[k] = other.inv.data[k]
+                    self.inv.data[k] = other.inv.data[k].copy()
                 else:
                     self.inv.data[k].update(other.inv.data[k])
         elif callable(getattr(iterable, 'keys', None)):
@@ -977,6 +976,7 @@ class ManyToMany:
         return
 
     def add(self, key, val):
+        hash(val)  # validate before creating the key's set
         if key not in self.data:
             self.data[key] = set()
         self.data[key].add(val)
@@ -998,7 +998,9 @@ class ManyToMany:
         """
         if key not in self.data:
             return
-        self.data[newkey] = fwdset = self.data.pop(key)
+        hash(newkey)
+        fwdset = self.data.pop(key)
+        self.data.setdefault(newkey, set()).update(fwdset)
         for val in fwdset:
             revset = self.inv.data[val]
             revset.remove(key)
