@@ -374,6 +374,18 @@ class TestSpooledStringIO(TestCase, BaseTestMixin, AssertionsMixin):
         b.write("I am b!")
         self.assertNotEqual(a, b)
 
+    def test_readline_zero_length(self):
+        for rolled in (False, True):
+            with self.subTest(rolled=rolled):
+                flo = ioutils.SpooledStringIO()
+                flo.write("a\nb")
+                if rolled:
+                    flo.rollover()
+                flo.seek(0)
+                self.assertEqual(flo.readline(0), "")
+                self.assertEqual(flo.tell(), 0)
+                self.assertEqual(flo.readline(), "a\n")
+
     def test_compare_two_equal_instances(self):
         """Make sure we can compare instances"""
         a = ioutils.SpooledStringIO()
