@@ -1389,3 +1389,11 @@ def ellipsize(text, max_len=160, *, ellipsis='…'):
     if not end:
         return text[:limit] + ellipsis
     return text[:end] + ellipsis
+
+def shorten_chars(text, width, placeholder='...'):
+    """Shorten text by characters, reserving space for the placeholder."""
+    if not text:
+        return text
+    if len(text) <= width:
+        return text
+    return text[:max(0, width - len(placeholder))] + placeholder

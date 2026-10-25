@@ -397,3 +397,23 @@ def test_args2cmd_sep():
     assert strutils.args2cmd(['aa', 'bb']) == 'aa bb'
     assert strutils.args2cmd(['aa', 'bb'], sep='|') == 'aa|bb'
     assert strutils.args2cmd(['a a', 'bb'], sep='|') == '"a a"|bb'
+
+def test_shorten_chars():
+    from boltons.strutils import shorten_chars
+
+    assert shorten_chars("123456789", width=8) == "12345..."
+    assert shorten_chars("123456789", width=9) == "123456789"
+    assert shorten_chars("hello", width=10) == "hello"
+    assert shorten_chars("", width=8) == ""
+    assert shorten_chars(None, width=8) is None
+    assert shorten_chars("abcdefghij", width=6, placeholder="..") == "abcd.."
+
+def test_shorten_chars_edge_cases():
+    from boltons.strutils import shorten_chars
+
+    assert shorten_chars("hello world", width=8) == "hello..."
+    assert shorten_chars("abcdefgh", width=4, placeholder="") == "abcd"
+    assert shorten_chars("abcdefgh", width=3) == "..."
+    assert shorten_chars("abcdefgh", width=2) == "..."
+    assert shorten_chars("abcdefgh", width=0) == "..."
+    assert shorten_chars("éééééé", width=5) == "éé..."
