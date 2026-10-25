@@ -1,3 +1,6 @@
+import itertools
+import operator
+
 from pytest import mark, raises
 
 from boltons.setutils import IndexedSet, _MISSING, complement
@@ -331,3 +334,71 @@ def test_small_difference_update_unchanged():
     thing = IndexedSet(range(100))
     thing.difference_update({1, 3, 5})
     assert list(thing)[:5] == [0, 2, 4, 6, 7]
+
+
+def test_cull_trims_multiple_tail_intervals():
+    # removing a tail out of order leaves unmerged dead intervals that
+    # all have to go when the tail is trimmed
+    iset = IndexedSet(range(39))
+    for v in (0, 37, 36, 38):
+        iset.remove(v)
+    iset.add(39)
+    assert iset.index(39) == 35
+    assert iset[-1] == 39
+    assert list(iset) == list(range(1, 36)) + [39]
+
+
+def test_iset_pop_requires_int_index():
+    # 3.0 == len - 1 used to take the pop-from-end fast path
+    iset = IndexedSet(range(4))
+    with raises(TypeError):
+        iset.pop(3.0)
+    assert list(iset) == [0, 1, 2, 3]
+
+
+def test_iset_multi_arg_updates():
+    iset = IndexedSet([1, 2, 3, 4])
+    iset.difference_update({1, 2}, {2, 3})
+    assert list(iset) == [4]
+    iset = IndexedSet([1, 2, 3, 4])
+    iset.intersection_update({1, 2}, {2, 3})
+    assert list(iset) == [2]
+
+
+def test_iset_iterator_operands():
+    iset = IndexedSet([1, 2, 3, 4])
+    assert list(iset.intersection(iter([2, 3, 5]))) == [2, 3]
+    assert list(iset.difference(iter([2, 3, 5]))) == [1, 4]
+    assert list(iset.symmetric_difference(iter([2, 3, 5]))) == [1, 4, 5]
+    iset = IndexedSet([1, 2])
+    iset ^= [2, 2, 5, 5]
+    assert list(iset) == [1, 5]
+
+
+_UNIVERSE = frozenset(range(6))
+_SUBSETS = [set(), {0}, {1, 2}, {2, 3, 4}, set(range(6))]
+
+
+def _make_cset(vals, rep):
+    if rep == 'set':
+        return set(vals)
+    if rep == '+':
+        return complement(complement(set(vals)))
+    return complement(set(_UNIVERSE - vals))
+
+
+@mark.parametrize('op, ref', [
+    (operator.and_, operator.and_), (operator.iand, operator.and_),
+    (operator.xor, operator.xor), (operator.ixor, operator.xor),
+    (operator.or_, operator.or_), (operator.ior, operator.or_),
+    (operator.sub, operator.sub), (operator.isub, operator.sub)])
+def test_complement_set_identities(op, ref):
+    # every representation pair must agree with plain set math, with
+    # complement(x) materialized as (universe - x)
+    reps = [('+', '+'), ('+', '-'), ('-', '+'), ('-', '-'),
+            ('+', 'set'), ('-', 'set'), ('set', '+'), ('set', '-')]
+    for a, b in itertools.product(_SUBSETS, repeat=2):
+        for rep_a, rep_b in reps:
+            res = op(_make_cset(a, rep_a), _make_cset(b, rep_b))
+            got = {x for x in _UNIVERSE if x in res}
+            assert got == ref(a, b), (op, a, rep_a, b, rep_b)
