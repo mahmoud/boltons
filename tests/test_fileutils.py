@@ -141,7 +141,7 @@ def test_rotate_file_one_rotation(tmp_path):
 def test_rotate_file_full_rotation(tmp_path):
     file_path = tmp_path / 'test_file.txt'
     file_path.write_text('test content 0')
-    for i in range(1, 5):
+    for i in range(1, 6):
         cur_path = tmp_path / f'test_file.{i}.txt'
         cur_path.write_text(f'test content {i}')
         assert cur_path.exists()
@@ -149,16 +149,16 @@ def test_rotate_file_full_rotation(tmp_path):
     fileutils.rotate_file(file_path, keep=5)
     assert not file_path.exists()
 
-    for i in range(1, 5):
+    for i in range(1, 6):
         cur_path = tmp_path / f'test_file.{i}.txt'
         assert cur_path.read_text() == f'test content {i-1}'
 
-    assert not (tmp_path / 'test_file.5.txt').exists()
+    assert not (tmp_path / 'test_file.6.txt').exists()
 
 def test_rotate_file_full_rotation_no_ext(tmp_path):
     file_path = tmp_path / 'test_file'
     file_path.write_text('test content 0')
-    for i in range(1, 5):
+    for i in range(1, 6):
         cur_path = tmp_path / f'test_file.{i}'
         cur_path.write_text(f'test content {i}')
         assert cur_path.exists()
@@ -166,9 +166,19 @@ def test_rotate_file_full_rotation_no_ext(tmp_path):
     fileutils.rotate_file(file_path, keep=5)
     assert not file_path.exists()
 
-    for i in range(1, 5):
+    for i in range(1, 6):
         cur_path = tmp_path / f'test_file.{i}'
         assert cur_path.read_text() == f'test content {i-1}'
 
-    assert not (tmp_path / 'test_file.5').exists()
+    assert not (tmp_path / 'test_file.6').exists()
+
+
+def test_rotate_file_keep_one(tmp_path):
+    # keep=1 used to delete the backup it had just made
+    file_path = tmp_path / 'log.txt'
+    for gen in range(3):
+        file_path.write_text(f'gen {gen}')
+        fileutils.rotate_file(file_path, keep=1)
+        assert sorted(p.name for p in tmp_path.iterdir()) == ['log.1.txt']
+        assert (tmp_path / 'log.1.txt').read_text() == f'gen {gen}'
 

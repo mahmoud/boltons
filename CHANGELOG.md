@@ -91,12 +91,16 @@ _(unreleased)_
 - Fixed [`tableutils.Table.extend`][tableutils.Table.extend] not widening headerless tables for wider rows ([#497](https://github.com/mahmoud/boltons/pull/497))
 - Fixed [`tableutils.Table.to_html`][tableutils.Table.to_html] nesting bottom metadata inside the main `</table>` ([#558](https://github.com/mahmoud/boltons/pull/558))
 - Fixed [`fileutils.FilePerms.from_int`][fileutils.FilePerms.from_int] shifting permission groups when the leading groups were zero, e.g. `0o007` became `0o700` ([#484](https://github.com/mahmoud/boltons/pull/484))
-- Fixed [`fileutils.FilePerms`][fileutils.FilePerms] attribute assignment never clearing old bits, so revoking permissions left them set in the integer value ([#518](https://github.com/mahmoud/boltons/pull/518))
+- Fixed [`fileutils.FilePerms`][fileutils.FilePerms] attribute assignment never clearing old bits, so revoking permissions left them set in the integer value ([#482](https://github.com/mahmoud/boltons/pull/482), [#518](https://github.com/mahmoud/boltons/pull/518))
+- Fixed [`fileutils.rotate_file`][fileutils.rotate_file] keeping one generation fewer than *keep*; `keep=1` deleted the backup it had just made ([#483](https://github.com/mahmoud/boltons/pull/483))
 - Fixed [`fileutils.iter_find_files`][fileutils.iter_find_files] miscounting `max_depth` when *directory* has a trailing separator ([#485](https://github.com/mahmoud/boltons/pull/485))
 - Fixed [`fileutils.AtomicSaver`][fileutils.AtomicSaver] leaving the part file open and on disk when flush, fsync, or close fails ([#539](https://github.com/mahmoud/boltons/pull/539))
 - Fixed [`pathutils.shrinkuser`][pathutils.shrinkuser] not shrinking paths when the home directory is the filesystem root ([#504](https://github.com/mahmoud/boltons/pull/504))
 - Fixed [`namedutils.namedtuple`][namedutils.namedtuple] and [`namedutils.namedlist`][namedutils.namedlist] accepting alphanumeric names that are not valid identifiers (e.g. `value²`), which raised `SyntaxError` instead of `ValueError` and defeated `rename=True` ([#573](https://github.com/mahmoud/boltons/pull/573))
 - Fixed the sdist omitting the `docs/` directory ([#557](https://github.com/mahmoud/boltons/pull/557))
+- Fixed [`dictutils.OrderedMultiDict.update_extend`][dictutils.OrderedMultiDict.update_extend] keeping only each key's last value when extending a multidict with itself; mirrored in `urlutils.QueryParamDict` ([#605](https://github.com/mahmoud/boltons/pull/605))
+- Fixed [`ioutils.SpooledStringIO`][ioutils.SpooledStringIO] `readline(0)` reading a full line ([#607](https://github.com/mahmoud/boltons/pull/607))
+- Fixed conflicting `dateutil` link targets in the [`timeutils.isoparse`][timeutils.isoparse] docs ([#608](https://github.com/mahmoud/boltons/pull/608))
 
 ## 26.2.0
 
@@ -1434,3 +1438,4 @@ added in this release.
 [urlutils.URL]: https://boltons.readthedocs.io/en/latest/urlutils.html#boltons.urlutils.URL
 [urlutils.URL.navigate]: https://boltons.readthedocs.io/en/latest/urlutils.html#boltons.urlutils.URL.navigate
 [urlutils.register_scheme]: https://boltons.readthedocs.io/en/latest/urlutils.html#boltons.urlutils.register_scheme
+[dictutils.OrderedMultiDict.update_extend]: https://boltons.readthedocs.io/en/latest/dictutils.html#boltons.dictutils.OrderedMultiDict.update_extend
