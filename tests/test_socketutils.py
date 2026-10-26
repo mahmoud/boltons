@@ -38,6 +38,61 @@ def test_short_lines():
     return
 
 
+@pytest.mark.parametrize('buffered', [False, True])
+@pytest.mark.parametrize('delimiter', [b'\n', b'\r\n'])
+def test_recv_until_rejects_full_buffer_without_another_read(buffered, delimiter):
+    class ReceiveSocket:
+        def __init__(self):
+            self.recv_calls = 0
+
+        def settimeout(self, timeout):
+            pass
+
+        def recv(self, size):
+            self.recv_calls += 1
+            if not buffered and self.recv_calls == 1:
+                return b'abcd'
+            raise AssertionError('maxsize reached: do not wait for more bytes')
+
+    sock = ReceiveSocket()
+    bs = BufferedSocket(sock, timeout=None, maxsize=4)
+    if buffered:
+        bs.rbuf = b'abcd'
+    with pytest.raises(MessageTooLong):
+        bs.recv_until(delimiter)
+    assert bs.getrecvbuffer() == b'abcd'
+    assert sock.recv_calls == (0 if buffered else 1)
+
+
+@pytest.mark.parametrize('with_delimiter', [False, True])
+def test_recv_until_delimiter_at_buffer_limit(with_delimiter):
+    class BufferedOnlySocket:
+        def settimeout(self, timeout):
+            pass
+
+        def recv(self, size):
+            raise AssertionError('delimiter is already buffered')
+
+    bs = BufferedSocket(BufferedOnlySocket(), timeout=None, maxsize=4)
+    bs.rbuf = b'ab\r\nnext'
+    expected = b'ab\r\n' if with_delimiter else b'ab'
+    assert bs.recv_until(b'\r\n', with_delimiter=with_delimiter) == expected
+    assert bs.getrecvbuffer() == b'next'
+
+
+def test_recv_until_limit_on_open_connection():
+    x, y = socket.socketpair()
+    with x, y:
+        bs = BufferedSocket(x, timeout=0.05, maxsize=4)
+        y.sendall(b'abcd')
+        with pytest.raises(MessageTooLong):
+            bs.recv_until(b'\n')
+        assert bs.getrecvbuffer() == b'abcd'
+        assert bs.recv_size(4) == b'abcd'
+        y.sendall(b'e\n')
+        assert bs.recv_until(b'\n') == b'e'
+
+
 def test_multibyte_delim():
     """Primarily tests recv_until with various maxsizes and True/False
     for with_delimiter.
