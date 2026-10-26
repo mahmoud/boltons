@@ -882,7 +882,7 @@ class OneToOne(dict):
             self[key] = default
         return self[key]
 
-    def update(self, dict_or_iterable, **kw):
+    def update(self, dict_or_iterable=(), **kw):
         if callable(getattr(dict_or_iterable, 'keys', None)):
             keys_vals = [(k, dict_or_iterable[k]) for k in dict_or_iterable.keys()]
         else:
