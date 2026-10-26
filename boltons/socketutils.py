@@ -685,6 +685,9 @@ class NetstringSocket:
                                             timeout=timeout,
                                             maxsize=msgsize_maxsize)
         try:
+            if (not size_prefix.isdigit()
+                    or (len(size_prefix) > 1 and size_prefix.startswith(b'0'))):
+                raise ValueError('invalid netstring size syntax')
             size = int(size_prefix)
         except ValueError:
             raise NetstringInvalidSize('netstring message size must be valid'
