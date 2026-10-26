@@ -10,6 +10,42 @@ from boltons.funcutils import wraps, FunctionBuilder, update_wrapper, copy_funct
 import boltons.funcutils as funcutils
 
 
+@pytest.mark.parametrize('copy_dict', [False, True])
+def test_copy_function_preserves_metadata(copy_dict):
+    def original(value: int = 3, *, flag: bool = True) -> int:
+        return value if flag else 0
+
+    original.__doc__ = 'Updated documentation.'
+    original.__qualname__ = 'Public.original'
+    original.__module__ = 'public_api'
+    original.custom = ['shared value']
+    copied = copy_function(original, copy_dict=copy_dict)
+    assert copied.__doc__ == original.__doc__
+    assert copied.__qualname__ == original.__qualname__
+    assert copied.__module__ == original.__module__
+    assert copied.__annotations__ == original.__annotations__
+    assert inspect.signature(copied) == inspect.signature(original)
+    assert copied() == 3
+    assert copied(flag=False) == 0
+    copied.__annotations__['extra'] = str
+    assert 'extra' not in original.__annotations__
+    assert hasattr(copied, 'custom') is copy_dict
+    if copy_dict:
+        assert copied.custom is original.custom
+    assert not hasattr(copied, '__wrapped__')
+
+
+@pytest.mark.skipif(sys.version_info < (3, 14), reason='lazy function annotations require Python 3.14')
+def test_copy_function_keeps_annotations_lazy():
+    namespace = {}
+    exec('def original(value: Missing) -> Missing: return value', namespace)
+    original = namespace['original']
+    copied = copy_function(original)
+    assert copied.__annotate__ is original.__annotate__
+    namespace['Missing'] = int
+    assert copied.__annotations__ == {'value': int, 'return': int}
+
+
 def wrappable_func(a, b):
     return a, b
 
