@@ -268,7 +268,7 @@ class Table:
         self.headers = list(headers) if headers else []
         self.metadata = metadata or {}
         self._data = []
-        self._width = 0
+        self._width = len(self.headers)
 
         self.extend(data)
 
@@ -279,7 +279,7 @@ class Table:
         if not data:
             return
         self._data.extend(data)
-        self._set_width(reset=not self.headers)
+        self._set_width(reset=True)
         self._fill()
 
     def _set_width(self, reset=False):
@@ -287,10 +287,8 @@ class Table:
             self._width = 0
         if self._width:
             return
-        if self.headers:
-            self._width = len(self.headers)
-            return
-        self._width = max([len(d) for d in self._data], default=0)
+        self._width = max(len(self.headers),
+                          max((len(d) for d in self._data), default=0))
 
     def _fill(self):
         width, filler = self._width, [None]
