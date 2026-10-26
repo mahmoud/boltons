@@ -536,6 +536,7 @@ def iter_find_files(directory, patterns, ignored=None, include_dirs=False, max_d
             rel_root = os.path.relpath(root, directory)
             depth = 0 if rel_root == os.curdir else rel_root.count(os.path.sep) + 1
             if depth > max_depth:
+                dirs[:] = []
                 continue
         if include_dirs:
             for basename in dirs:
@@ -544,6 +545,10 @@ def iter_find_files(directory, patterns, ignored=None, include_dirs=False, max_d
                         continue
                     filename = os.path.join(root, basename)
                     yield filename
+
+        if max_depth is not None and depth >= max_depth:
+            # os.walk uses this list to decide which subdirectories to visit.
+            dirs[:] = []
 
         for basename in files:
             if pats_re.match(basename):

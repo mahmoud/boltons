@@ -1,6 +1,8 @@
 import os.path
 import pathlib
 
+import pytest
+
 
 
 from boltons import fileutils
@@ -9,6 +11,37 @@ from boltons.strutils import removeprefix
 
 
 BOLTONS_PATH = os.path.dirname(os.path.abspath(fileutils.__file__))
+
+
+@pytest.mark.parametrize('max_depth', [-1, 0, 1, 2, None])
+@pytest.mark.parametrize('include_dirs', [False, True])
+def test_iter_find_files_prunes_depth(tmp_path, monkeypatch, max_depth, include_dirs):
+    files = {'root.txt': 0, 'child/child.txt': 1, 'sibling/sibling.txt': 1,
+             'child/grand/grand.txt': 2, 'child/grand/great/great.txt': 3}
+    directories = {'child': 1, 'sibling': 1, 'child/grand': 2,
+                   'child/grand/great': 3}
+    for name in files:
+        path = tmp_path / name
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(name)
+    visited = set()
+    walk = os.walk
+
+    def recording_walk(*args, **kwargs):
+        for root, dirs, entries in walk(*args, **kwargs):
+            visited.add(pathlib.Path(root).relative_to(tmp_path).as_posix())
+            yield root, dirs, entries
+
+    monkeypatch.setattr(os, 'walk', recording_walk)
+    result = {pathlib.Path(path).relative_to(tmp_path).as_posix()
+              for path in iter_find_files(tmp_path, '*', include_dirs=include_dirs,
+                                          max_depth=max_depth)}
+    limit = 3 if max_depth is None else max_depth
+    expected = {path for path, depth in files.items() if depth <= limit}
+    if include_dirs:
+        expected.update(path for path, depth in directories.items() if depth - 1 <= limit)
+    assert result == expected
+    assert visited == {'.'} | {path for path, depth in directories.items() if depth <= limit}
 
 
 def test_fileperms():
