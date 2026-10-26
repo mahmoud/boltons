@@ -1,4 +1,7 @@
+import io
 import os
+
+import pytest
 
 from boltons.jsonutils import (JSONLIterator,
                                DEFAULT_BLOCKSIZE,
@@ -37,6 +40,25 @@ def test_jsonl_iterator():
     jsonl_iter = JSONLIterator(open(JSONL_DATA_PATH), reverse=True)
     jsonl_list = list(jsonl_iter)
     assert jsonl_list == ref
+
+
+@pytest.mark.parametrize('blocksize', [0, -1])
+@pytest.mark.parametrize('stream_type', [io.BytesIO, io.StringIO])
+@pytest.mark.parametrize('text', ['', 'a\nb'])
+def test_reverse_iter_lines_rejects_nonpositive_blocksize(blocksize, stream_type, text):
+    data = text.encode() if stream_type is io.BytesIO else text
+    with stream_type(data) as raw:
+        stream = _CappedReadFile(raw, max_reads=8)
+        with pytest.raises(ValueError, match='blocksize'):
+            list(reverse_iter_lines(stream, blocksize=blocksize))
+
+
+@pytest.mark.parametrize('blocksize', [1, 2, 7])
+@pytest.mark.parametrize('stream_type', [io.BytesIO, io.StringIO])
+def test_reverse_iter_lines_positive_blocksize(blocksize, stream_type):
+    data = b'a\nb' if stream_type is io.BytesIO else 'a\nb'
+    with stream_type(data) as stream:
+        assert list(reverse_iter_lines(stream, blocksize=blocksize)) == data.splitlines()[::-1]
 
 
 class _CappedReadFile:
