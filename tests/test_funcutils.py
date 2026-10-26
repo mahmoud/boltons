@@ -1,7 +1,11 @@
 import threading
 import time
+
+import pytest
+
 from boltons.funcutils import (copy_function,
                                total_ordering,
+                               partial_ordering,
                                format_invocation,
                                InstancePartial,
                                CachedInstancePartial,
@@ -52,6 +56,72 @@ def test_copy_function():
     callee_copy = copy_function(callee)
     assert callee is not callee_copy
     assert callee() == callee_copy()
+
+
+def test_partial_ordering_from_object():
+    @partial_ordering
+    class PartiallyOrdered:
+        def __init__(self, values):
+            self.values = set(values)
+
+        def __le__(self, other):
+            return self.values <= other.values
+
+        def __ge__(self, other):
+            return self.values >= other.values
+
+    values = [{1}, {1, 2}, {2}]
+    for left in values:
+        for right in values:
+            a, b = PartiallyOrdered(left), PartiallyOrdered(right)
+            assert (a < b) == (left < right)
+            assert (a > b) == (left > right)
+            assert (a == b) == (left == right)
+            assert (a != b) == (left != right)
+            assert (a <= b) == (left <= right)
+            assert (a >= b) == (left >= right)
+    with pytest.raises(TypeError):
+        hash(PartiallyOrdered({1}))
+
+
+@pytest.mark.parametrize('inherited', [False, True])
+def test_partial_ordering_preserves_defined_comparisons(inherited):
+    class Defined:
+        def __lt__(self, other):
+            return 'custom lt'
+
+        def __gt__(self, other):
+            return 'custom gt'
+
+        def __eq__(self, other):
+            return 'custom eq'
+
+        def __hash__(self):
+            return 42
+
+    cls = type('Child', (Defined,), {}) if inherited else Defined
+    decorated = partial_ordering(cls)
+    assert decorated is cls
+    a, b = cls(), cls()
+    assert (a < b) == 'custom lt'
+    assert (a > b) == 'custom gt'
+    assert (a == b) == 'custom eq'
+    assert hash(a) == 42
+
+
+def test_partial_ordering_preserves_custom_hash():
+    @partial_ordering
+    class Hashable:
+        def __le__(self, other):
+            return True
+
+        def __ge__(self, other):
+            return True
+
+        def __hash__(self):
+            return 42
+
+    assert hash(Hashable()) == 42
 
 
 def test_total_ordering():
