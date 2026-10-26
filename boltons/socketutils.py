@@ -337,7 +337,7 @@ class BufferedSocket:
                         else:
                             rbuf_offset = offset + len_delimiter
                         break
-                    elif len(recvd) > maxsize:
+                    elif len(recvd) >= maxsize:
                         raise MessageTooLong(maxsize, delimiter)  # see rbuf
                     if timeout:
                         cur_timeout = timeout - (time.time() - start)
