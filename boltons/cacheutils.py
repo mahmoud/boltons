@@ -703,12 +703,12 @@ class ThresholdCounter:
 
         Cache compaction is triggered every *ceil(1/threshold)* additions.
         """
-        self.total += 1
         try:
             self._count_map[key][0] += 1
         except KeyError:
             self._count_map[key] = [1, self._cur_bucket - 1]
 
+        self.total += 1
         if self.total % self._thresh_count == 0:
             self._count_map = {k: v for k, v in self._count_map.items()
                                     if sum(v) > self._cur_bucket}
