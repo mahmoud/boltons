@@ -181,11 +181,18 @@ class JSONLIterator:
     def _align_to_newline(self):
         "Aligns the file object's position to the next newline."
         fo, bsize = self._file_obj, self._blocksize
-        newline = b'\n' if isinstance(fo.read(0), bytes) else '\n'
+        # Relative positions are byte offsets for text files, and can land
+        # inside a multibyte character. Scan the buffer without decoding, then
+        # seek through the wrapper to reset its decoder at the line boundary.
+        try:
+            scan = fo.buffer
+        except (AttributeError, io.UnsupportedOperation):
+            scan = fo
+        newline = b'\n' if isinstance(scan.read(0), bytes) else '\n'
         cur, total_read = newline[:0], 0
         cur_pos = fo.tell()
         while newline not in cur:
-            cur = fo.read(bsize)
+            cur = scan.read(bsize)
             if not cur:
                 # no newline until EOF; a partial trailing line was
                 # never yieldable from a mid-line seek anyway
