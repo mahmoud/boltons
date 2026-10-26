@@ -81,6 +81,17 @@ def test_namedlist_custom_state(clone):
     assert restored.tag == 'metadata'
 
 
+@pytest.mark.parametrize('typename', ['type', 'iter'])
+@pytest.mark.parametrize('clone', [copy.copy, copy.deepcopy])
+def test_namedlist_copy_builtin_type_names(typename, clone):
+    record_type = namedlist(typename, 'x y')
+    original = record_type(1, 2)
+    restored = clone(original)
+    assert type(restored) is record_type
+    assert restored is not original
+    assert list(restored) == [1, 2]
+
+
 def test_namedtuple_pickle():
     p = Point(x=10, y=20)
     assert p == loads(dumps(p))

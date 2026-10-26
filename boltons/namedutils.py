@@ -275,7 +275,8 @@ class {typename}(list):
 
     def __reduce_ex__(self, protocol):
         # Memoize the empty instance before restoring possibly recursive items.
-        return (_list.__new__, (type(self),), self.__getstate__(), iter(self))
+        return (_list.__new__, (self.__class__,),
+                self.__getstate__(), self.__iter__())
 
     __dict__ = _property(_asdict)
 
