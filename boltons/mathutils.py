@@ -35,6 +35,7 @@ built-in :mod:`math` module.
 from math import ceil as _ceil, floor as _floor
 import bisect
 import binascii
+import operator
 
 
 def clamp(x, lower=float('-inf'), upper=float('inf')):
@@ -161,6 +162,7 @@ class Bits:
             raise ValueError('Bits cannot represent negative values')
         if len_ is None:
             len_ = len(f'{val:b}')
+        len_ = operator.index(len_)
         if len_ < 0:
             raise ValueError(f'Bits length must be non-negative, not {len_!r}')
         if val >= 2 ** len_:
@@ -171,13 +173,12 @@ class Bits:
     def __getitem__(self, k):
         if type(k) is slice:
             return Bits(self.as_bin()[k])
-        if type(k) is int:
-            if k < 0:
-                k += self.len
-            if k < 0 or k >= self.len:
-                raise IndexError(k)
-            return bool((1 << (self.len - k - 1)) & self.val)
-        raise TypeError(type(k))
+        k = operator.index(k)
+        if k < 0:
+            k += self.len
+        if k < 0 or k >= self.len:
+            raise IndexError(k)
+        return bool((1 << (self.len - k - 1)) & self.val)
 
     def __len__(self):
         return self.len
