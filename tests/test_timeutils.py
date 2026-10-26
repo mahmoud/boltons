@@ -97,6 +97,30 @@ def test_isoparse_timezone_suffix():
         isoparse('2020-01-02T03:04:05+25:00')
 
 
+@pytest.mark.parametrize('offset', [
+    timedelta(microseconds=500000),
+    -timedelta(microseconds=500000),
+    timedelta(hours=5, minutes=30, seconds=45, microseconds=1234),
+    -timedelta(hours=3, seconds=12, microseconds=654321),
+])
+def test_isoparse_fractional_timezone_offset_roundtrip(offset):
+    original = datetime(2020, 1, 2, 3, 4, 5, 123456,
+                        tzinfo=timezone(offset))
+
+    parsed = isoparse(original.isoformat())
+
+    assert parsed.utcoffset() == offset
+    assert parsed == original
+
+
+@pytest.mark.parametrize('suffix,offset', [
+    ('+000000.000001', timedelta(microseconds=1)),
+    ('-03:00:12.5', -timedelta(hours=3, seconds=12, microseconds=500000)),
+])
+def test_isoparse_fractional_offset_spellings(suffix, offset):
+    assert isoparse('2020-01-02T03:04:05' + suffix).utcoffset() == offset
+
+
 def test_dt_to_timestamp_naive_tzinfo():
     # a tzinfo whose utcoffset() is None makes the datetime naive (PEP 495)
     class NaiveTZ(tzinfo):

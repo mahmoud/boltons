@@ -143,12 +143,13 @@ def isoparse(iso_str):
         if tz == 'Z':
             tzinfo = timezone.utc
         else:
-            digits = tz[1:].replace(':', '').split('.')[0]
+            digits, _, fraction = tz[1:].replace(':', '').partition('.')
             hh, mm = int(digits[0:2]), int(digits[2:4])
             ss = int(digits[4:6] or 0)
+            microseconds = int(fraction.ljust(6, '0')[:6]) if fraction else 0
             sign = -1 if tz[0] == '-' else 1
             tzinfo = timezone(sign * timedelta(hours=hh, minutes=mm,
-                                               seconds=ss))
+                                               seconds=ss, microseconds=microseconds))
     parts = _NONDIGIT_RE.split(iso_str)
     dt_args = [int(p) for p in parts]
     if len(parts) > 6:
