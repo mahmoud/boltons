@@ -7,10 +7,34 @@ from boltons.socketutils import (BufferedSocket,
                                  NetstringSocket,
                                  ConnectionClosed,
                                  NetstringMessageTooLong,
+                                 NetstringInvalidSize,
                                  MessageTooLong,
                                  Timeout)
 
 import pytest
+
+
+@pytest.mark.parametrize('prefix', [b'-1', b'+1', b' 1', b'1 ', b'01', b'00', b'1_0', b'\t1'])
+def test_netstring_rejects_noncanonical_size(prefix):
+    x, y = socket.socketpair()
+    with x, y:
+        ns = NetstringSocket(x, timeout=0.1, maxsize=1024)
+        body = b'abcdefghij,'
+        y.sendall(prefix + b':' + body)
+        y.shutdown(socket.SHUT_WR)
+        with pytest.raises(NetstringInvalidSize):
+            ns.read_ns()
+        assert ns.bsock.recv_size(len(body)) == body
+
+
+@pytest.mark.parametrize('payload', [b'', b'a', b'abcdefghij'])
+def test_netstring_accepts_canonical_sizes(payload):
+    x, y = socket.socketpair()
+    with x, y:
+        ns = NetstringSocket(x, timeout=0.1, maxsize=1024)
+        y.sendall(str(len(payload)).encode('ascii') + b':' + payload + b',0:,')
+        assert ns.read_ns() == payload
+        assert ns.read_ns() == b''
 
 # skip if there's no socketpair
 pytestmark = pytest.mark.skipif(getattr(socket, 'socketpair', None) is None,
