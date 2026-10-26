@@ -1,4 +1,5 @@
 from boltons.statsutils import Stats, mode
+import pytest
 
 
 def test_stats_basic():
@@ -68,3 +69,16 @@ def test_format_histogram_counts_all_zero():
     from boltons.statsutils import format_histogram_counts
 
     assert format_histogram_counts([(0.0, 0), (1.0, 0)]) == '0.0: 0 |\n1.0: 0 |'
+
+
+@pytest.mark.parametrize('data,bounds', [
+    ([1, 2, 3], [3, 0]),
+    ([-3, -2, -1], [-1, -4]),
+    ([1, 2, 3], [3, 2]),
+    ([1, 2, 3], [0, 3]),
+])
+def test_histogram_boundary_order(data, bounds):
+    stats = Stats(data)
+    counts = stats.get_histogram_counts(bins=bounds)
+    assert counts == stats.get_histogram_counts(bins=sorted(bounds))
+    assert sum(count for _, count in counts) == len(data)

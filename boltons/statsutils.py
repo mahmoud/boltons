@@ -625,7 +625,7 @@ class Stats:
                 except Exception:
                     raise ValueError('bins expected integer bin count or list'
                                      ' of float bin boundaries, not %r' % bins)
-                if self.min < bins[0]:
+                if self.min < min(bins):
                     bins = [self.min] + bins
             else:
                 bins = self._get_bin_bounds(bin_count)
