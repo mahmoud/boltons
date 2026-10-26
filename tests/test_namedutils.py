@@ -1,4 +1,6 @@
 from pickle import loads, dumps
+import copy
+import pickle
 
 import pytest
 
@@ -6,6 +8,14 @@ from boltons.namedutils import namedlist, namedtuple
 
 Point = namedtuple('Point', 'x, y', rename=True)
 MutablePoint = namedlist('MutablePoint', 'x, y', rename=True)
+
+
+class TaggedPoint(MutablePoint):
+    def __getstate__(self):
+        return {'tag': self.tag}
+
+    def __setstate__(self, state):
+        self.tag = state['tag']
 
 
 def test_namedlist():
@@ -21,6 +31,65 @@ def test_namedlist():
 def test_namedlist_pickle():
     p = MutablePoint(x=10, y=20)
     assert p == loads(dumps(p))
+
+
+def _cyclic_namedlist():
+    first = MutablePoint(None, [])
+    second = MutablePoint(first, first.y)
+    first.x = second
+    first.y.append(first)
+    return first
+
+
+@pytest.mark.parametrize('protocol', range(pickle.HIGHEST_PROTOCOL + 1))
+def test_namedlist_pickle_cycles(protocol):
+    original = _cyclic_namedlist()
+    restored = loads(dumps(original, protocol=protocol))
+    assert type(restored) is MutablePoint
+    assert restored is not original
+    assert restored.x.x is restored
+    assert restored.x.y is restored.y
+    assert restored.y[0] is restored
+
+
+def test_namedlist_deepcopy_cycles():
+    original = _cyclic_namedlist()
+    restored = copy.deepcopy(original)
+    assert type(restored) is MutablePoint
+    assert restored is not original
+    assert restored.x.x is restored
+    assert restored.x.y is restored.y
+    assert restored.y is not original.y
+    assert restored.y[0] is restored
+
+
+def test_namedlist_shallow_copy():
+    original = _cyclic_namedlist()
+    restored = copy.copy(original)
+    assert restored is not original
+    assert restored.x is original.x
+    assert restored.y is original.y
+
+
+@pytest.mark.parametrize('clone', [copy.copy, copy.deepcopy, lambda p: loads(dumps(p))])
+def test_namedlist_custom_state(clone):
+    original = TaggedPoint(1, 2)
+    original.tag = 'metadata'
+    restored = clone(original)
+    assert type(restored) is TaggedPoint
+    assert list(restored) == [1, 2]
+    assert restored.tag == 'metadata'
+
+
+@pytest.mark.parametrize('typename', ['type', 'iter'])
+@pytest.mark.parametrize('clone', [copy.copy, copy.deepcopy])
+def test_namedlist_copy_builtin_type_names(typename, clone):
+    record_type = namedlist(typename, 'x y')
+    original = record_type(1, 2)
+    restored = clone(original)
+    assert type(restored) is record_type
+    assert restored is not original
+    assert list(restored) == [1, 2]
 
 
 def test_namedtuple_pickle():

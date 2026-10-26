@@ -273,6 +273,11 @@ class {typename}(list):
         'Return self as a plain list.  Used by copy and pickle.'
         return tuple(self)
 
+    def __reduce_ex__(self, protocol):
+        # Memoize the empty instance before restoring possibly recursive items.
+        return (_list.__new__, (self.__class__,),
+                self.__getstate__(), self.__iter__())
+
     __dict__ = _property(_asdict)
 
     def __getstate__(self):
