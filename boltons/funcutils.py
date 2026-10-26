@@ -201,6 +201,10 @@ def partial_ordering(cls):
     method, but nothing else. It will not override any existing
     additional comparison methods.
 
+    The default comparisons inherited from :class:`object` are replaced.
+    If equality is generated, the default identity hash is disabled;
+    explicitly defined hash methods are preserved.
+
     .. _partial orderings: https://en.wikipedia.org/wiki/Partially_ordered_set
 
     >>> @partial_ordering
@@ -228,9 +232,14 @@ def partial_ordering(cls):
     def __gt__(self, other): return self >= other and not self <= other
     def __eq__(self, other): return self >= other and self <= other
 
-    if not hasattr(cls, '__lt__'): cls.__lt__ = __lt__
-    if not hasattr(cls, '__gt__'): cls.__gt__ = __gt__
-    if not hasattr(cls, '__eq__'): cls.__eq__ = __eq__
+    if cls.__lt__ is object.__lt__:
+        cls.__lt__ = __lt__
+    if cls.__gt__ is object.__gt__:
+        cls.__gt__ = __gt__
+    if cls.__eq__ is object.__eq__:
+        cls.__eq__ = __eq__
+        if cls.__hash__ is object.__hash__:
+            cls.__hash__ = None
 
     return cls
 
