@@ -287,6 +287,7 @@ class IndexedSet(MutableSet):
 
     def issubset(self, other):
         "issubset(other) -> return True if other contains this set"
+        other = self._as_container(other)
         if len(other) < len(self):
             return False
         for k in self.item_index_map:
@@ -296,8 +297,6 @@ class IndexedSet(MutableSet):
 
     def issuperset(self, other):
         "issuperset(other) -> return True if set contains other"
-        if len(other) > len(self):
-            return False
         iim = self.item_index_map
         for k in other:
             if k not in iim:
