@@ -265,7 +265,7 @@ def decimal_relative_time(d, other=None, ndigits=0, cardinalize=True):
 
     """
     if other is None:
-        if d.tzinfo is None:
+        if d.utcoffset() is None:
             other = datetime.now(timezone.utc).replace(tzinfo=None)
         else:
             other = datetime.now(d.tzinfo)
