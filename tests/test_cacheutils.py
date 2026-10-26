@@ -608,3 +608,36 @@ def test_threshold_counter_non_reciprocal_threshold():
     for _ in range(20):
         tc.add('a')
     assert tc.get('a') == 20
+
+
+@pytest.mark.parametrize('key', [[], {}])
+@pytest.mark.parametrize('initial_count', [0, 9])
+def test_threshold_counter_rejected_key_preserves_counts(key, initial_count):
+    counter = ThresholdCounter(0.1)
+    reference = ThresholdCounter(0.1)
+    initial = ['rare'] + ['a'] * (initial_count - 1) if initial_count else []
+    counter.update(initial)
+    reference.update(initial)
+
+    with pytest.raises(TypeError):
+        counter.add(key)
+    assert counter.total == reference.total
+    assert counter.items() == reference.items()
+    assert counter.get_uncommon_count() == reference.get_uncommon_count()
+
+    # Rejection must not shift subsequent compaction boundaries either.
+    for value in ['a'] + ['b'] * 10:
+        counter.add(value)
+        reference.add(value)
+        assert counter.total == reference.total
+        assert counter.items() == reference.items()
+        assert counter.get_uncommon_count() == reference.get_uncommon_count()
+
+
+def test_threshold_counter_update_counts_only_successful_additions():
+    counter = ThresholdCounter(0.1)
+    with pytest.raises(TypeError):
+        counter.update(['valid', []])
+    assert counter.total == 1
+    assert counter.items() == [('valid', 1)]
+    assert counter.get_uncommon_count() == 0
