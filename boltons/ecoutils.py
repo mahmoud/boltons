@@ -175,7 +175,7 @@ except Exception:
 
 
 # 128-bit GUID just like a UUID, but backwards compatible to 2.4
-INSTANCE_ID = hex(getrandbits(128))[2:-1].lower()
+INSTANCE_ID = format(getrandbits(128), '032x')
 
 IS_64BIT = struct.calcsize("P") > 4
 HAVE_UCS4 = getattr(sys, 'maxunicode', 0) > 65536
@@ -339,7 +339,7 @@ def get_profile(**kwargs):
     ret['ulimit_soft'] = RLIMIT_FDS_SOFT
     ret['ulimit_hard'] = RLIMIT_FDS_HARD
     ret['cwd'] = '-' if scrub else os.getcwd()
-    ret['umask'] = oct(os.umask(os.umask(2))).rjust(3, '0')
+    ret['umask'] = format(os.umask(os.umask(2)), '03o')
 
     ret['python'] = get_python_info()
     ret.update(START_TIME_INFO)
