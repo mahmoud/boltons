@@ -656,6 +656,8 @@ class URL:
         links with ease.
 
         The newly created :class:`URL` is normalized before being returned.
+        When *dest* specifies a host, its userinfo and port replace the
+        corresponding base fields, including when they are omitted.
 
         >>> url = URL('http://boltons.readthedocs.io')
         >>> url.navigate('en/latest/')
@@ -692,12 +694,15 @@ class URL:
 
         ret = self.from_parts(scheme=dest.scheme or self.scheme,
                               host=dest.host or self.host,
-                              port=dest.port or self.port,
+                              port=(dest.port if dest.host
+                                    else dest.port or self.port),
                               path_parts=new_path_parts,
                               query_params=query_params,
                               fragment=dest.fragment,
-                              username=dest.username or self.username,
-                              password=dest.password or self.password)
+                              username=(dest.username if dest.host
+                                        else dest.username or self.username),
+                              password=(dest.password if dest.host
+                                        else dest.password or self.password))
         ret.family = dest.family if dest.host else self.family
         ret.normalize()
         return ret

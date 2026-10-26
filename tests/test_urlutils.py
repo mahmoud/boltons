@@ -347,6 +347,37 @@ def test_navigate_ipv6_keeps_brackets():
     assert url.navigate('//example.com/x').to_text() == 'https://example.com/x'
 
 
+@pytest.mark.parametrize('as_url', [False, True])
+@pytest.mark.parametrize('destination, expected', [
+    ('//new.example/path', 'https://new.example/path'),
+    ('//bob@new.example/path', 'https://bob@new.example/path'),
+    ('//new.example:0/path', 'https://new.example:0/path'),
+    ('//:newpass@new.example/path', 'https://:newpass@new.example/path'),
+    ('//[::1]/path', 'https://[::1]/path'),
+])
+def test_navigate_replaces_authority_fields(as_url, destination, expected):
+    base_text = 'https://alice:example@old.example:8443/old?q=1#frag'
+    base = URL(base_text)
+    dest = URL(destination) if as_url else destination
+    result = base.navigate(dest)
+    assert result.to_text() == expected
+    expected_url = URL(expected)
+    for attr in ('host', 'port', 'username', 'password', 'family'):
+        assert getattr(result, attr) == getattr(expected_url, attr)
+    assert URL(result.to_text()) == result
+    assert base.to_text() == base_text
+    if as_url:
+        assert dest.to_text() == destination
+        assert result is not dest
+
+
+@pytest.mark.parametrize('as_url', [False, True])
+def test_navigate_relative_path_preserves_authority(as_url):
+    base = URL('https://alice:example@old.example:8443/old?q=1')
+    dest = URL('/new') if as_url else '/new'
+    assert base.navigate(dest).to_text() == 'https://alice:example@old.example:8443/new'
+
+
 def test_port_zero_roundtrips():
     url = URL('http://example.com:0/path')
     assert url.port == 0
