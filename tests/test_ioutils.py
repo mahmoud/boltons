@@ -584,7 +584,56 @@ class TestSpooledStringIO(TestCase, BaseTestMixin, AssertionsMixin):
         self.assertEqual(self.spooled_flo.getvalue(), expected)
 
 
+class _ShortRawReader(io.RawIOBase):
+    def __init__(self, data):
+        self._data = io.BytesIO(data)
+
+    def readinto(self, buf):
+        chunk = self._data.read(min(2, len(buf)))
+        buf[:len(chunk)] = chunk
+        return len(chunk)
+
+    def seek(self, offset, whence=os.SEEK_SET):
+        return self._data.seek(offset, whence)
+
+    def readable(self):
+        return True
+
+    def seekable(self):
+        return True
+
+
 class TestMultiFileReader(TestCase):
+    def test_short_raw_reads(self):
+        r = ioutils.MultiFileReader(_ShortRawReader(b'abcdef'),
+                                    io.BytesIO(b''),
+                                    _ShortRawReader(b'ghijk'))
+        self.assertEqual(r.read(0), b'')
+        self.assertEqual(r.read(5), b'abcde')
+        self.assertEqual(r.read(4), b'fghi')
+        self.assertEqual(r.read(), b'jk')
+        self.assertEqual(r.read(2), b'')
+        r.seek(0)
+        self.assertEqual(r.read(3), b'abc')
+        self.assertEqual(r.read(-1), b'defghijk')
+
+    def test_short_text_reads(self):
+        class ShortTextReader(io.StringIO):
+            def read(self, size=-1):
+                if size >= 0:
+                    size = min(size, 2)
+                return super().read(size)
+
+        r = ioutils.MultiFileReader(ShortTextReader('abcdef'),
+                                    io.StringIO(''),
+                                    ShortTextReader('ghijk'))
+        self.assertEqual(r.read(5), 'abcde')
+        self.assertEqual(r.read(4), 'fghi')
+        self.assertEqual(r.read(), 'jk')
+        self.assertEqual(r.read(2), '')
+        r.seek(0)
+        self.assertEqual(r.read(), 'abcdefghijk')
+
     def test_read_seek_bytes(self):
         r = ioutils.MultiFileReader(io.BytesIO(b'narf'), io.BytesIO(b'troz'))
         self.assertEqual([b'nar', b'ftr', b'oz'],

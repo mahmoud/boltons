@@ -579,7 +579,8 @@ class MultiFileReader:
         while amt > 0 and self._index < len(self._fileobjs):
             parts.append(self._fileobjs[self._index].read(amt))
             got = len(parts[-1])
-            if got < amt:
+            # A short read may still leave data in the current stream.
+            if not got:
                 self._index += 1
             amt -= got
         return self._joiner.join(parts)
