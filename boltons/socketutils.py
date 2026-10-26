@@ -435,7 +435,8 @@ class BufferedSocket:
                 set in the constructor of BufferedSocket.
 
         Will raise :exc:`Timeout` if the send operation fails to
-        complete before *timeout*. In the event of an exception, use
+        complete before *timeout*, or :exc:`ConnectionClosed` if the
+        socket reports a zero-byte send. In the event of an exception, use
         :meth:`BufferedSocket.getsendbuffer` to see which data was
         unsent.
         """
@@ -453,6 +454,9 @@ class BufferedSocket:
             try:
                 while sbuf[0]:
                     sent = self.sock.send(sbuf[0])
+                    if sent == 0:
+                        raise ConnectionClosed('connection closed with %s bytes unsent'
+                                               % len(sbuf[0]))
                     total_sent += sent
                     sbuf[0] = sbuf[0][sent:]
                     if timeout:
@@ -605,10 +609,11 @@ class Error(socket.error):
 
 
 class ConnectionClosed(Error):
-    """Raised when receiving and the connection is unexpectedly closed
-    from the sending end. Raised from :class:`BufferedSocket`'s
+    """Raised when the connection closes unexpectedly during buffered I/O.
+    Raised from :class:`BufferedSocket`'s
     :meth:`~BufferedSocket.peek`, :meth:`~BufferedSocket.recv_until`,
-    and :meth:`~BufferedSocket.recv_size`, and never from its
+    :meth:`~BufferedSocket.recv_size`, and :meth:`~BufferedSocket.send`
+    when the socket reports a zero-byte send. Never raised from its
     :meth:`~BufferedSocket.recv` or
     :meth:`~BufferedSocket.recv_close`.
     """
