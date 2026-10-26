@@ -608,3 +608,49 @@ def test_threshold_counter_non_reciprocal_threshold():
     for _ in range(20):
         tc.add('a')
     assert tc.get('a') == 20
+
+
+@pytest.mark.parametrize('call_style', ['function', 'bound', 'unbound'])
+@pytest.mark.parametrize('bool_raises', [False, True])
+def test_cached_custom_key_without_truth_testing(call_style, bool_raises):
+    key_calls = []
+    func_calls = []
+
+    class CustomKey:
+        def __bool__(self):
+            if bool_raises:
+                raise AssertionError('a cache key callable need not be truthy')
+            return False
+
+        def __call__(self, args, kwargs, typed=False):
+            key_calls.append((args, kwargs, typed))
+            return ('custom', args[-1]['value'], typed)
+
+    key = CustomKey()
+    cache = {}
+    if call_style == 'function':
+        @cached(cache, key=key, typed=True)
+        def func(data):
+            func_calls.append(data)
+            return data['value'] * 2
+    else:
+        class C:
+            @cachedmethod(cache, key=key, typed=True)
+            def method(self, data):
+                func_calls.append(data)
+                return data['value'] * 2
+
+        obj = C()
+        if call_style == 'bound':
+            func = obj.method
+        else:
+            func = lambda data: C.method(obj, data)
+
+    # The custom key deliberately supports unhashable function arguments.
+    assert func({'value': 3}) == 6
+    assert func({'value': 3}) == 6
+    assert len(func_calls) == 1
+    assert len(key_calls) == 2
+    assert all(kwargs == {} and typed is True
+               for args, kwargs, typed in key_calls)
+    assert cache == {('custom', 3, True): 6}
