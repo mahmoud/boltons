@@ -402,3 +402,33 @@ def test_complement_set_identities(op, ref):
             res = op(_make_cset(a, rep_a), _make_cset(b, rep_b))
             got = {x for x in _UNIVERSE if x in res}
             assert got == ref(a, b), (op, a, rep_a, b, rep_b)
+
+
+@mark.parametrize('left_rep', ['+', '-'])
+@mark.parametrize('right_rep', ['+', '-', 'set', 'frozenset', 'list', 'iterator'])
+def test_complement_update_matches_union(left_rep, right_rep):
+    for a, b in itertools.product(_SUBSETS, repeat=2):
+        target = _make_cset(a, left_rep)
+        alias = target
+        if right_rep == 'frozenset':
+            other = frozenset(b)
+        elif right_rep == 'list':
+            other = list(b) * 2
+        elif right_rep == 'iterator':
+            other = iter(list(b) * 2)
+        else:
+            other = _make_cset(b, right_rep)
+        assert target.update(other) is None
+        assert target is alias
+        assert {x for x in _UNIVERSE if x in target} == a | b
+        assert (100 in target) is (left_rep == '-' or right_rep == '-')
+        if right_rep in ('+', '-', 'set', 'frozenset'):
+            assert {x for x in _UNIVERSE if x in other} == b
+
+
+@mark.parametrize('rep', ['+', '-'])
+def test_complement_update_self(rep):
+    target = _make_cset({1, 2}, rep)
+    before = {x for x in range(8) if x in target}
+    assert target.update(target) is None
+    assert {x for x in range(8) if x in target} == before

@@ -752,23 +752,9 @@ class _ComplementSet:
         return self
 
     def update(self, items):
-        if type(items) in (set, frozenset):
-            inc, exc = items, None
-        elif type(items) is _ComplementSet:
-            inc, exc = items._included, items._excluded
-        else:
-            inc, exc = frozenset(items), None
-        if self._included is None:
-            if exc is None:  # - +
-                self._excluded &= inc
-            else:  # - -
-                self._excluded.discard(exc)
-        else:
-            if inc is None:  # + -
-                self._included &= exc
-                self._included, self._excluded = None, self._excluded
-            else:  # + +
-                self._included.update(inc)
+        if type(items) not in (set, frozenset, _ComplementSet):
+            items = frozenset(items)
+        self.__ior__(items)
 
     def discard(self, items):
         if type(items) in (set, frozenset):
