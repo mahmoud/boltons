@@ -340,9 +340,6 @@ def chunked_iter(src, size, **kw):
         fill_val = None
     if kw:
         raise ValueError('got unexpected keyword arguments: %r' % kw.keys())
-    if not src:
-        return
-
     def postprocess(chk): return chk
     if isinstance(src, (str, bytes)):
         def postprocess(chk, _sep=type(src)()): return _sep.join(chk)
