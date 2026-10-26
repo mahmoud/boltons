@@ -134,6 +134,7 @@ class BarrelList(list):
         return False
 
     def insert(self, index, item):
+        index = operator.index(index)
         if len(self.lists) == 1:
             self.lists[0].insert(index, item)
             self._balance_list(0)
