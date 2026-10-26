@@ -608,3 +608,19 @@ def test_threshold_counter_non_reciprocal_threshold():
     for _ in range(20):
         tc.add('a')
     assert tc.get('a') == 20
+
+
+def test_threshold_counter_update_without_source():
+    counter = ThresholdCounter(0.1)
+    counter.update()
+    assert counter.total == 0
+    assert counter.items() == []
+    counter.update(a=3, b=2, zero=0)
+    assert dict(counter.items()) == {'a': 3, 'b': 2}
+    assert counter.total == 5
+    counter.update()
+    counter.update(a=5)
+    reference = ThresholdCounter(0.1)
+    reference.update(['a'] * 3 + ['b'] * 2 + ['a'] * 5)
+    assert counter.items() == reference.items()
+    assert counter.total == reference.total == 10

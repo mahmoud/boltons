@@ -794,7 +794,7 @@ class ThresholdCounter:
         except KeyError:
             return default
 
-    def update(self, iterable, **kwargs):
+    def update(self, iterable=None, **kwargs):
         """Like dict.update() but add counts instead of replacing them, used
         to add multiple items in one call.
 
