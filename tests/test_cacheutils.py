@@ -608,3 +608,28 @@ def test_threshold_counter_non_reciprocal_threshold():
     for _ in range(20):
         tc.add('a')
     assert tc.get('a') == 20
+
+
+def test_minidmap_gc_is_silent_and_reuses_ids(capsys):
+    import gc
+    import weakref
+
+    class Item:
+        pass
+
+    id_map = MinIDMap()
+    first, second = Item(), Item()
+    assert id_map.get(first) == 0
+    assert id_map.get(second) == 1
+    first_ref = weakref.ref(first)
+    del first
+    gc.collect()
+
+    assert first_ref() is None
+    assert len(id_map) == 1
+    assert id_map.get(second) == 1
+    replacement = Item()
+    assert id_map.get(replacement) == 0
+    captured = capsys.readouterr()
+    assert captured.out == ''
+    assert captured.err == ''
