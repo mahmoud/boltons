@@ -660,8 +660,7 @@ MultiDict = OrderedMultiDict
 
 class FastIterOrderedMultiDict(OrderedMultiDict):
     """An OrderedMultiDict backed by a skip list.  Iteration over keys
-    is faster and uses constant memory but adding duplicate key-value
-    pairs is slower. Brainchild of Mark Williams.
+    is faster and uses constant memory. Brainchild of Mark Williams.
     """
     def _clear_ll(self):
         # TODO: always reset objects? (i.e., no else block below)
@@ -680,60 +679,38 @@ class FastIterOrderedMultiDict(OrderedMultiDict):
         empty = []
         cells = self._map.setdefault(k, empty)
         last = root[PREV]
-
+        # Only each key's first cell participates in the skip chain.
+        # Duplicate cells belong to the full insertion-order chain only.
+        cell = [last, root, k, v, None, None]
         if cells is empty:
-            cell = [last, root,
-                    k, v,
-                    last, root]
-            # was the last one skipped?
-            if last[SPREV][SNEXT] is root:
-                last[SPREV][SNEXT] = cell
-            last[NEXT] = last[SNEXT] = root[PREV] = root[SPREV] = cell
-            cells.append(cell)
-        else:
-            # if the previous was skipped, go back to the cell that
-            # skipped it
-            sprev = last[SPREV] if (last[SPREV][SNEXT] is not last) else last
-            cell = [last, root,
-                    k, v,
-                    sprev, root]
-            # skip me
-            last[SNEXT] = root
-            last[NEXT] = root[PREV] = root[SPREV] = cell
-            cells.append(cell)
+            skip_last = root[SPREV]
+            cell[SPREV], cell[SNEXT] = skip_last, root
+            skip_last[SNEXT] = root[SPREV] = cell
+        last[NEXT] = root[PREV] = cell
+        cells.append(cell)
 
     def _remove(self, k):
         cells = self._map[k]
         cell = cells.pop()
         if not cells:
             del self._map[k]
-            cell[PREV][SNEXT] = cell[SNEXT]
-
-        if cell[PREV][SPREV][SNEXT] is cell:
-            cell[PREV][SPREV][SNEXT] = cell[NEXT]
-        elif cell[SNEXT] is cell[NEXT]:
             cell[SPREV][SNEXT], cell[SNEXT][SPREV] = cell[SNEXT], cell[SPREV]
-
         cell[PREV][NEXT], cell[NEXT][PREV] = cell[NEXT], cell[PREV]
 
     def _remove_all(self, k):
         cells = self._map.pop(k)
+        first = cells[0]
+        first[SPREV][SNEXT], first[SNEXT][SPREV] = first[SNEXT], first[SPREV]
         while cells:
             cell = cells.pop()
-            if cell[PREV][SPREV][SNEXT] is cell:
-                cell[PREV][SPREV][SNEXT] = cell[NEXT]
-            elif cell[SNEXT] is cell[NEXT]:
-                cell[SPREV][SNEXT], cell[SNEXT][SPREV] = cell[SNEXT], cell[SPREV]
-
             cell[PREV][NEXT], cell[NEXT][PREV] = cell[NEXT], cell[PREV]
-        cell[PREV][SNEXT] = cell[SNEXT]
 
     def iteritems(self, multi=False):
         next_link = NEXT if multi else SNEXT
         root = self.root
         curr = root[next_link]
         while curr is not root:
-            yield curr[KEY], curr[VALUE]
+            yield curr[KEY], curr[VALUE] if multi else self[curr[KEY]]
             curr = curr[next_link]
 
     def iterkeys(self, multi=False):
@@ -746,14 +723,10 @@ class FastIterOrderedMultiDict(OrderedMultiDict):
 
     def __reversed__(self):
         root = self.root
-        curr = root[PREV]
+        curr = root[SPREV]
         while curr is not root:
-            if curr[SPREV][SNEXT] is not curr:
-                curr = curr[SPREV]
-                if curr is root:
-                    break
             yield curr[KEY]
-            curr = curr[PREV]
+            curr = curr[SPREV]
 
 
 _OTO_INV_MARKER = object()
