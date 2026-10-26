@@ -380,12 +380,14 @@ class SpooledStringIO(SpooledIOBase):
     """
     def __init__(self, *args, **kwargs):
         self._tell = 0
+        self._byte_tell = 0
         super().__init__(*args, **kwargs)
 
     def read(self, n=-1):
         self._checkClosed()
         ret = self.buffer.reader.read(n, n)
         self._tell = self.tell() + len(ret)
+        self._byte_tell += len(ret.encode('utf-8'))
         return ret
 
     def write(self, s):
@@ -395,10 +397,15 @@ class SpooledStringIO(SpooledIOBase):
                 type(s).__name__
             ))
         current_pos = self.tell()
-        if self.buffer.tell() + len(s.encode('utf-8')) >= self._max_size:
+        encoded = s.encode('utf-8')
+        if self.buffer.tell() + len(encoded) >= self._max_size:
             self.rollover()
-        self.buffer.write(s.encode('utf-8'))
+        # The decoder may have read beyond the text returned to the caller.
+        if self.buffer.tell() != self._byte_tell:
+            self.buffer.seek(self._byte_tell)
+        self.buffer.write(encoded)
         self._tell = current_pos + len(s)
+        self._byte_tell += len(encoded)
         return len(s)
 
     def _traverse_codepoints(self, current_position, n):
@@ -435,6 +442,7 @@ class SpooledStringIO(SpooledIOBase):
             if pos < 0:
                 raise ValueError("negative seek position")
             self.buffer.seek(0)
+            self._byte_tell = 0
             self._traverse_codepoints(0, pos)
             self._tell = pos
         # Seek to new position relative to current position
@@ -466,11 +474,13 @@ class SpooledStringIO(SpooledIOBase):
             return ''
         ret = self.buffer.readline(length).decode('utf-8')
         self._tell = self.tell() + len(ret)
+        self._byte_tell += len(ret.encode('utf-8'))
         return ret
 
     def readlines(self, sizehint=0):
         ret = [x.decode('utf-8') for x in self.buffer.readlines(sizehint)]
         self._tell = self.tell() + sum(len(x) for x in ret)
+        self._byte_tell += sum(len(x.encode('utf-8')) for x in ret)
         return ret
 
     @property
