@@ -1311,6 +1311,15 @@ class OrderedMultiDict(dict):
             return super_self.pop(k)
         return super_self.pop(k, default)
 
+    def popitem(self):
+        """Remove the last inserted dictionary key and return it with its
+        most-recent value. All values under that key are removed.
+        Raises :exc:`KeyError` if the dictionary is empty.
+        """
+        k, values = super().popitem()
+        self._remove_all(k)
+        return k, values[-1]
+
     def poplast(self, k=_MISSING, default=_MISSING):
         """Remove and return the most-recently inserted value under the key
         *k*, or the most-recently inserted key if *k* is not
