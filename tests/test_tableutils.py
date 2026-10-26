@@ -1,3 +1,5 @@
+import pytest
+
 from boltons.tableutils import Table
 
 
@@ -113,3 +115,41 @@ def test_to_html_bottom_metadata_after_table():
     assert main_close < html.index('<br />') < html.index('<th>k</th>')
     assert html.endswith('</table>')
     assert html.count('<table>') == html.count('</table>') == 2
+
+
+@pytest.mark.parametrize('infer_headers', [False, True])
+def test_table_rows_wider_than_headers(infer_headers):
+    table = Table([['a'], [1, 2]]) if infer_headers else Table([[1, 2]], headers=['a'])
+    assert table.headers == ['a']
+    lines = table.to_text().splitlines()
+    assert [cell.strip() for cell in lines[0].split(' | ')] == ['a', 'None']
+    assert [cell.strip() for cell in lines[-1].split(' | ')] == ['1', '2']
+    html = table.to_html(orientation='vertical')
+    assert '<tr><th>a</th><td>1</td></tr>' in html
+    assert '<tr><th>None</th><td>2</td></tr>' in html
+
+
+def test_headered_table_extend_wider_row():
+    table = Table([[1]], headers=['a'])
+    table.extend(iter([[2, 3, 4]]))
+    table.extend([])
+    table.extend([[5]])
+    assert table.headers == ['a']
+    assert list(table) == [[1, None, None], [2, 3, 4], [5, None, None]]
+    lines = table.to_text().splitlines()
+    assert [cell.strip() for cell in lines[0].split(' | ')] == ['a', 'None', 'None']
+    html = table.to_html(orientation='vertical')
+    assert '<tr><th>None</th><td>None</td><td>4</td><td>None</td></tr>' in html
+
+
+def test_empty_table_with_headers():
+    table = Table(headers=['a', 'b'])
+    assert table.to_text() == 'a | b\n--|--'
+    assert table.headers == ['a', 'b']
+    assert list(table) == []
+
+
+def test_table_headers_wider_than_rows():
+    table = Table([[1]], headers=['a', 'b'])
+    assert table[0] == [1, None]
+    assert [cell.strip() for cell in table.to_text().splitlines()[-1].split(' | ')] == ['1', 'None']
