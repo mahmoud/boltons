@@ -50,6 +50,7 @@ import sys as _sys
 from collections import OrderedDict
 from keyword import iskeyword as _iskeyword
 from operator import itemgetter as _itemgetter
+from unicodedata import normalize as _normalize
 
 
 __all__ = ['namedlist', 'namedtuple']
@@ -208,7 +209,7 @@ def namedtuple(typename, field_names, verbose=False, rename=False):
         exec(class_definition, namespace)
     except SyntaxError as e:
         raise SyntaxError(e.msg + ':\n' + class_definition)
-    result = namespace[typename]
+    result = namespace[_normalize('NFKC', typename)]
 
     # For pickling to work, the __module__ variable needs to be set to the frame
     # where the named tuple is created.  Bypass this step in environments where
@@ -377,7 +378,7 @@ def namedlist(typename, field_names, verbose=False, rename=False):
         exec(class_definition, namespace)
     except SyntaxError as e:
         raise SyntaxError(e.msg + ':\n' + class_definition)
-    result = namespace[typename]
+    result = namespace[_normalize('NFKC', typename)]
 
     # For pickling to work, the __module__ variable needs to be set to
     # the frame where the named list is created.  Bypass this step in
