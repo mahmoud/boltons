@@ -1188,14 +1188,14 @@ class OrderedMultiDict(dict):
         """
         return cls([(k, default) for k in keys])
 
-    def update(self, E, **F):
+    def update(self, E=(), **F):
         """Add items from a dictionary or iterable (and/or keyword arguments),
         overwriting values under an existing key. See
         :meth:`dict.update` for more details.
         """
         # E and F are throwback names to the dict() __doc__
         if E is self:
-            return
+            E = ()
         self_add = self.add
         if isinstance(E, OrderedMultiDict):
             for k in E:
@@ -1219,7 +1219,7 @@ class OrderedMultiDict(dict):
             self[k] = F[k]
         return
 
-    def update_extend(self, E, **F):
+    def update_extend(self, E=(), **F):
         """Add items from a dictionary, iterable, and/or keyword
         arguments without overwriting existing items present in the
         dictionary. Like :meth:`update`, but adds to existing keys
@@ -1236,6 +1236,8 @@ class OrderedMultiDict(dict):
 
         self_add = self.add
         for k, v in iterator:
+            self_add(k, v)
+        for k, v in F.items():
             self_add(k, v)
 
     def __setitem__(self, k, v):
