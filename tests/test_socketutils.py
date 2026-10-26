@@ -17,6 +17,64 @@ pytestmark = pytest.mark.skipif(getattr(socket, 'socketpair', None) is None,
                                 reason='no socketpair (likely Py2 on Windows)')
 
 
+class _SendPlanSocket:
+    def __init__(self, counts):
+        self.counts = iter(counts)
+        self.calls = []
+
+    def settimeout(self, timeout):
+        pass
+
+    def gettimeout(self):
+        return None
+
+    def send(self, data):
+        self.calls.append(data)
+        try:
+            return next(self.counts)
+        except StopIteration:
+            raise AssertionError('send retried after making no progress')
+
+
+@pytest.mark.parametrize('queued', [b'', b'queued:'])
+@pytest.mark.parametrize('first_sent', [0, 2])
+def test_send_zero_reports_closed_and_preserves_buffer(queued, first_sent):
+    counts = [0] if first_sent == 0 else [first_sent, 0]
+    sock = _SendPlanSocket(counts)
+    buffered = BufferedSocket(sock, timeout=None)
+    buffered.buffer(queued)
+    payload = b'abcde'
+    remaining = (queued + payload)[first_sent:]
+    with pytest.raises(ConnectionClosed, match='%s bytes unsent' % len(remaining)):
+        buffered.send(payload)
+    assert buffered.getsendbuffer() == remaining
+    assert len(sock.calls) == len(counts)
+
+
+def test_netstring_send_zero_preserves_frame():
+    sock = _SendPlanSocket([0])
+    netstring = NetstringSocket(sock, timeout=None)
+    with pytest.raises(ConnectionClosed):
+        netstring.write_ns(b'abc')
+    assert netstring.bsock.getsendbuffer() == b'3:abc,'
+    assert len(sock.calls) == 1
+
+
+def test_send_empty_does_not_call_socket():
+    sock = _SendPlanSocket([])
+    buffered = BufferedSocket(sock, timeout=None)
+    assert buffered.send(b'') == 0
+    assert sock.calls == []
+
+
+def test_send_partial_writes_still_complete():
+    sock = _SendPlanSocket([2, 3])
+    buffered = BufferedSocket(sock, timeout=None)
+    assert buffered.send(b'abcde') == 5
+    assert sock.calls == [b'abcde', b'cde']
+    assert buffered.getsendbuffer() == b''
+
+
 def test_short_lines():
     for ms in (2, 4, 6, 1024, None):
         x, y = socket.socketpair()
