@@ -1,4 +1,7 @@
 import os
+import json
+
+import pytest
 
 from boltons.jsonutils import (JSONLIterator,
                                DEFAULT_BLOCKSIZE,
@@ -146,3 +149,20 @@ def test_jsonl_iterator_text_cur_byte_pos(tmp_path):
         assert next(jsonl_iter) == {'1': 1}
         assert jsonl_iter.cur_byte_pos == len('{"1": 1}\n')
         assert list(jsonl_iter) == [{'2': 2}]
+
+
+@pytest.mark.parametrize('rel_seek', [0.1, 0.3, 0.5, -0.5])
+@pytest.mark.parametrize('reverse', [False, True])
+@pytest.mark.parametrize('newline', ['\n', '\r\n'])
+def test_jsonl_relative_seek_utf8_matches_binary(tmp_path, rel_seek, reverse, newline):
+    records = [{'name': value} for value in ['বাংলা', 'café', '日本語', 'more', 'শেষ']]
+    data = newline.join(json.dumps(record, ensure_ascii=False) for record in records) + newline
+    path = tmp_path / 'unicode.jsonl'
+    path.write_bytes(data.encode('utf-8'))
+    with path.open('rb') as binary, path.open(encoding='utf-8') as text:
+        expected = list(JSONLIterator(binary, rel_seek=rel_seek, reverse=reverse))
+        actual = list(JSONLIterator(text, rel_seek=rel_seek, reverse=reverse))
+        assert actual == expected
+        # Relative seeking must leave the caller's text stream usable.
+        text.seek(0)
+        assert json.loads(text.readline()) == records[0]
