@@ -437,10 +437,10 @@ def test_one_to_one():
     ck({}, {})
     assert OneToOne({1:2, 3:4}).copy().inv == {2:1, 4:3}
     e[1] = 2
-    e.pop(1)
+    assert e.pop(1) == 2
     ck({}, {})
     e[1] = 2
-    e.inv.pop(2)
+    assert e.inv.pop(2) == 1
     ck({}, {})
     e[1] = 2
     e.popitem()
@@ -471,6 +471,32 @@ def test_one_to_one():
         OneToOne.unique({'a': 0, 'b': 0})
 
     return
+
+
+@pytest.mark.parametrize('inverse', [False, True], ids=['forward', 'inverse'])
+@pytest.mark.parametrize('key', ['missing', 42, ('missing', 42), object()])
+def test_one_to_one_pop_missing_key(inverse, key):
+    oto = OneToOne({'a': 1})
+    mapping = oto.inv if inverse else oto
+
+    with pytest.raises(KeyError) as exc_info:
+        mapping.pop(key)
+
+    assert exc_info.value.args == (key,)
+    assert exc_info.value.args[0] is key
+    assert oto == {'a': 1}
+    assert oto.inv == {1: 'a'}
+
+
+@pytest.mark.parametrize('inverse', [False, True], ids=['forward', 'inverse'])
+@pytest.mark.parametrize('default', [None, object()])
+def test_one_to_one_pop_missing_key_with_default(inverse, default):
+    oto = OneToOne({'a': 1})
+    mapping = oto.inv if inverse else oto
+
+    assert mapping.pop('missing', default) is default
+    assert oto == {'a': 1}
+    assert oto.inv == {1: 'a'}
 
 
 def test_one_to_one_update_iterator():

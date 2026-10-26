@@ -870,7 +870,7 @@ class OneToOne(dict):
             return dict.pop(self, key)
         if default is not _MISSING:
             return default
-        raise KeyError()
+        raise KeyError(key)
 
     def popitem(self):
         key, val = dict.popitem(self)
