@@ -307,7 +307,12 @@ class BarrelList(list):
         return f'{self.__class__.__name__}({list(self)!r})'
 
     def __reduce__(self):
-        return (self.__class__, (list(self),))
+        # Reconstruct contents after memoizing the new instance, so cycles
+        # work. Keep instance attributes, but rebuild partition storage via
+        # append instead of sharing it in a shallow copy.
+        state = self.__dict__.copy()
+        del state['lists']
+        return (self.__class__, (), state, iter(self))
 
     @staticmethod
     def _as_list(other):
