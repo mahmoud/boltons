@@ -1,4 +1,6 @@
-from boltons.statsutils import Stats, mode
+import pytest
+
+from boltons.statsutils import Stats, describe, mode
 
 
 def test_stats_basic():
@@ -68,3 +70,27 @@ def test_format_histogram_counts_all_zero():
     from boltons.statsutils import format_histogram_counts
 
     assert format_histogram_counts([(0.0, 0), (1.0, 0)]) == '0.0: 0 |\n1.0: 0 |'
+
+
+@pytest.mark.parametrize('format', ['dict', 'list', 'text'])
+@pytest.mark.parametrize('module_level', [False, True])
+def test_describe_without_quantiles(format, module_level):
+    if module_level:
+        result = describe([1, 2, 3], quantiles=[], format=format)
+    else:
+        result = Stats([1, 2, 3]).describe(quantiles=[], format=format)
+    if format == 'dict':
+        keys = list(result)
+    elif format == 'list':
+        keys = [key for key, value in result]
+    else:
+        keys = [line.split(':', 1)[0] for line in result.splitlines()]
+    assert keys == ['count', 'mean', 'std_dev', 'mad', 'min', 'max']
+
+
+@pytest.mark.parametrize('quantiles', [None, [0.25, 0.5, 0.75]])
+def test_describe_default_quantiles(quantiles):
+    result = Stats([1, 2, 3]).describe(quantiles=quantiles)
+    assert result['0.25'] == 1.5
+    assert result['0.5'] == 2
+    assert result['0.75'] == 2.5

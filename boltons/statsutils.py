@@ -705,6 +705,7 @@ class Stats:
                 0.0-1.0, with 0.5 representing the median. Defaults to
                 ``[0.25, 0.5, 0.75]``, representing the standard
                 quartiles.
+                Pass an empty list to omit quantiles from the summary.
             format (str): Controls the return type of the function,
                 with one of three valid values: ``"dict"`` gives back
                 a :class:`dict` with the appropriate keys and
@@ -739,7 +740,8 @@ class Stats:
             raise ValueError('invalid format for describe,'
                              ' expected one of "dict"/"list"/"text", not %r'
                              % format)
-        quantiles = quantiles or [0.25, 0.5, 0.75]
+        if quantiles is None:
+            quantiles = [0.25, 0.5, 0.75]
         q_items = []
         for q in quantiles:
             q_val = self.get_quantile(q)
