@@ -60,7 +60,7 @@ def reverse_iter_lines(file_obj, blocksize=DEFAULT_BLOCKSIZE, preseek=True, enco
             other functions should not mutably interact with the file
             object during iteration. Files can be opened in bytes or
             text mode. Seek before reusing a text stream after iteration.
-        blocksize (int): The block size to pass to
+        blocksize (int): The positive block size to pass to
           :meth:`file.read()`. Warning: keep this a fairly large
           multiple of 2, defaults to 4096.
         preseek (bool): Tells the function whether or not to automatically
@@ -73,6 +73,8 @@ def reverse_iter_lines(file_obj, blocksize=DEFAULT_BLOCKSIZE, preseek=True, enco
             file's encoding, or returns bytes when neither is specified.
 
     """
+    if blocksize <= 0:
+        raise ValueError('blocksize must be positive, not %r' % blocksize)
     # This function is a bit of a pain because it attempts to be byte/text agnostic
     encoding = encoding or getattr(file_obj, 'encoding', None)
 
