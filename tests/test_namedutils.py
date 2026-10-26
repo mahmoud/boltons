@@ -54,3 +54,18 @@ def test_non_identifier_alnum_name(factory):
     with pytest.raises(ValueError):
         factory('T', ['value\u00b2'])
     assert factory('T', ['value\u00b2', 'b'], rename=True)._fields == ('_0', 'b')
+
+
+@pytest.mark.parametrize('factory', [namedtuple, namedlist])
+@pytest.mark.parametrize('typename, compiled_name', [('Ｐoint', 'Point'), ('Klass', 'Klass')])
+def test_normalized_type_names(factory, typename, compiled_name, monkeypatch):
+    record_type = factory(typename, ['x', 'y'])
+    assert record_type.__name__ == compiled_name
+    point = record_type(x=1, y=2)
+    assert (point.x, point.y) == (1, 2)
+    assert tuple(point) == (1, 2)
+    # The class statement stores its normalized spelling in the namespace.
+    monkeypatch.setitem(globals(), compiled_name, record_type)
+    restored = loads(dumps(point))
+    assert type(restored) is record_type
+    assert (restored.x, restored.y) == (1, 2)
