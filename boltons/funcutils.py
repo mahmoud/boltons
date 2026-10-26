@@ -188,6 +188,14 @@ def copy_function(orig, copy_dict=True):
                        closure=getattr(orig, "__closure__", None))
     if hasattr(orig, "__kwdefaults__"):
         ret.__kwdefaults__ = orig.__kwdefaults__
+    ret.__doc__ = orig.__doc__
+    ret.__module__ = orig.__module__
+    ret.__qualname__ = orig.__qualname__
+    annotate = getattr(orig, '__annotate__', None)
+    if annotate is not None:
+        ret.__annotate__ = annotate
+    else:
+        ret.__annotations__ = orig.__annotations__.copy()
     if copy_dict:
         ret.__dict__.update(orig.__dict__)
     return ret
