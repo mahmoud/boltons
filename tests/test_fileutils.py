@@ -1,11 +1,46 @@
 import os.path
 import pathlib
 
+import pytest
+
 
 
 from boltons import fileutils
 from boltons.fileutils import FilePerms, iter_find_files
 from boltons.strutils import removeprefix
+
+
+def test_dummyfile_context_returns_stream():
+    stream = fileutils.DummyFile('unused', mode='w')
+    with stream as opened:
+        assert opened is stream
+        assert not opened.closed
+        opened.write('discarded')
+
+
+@pytest.mark.parametrize('raise_error', [False, True])
+def test_dummyfile_context_closes_stream(raise_error):
+    stream = fileutils.DummyFile('unused')
+    failure = RuntimeError('from context body')
+    try:
+        with stream:
+            if raise_error:
+                raise failure
+    except RuntimeError as caught:
+        assert caught is failure
+    else:
+        assert not raise_error
+    assert stream.closed
+    with pytest.raises(ValueError, match='closed file'):
+        stream.read()
+
+
+def test_dummyfile_context_rejects_closed_stream():
+    stream = fileutils.DummyFile('unused')
+    stream.close()
+    with pytest.raises(ValueError, match='closed file'):
+        with stream:
+            pytest.fail('closed file should not be entered')
 
 
 BOLTONS_PATH = os.path.dirname(os.path.abspath(fileutils.__file__))

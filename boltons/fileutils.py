@@ -688,10 +688,10 @@ class DummyFile:
     def __enter__(self):
         if self.closed:
             raise ValueError('I/O operation on a closed file')
-        return
+        return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        return
+        self.close()
 
 
 def rotate_file(filename, *, keep: int = 5):
