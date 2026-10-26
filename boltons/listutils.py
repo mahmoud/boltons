@@ -42,6 +42,7 @@ For utilities for working with iterables and lists, check out
 import operator
 from math import log as math_log
 from itertools import chain, islice
+from reprlib import recursive_repr
 
 try:
     from .typeutils import make_sentinel
@@ -303,6 +304,7 @@ class BarrelList(list):
         self._balance_list(0)
         return
 
+    @recursive_repr()
     def __repr__(self):
         return f'{self.__class__.__name__}({list(self)!r})'
 
