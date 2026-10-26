@@ -373,6 +373,27 @@ def test_multi_replace_compiled_flags():
     assert mr.sub('ab a b c') == 'X a b Y'
 
 
+@pytest.mark.parametrize('pattern,text,expected', [
+    (r'(?i)cat', 'CAT cat OTHER other', 'X X OTHER Y'),
+    (r'(?im)^cat$', 'CAT\ncat\nOTHER\nother', 'X\nX\nOTHER\nY'),
+    ('(?x) # heading\n(?i) c a t # trailing comment',
+     'CAT cat OTHER other', 'X X OTHER Y'),
+    (r'(?#heading)(?i)cat', 'CAT cat OTHER other', 'X X OTHER Y'),
+    (r'(?#escaped \) parenthesis)(?i)cat',
+     'CAT cat OTHER other', 'X X OTHER Y'),
+    (r'(?x)\#cat', '#cat OTHER other', 'X OTHER Y'),
+])
+def test_multi_replace_compiled_inline_flags(pattern, text, expected):
+    compiled = re.compile(pattern)
+    replacer = strutils.MultiReplace([(compiled, 'X'), ('other', 'Y')])
+    assert replacer.sub(text) == expected
+
+
+def test_multi_replace_preserves_scoped_flags_and_literal_prefix():
+    compiled = re.compile(r'(?i:cat)\(\?i\)')
+    assert strutils.MultiReplace([(compiled, 'X')]).sub('CAT(?i)') == 'X'
+
+
 def test_slugify_backslash():
     assert strutils.slugify('a\\b') == 'a_b'
     assert strutils.split_punct_ws('a\\b]c') == ['a', 'b', 'c']
