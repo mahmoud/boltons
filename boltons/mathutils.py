@@ -148,6 +148,8 @@ class Bits:
                     len_ = len(val)
                     if val.startswith('0x'):
                         len_ = (len_ - 2) * 4
+                    elif val.startswith(('0b', '0B')):
+                        len_ -= 2
                 if val.startswith('0x'):
                     val = int(val, 16)
                 else:

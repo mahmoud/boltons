@@ -1,4 +1,4 @@
-from pytest import raises
+from pytest import mark, raises
 from boltons.mathutils import clamp, ceil, floor, Bits
 import math
 
@@ -157,3 +157,23 @@ def test_bits_rshift_past_width():
     assert len(shifted) == 0
     assert shifted.as_bin() == ''
     assert Bits('101') >> 1 == Bits('10')
+
+
+@mark.parametrize('prefix', ['0b', '0B'])
+@mark.parametrize('digits', ['0', '101', '00101'])
+def test_bits_binary_prefix_width(prefix, digits):
+    value = prefix + digits
+    assert Bits(value) == Bits(digits)
+    assert Bits.from_bin(value).as_bin() == digits
+    assert Bits(value.encode('ascii')).as_list() == Bits(digits).as_list()
+
+
+def test_bits_builtin_bin_roundtrip():
+    for value in (0, 1, 5, 255):
+        assert Bits.from_bin(bin(value)) == Bits(value)
+
+
+def test_bits_binary_prefix_explicit_width():
+    assert Bits('0b101', 8) == Bits('00000101')
+    with raises(ValueError):
+        Bits('0b101', 2)
