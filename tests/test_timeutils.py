@@ -3,7 +3,28 @@ from datetime import timedelta, date, datetime, timezone, tzinfo
 import pytest
 
 from boltons.timeutils import (daterange, isoparse, Eastern, dt_to_timestamp,
-                               parse_timedelta)
+                               parse_timedelta, decimal_relative_time, relative_time)
+
+
+@pytest.mark.parametrize('future', [False, True])
+@pytest.mark.parametrize('as_text', [False, True])
+def test_relative_time_naive_timezone_defaults_to_now(future, as_text):
+    class NaiveTimezone(tzinfo):
+        def utcoffset(self, dt):
+            return None
+
+    offset = timedelta(days=2 if future else -2)
+    value = (datetime.now(timezone.utc) + offset).replace(tzinfo=NaiveTimezone())
+    if as_text:
+        assert relative_time(value) == ('2 days from now' if future else '2 days ago')
+    else:
+        assert decimal_relative_time(value) == (-2.0 if future else 2.0, 'days')
+
+
+@pytest.mark.parametrize('tz', [None, timezone(timedelta(hours=2))])
+def test_relative_time_defaults_preserve_standard_timezones(tz):
+    value = datetime.now(tz) - timedelta(days=2)
+    assert decimal_relative_time(value) == (2.0, 'days')
 
 
 def test_daterange_years():
