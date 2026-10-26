@@ -411,6 +411,12 @@ class cachedproperty:
     def __get__(self, obj, objtype=None):
         if obj is None:
             return self
+        # An alias can still reach this descriptor after the canonical
+        # attribute has been cached on the instance.
+        try:
+            return obj.__dict__[self.func.__name__]
+        except KeyError:
+            pass
         value = obj.__dict__[self.func.__name__] = self.func(obj)
         return value
 
