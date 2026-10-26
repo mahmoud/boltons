@@ -1,6 +1,8 @@
 import os.path
 import pathlib
 
+import pytest
+
 
 
 from boltons import fileutils
@@ -9,6 +11,87 @@ from boltons.strutils import removeprefix
 
 
 BOLTONS_PATH = os.path.dirname(os.path.abspath(fileutils.__file__))
+
+
+@pytest.mark.parametrize('rm_part_on_exc', [False, True])
+@pytest.mark.parametrize('phase', ['cloexec', 'fdopen', 'chmod'])
+def test_atomicsaver_setup_failure_cleans_owned_resources(tmp_path, monkeypatch,
+                                                       rm_part_on_exc, phase):
+    dest = tmp_path / 'output.bin'
+    dest.write_bytes(b'original')
+    saver = fileutils.AtomicSaver(dest, rm_part_on_exc=rm_part_on_exc)
+    failure = OSError('setup failed')
+    descriptors = []
+    real_open = os.open
+
+    def track_open(*args, **kwargs):
+        fd = real_open(*args, **kwargs)
+        descriptors.append(fd)
+        return fd
+
+    def fail(*args, **kwargs):
+        raise failure
+
+    monkeypatch.setattr(os, 'open', track_open)
+    if phase == 'cloexec':
+        monkeypatch.setattr(fileutils, 'set_cloexec', fail)
+    else:
+        monkeypatch.setattr(os, phase, fail)
+
+    try:
+        with pytest.raises(OSError) as caught:
+            with saver:
+                pytest.fail('context body must not run after setup failure')
+        assert caught.value is failure
+        with pytest.raises(OSError):
+            os.fstat(descriptors[0])
+        assert os.path.exists(saver.part_path) is (not rm_part_on_exc)
+        assert dest.read_bytes() == b'original'
+    finally:
+        # Keep a failing regression from leaking its real descriptor.
+        if saver.part_file is not None:
+            saver.part_file.close()
+        else:
+            try:
+                os.close(descriptors[0])
+            except OSError:
+                pass
+
+
+def test_atomicsaver_setup_failure_preserves_existing_part(tmp_path):
+    dest = tmp_path / 'output.bin'
+    part = tmp_path / 'output.bin.part'
+    part.write_bytes(b'from another writer')
+    with pytest.raises(OSError):
+        with fileutils.AtomicSaver(dest):
+            pytest.fail('existing part must not be overwritten')
+    assert part.read_bytes() == b'from another writer'
+
+
+def test_atomicsaver_unbuffered_text_setup_cleanup(tmp_path):
+    dest = tmp_path / 'output.txt'
+    with pytest.raises(ValueError, match='unbuffered text'):
+        with fileutils.AtomicSaver(dest, text_mode=True, buffering=0):
+            pytest.fail('invalid buffering must fail at setup')
+    assert list(tmp_path.iterdir()) == []
+
+
+def test_atomicsaver_setup_cleanup_error_preserves_setup_error(tmp_path, monkeypatch):
+    dest = tmp_path / 'output.bin'
+    saver = fileutils.AtomicSaver(dest)
+    failure = OSError('setup failed')
+
+    def fail_cloexec(fd):
+        raise failure
+
+    def fail_unlink(path):
+        raise OSError('cleanup failed')
+
+    monkeypatch.setattr(fileutils, 'set_cloexec', fail_cloexec)
+    monkeypatch.setattr(os, 'unlink', fail_unlink)
+    with pytest.raises(OSError) as caught:
+        saver.setup()
+    assert caught.value is failure
 
 
 def test_fileperms():

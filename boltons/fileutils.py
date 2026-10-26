@@ -423,17 +423,31 @@ class AtomicSaver:
                 do_chmod = False  # respect the umask
 
         fd = os.open(self.part_path, self.open_flags, file_perms)
-        set_cloexec(fd)
-        self.part_file = os.fdopen(fd, self.mode, self.buffering)
+        part_file = None
+        try:
+            set_cloexec(fd)
+            part_file = self.part_file = os.fdopen(fd, self.mode, self.buffering)
 
-        # if default perms are overridden by the user or previous dest_path
-        # chmod away the effects of the umask
-        if do_chmod:
-            try:
+            # if default perms are overridden by the user or previous dest_path
+            # chmod away the effects of the umask
+            if do_chmod:
                 os.chmod(self.part_path, file_perms)
+        except BaseException:
+            # __exit__ does not run when setup fails. Only clean up after
+            # os.open succeeds, so an existing writer's part is left alone.
+            try:
+                if part_file is None:
+                    os.close(fd)
+                else:
+                    part_file.close()
             except OSError:
-                self.part_file.close()
-                raise
+                pass
+            if self.rm_part_on_exc:
+                try:
+                    os.unlink(self.part_path)
+                except OSError:
+                    pass
+            raise
         return
 
     def setup(self):
