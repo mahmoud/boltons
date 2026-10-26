@@ -119,7 +119,7 @@ class mbox_readonlydir(mailbox.mbox):
                 while True:
                     buffer = self._file.read(min(4096,
                                                  stop - self._file.tell()))
-                    if buffer == '':
+                    if buffer == b'':
                         break
                     new_file.write(buffer)
                 new_toc[key] = (new_start, new_file.tell())
