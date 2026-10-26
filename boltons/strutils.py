@@ -1138,6 +1138,15 @@ _SCOPED_FLAG_LETTERS = ((re.ASCII, 'a'), (re.IGNORECASE, 'i'),
                         (re.VERBOSE, 'x'))
 
 
+def _strip_compiled_flag_prefix(pattern, flags):
+    # These global flag groups have already been recorded in Pattern.flags.
+    # Remove them before embedding the pattern in a named/scoped group.
+    prefix = r'\(\?[aiLmsux]+\)|\(\?#(?:\\[\s\S]|[^\\)])*\)'
+    if flags & re.VERBOSE:
+        prefix += r'|[ \t\n\r\v\f]+|#[^\n]*(?:\n|$)'
+    return re.sub('^(?:' + prefix + ')*', '', pattern)
+
+
 class MultiReplace:
     """
     MultiReplace is a tool for doing multiple find/replace actions in one pass.
@@ -1219,7 +1228,7 @@ class MultiReplace:
             else:
                 # Compiled pattern: scope its flags to its own group so
                 # they survive being combined into one expression.
-                exp = vals[0].pattern
+                exp = _strip_compiled_flag_prefix(vals[0].pattern, vals[0].flags)
                 flag_letters = ''.join(
                     letter for flag, letter in _SCOPED_FLAG_LETTERS
                     if vals[0].flags & flag)
