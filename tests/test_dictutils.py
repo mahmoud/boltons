@@ -494,6 +494,45 @@ def test_one_to_one_ior():
     assert oto.inv == {1: 'd', 2: 'c'}
 
 
+def test_one_to_one_copy_and_pickle():
+    # The inherited dict-subclass reduce reapplied a dictitems iterator via
+    # __setitem__ before the copy had an inverse mapping: copy.copy raised
+    # RuntimeError and deleted entries from the source (the source's `inv`
+    # was shared with the half-built copy), and unpickling raised
+    # AttributeError. copy.copy/deepcopy/pickle must round-trip through
+    # __init__ instead.
+    import copy
+    import pickle
+
+    src = OneToOne({'a': 1, 'b': 2})
+
+    shallow = copy.copy(src)
+    assert type(shallow) is OneToOne
+    assert shallow == {'a': 1, 'b': 2}
+    assert shallow.inv == {1: 'a', 2: 'b'}
+    assert shallow.inv.inv is shallow
+
+    # copying must not disturb the source
+    assert src == {'a': 1, 'b': 2}
+    assert src.inv == {1: 'a', 2: 'b'}
+
+    deep = copy.deepcopy(src)
+    assert deep == src
+    assert deep.inv == {1: 'a', 2: 'b'}
+    assert deep.inv.inv is deep
+
+    for protocol in range(pickle.HIGHEST_PROTOCOL + 1):
+        roundtripped = pickle.loads(pickle.dumps(src, protocol))
+        assert roundtripped == src
+        assert roundtripped.inv == {1: 'a', 2: 'b'}
+        assert roundtripped.inv.inv is roundtripped
+
+    # an empty mapping round-trips, too
+    empty = OneToOne()
+    assert copy.copy(empty).inv == {}
+    assert pickle.loads(pickle.dumps(empty)).inv == {}
+
+
 def test_many_to_many():
     m2m = ManyToMany()
     assert len(m2m) == 0

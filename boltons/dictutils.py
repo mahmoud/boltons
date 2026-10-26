@@ -861,6 +861,16 @@ class OneToOne(dict):
         dict.clear(self)
         dict.clear(self.inv)
 
+    def __reduce__(self):
+        # The default dict-subclass reduce creates the object without
+        # calling __init__ and then reapplies a dictitems iterator via
+        # __setitem__. That happens before `inv` exists (unpickling:
+        # AttributeError) and, for copy.copy, while the copy still shares
+        # the source's `inv`, so the entries were popped back out of the
+        # source (RuntimeError, source silently truncated). Rebuilding
+        # from a plain dict goes through __init__, which sets up `inv`.
+        return (self.__class__, (dict(self),))
+
     def copy(self):
         return self.__class__(self)
 
