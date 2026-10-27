@@ -984,6 +984,8 @@ class _ComplementSet:
             type(other) in (set, frozenset) and self._included == other)
 
     def __hash__(self):
+        if self._included is not None:
+            return hash(self._included)
         return hash(self._included) ^ hash(self._excluded)
 
     def __len__(self):
