@@ -402,3 +402,20 @@ def test_complement_set_identities(op, ref):
             res = op(_make_cset(a, rep_a), _make_cset(b, rep_b))
             got = {x for x in _UNIVERSE if x in res}
             assert got == ref(a, b), (op, a, rep_a, b, rep_b)
+
+
+@mark.parametrize('items', [(), (1,), (1, 2, 3)])
+def test_finite_frozen_complement_hash(items):
+    frozen = frozenset(items)
+    wrapped = complement(complement(frozen))
+    assert wrapped == frozen
+    assert hash(wrapped) == hash(frozen)
+    assert {wrapped: 'value'}[frozen] == 'value'
+    assert {frozen: 'value'}[wrapped] == 'value'
+
+
+def test_mutable_complement_unhashable():
+    with raises(TypeError):
+        hash(complement({1, 2}))
+    with raises(TypeError):
+        hash(complement(complement({1, 2})))
