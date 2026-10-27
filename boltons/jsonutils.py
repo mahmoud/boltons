@@ -100,6 +100,15 @@ def reverse_iter_lines(file_obj, blocksize=DEFAULT_BLOCKSIZE, preseek=True, enco
         cur_pos -= read_size
         file_obj.seek(cur_pos, os.SEEK_SET)
         cur = file_obj.read(read_size)
+        if len(cur) < read_size:
+            parts, remaining = [cur], read_size - len(cur)
+            while remaining:
+                part = file_obj.read(remaining)
+                if not part:
+                    break
+                parts.append(part)
+                remaining -= len(part)
+            cur = empty.join(parts)
         buff = cur + buff
         lines = buff.splitlines()
 
