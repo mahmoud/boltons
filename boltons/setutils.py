@@ -664,6 +664,8 @@ class _ComplementSet:
 
     def remove(self, item):
         if self._included is None:
+            if item in self._excluded:
+                raise KeyError(item)
             self._excluded.add(item)
         else:
             self._included.remove(item)
