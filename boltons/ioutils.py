@@ -504,15 +504,18 @@ class SpooledStringIO(SpooledIOBase):
     @property
     def len(self):
         """Determine the number of codepoints in the file"""
-        pos = self.buffer.tell()
-        self.buffer.seek(0)
+        pos = self._tell
+        self.seek(0)
         total = 0
         while True:
             ret = self.buffer.reader.read(READ_CHUNK_SIZE, READ_CHUNK_SIZE)
             if not ret:
                 break
             total += len(ret)
-        self.buffer.seek(pos)
+        # Reading through the decoder leaves it holding buffered characters
+        # that the raw byte offset does not account for, so restore the
+        # position by seeking, which rebuilds the decoder state too.
+        self.seek(pos)
         return total
 
 
