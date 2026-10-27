@@ -237,6 +237,9 @@ class SpooledIOBase(IOBase):
 
     def __eq__(self, other):
         if isinstance(other, self.__class__):
+            if self is other:
+                self._checkClosed()
+                return True
             self_pos = self.tell()
             other_pos = other.tell()
             try:
