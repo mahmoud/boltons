@@ -470,6 +470,21 @@ class TestSpooledStringIO(TestCase, BaseTestMixin, AssertionsMixin):
                     self.assertEqual(stream.tell(), 1)
                     self.assertEqual(stream.read(), '\u2603bcd')
 
+    def test_len_keeps_position_after_multibyte(self):
+        """len() must not disturb a position that follows a multibyte char"""
+        text = 'ab\u2014cd\u2014ef'
+        for rolled in (False, True):
+            for pos in range(len(text) + 1):
+                with self.subTest(rolled=rolled, pos=pos):
+                    with ioutils.SpooledStringIO() as stream:
+                        stream.write(text)
+                        if rolled:
+                            stream.rollover()
+                        stream.seek(pos)
+                        self.assertEqual(stream.len, len(text))
+                        self.assertEqual(stream.tell(), pos)
+                        self.assertEqual(stream.read(), text[pos:])
+
     def test_seek_SEEK_END_negative_offset(self):
         for rolled in (False, True):
             with self.subTest(rolled=rolled):
