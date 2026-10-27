@@ -41,8 +41,7 @@ together.
 The :func:`shrinkuser` function replaces your home directory with a tilde.
 """
 
-from os.path import (expanduser, expandvars, join, normpath, split, splitext)
-import os
+from os.path import (expanduser, expandvars, join, normcase, normpath, split, splitext)
 
 
 __all__ = [
@@ -154,10 +153,11 @@ def shrinkuser(path, home='~'):
     """
     path = normpath(path)
     userhome_dpath = normpath(expanduser('~'))
-    if path == userhome_dpath:
+    normalized_path = normcase(path)
+    if normalized_path == normcase(userhome_dpath):
         return home
-    prefix = userhome_dpath.rstrip(os.path.sep) + os.path.sep
-    if path.startswith(prefix):
+    prefix = join(userhome_dpath, '')
+    if normalized_path.startswith(normcase(prefix)):
         return join(home, path[len(prefix):])
     return path
 
