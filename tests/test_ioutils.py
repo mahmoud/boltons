@@ -88,7 +88,7 @@ class BaseTestMixin:
         """Test truncating with no args with in-memory flo"""
         self.spooled_flo.write(self.test_str)
         self.spooled_flo.seek(10)
-        self.spooled_flo.truncate()
+        self.assertEqual(self.spooled_flo.truncate(), 10)
         self.assertEqual(self.spooled_flo.getvalue(), self.test_str[:10])
 
     def test_truncate_noargs_rollover(self):
@@ -96,14 +96,14 @@ class BaseTestMixin:
         self.spooled_flo.write(self.test_str)
         self.spooled_flo.seek(10)
         self.spooled_flo.rollover()
-        self.spooled_flo.truncate()
+        self.assertEqual(self.spooled_flo.truncate(), 10)
         self.assertEqual(self.spooled_flo.getvalue(), self.test_str[:10])
 
     def test_truncate_with_args_norollover(self):
         """Test truncating to a value with in-memory flo"""
         self.spooled_flo.write(self.test_str)
         self.spooled_flo.seek(5)
-        self.spooled_flo.truncate(10)
+        self.assertEqual(self.spooled_flo.truncate(10), 10)
         self.assertEqual(self.spooled_flo.getvalue(), self.test_str[:10])
 
     def test_truncate_with_args_rollover(self):
@@ -111,7 +111,7 @@ class BaseTestMixin:
         self.spooled_flo.write(self.test_str)
         self.spooled_flo.seek(5)
         self.spooled_flo.rollover()
-        self.spooled_flo.truncate(10)
+        self.assertEqual(self.spooled_flo.truncate(10), 10)
         self.assertEqual(self.spooled_flo.getvalue(), self.test_str[:10])
 
     def test_truncate_keeps_position(self):
@@ -359,6 +359,22 @@ class TestSpooledBytesIO(TestCase, BaseTestMixin, AssertionsMixin):
 
 class TestSpooledStringIO(TestCase, BaseTestMixin, AssertionsMixin):
     linesep = os.linesep
+
+    def test_truncate_returns_character_count(self):
+        for rolled in (False, True):
+            for size in (None, 2):
+                with self.subTest(rolled=rolled, size=size):
+                    flo = ioutils.SpooledStringIO()
+                    try:
+                        flo.write('\u00e9\U0001f370abc')
+                        if rolled:
+                            flo.rollover()
+                        flo.seek(2)
+                        self.assertEqual(flo.truncate(size), 2)
+                        self.assertEqual(flo.tell(), 2)
+                        self.assertEqual(flo.getvalue(), '\u00e9\U0001f370')
+                    finally:
+                        flo.close()
 
     def setUp(self):
         self.spooled_flo = ioutils.SpooledStringIO()
