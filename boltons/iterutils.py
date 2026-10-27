@@ -1627,14 +1627,15 @@ def soft_sorted(iterable, first=None, last=None, key=None, reverse=False):
           each item to be sorted, same as the key in
           :func:`sorted`. Note that entries in *first* and *last*
           should be the keys for the items. Defaults to
-          passthrough/the identity function.
+          passthrough/the identity function. Keys present in both *first*
+          and *last* take their position from *first*.
        reverse (bool): Whether or not elements not explicitly ordered
           by *first* and *last* should be in reverse order or not.
 
     Returns a new list in sorted order.
     """
     first = first or []
-    last = last or []
+    last = [value for value in (last or []) if value not in first]
     key = key or (lambda x: x)
     seq = list(iterable)
     other = [x for x in seq if not (
