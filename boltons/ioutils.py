@@ -404,25 +404,12 @@ class SpooledStringIO(SpooledIOBase):
     def _traverse_codepoints(self, current_position, n):
         """Traverse from current position to the right n codepoints"""
         dest = current_position + n
-        while True:
-            if current_position == dest:
-                # By chance we've landed on the right position, break
-                break
-
-            # If the read would take us past the intended position then
-            # seek only enough to cover the offset
-            if current_position + READ_CHUNK_SIZE > dest:
-                self.read(dest - current_position)
-                break
-            else:
-                ret = self.read(READ_CHUNK_SIZE)
-
-            # Increment our current position
-            current_position += READ_CHUNK_SIZE
-
-            # If we kept reading but there was nothing here, break
-            # as we are at the end of the file
+        while current_position < dest:
+            ret = self.read(min(READ_CHUNK_SIZE, dest - current_position))
+            current_position += len(ret)
             if not ret:
+                # Each missing character will be a single-byte NUL on write.
+                self.buffer.seek(self.buffer.tell() + dest - current_position)
                 break
 
         return dest
