@@ -402,3 +402,22 @@ def test_complement_set_identities(op, ref):
             res = op(_make_cset(a, rep_a), _make_cset(b, rep_b))
             got = {x for x in _UNIVERSE if x in res}
             assert got == ref(a, b), (op, a, rep_a, b, rep_b)
+
+
+@mark.parametrize('item', [None, 1, 'missing'])
+def test_complement_remove_missing(item):
+    wrapped = complement({item})
+    for attempt in range(2):
+        with raises(KeyError) as exc:
+            wrapped.remove(item)
+        assert exc.value.args == (item,)
+        assert item not in wrapped
+
+
+def test_complement_remove_existing():
+    wrapped = complement(set())
+    wrapped.remove('present')
+    assert 'present' not in wrapped
+    assert 'other' in wrapped
+    with raises(KeyError):
+        wrapped.remove('present')
