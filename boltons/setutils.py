@@ -115,7 +115,7 @@ class IndexedSet(MutableSet):
         self.dead_indices = []
         self._compactions = 0
         self._c_max_size = 0
-        if other:
+        if other is not None:
             self.update(other)
 
     # internal functions
