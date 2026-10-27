@@ -82,6 +82,10 @@ def reverse_iter_lines(file_obj, blocksize=DEFAULT_BLOCKSIZE, preseek=True, enco
         file_obj = orig_obj.buffer
     except (AttributeError, io.UnsupportedOperation):
         pass
+    else:
+        if not preseek:
+            # Synchronize read-ahead buffers with the logical text cursor.
+            orig_obj.seek(orig_obj.tell())
 
     # read(0) reveals whether the stream yields text (e.g., io.StringIO,
     # which has no .buffer to unwrap) or bytes
