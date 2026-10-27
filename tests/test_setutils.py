@@ -6,6 +6,31 @@ from pytest import mark, raises
 from boltons.setutils import IndexedSet, _MISSING, complement
 
 
+@mark.parametrize('ambiguous_truth', [False, True])
+def test_indexed_set_init_does_not_test_iterable_truth(ambiguous_truth):
+    class Values:
+        def __iter__(self):
+            return iter([2, 1, 2, 3])
+
+        def __bool__(self):
+            if ambiguous_truth:
+                raise ValueError('truth value is ambiguous')
+            return False
+
+    assert list(IndexedSet(Values())) == [2, 1, 3]
+
+
+@mark.parametrize('value', [0, False, 0.0, 1, True])
+def test_indexed_set_init_rejects_non_iterables(value):
+    with raises(TypeError):
+        IndexedSet(value)
+
+
+@mark.parametrize('value', [None, [], (), '', {}, set(), iter(())])
+def test_indexed_set_init_empty_inputs(value):
+    assert list(IndexedSet(value)) == []
+
+
 def test_indexed_set_basic():
     zero2nine = IndexedSet(range(10))
     five2nine = zero2nine & IndexedSet(range(5, 15))
