@@ -232,7 +232,7 @@ def test_mailto():
 REL_URL_BASE = 'http://a/b/c/d;p?q'
 REL_URL_TEST_CASES = [
     # "Normal"
-    #('g:h', 'g:h'),     # Not supported:  scheme with relative path
+    ('g:h', 'g:h'),
     ('g', 'http://a/b/c/g'),
     ('./g', 'http://a/b/c/g'),
     ('g/', 'http://a/b/c/g/'),

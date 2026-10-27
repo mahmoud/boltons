@@ -660,6 +660,8 @@ class URL:
         >>> url = URL('http://boltons.readthedocs.io')
         >>> url.navigate('en/latest/')
         URL(u'http://boltons.readthedocs.io/en/latest/')
+        >>> url.navigate('mailto:me@example.com')
+        URL(u'mailto:me@example.com')
 
         Args:
            dest (str): A string or URL object representing the destination
@@ -671,7 +673,7 @@ class URL:
         orig_dest = None
         if not isinstance(dest, URL):
             dest, orig_dest = URL(dest), dest
-        if dest.scheme and dest.host:
+        if dest.scheme and (dest.host or not dest.uses_netloc):
             # absolute URLs replace everything, but don't make an
             # extra copy if we don't have to
             ret = URL(dest) if orig_dest is None else dest
