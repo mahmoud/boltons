@@ -24,6 +24,26 @@ def test_lru_add():
     assert 0 not in cache
 
 
+@pytest.mark.parametrize('cache_type', [LRI, LRU])
+@pytest.mark.parametrize('source_type', [dict, list])
+@pytest.mark.parametrize('raises', [False, True])
+def test_cache_initial_values_without_truth_testing(cache_type, source_type, raises):
+    class Values(source_type):
+        def __bool__(self):
+            if raises:
+                raise ValueError('truth value is ambiguous')
+            return False
+
+    values = Values([('a', 1), ('b', 2), ('c', 3)])
+    cache = cache_type(max_size=2, values=values)
+
+    assert dict(cache) == {'b': 2, 'c': 3}
+    cache['d'] = 4
+    assert dict(cache) == {'c': 3, 'd': 4}
+    assert cache.hit_count == cache.miss_count == cache.soft_miss_count == 0
+    assert len(values) == 3
+
+
 def test_lri():
     cache_size = 10
     bc = LRI(cache_size, on_miss=lambda k: k.upper())
