@@ -316,6 +316,44 @@ def test_callable_cached_dec():
     return
 
 
+def test_falsey_callable_cache_keys():
+    class FalseyKey:
+        def __init__(self):
+            self.calls = 0
+
+        def __bool__(self):
+            return False
+
+        def __call__(self, args, kwargs, typed=False):
+            self.calls += 1
+            return ('constant',)
+
+    function_key = FalseyKey()
+
+    @cached({}, key=function_key)
+    def func(value):
+        return value
+
+    assert func(1) == 1
+    assert func(2) == 1
+    assert function_key.calls == 2
+
+    method_key = FalseyKey()
+
+    class Target:
+        def __init__(self):
+            self.cache = {}
+
+        @cachedmethod('cache', key=method_key)
+        def method(self, value):
+            return value
+
+    target = Target()
+    assert target.method(1) == 1
+    assert target.method(2) == 1
+    assert method_key.calls == 2
+
+
 def test_cachedmethod():
     class Car:
         def __init__(self, cache=None):

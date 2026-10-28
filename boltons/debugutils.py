@@ -258,7 +258,7 @@ def wrap_trace(obj, hook=trace_print_hook,
 
         if not callable(attr_val) or attr_name in ('__new__',):
             continue
-        elif which_func and not which_func(attr_name, attr_val):
+        elif which_func is not None and not which_func(attr_name, attr_val):
             continue
 
         if attr_name == '__getattribute__':

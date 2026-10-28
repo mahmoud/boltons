@@ -455,7 +455,7 @@ class CachedFunction:
             self.get_cache = _get_cache
         self.scoped = scoped
         self.typed = typed
-        self.key_func = key or make_cache_key
+        self.key_func = key if key is not None else make_cache_key
 
     def __call__(self, *args, **kwargs):
         cache = self.get_cache()
@@ -497,7 +497,7 @@ class CachedMethod:
             self.get_cache = _get_cache
         self.scoped = scoped
         self.typed = typed
-        self.key_func = key or make_cache_key
+        self.key_func = key if key is not None else make_cache_key
         self.bound_to = None
 
     def __get__(self, obj, objtype=None):

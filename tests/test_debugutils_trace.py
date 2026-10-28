@@ -72,6 +72,33 @@ def test_trace_which():
     assert config.value == 'second'
 
 
+def test_trace_falsey_callable_which():
+    class Target:
+        def selected(self):
+            pass
+
+        def skipped(self):
+            pass
+
+    class FalseySelector:
+        def __bool__(self):
+            return False
+
+        def __call__(self, name, value):
+            return name == 'selected'
+
+    calls = []
+
+    def hook(**event):
+        calls.append(event['attr_name'])
+
+    wrapped = wrap_trace(Target(), hook=hook, which=FalseySelector(),
+                         events='call')
+    wrapped.selected()
+    wrapped.skipped()
+    assert calls == ['selected']
+
+
 def test_trace_namedtuple():
     TargetType = namedtuple('TargetType', 'x y z')
     target = TargetType(1, 2, 3)

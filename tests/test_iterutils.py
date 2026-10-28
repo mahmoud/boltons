@@ -677,6 +677,14 @@ def test_untyped_sorted_key_called_once_per_item():
         untyped_sorted([1], key=bad_key)
 
 
+def test_soft_sorted_falsey_key():
+    from boltons.iterutils import soft_sorted
+
+    key = _FalseyCallable(lambda x: -x)
+    assert soft_sorted([1, 3, 2], key=key) == [3, 2, 1]
+    assert key.calls == 3
+
+
 def test_lstrip():
     from boltons.iterutils import lstrip
 
