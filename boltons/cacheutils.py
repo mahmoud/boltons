@@ -128,7 +128,7 @@ class LRI(dict):
                             ' (or None), not %r' % on_miss)
         self.on_miss = on_miss
 
-        if values:
+        if values is not None:
             self.update(values)
 
     # TODO: fromkeys()?
