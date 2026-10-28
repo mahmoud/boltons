@@ -65,6 +65,7 @@ original author of `Netstring`_.
 """
 
 import time
+import operator
 import socket
 
 try:
@@ -214,6 +215,9 @@ class BufferedSocket:
         calls to recv will raise :exc:`socket.error`.
 
         """
+        size = operator.index(size)
+        if size < 0:
+            raise ValueError('size must be non-negative')
         with self._recv_lock:
             if timeout is _UNSET:
                 timeout = self.timeout
@@ -240,7 +244,7 @@ class BufferedSocket:
         see bytes in the recv buffer, use :meth:`getrecvbuffer`.
 
         Args:
-            size (int): The exact number of bytes to peek at
+            size (int): The non-negative number of bytes to peek at
             timeout (float): The timeout for this operation. Can be 0 for
                 nonblocking and None for no timeout. Defaults to the value
                 set in the constructor of BufferedSocket.
@@ -250,6 +254,9 @@ class BufferedSocket:
         :exc:`Timeout` will be raised. If the connection is closed, a
         :exc:`ConnectionClosed` will be raised.
         """
+        size = operator.index(size)
+        if size < 0:
+            raise ValueError('size must be non-negative')
         with self._recv_lock:
             if len(self.rbuf) >= size:
                 return self.rbuf[:size]
@@ -368,7 +375,7 @@ class BufferedSocket:
         *size* bytes have been read.
 
         Args:
-            size (int): number of bytes to read before returning.
+            size (int): non-negative number of bytes to read before returning.
             timeout (float): The timeout for this operation. Can be 0 for
                 nonblocking and None for no timeout. Defaults to the value
                 set in the constructor of BufferedSocket.
@@ -378,6 +385,9 @@ class BufferedSocket:
         :exc:`Timeout` will be raised. If the connection is closed, a
         :exc:`ConnectionClosed` will be raised.
         """
+        size = operator.index(size)
+        if size < 0:
+            raise ValueError('size must be non-negative')
         with self._recv_lock:
             if size == 0:
                 return b''
