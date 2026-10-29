@@ -886,7 +886,7 @@ class OneToOne(dict):
         if callable(getattr(dict_or_iterable, 'keys', None)):
             keys_vals = [(k, dict_or_iterable[k]) for k in dict_or_iterable.keys()]
         else:
-            keys_vals = list(dict_or_iterable)
+            keys_vals = [(key, val) for key, val in dict_or_iterable]
         keys_vals.extend(kw.items())
         for key, val in keys_vals:
             hash(key)
