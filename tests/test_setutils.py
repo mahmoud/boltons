@@ -277,6 +277,30 @@ def test_iset_slice_agreement():
                         assert list(iset[s]) == ref[s], (pops, s)
 
 
+@mark.parametrize('remove', [False, True])
+@mark.parametrize('bounds', [
+    (None, 10**100, None),
+    (10**100, None, None),
+    (-10**100, 10**100, 2),
+    (None, None, 10**100),
+    (1, 10**100, -2),
+    (None, None, -10**100),
+])
+def test_iset_slice_large_integers(remove, bounds):
+    iset = IndexedSet(range(10))
+    if remove:
+        iset.remove(2)
+    ref = list(iset)
+    start, stop, step = bounds
+    # Negative steps select a forward slice of the reversed contents.
+    if step is not None and step < 0:
+        expected = ref[::-1][slice(start, stop, -step)]
+    else:
+        expected = ref[slice(*bounds)]
+    assert list(iset[slice(*bounds)]) == expected
+    assert list(iset.iter_slice(*bounds)) == expected
+
+
 def test_iset_scalar_index_bounds():
     # Out-of-range negatives used to wrap silently: __getitem__ normalized
     # the index and _get_real_index normalized it AGAIN, so x[-10] on a
