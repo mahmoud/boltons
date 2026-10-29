@@ -677,6 +677,24 @@ def test_untyped_sorted_key_called_once_per_item():
         untyped_sorted([1], key=bad_key)
 
 
+def test_chunk_ranges_bad_overlap():
+    from boltons.iterutils import chunk_ranges
+
+    # overlap_size == chunk_size used to raise an opaque
+    # "range() arg 3 must not be zero" from inside the loop.
+    with pytest.raises(ValueError):
+        list(chunk_ranges(20, 5, overlap_size=5))
+
+    # overlap_size > chunk_size used to silently return [].
+    with pytest.raises(ValueError):
+        list(chunk_ranges(20, 5, overlap_size=10))
+
+    # valid overlap still works
+    assert list(chunk_ranges(20, 5, overlap_size=2)) == [
+        (0, 5), (3, 8), (6, 11), (9, 14), (12, 17), (15, 20)
+    ]
+
+
 def test_lstrip():
     from boltons.iterutils import lstrip
 
