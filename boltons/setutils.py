@@ -431,17 +431,19 @@ class IndexedSet(MutableSet):
         iterable = self
         # start/stop are apparent (dead-slot-free) indices, the same space
         # islice consumes; mapping them through _get_real_index() (item_list
-        # space) over-counted by the dead slots before each bound. Only
-        # negatives need normalizing, as islice rejects them.
+        # space) over-counted by the dead slots before each bound.
         # NB: a negative step slices the reversed stream with forward bounds
         # (x[2:4:-1] == reversed(x)[2:4]), behavior since 2013.
-        if start is not None and start < 0:
-            start = max(len(self) + start, 0)
-        if stop is not None and stop < 0:
-            stop = max(len(self) + stop, 0)
+        if step is not None:
+            step = operator.index(step)
         if step is not None and step < 0:
             step = -step
             iterable = reversed(self)
+        size = len(self)
+        start, stop, step = slice(start, stop, step).indices(size)
+        # islice rejects integers above sys.maxsize. No stride needs to
+        # exceed the container length to select at most one element.
+        step = min(step, max(size, 1))
         return islice(iterable, start, stop, step)
 
     # list operations
