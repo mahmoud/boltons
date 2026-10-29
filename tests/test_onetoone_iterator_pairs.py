@@ -24,3 +24,20 @@ def test_invalid_iterator_pair_does_not_mutate(bad_pair):
         mapping.update([iter(("new", 1)), iter(bad_pair)])
     assert dict(mapping) == {"old": 0}
     assert dict(mapping.inv) == {0: "old"}
+
+
+@pytest.mark.parametrize("inverse", [False, True])
+def test_update_snapshots_reused_pair_buffer(inverse):
+    def pairs():
+        pair = [None, None]
+        for key, value in [("a", 1), ("b", 2)]:
+            pair[:] = [key, value]
+            yield pair
+
+    mapping = OneToOne()
+    target = mapping.inv if inverse else mapping
+    expected = dict(pairs())
+    target.update(pairs())
+    assert dict(target) == expected
+    assert dict(target.inv) == {value: key for key, value in expected.items()}
+    assert target.inv.inv is target
