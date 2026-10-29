@@ -695,7 +695,13 @@ def backoff_iter(start, stop, count=None, factor=2.0, jitter=False):
                                  ' and start != stop, not %r' % factor)
             count = 1
         else:
-            count = 1 + math.ceil(math.log(stop/denom, factor))
+            ratio = stop / denom
+            if math.isinf(ratio) and math.isfinite(stop) and math.isfinite(factor):
+                # Finite endpoints can still have an overflowing ratio.
+                log_range = (math.log2(stop) - math.log2(denom)) / math.log2(factor)
+            else:
+                log_range = math.log(ratio, factor)
+            count = 1 + math.ceil(log_range)
             count = count if start else count + 1
     if count != 'repeat' and count < 0:
         raise ValueError('count must be positive or "repeat", not %r' % count)
