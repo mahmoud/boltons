@@ -1,5 +1,7 @@
 import os
 
+from pytest import mark
+
 from boltons.jsonutils import (JSONLIterator,
                                DEFAULT_BLOCKSIZE,
                                reverse_iter_lines)
@@ -146,3 +148,32 @@ def test_jsonl_iterator_text_cur_byte_pos(tmp_path):
         assert next(jsonl_iter) == {'1': 1}
         assert jsonl_iter.cur_byte_pos == len('{"1": 1}\n')
         assert list(jsonl_iter) == [{'2': 2}]
+
+
+@mark.parametrize('binary', [False, True])
+@mark.parametrize('rel_seek', [0.1, 0.45, -0.4])
+@mark.parametrize('max_chunk', [1, 3, 5])
+def test_jsonl_relative_seek_short_reads(binary, rel_seek, max_chunk):
+    import io
+    import json
+
+    class ShortReadFile(_CappedReadFile):
+        def __init__(self, stream, max_chunk):
+            super().__init__(stream, max_reads=1000)
+            self.max_chunk = max_chunk
+
+        def read(self, size=-1):
+            if size >= 0:
+                size = min(size, self.max_chunk)
+            return super().read(size)
+
+    text = ''.join(json.dumps({'n': i, 'padding': 'x' * 20}) + '\n'
+                   for i in range(5))
+    stream_type = io.BytesIO if binary else io.StringIO
+    data = text.encode('utf-8') if binary else text
+    expected = list(JSONLIterator(stream_type(data), rel_seek=rel_seek))
+    assert expected
+    stream = ShortReadFile(stream_type(data), max_chunk)
+    actual = list(JSONLIterator(stream, rel_seek=rel_seek))
+    assert actual == expected
+    assert stream.tell() <= len(data)

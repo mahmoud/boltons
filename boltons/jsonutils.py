@@ -191,8 +191,8 @@ class JSONLIterator:
                 # never yieldable from a mid-line seek anyway
                 fo.seek(0, os.SEEK_END)
                 return
-            total_read += bsize
-        newline_offset = cur.index(newline) + total_read - bsize
+            total_read += len(cur)
+        newline_offset = cur.index(newline) + total_read - len(cur)
         fo.seek(cur_pos + newline_offset)
 
     def _init_rel_seek(self):
