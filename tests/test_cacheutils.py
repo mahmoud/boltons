@@ -372,7 +372,8 @@ def test_cachedmethod():
     # always check the repr
     assert repr(car_two.door) == ('<CachedMethod func=%r scoped=False typed=False bound_to=%r>'
                                   % (Car.door.func, car_two))
-    print(repr(Car.door))
+    assert repr(Car.door) == ('CachedMethod(func=%r, scoped=False, typed=False)'
+                              % Car.door.func)
     return
 
 
