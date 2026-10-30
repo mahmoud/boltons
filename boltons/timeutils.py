@@ -443,6 +443,8 @@ def daterange(start, stop, step=1, inclusive=False):
 
     while not finished(now, stop):
         yield now
+        if now == stop:
+            return
         prev, now = now, _advance(now)
         if now == prev:
             raise ValueError('step does not advance: %r' % (step,))
