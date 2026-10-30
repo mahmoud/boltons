@@ -20,6 +20,7 @@ present in the standard library.
 .. autofunction:: chunked_iter
 .. autofunction:: chunked_filter
 .. autofunction:: chunk_ranges
+.. autofunction:: lookahead_iter
 .. autofunction:: pairwise
 .. autofunction:: pairwise_iter
 .. autofunction:: windowed

@@ -452,6 +452,31 @@ def chunk_ranges(input_size, chunk_size, input_offset=0, overlap_size=0, align=F
             return
 
 
+def lookahead_iter(src):
+    """Yield ``(item, is_last)`` pairs from *src*.
+
+    This is useful for adding separators or final-item handling when
+    iterating over a generator without loading all its items into memory.
+
+    >>> list(lookahead_iter(['a', 'b', 'c']))
+    [('a', False), ('b', False), ('c', True)]
+    >>> list(lookahead_iter([]))
+    []
+
+    Only one item is read ahead. Empty iterables yield nothing, and errors
+    raised by the underlying iterator are propagated to the caller.
+    """
+    iterator = iter(src)
+    try:
+        item = next(iterator)
+    except StopIteration:
+        return
+    for next_item in iterator:
+        yield item, False
+        item = next_item
+    yield item, True
+
+
 def pairwise(src, end=_UNSET):
     """Convenience function for calling :func:`windowed` on *src*, with
     *size* set to 2.

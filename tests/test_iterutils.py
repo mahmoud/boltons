@@ -2,6 +2,7 @@ import os
 
 import pytest
 
+from boltons import iterutils
 from boltons.dictutils import OMD
 from boltons.iterutils import (first,
                                split,
@@ -17,6 +18,58 @@ from boltons.iterutils import (first,
 from boltons.namedutils import namedtuple
 
 CUR_PATH = os.path.abspath(__file__)
+
+
+@pytest.mark.parametrize('values, expected', [
+    ([], []),
+    ([None], [(None, True)]),
+    ([1, 2, 3], [(1, False), (2, False), (3, True)]),
+    ([False, 0, '', None], [(False, False), (0, False), ('', False), (None, True)]),
+])
+def test_lookahead_iter(values, expected):
+    assert list(iterutils.lookahead_iter(iter(values))) == expected
+
+
+def test_lookahead_iter_reads_only_one_item_ahead():
+    consumed = []
+
+    def source():
+        for item in range(100):
+            consumed.append(item)
+            yield item
+
+    result = iterutils.lookahead_iter(source())
+    assert consumed == []
+    assert next(result) == (0, False)
+    assert consumed == [0, 1]
+    assert next(result) == (1, False)
+    assert consumed == [0, 1, 2]
+
+
+def test_lookahead_iter_propagates_source_error():
+    def source():
+        yield 1
+        yield 2
+        raise RuntimeError('source failed')
+
+    result = iterutils.lookahead_iter(source())
+    assert next(result) == (1, False)
+    with pytest.raises(RuntimeError, match='source failed'):
+        next(result)
+
+
+def test_lookahead_iter_does_not_test_item_truth():
+    class Item:
+        def __bool__(self):
+            raise AssertionError('item truth was tested')
+
+    item = Item()
+    assert list(iterutils.lookahead_iter([item])) == [(item, True)]
+
+
+def test_lookahead_iter_rejects_non_iterable():
+    with pytest.raises(TypeError):
+        list(iterutils.lookahead_iter(42))
 
 isbool = lambda x: isinstance(x, bool)
 isint = lambda x: isinstance(x, int)
