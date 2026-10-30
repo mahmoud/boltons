@@ -114,12 +114,8 @@ def test_lru_basic():
     assert len(lru) == 0
     assert not lru
 
-    try:
+    with pytest.raises(KeyError):
         lru.pop('bye')
-    except KeyError:
-        pass
-    else:
-        assert False
 
     default = object()
     assert lru.pop('bye', default) is default
