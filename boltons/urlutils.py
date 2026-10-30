@@ -547,14 +547,14 @@ class URL:
         """
         ret = cls()
 
-        ret.scheme = scheme
-        ret.host = host
+        ret.scheme = scheme or ''
+        ret.host = host or ''
         ret.path_parts = tuple(path_parts) or ('',)
         ret.query_params.update(query_params)
         ret.fragment = fragment
         ret.port = port
-        ret.username = username
-        ret.password = password
+        ret.username = username or ''
+        ret.password = password or ''
 
         return ret
 
