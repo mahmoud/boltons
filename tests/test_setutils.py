@@ -402,3 +402,24 @@ def test_complement_set_identities(op, ref):
             res = op(_make_cset(a, rep_a), _make_cset(b, rep_b))
             got = {x for x in _UNIVERSE if x in res}
             assert got == ref(a, b), (op, a, rep_a, b, rep_b)
+
+
+@mark.parametrize('iterable_type', [list, tuple, iter])
+def test_iset_symmetric_difference_multiple_operands(iterable_type):
+    original = IndexedSet([1, 2, 3])
+    result = original.symmetric_difference(
+        iterable_type([2, 3, 4, 4]), iterable_type([3, 4, 5, 5]))
+
+    assert list(result) == [1, 3, 5]
+    assert set(result) == {1, 2, 3} ^ {2, 3, 4} ^ {3, 4, 5}
+    assert list(original) == [1, 2, 3]
+
+
+def test_iset_symmetric_difference_no_operands():
+    original = IndexedSet([3, 1, 2])
+    result = original.symmetric_difference()
+
+    assert list(result) == [3, 1, 2]
+    assert result is not original
+    result.add(4)
+    assert list(original) == [3, 1, 2]
