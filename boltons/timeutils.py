@@ -170,7 +170,7 @@ _BOUNDS = [(b[0] * b[1], b[1], b[2]) for b in _BOUNDS]
 _BOUND_DELTAS = [b[0] for b in _BOUNDS]
 
 _FLOAT_PATTERN = r'[+-]?\ *(\d+(\.\d*)?|\.\d+)([eE][+-]?\d+)?'
-_PARSE_TD_RE = re.compile(r"((?P<value>%s)\s*(?P<unit>\w)\w*)" % _FLOAT_PATTERN)
+_PARSE_TD_RE = re.compile(r"((?P<value>%s)\s*(?P<unit>\w+))" % _FLOAT_PATTERN)
 _PARSE_TD_KW_MAP = {unit[0]: unit + 's'
                          for _, _, unit in reversed(_BOUNDS[:-2])}
 
@@ -178,7 +178,8 @@ _PARSE_TD_KW_MAP = {unit[0]: unit + 's'
 def parse_timedelta(text):
     """Robustly parses a short text description of a time period into a
     :class:`datetime.timedelta`. Supports weeks, days, hours, minutes,
-    and seconds, with or without decimal points:
+    and seconds, with or without decimal points. Milliseconds,
+    microseconds, and months are not supported:
 
     Args:
         text (str): Text to parse.
@@ -205,8 +206,10 @@ def parse_timedelta(text):
     td_kwargs = {}
     for match in _PARSE_TD_RE.finditer(text):
         value, unit = match.group('value'), match.group('unit')
+        if unit.lower().startswith(('ms', 'milli', 'micro', 'mo')):
+            raise ValueError('unsupported time unit %r' % unit)
         try:
-            unit_key = _PARSE_TD_KW_MAP[unit]
+            unit_key = _PARSE_TD_KW_MAP[unit[0]]
         except KeyError:
             raise ValueError('invalid time unit %r, expected one of %r'
                              % (unit, _PARSE_TD_KW_MAP.keys()))
