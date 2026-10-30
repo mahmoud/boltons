@@ -190,3 +190,14 @@ def test_us_timezone_fromutc_sets_fold():
     assert second.replace(tzinfo=None) == datetime(2011, 11, 6, 1, 30)
     assert second.fold == 1
     assert second.tzname() == 'EST'
+
+
+@pytest.mark.parametrize('start, stop, step', [
+    (date(9999, 12, 30), date.max, 1),
+    (date(1, 1, 2), date.min, -1),
+    (date(9999, 11, 1), date(9999, 12, 1), (0, 1, 0)),
+    (date(1, 2, 1), date.min, (0, -1, 0)),
+])
+def test_daterange_stops_at_inclusive_endpoint(start, stop, step):
+    assert list(daterange(start, stop, step=step, inclusive=True)) == [start, stop]
+    assert list(daterange(start, stop, step=step)) == [start]
