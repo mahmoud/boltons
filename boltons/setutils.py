@@ -353,9 +353,10 @@ class IndexedSet(MutableSet):
 
     def symmetric_difference(self, *others):
         "symmetric_difference(*others) -> XOR set of this and others"
-        others = [self._as_container(other) for other in others]
-        ret = self.union(*others)
-        return ret.difference(self.intersection(*others))
+        ret = self.from_iterable(self)
+        for other in others:
+            ret.symmetric_difference_update(other)
+        return ret
 
     __or__  = __ror__  = union
     __and__ = __rand__ = intersection
