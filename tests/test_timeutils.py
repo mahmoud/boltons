@@ -113,6 +113,21 @@ def test_parse_timedelta_rejects_garbage():
     assert parse_timedelta('  ') == timedelta(0)
 
 
+@pytest.mark.parametrize('unit', [
+    'ms', 'msec', 'msecs', 'millis', 'millisecond', 'milliseconds',
+    'microsecond', 'microseconds', 'mo', 'mon', 'month', 'months',
+    'mS', 'mSec', 'mILLISECOND', 'mONTH',
+])
+def test_parse_timedelta_rejects_unsupported_m_units(unit):
+    with pytest.raises(ValueError):
+        parse_timedelta('500' + unit)
+
+
+@pytest.mark.parametrize('unit', ['m', 'min', 'mins', 'minute', 'minutes'])
+def test_parse_timedelta_minutes(unit):
+    assert parse_timedelta('2.5 ' + unit) == timedelta(seconds=150)
+
+
 def test_daterange_month_step_clamps_day():
     # issue #500: stepping by months from the 31st clamps to month end
     res = list(daterange(date(2020, 1, 31), date(2020, 4, 1), step=(0, 1, 0)))
