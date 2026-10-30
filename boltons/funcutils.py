@@ -261,6 +261,8 @@ class InstancePartial(functools.partial):
         return functools.partialmethod(self.func, *self.args, **self.keywords)
 
     def __get__(self, obj, obj_type):
+        if obj is None:
+            return self
         return MethodType(self, obj)
 
 
@@ -297,7 +299,7 @@ class CachedInstancePartial(functools.partial):
         name = self.__name__
 
         if obj is None:
-            return MethodType(self, obj)
+            return self
         try:
             # since this is a data descriptor, this block
             # is probably only hit once (per object)
