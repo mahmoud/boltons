@@ -311,7 +311,7 @@ def test_callable_cached_dec():
     func()
     assert inner_func.call_count == 2
 
-    print(repr(func))
+    assert repr(func) == f'CachedFunction(func={inner_func!r})'
 
     return
 
