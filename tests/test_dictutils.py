@@ -256,11 +256,8 @@ def test_pop():
 
     assert omd.pop('odd') == 1
     assert omd.pop('odd', 99) == 99
-    try:
+    with pytest.raises(KeyError):
         omd.pop('odd')
-        assert False
-    except KeyError:
-        pass
 
     assert len(omd) == 1
     assert len(omd.items(multi=True)) == 2
