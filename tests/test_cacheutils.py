@@ -74,6 +74,8 @@ def test_lri_cache_eviction():
     # will error here since we evict key1 from the cache and it doesn't
     # exist in the dict anymore
     test_cache["key3"] = "value3"
+    assert dict(test_cache) == {"key2": "value2", "key3": "value3"}, \
+        "LRI(2) should evict key1 and keep only the two newest keys"
 
 
 def test_cache_sizes_on_repeat_insertions():
