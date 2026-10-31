@@ -1,5 +1,8 @@
-from pytest import raises
-from boltons.mathutils import clamp, ceil, floor, Bits
+from datetime import date
+from itertools import product
+
+from pytest import raises, mark
+from boltons.mathutils import clamp, ceil, floor, Bits, range_union, range_intersection
 import math
 
 INF, NAN = float('inf'), float('nan')
@@ -13,6 +16,155 @@ OUT_OF_RANGE_UPPER = 2500
 VALID_LOWER = 247
 VALID_UPPER = 2314
 VALID_BETWEEN = 248.5
+
+
+@mark.parametrize('ranges, union, intersection', [
+    ([(1, 5), (2, 6), (1, 4)], [(1, 6)], (2, 4)),  # overlapping ranges merge
+    ([(1, 5), (6, 8), (7, 9)], [(1, 5), (6, 9)], None),  # disjoint ranges
+    ([], [], None),  # empty input
+    ([(2, 2)], [(2, 2)], (2, 2)),  # single point range
+    ([(3, 5), (1, 3)], [(1, 5)], (3, 3)),  # touching at endpoint (closed semantics)
+    ([(1, 9), (2, 3), (1, 9)], [(1, 9)], (2, 3)),  # duplicates and containment
+    ([(5, 6), (-3, -1), (0, 2)], [(-3, -1), (0, 2), (5, 6)], None),  # unsorted input
+    ([(0.5, 1.5), (1.0, 2.5)], [(0.5, 2.5)], (1.0, 1.5)),  # float endpoints
+    ([(float('-inf'), 0), (0, float('inf'))], [(float('-inf'), float('inf'))], (0, 0)),  # infinite ranges
+    ([('a', 'f'), ('c', 'z')], [('a', 'z')], ('c', 'f')),  # string endpoints
+])
+def test_range_operations(ranges, union, intersection):
+    assert range_union(ranges) == union
+    assert range_intersection(ranges) == intersection
+
+
+def test_range_operations_dates():
+    """
+    Range operations work with any comparable type, including dates.
+    """
+    ranges = [(date(2026, 10, 1), date(2026, 10, 5)), (date(2026, 10, 3), date(2026, 10, 8))]
+    assert range_union(ranges) == [(date(2026, 10, 1), date(2026, 10, 8))]
+    assert range_intersection(ranges) == (date(2026, 10, 3), date(2026, 10, 5))
+
+
+def test_range_operations_negative_and_touching_floats():
+    """
+    Negative floats, and floats touching at a shared endpoint, merge
+    and intersect at exactly that endpoint.
+    """
+    ranges = [(-0.1, 0.3), (-1.5, -0.1)]
+    assert range_union(ranges) == [(-1.5, 0.3)]
+    assert range_intersection(ranges) == (-0.1, -0.1)
+
+
+def test_range_operations_many_float_ranges():
+    """
+    Large float inputs, such as measurement windows, are handled in any order.
+    """
+    # each window overlaps the next one, so everything merges into one range
+    overlapping = [(i * 0.5, i * 0.5 + 0.75) for i in range(1000)]
+    assert range_union(overlapping) == [(0.0, 500.25)]
+    assert range_union(reversed(overlapping)) == [(0.0, 500.25)]
+    # the first and last windows are far apart, so nothing is shared
+    assert range_intersection(overlapping) is None
+
+    # each window leaves a gap before the next one, so none of them merge
+    disjoint = [(i * 2.0, i * 2.0 + 0.5) for i in range(1000)]
+    assert range_union(reversed(disjoint)) == disjoint
+    assert range_intersection(disjoint) is None
+
+    # windows that all contain 100.0 share exactly the narrowest span
+    nested = [(100.0 - i * 0.25, 100.0 + i * 0.25) for i in range(1, 1000)]
+    assert range_intersection(nested) == (99.75, 100.25)
+    assert range_union(nested) == [(100.0 - 999 * 0.25, 100.0 + 999 * 0.25)]
+
+
+def test_range_operations_generators_and_no_mutation():
+    """
+    Range operations accept generators and don't mutate input.
+    """
+    ranges = [[6, 9], [1, 4], [3, 7]]
+    assert range_union(iter(ranges)) == [(1, 9)]
+    assert range_intersection(iter(ranges)) is None
+    assert ranges == [[6, 9], [1, 4], [3, 7]]
+
+
+@mark.parametrize('operation', [range_union, range_intersection])
+@mark.parametrize('ranges', [
+    [(3, 1)],
+    [(0, 1), (4, 5), (8, 2)],
+    [(1,)],
+    [(1, 2, 3)],
+    [(NAN, 1)],
+    [(0, NAN)],
+    [(NAN, NAN)],
+    [(0, NAN), (3, 4)],
+    [(0, 1), (NAN, 4)],
+    [(0, 1), (3, 4), (5, NAN)],
+])
+def test_range_operations_invalid_ranges(operation, ranges):
+    with raises(ValueError):
+        operation(iter(ranges))
+
+
+@mark.parametrize('operation', [range_union, range_intersection])
+def test_range_operations_incomparable_endpoints(operation):
+    with raises(TypeError):
+        operation([(1, 'two')])
+
+
+def test_range_operations_less_than_only():
+    """
+    Range operations work with objects that only implement __lt__ (<).
+    """
+    class Endpoint:
+        def __init__(self, value):
+            self.value = value
+
+        def __lt__(self, other):
+            return self.value < other.value
+
+    first = Endpoint(1)
+    middle = Endpoint(3)
+    last = Endpoint(5)
+    ranges = [(middle, last), (first, middle)]
+    assert range_union(ranges) == [(first, last)]
+    assert range_intersection(ranges) == (middle, middle)
+
+
+def test_range_operations_exhaustive_membership():
+    """
+    Exhaustive verification of range union and intersection properties.
+
+    The test strategy is based on boundary-value analysis:
+    - Enumerate all three-range combinations from a small interval domain.
+    - Sample at half-step intervals to test boundaries, interiors and invalid regions.
+    - Verify set-theoretic properties including membership, idempotence and canonical form.
+
+    Half-step sampling (e.g. -0.5, 0, 0.5, ..., 3.5) ensures:
+    - On-point testing. Exact boundary values (0, 1, 2, 3)
+    - Off-point testing. Values just outside valid range (-0.5, 3.5)
+    - Interior testing. Values between boundaries (0.5, 1.5, 2.5)
+
+    This detects off-by-one errors and closed vs open interval bugs.
+
+    References:
+    - Boundary-value analysis: https://en.wikipedia.org/wiki/Boundary-value_analysis
+    - Algebra of sets: https://en.wikipedia.org/wiki/Algebra_of_sets
+    """
+    intervals = [(lower, upper) for lower in range(4) for upper in range(lower, 4)]
+    for ranges in product(intervals, repeat=3):
+        union = range_union(ranges)
+        intersection = range_intersection(ranges)
+        for point in (value / 2 for value in range(-1, 8)):
+            # membership property: x in union iff x in some input
+            assert any(lower <= point <= upper for lower, upper in union) == \
+                   any(lower <= point <= upper for lower, upper in ranges)
+            # membership property: x in intersection iff x in all inputs
+            assert (intersection is not None and intersection[0] <= point <= intersection[1]) == \
+                   all(lower <= point <= upper for lower, upper in ranges)
+        # canonical form: output sorted and non-overlapping
+        assert all(previous[1] < following[0] for previous, following in zip(union, union[1:]))
+        # idempotence: union(union(x)) = union(x)
+        assert range_union(union) == union
+
 
 def test_clamp_examples():
     """some examples for clamp()"""

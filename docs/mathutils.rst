@@ -7,6 +7,18 @@
    :members:
    :undoc-members:
 
+Range Operations
+----------------
+
+These helpers operate on closed ranges of comparable endpoints, including
+numbers, strings, and dates. They accept unsorted iterables without modifying
+them. Touching ranges share their endpoint. Reversed bounds and NaN endpoints
+raise :exc:`ValueError`.
+
+.. autofunction:: boltons.mathutils.range_union
+
+.. autofunction:: boltons.mathutils.range_intersection
+
 Alternative Rounding Functions
 ------------------------------
 
