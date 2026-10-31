@@ -67,6 +67,7 @@ thanks to `Mark Williams`_ for all his help.
 
 """
 
+from collections import defaultdict
 from collections.abc import KeysView, ValuesView, ItemsView
 from itertools import zip_longest
 
@@ -1044,6 +1045,9 @@ def subdict(d, keep=None, drop=None):
     without one of these arguments, calling this function is
     equivalent to calling ``dict()``.
 
+    The input mapping's type is retained, including the default factory
+    when the input is a :class:`collections.defaultdict`.
+
     >>> from pprint import pprint as pp
     >>> pp(subdict({'a': 1, 'b': 2}))
     {'a': 1, 'b': 2}
@@ -1060,7 +1064,10 @@ def subdict(d, keep=None, drop=None):
 
     keys = set(keep) - set(drop)
 
-    return type(d)([(k, v) for k, v in d.items() if k in keys])
+    items = [(k, v) for k, v in d.items() if k in keys]
+    if isinstance(d, defaultdict):
+        return type(d)(d.default_factory, items)
+    return type(d)(items)
 
 
 class FrozenHashError(TypeError):
