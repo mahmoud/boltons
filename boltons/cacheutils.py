@@ -289,13 +289,14 @@ class LRI(dict):
                                   on_miss=self.on_miss)
 
     def setdefault(self, key, default=None):
+        """Return a cached value, inserting *default* without calling on_miss."""
         with self._lock:
-            try:
-                return self[key]
-            except KeyError:
+            if key not in self:
+                self.miss_count += 1
                 self.soft_miss_count += 1
                 self[key] = default
                 return default
+            return self[key]
 
     def update(self, E=(), **F):
         # E and F are throwback names to the dict() __doc__
