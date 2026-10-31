@@ -4,7 +4,7 @@ import codecs
 import random
 import string
 
-from tempfile import mkdtemp
+from tempfile import TemporaryDirectory
 from unittest import TestCase
 from zipfile import ZipFile, ZIP_DEFLATED
 
@@ -40,8 +40,7 @@ class BaseTestMixin:
 
     def test_rollover_custom_directory(self):
         """dir keyword argument is passed to TemporaryFile instantiation"""
-        custom_dir = mkdtemp()
-        try:
+        with TemporaryDirectory() as custom_dir:
             # Re-instantiate self.spooled_flo with the custom dir argument
             _spooled_flo = type(self.spooled_flo)(dir=custom_dir)
             self.assertEqual(_spooled_flo._dir, custom_dir)
@@ -58,8 +57,6 @@ class BaseTestMixin:
             self.assertEqual(_spooled_flo.getvalue(), self.test_str)
             self.assertTrue(_spooled_flo._rolled)
             _spooled_flo.close()
-        finally:
-            os.rmdir(custom_dir)
 
     def test_compare_err(self):
         """Read-heads are reset if a comparison raises an error."""
