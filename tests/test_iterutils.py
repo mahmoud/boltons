@@ -88,8 +88,9 @@ class TestRemap:
 
     def test_unremappable(self):
         obj = object()
-        with pytest.raises(TypeError):
+        with pytest.raises(TypeError) as exc_info:
             remap(obj)
+        assert 'expected remappable root' in str(exc_info.value)
 
     def test_basic_upper(self):
         orig = {'a': 1, 'b': object(), 'c': {'d': set()}}
