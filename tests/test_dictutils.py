@@ -678,3 +678,28 @@ def test_frozendict_api():
 
     import copy
     assert copy.copy(fd) is fd
+
+
+@pytest.mark.parametrize('factory', [None, list, int])
+@pytest.mark.parametrize('filters, expected', [
+    ({}, {'a': 1, 'b': 2}),
+    ({'keep': ['a']}, {'a': 1}),
+    ({'drop': ['a']}, {'b': 2}),
+    ({'keep': ['a', 'b'], 'drop': ['b']}, {'a': 1}),
+    ({'keep': []}, {}),
+])
+def test_subdict_defaultdict(factory, filters, expected):
+    from collections import defaultdict
+
+    source = defaultdict(factory, a=1, b=2)
+    result = subdict(source, **filters)
+    assert type(result) is defaultdict
+    assert result == expected
+    assert result.default_factory is factory
+    assert source == {'a': 1, 'b': 2}
+    if factory is None:
+        with pytest.raises(KeyError):
+            result['new']
+    else:
+        assert result['new'] == factory()
+    assert 'new' not in source
