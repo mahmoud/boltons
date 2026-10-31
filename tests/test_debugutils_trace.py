@@ -40,7 +40,7 @@ def test_trace_bytes():
 
 def test_trace_exc():
     class TestException(Exception):
-        pass
+        """Custom exception type used to check that wrap_trace keeps its args."""
 
     target = TestException('exceptions can be a good thing')
     wrapped = wrap_trace(target)
