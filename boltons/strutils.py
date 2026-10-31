@@ -665,7 +665,7 @@ def gzip_bytes(bytestring, level=6):
 
 
 
-_line_ending_re = re.compile(r'(\r\n|\n|\x0b|\f|\r|\x85|\u2028|\u2029)',
+_line_ending_re = re.compile(r'(\r\n|\n|\x0b|\f|\r|\x1c|\x1d|\x1e|\x85|\u2028|\u2029)',
                              re.UNICODE)
 
 
