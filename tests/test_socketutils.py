@@ -1,4 +1,5 @@
 import sys
+from array import array
 import time
 import errno
 import socket
@@ -449,3 +450,52 @@ def test_netstring_read_ns_timeout_covers_payload():
         with pytest.raises(Timeout):
             ns.read_ns(timeout=0.05)
         assert time.time() - start < 2
+
+
+@pytest.mark.parametrize('typecode', ['B', 'H', 'I', 'd'])
+@pytest.mark.parametrize('shape', ['flat', 'matrix'])
+def test_netstring_write_buffer_byte_length(typecode, shape):
+    payload = memoryview(array(typecode, [1, 2, 3, 4]))
+    if shape == 'matrix':
+        payload = payload.cast('B').cast(typecode, shape=[2, 2])
+    expected = payload.tobytes()
+    x, y = socket.socketpair()
+    try:
+        writer = NetstringSocket(x, maxsize=len(expected))
+        reader = NetstringSocket(y)
+        writer.write_ns(payload)
+        writer.write_ns(b'next')
+        assert reader.read_ns() == expected
+        assert reader.read_ns() == b'next'
+    finally:
+        x.close()
+        y.close()
+
+
+@pytest.mark.parametrize('typecode', ['H', 'I', 'd'])
+def test_netstring_write_buffer_maxsize(typecode):
+    payload = memoryview(array(typecode, [1, 2]))
+    x, y = socket.socketpair()
+    try:
+        writer = NetstringSocket(x, maxsize=payload.nbytes - 1)
+        reader = NetstringSocket(y)
+        with pytest.raises(NetstringMessageTooLong):
+            writer.write_ns(payload)
+        writer.write_ns(b'ok')
+        assert reader.read_ns() == b'ok'
+    finally:
+        x.close()
+        y.close()
+
+
+@pytest.mark.parametrize('payload', [b'', b'abc', bytearray(b'abc')])
+def test_netstring_write_byte_payload(payload):
+    x, y = socket.socketpair()
+    try:
+        writer = NetstringSocket(x, maxsize=len(payload) or 1)
+        reader = NetstringSocket(y)
+        writer.write_ns(payload)
+        assert reader.read_ns() == bytes(payload)
+    finally:
+        x.close()
+        y.close()
