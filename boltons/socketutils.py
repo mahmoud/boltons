@@ -699,7 +699,7 @@ class NetstringSocket:
         return payload
 
     def write_ns(self, payload):
-        size = len(payload)
+        size = memoryview(payload).nbytes
         if size > self.maxsize:
             raise NetstringMessageTooLong(size, self.maxsize)
         data = str(size).encode('ascii') + b':' + payload + b','
