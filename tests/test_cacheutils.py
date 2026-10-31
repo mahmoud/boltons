@@ -120,12 +120,8 @@ def test_lru_basic():
     default = object()
     assert lru.pop('bye', default) is default
 
-    try:
+    with pytest.raises(KeyError):
         lru.popitem()
-    except KeyError:
-        pass
-    else:
-        assert False
 
     lru['another'] = 1
     assert lru.popitem() == ('another', 1)
