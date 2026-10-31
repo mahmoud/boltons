@@ -305,11 +305,8 @@ def test_pop_all():
 
     assert omd.popall('odd') == [1]
     assert len(omd) == 1
-    try:
+    with pytest.raises(KeyError):
         omd.popall('odd')
-        assert False
-    except KeyError:
-        pass
     assert omd.popall('odd', None) is None
 
     assert omd.popall('even') == [0, 2]
