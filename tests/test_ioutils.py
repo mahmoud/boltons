@@ -307,13 +307,10 @@ class TestSpooledBytesIO(TestCase, BaseTestMixin, AssertionsMixin):
                 stream = ioutils.SpooledBytesIO()
                 if rolled:
                     stream.rollover()
-                writer = io.BufferedWriter(stream)
-                try:
+                with io.BufferedWriter(stream) as writer:
                     writer.write(b'payload')
                     writer.flush()
                     self.assertEqual(stream.getvalue(), b'payload')
-                finally:
-                    writer.close()
 
     def test_buffer_write_rollover_uses_byte_count(self):
         with ioutils.SpooledBytesIO(max_size=4) as stream:
