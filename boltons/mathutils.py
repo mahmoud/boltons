@@ -69,6 +69,85 @@ def clamp(x, lower=float('-inf'), upper=float('inf')):
     return min(max(x, lower), upper)
 
 
+def _iter_ranges(ranges):
+    # validate lazily, so any iterable (including a generator) is consumed only once
+    for lower, upper in ranges:
+        if lower != lower or upper != upper:
+            raise ValueError('range endpoints must not be NaN')
+        if upper < lower:
+            raise ValueError('expected upper bound (%r) >= lower bound (%r)'
+                             % (upper, lower))
+        yield lower, upper
+
+
+def range_union(ranges):
+    """Merge closed ranges into a sorted list of non-overlapping
+    ``(lower, upper)`` tuples.
+
+    Args:
+        ranges (iterable): Iterable of ``(lower, upper)`` pairs. The
+          endpoints can be any comparable type, such as numbers,
+          strings, or dates.
+
+    Ranges that overlap or touch at an endpoint are merged. *ranges*
+    need not be sorted and is not modified. A pair whose *upper* is
+    less than its *lower*, or a NaN endpoint, raises :exc:`ValueError`.
+
+    >>> range_union([(1, 5), (2, 6), (8, 9)])
+    [(1, 6), (8, 9)]
+    >>> range_union([(3, 5), (1, 3)])
+    [(1, 5)]
+    >>> range_union([])
+    []
+    """
+    ordered = sorted(_iter_ranges(ranges), key=lambda bounds: bounds[0])
+    merged = []
+    for lower, upper in ordered:
+        # input is sorted by lower bound, so only a gap after the last
+        # merged range (its upper < lower) starts a new one
+        if merged and not merged[-1][1] < lower:
+            previous_lower, previous_upper = merged[-1]
+            if previous_upper < upper:
+                merged[-1] = (previous_lower, upper)
+        else:
+            merged.append((lower, upper))
+    return merged
+
+
+def range_intersection(ranges):
+    """Return the ``(lower, upper)`` range shared by all closed
+    *ranges*, or ``None`` if there is no such range.
+
+    Args:
+        ranges (iterable): Iterable of ``(lower, upper)`` pairs. The
+          endpoints can be any comparable type, such as numbers,
+          strings, or dates.
+
+    Ranges that only touch at an endpoint intersect in that single
+    point. An empty *ranges* returns ``None``. A pair whose *upper* is
+    less than its *lower*, or a NaN endpoint, raises :exc:`ValueError`.
+
+    >>> range_intersection([(1, 5), (2, 6), (1, 4)])
+    (2, 4)
+    >>> range_intersection([(3, 5), (1, 3)])
+    (3, 3)
+    >>> range_intersection([(1, 2), (3, 4)]) is None
+    True
+    """
+    iterator = iter(_iter_ranges(ranges))
+    first = next(iterator, None)
+    if first is None:
+        return None
+    lower, upper = first
+    # shared range is bounded by the largest lower and smallest upper endpoint seen
+    for next_lower, next_upper in iterator:
+        if lower < next_lower:
+            lower = next_lower
+        if next_upper < upper:
+            upper = next_upper
+    return None if upper < lower else (lower, upper)
+
+
 def ceil(x, options=None):
     """Return the ceiling of *x*. If *options* is set, return the smallest
     integer or float from *options* that is greater than or equal to
