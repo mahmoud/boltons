@@ -608,3 +608,41 @@ def test_threshold_counter_non_reciprocal_threshold():
     for _ in range(20):
         tc.add('a')
     assert tc.get('a') == 20
+
+
+@pytest.mark.parametrize('cache_type', [LRI, LRU])
+@pytest.mark.parametrize('default', [None, 0, 'explicit'])
+def test_setdefault_bypasses_on_miss(cache_type, default):
+    calls = []
+
+    def on_miss(key):
+        calls.append(key)
+        return 'generated'
+
+    cache = cache_type(max_size=2, on_miss=on_miss)
+    assert cache.setdefault('missing', default) == default
+    assert dict(cache) == {'missing': default}
+    assert calls == []
+    assert (cache.hit_count, cache.miss_count, cache.soft_miss_count) == (0, 1, 1)
+
+    assert cache.setdefault('missing', 'replacement') == default
+    assert (cache.hit_count, cache.miss_count, cache.soft_miss_count) == (1, 1, 1)
+    assert calls == []
+
+    # Ordinary indexing still invokes the configured cache loader.
+    assert cache['loaded'] == 'generated'
+    assert calls == ['loaded']
+    assert _test_linkage(cache._anchor, 3)
+
+
+@pytest.mark.parametrize('cache_type', [LRI, LRU])
+def test_setdefault_on_miss_keeps_eviction_order(cache_type):
+    cache = cache_type(max_size=2, on_miss=lambda key: 'generated')
+    cache['first'] = 1
+    cache['second'] = 2
+    assert cache.setdefault('first', 99) == 1
+    assert cache.setdefault('third', 3) == 3
+    evicted = 'second' if cache_type is LRU else 'first'
+    assert evicted not in cache
+    assert len(cache) == 2
+    assert _test_linkage(cache._anchor, 3)
