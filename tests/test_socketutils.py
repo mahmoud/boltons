@@ -413,7 +413,8 @@ def test_socketutils_netstring_timeout():
 
     # connect, ping-pong
     client = client_connect()
-    time.sleep(0.02)
+    with pytest.raises(Timeout):
+        client.read_ns(timeout=0.02)
     client.write_ns(b'ping')
     assert client.read_ns() == b'pong'
 
