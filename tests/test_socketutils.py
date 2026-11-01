@@ -35,17 +35,15 @@ def test_short_lines():
     return
 
 
-@pytest.mark.parametrize('with_delim', (True, False))
-def test_multibyte_delim(with_delim):
+@pytest.mark.parametrize('with_delim, cond_delim',
+                         [(True, b'\r\n'), (False, b'')],
+                         ids=['True', 'False'])
+def test_multibyte_delim(with_delim, cond_delim):
     """Primarily tests recv_until with various maxsizes and True/False
     for with_delimiter.
     """
 
     delim = b'\r\n'
-    if with_delim:
-        cond_delim = b'\r\n'
-    else:
-        cond_delim = b''
 
     empty = b''
     small_one = b'1'
