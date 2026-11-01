@@ -540,7 +540,8 @@ class OrderedMultiDict(dict):
         Args:
             key (callable): A single-argument callable to determine
               the sort key of each element. The callable should expect
-              an **item** (key-value pair tuple).
+              a **value**. Equal-key values retain their original order,
+              including when *reverse* is ``True``.
             reverse (bool): Set to ``True`` to reverse the ordering.
 
         >>> omd = OrderedMultiDict()
@@ -565,12 +566,12 @@ class OrderedMultiDict(dict):
             superself_iteritems = super().iteritems()
         except AttributeError:
             superself_iteritems = super().items()
-        # (not reverse) because they pop off in reverse order for reinsertion
-        sorted_val_map = {k: sorted(v, key=key, reverse=(not reverse))
+        # Consume each sorted group forwards to preserve the order of ties.
+        sorted_val_map = {k: iter(sorted(v, key=key, reverse=reverse))
                                for k, v in superself_iteritems}
         ret = self.__class__()
         for k in self.iterkeys(multi=True):
-            ret.add(k, sorted_val_map[k].pop())
+            ret.add(k, next(sorted_val_map[k]))
         return ret
 
     def inverted(self):
