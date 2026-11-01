@@ -364,7 +364,7 @@ class Stats:
         total = sum(self.data)
         if isinstance(total, int):
             count = len(self.data)
-            origin = self.data[0]
+            origin = next(iter(self.data))
             diffs = [value - origin for value in self.data]
             total -= count * origin
             total_sq = sum(diff * diff for diff in diffs)

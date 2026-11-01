@@ -55,6 +55,43 @@ def test_variance_defaults():
     assert std_dev([], default=None) is None
 
 
+@pytest.mark.parametrize('make_data', [set, frozenset,
+    lambda values: dict(enumerate(values)).values()],
+    ids=['set', 'frozenset', 'dict_values'])
+@pytest.mark.parametrize('entry', ['variance', 'std_dev',
+                                  'Stats.variance', 'Stats.std_dev'])
+@pytest.mark.parametrize('values', [
+    [1, 2, 3], [10**20, 10**20 + 1], [-10**20, -10**20 + 1],
+    [10**1000], [1.0, 2.0, 4.0], [1, 2.5, 7],
+    [Fraction(1, 3), Fraction(2, 3), Fraction(4, 3)], [True, False],
+])
+def test_variance_nonindexable_data(make_data, entry, values):
+    data = make_data(values)
+    # Use the actual observations: sets may discard duplicate values.
+    expected = float(statistics.pvariance([Fraction(value) for value in data]))
+    if entry.startswith('Stats.'):
+        result = getattr(Stats(data, use_copy=False), entry.split('.')[1])
+    else:
+        result = {'variance': variance, 'std_dev': std_dev}[entry](data)
+    if entry.endswith('variance'):
+        assert result == pytest.approx(expected)
+    else:
+        assert result == pytest.approx(expected ** 0.5)
+
+
+@pytest.mark.parametrize('make_data', [set, frozenset,
+    lambda values: dict(enumerate(values)).values()],
+    ids=['set', 'frozenset', 'dict_values'])
+@pytest.mark.parametrize('default', [0.0, None, -1])
+def test_variance_nonindexable_empty(make_data, default):
+    data = make_data([])
+    stats = Stats(data, default=default, use_copy=False)
+    assert stats.variance == default
+    assert stats.std_dev == default
+    assert variance(data, default=default) == default
+    assert std_dev(data, default=default) == default
+
+
 def test_variance_cache_and_trim():
     stats = Stats([10**20, 10**20 + 1], use_copy=False)
     # Reading the rounded mean first must not lose the integer differences.
