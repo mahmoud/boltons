@@ -142,12 +142,8 @@ def test_client_disconnecting():
     by.close()
     assert not by.getsendbuffer()
 
-    try:
+    with pytest.raises(OSError):
         by.send(b'123')
-    except OSError:
-        pass
-    else:
-        assert False, 'expected socket.error on closed send'
 
     return
 
