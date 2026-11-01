@@ -39,8 +39,9 @@ def test_empty_field_name_raises_value_error(factory):
 
 @pytest.mark.parametrize("factory", [namedtuple, namedlist])
 def test_empty_type_name_raises_value_error(factory):
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError) as excinfo:
         factory('', ['x', 'y'])
+    assert str(excinfo.value).endswith(': ' + repr(''))
 
 
 @pytest.mark.parametrize("factory", [namedtuple, namedlist])
