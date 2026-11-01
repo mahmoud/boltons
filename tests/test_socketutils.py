@@ -1,6 +1,7 @@
 import sys
 import time
 import errno
+import contextlib
 import socket
 import threading
 from boltons.socketutils import (BufferedSocket,
@@ -157,10 +158,8 @@ def test_split_delim():
     bs = BufferedSocket(x)
 
     y.sendall(first)
-    try:
+    with contextlib.suppress(Timeout):
         bs.recv_until(delim, timeout=0.0001)
-    except Timeout:
-        pass
     y.sendall(second)
 
     assert bs.recv_until(delim, with_delimiter=True) == b'1234\r\n'
