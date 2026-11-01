@@ -308,7 +308,6 @@ def test_socketutils_netstring():
         client.write_ns(b'ping')
         assert client.read_ns() == b'pong'
     dur = time.time() - s
-    print("netstring ping-pong latency", dur, "ms")
 
     s = time.time()
     for i in range(1000):
