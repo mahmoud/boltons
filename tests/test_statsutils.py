@@ -1,4 +1,9 @@
-from boltons.statsutils import Stats, mode
+from fractions import Fraction
+import statistics
+
+import pytest
+
+from boltons.statsutils import Stats, mode, std_dev, variance
 
 
 def test_stats_basic():
@@ -9,6 +14,65 @@ def test_stats_basic():
     assert da.skewness == 0
     assert round(da.kurtosis, 1) == 1.9
     assert da.median == 9.5
+
+
+@pytest.mark.parametrize('offset', [0, 2**53, 10**20, -10**20])
+@pytest.mark.parametrize('values', [
+    [0, 1], [0, 1, 2], [0, 1, 1], [7], [7] * 10,
+    [0] * 10 + [100], [-17, 0, 4, 90], [-10**20, 10**20],
+])
+def test_integer_variance(offset, values):
+    data = [offset + value for value in values]
+    # Fraction inputs keep the oracle exact even on older Python versions.
+    expected = float(statistics.pvariance([Fraction(value) for value in data]))
+    for ordered in (data, data[::-1], data[1:] + data[:1]):
+        stats = Stats(ordered)
+        assert stats.variance == expected
+        assert stats.std_dev == pytest.approx(expected ** 0.5)
+        assert variance(ordered) == expected
+        assert std_dev(ordered) == pytest.approx(expected ** 0.5)
+
+
+@pytest.mark.parametrize('data', [
+    [1.0, 2.0, 4.0, 9.0], [1, 2.5, 7], [0.1, 0.2, 0.3],
+    [Fraction(1, 3), Fraction(2, 3), Fraction(4, 3)], [True, False, True],
+])
+def test_variance_numeric_controls(data):
+    expected = float(statistics.pvariance(data))
+    stats = Stats(data)
+    assert stats.variance == pytest.approx(expected)
+    assert stats.std_dev == pytest.approx(expected ** 0.5)
+    assert variance(data) == pytest.approx(expected)
+    assert std_dev(data) == pytest.approx(expected ** 0.5)
+
+
+def test_variance_defaults():
+    assert Stats([]).variance == variance([]) == 0.0
+    assert Stats([]).std_dev == std_dev([]) == 0.0
+    assert Stats([], default=None).variance is None
+    assert Stats([], default=None).std_dev is None
+    assert variance([], default=None) is None
+    assert std_dev([], default=None) is None
+
+
+def test_variance_cache_and_trim():
+    stats = Stats([10**20, 10**20 + 1], use_copy=False)
+    # Reading the rounded mean first must not lose the integer differences.
+    assert stats.mean == 1e20
+    assert stats.variance == 0.25
+    assert stats.std_dev == 0.5
+    stats.data.append(10**20 + 2)
+    assert stats.variance == 0.25
+    assert stats.std_dev == 0.5
+    stats.clear_cache()
+    assert stats.variance == 2 / 3
+    assert stats.std_dev == pytest.approx((2 / 3) ** 0.5)
+
+    stats = Stats([10**20 + value for value in [0, 1, 2, 3, 100]])
+    assert stats.variance == 1553.36
+    stats.trim_relative(0.2)
+    assert stats.variance == 2 / 3
+    assert stats.std_dev == pytest.approx((2 / 3) ** 0.5)
 
 
 def test_pearson_type_covers_kappa_ge_zero():
