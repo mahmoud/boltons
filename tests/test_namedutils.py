@@ -32,8 +32,9 @@ def test_namedtuple_pickle():
 def test_empty_field_name_raises_value_error(factory):
     # `all()` is True for the empty string, so an empty name used to pass both
     # ValueError checks and reach `name[0].isdigit()`, raising IndexError.
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError) as excinfo:
         factory('Point', ['x', ''])
+    assert 'must be non-empty' in str(excinfo.value)
 
 
 @pytest.mark.parametrize("factory", [namedtuple, namedlist])
