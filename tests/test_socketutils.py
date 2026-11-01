@@ -319,7 +319,6 @@ def test_socketutils_netstring():
     assert all([r == b'pong' for r in resps])
     assert client.bsock.getrecvbuffer() == b''
     dur = e - s
-    print("netstring pipelined ping-pong latency", dur, "ms")
 
     # tell the server to close the socket and then try a failure case
     client.write_ns(b'close')
