@@ -35,40 +35,40 @@ def test_short_lines():
     return
 
 
-def test_multibyte_delim():
+@pytest.mark.parametrize('with_delim', (True, False))
+def test_multibyte_delim(with_delim):
     """Primarily tests recv_until with various maxsizes and True/False
     for with_delimiter.
     """
 
     delim = b'\r\n'
-    for with_delim in (True, False):
-        if with_delim:
-            cond_delim = b'\r\n'
+    if with_delim:
+        cond_delim = b'\r\n'
+    else:
+        cond_delim = b''
+
+    empty = b''
+    small_one = b'1'
+    big_two = b'2' * 2048
+    for ms in (3, 5, 1024, None):
+        x, y = socket.socketpair()
+        bs = BufferedSocket(x)
+
+        y.sendall(empty + delim)
+        y.sendall(small_one + delim)
+        y.sendall(big_two + delim)
+
+        kwargs = {'maxsize': ms, 'with_delimiter': with_delim}
+        assert bs.recv_until(delim, **kwargs) == empty + cond_delim
+        assert bs.recv_until(delim, **kwargs) == small_one + cond_delim
+        try:
+            assert bs.recv_until(delim, **kwargs) == big_two + cond_delim
+        except MessageTooLong:
+            if ms is None:
+                assert False, 'unexpected MessageTooLong'
         else:
-            cond_delim = b''
-
-        empty = b''
-        small_one = b'1'
-        big_two = b'2' * 2048
-        for ms in (3, 5, 1024, None):
-            x, y = socket.socketpair()
-            bs = BufferedSocket(x)
-
-            y.sendall(empty + delim)
-            y.sendall(small_one + delim)
-            y.sendall(big_two + delim)
-
-            kwargs = {'maxsize': ms, 'with_delimiter': with_delim}
-            assert bs.recv_until(delim, **kwargs) == empty + cond_delim
-            assert bs.recv_until(delim, **kwargs) == small_one + cond_delim
-            try:
-                assert bs.recv_until(delim, **kwargs) == big_two + cond_delim
-            except MessageTooLong:
-                if ms is None:
-                    assert False, 'unexpected MessageTooLong'
-            else:
-                if ms is not None:
-                    assert False, 'expected MessageTooLong'
+            if ms is not None:
+                assert False, 'expected MessageTooLong'
 
     return
 
