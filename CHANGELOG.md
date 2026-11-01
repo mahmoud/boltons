@@ -62,6 +62,7 @@ _(unreleased)_
 - Fixed [`jsonutils.reverse_iter_lines`][jsonutils.reverse_iter_lines] merging lines into one chunk for files starting with blank lines ([#536](https://github.com/mahmoud/boltons/pull/536))
 - Fixed [`jsonutils.reverse_iter_lines`][jsonutils.reverse_iter_lines] raising `TypeError` on text streams without a `.buffer`, like `io.StringIO` ([#488](https://github.com/mahmoud/boltons/pull/488))
 - Fixed [`jsonutils.JSONLIterator`][jsonutils.JSONLIterator] `cur_byte_pos` raising `OSError` during forward iteration over text files ([#519](https://github.com/mahmoud/boltons/pull/519))
+- Fixed [`jsonutils.JSONLIterator`][jsonutils.JSONLIterator] splitting valid Unicode string contents into separate records when reading `StringIO` streams in reverse.
 - Fixed [`socketutils.BufferedSocket.recv_size`][socketutils.BufferedSocket.recv_size] performing socket I/O for `size=0` ([#572](https://github.com/mahmoud/boltons/pull/572))
 - Fixed [`socketutils.NetstringSocket.read_ns`][socketutils.NetstringSocket.read_ns] ignoring its *timeout* for the payload and trailing comma ([#602](https://github.com/mahmoud/boltons/pull/602))
 - Fixed [`strutils.slugify`][strutils.slugify] and [`strutils.split_punct_ws`][strutils.split_punct_ws] not treating backslash as punctuation ([#492](https://github.com/mahmoud/boltons/pull/492))

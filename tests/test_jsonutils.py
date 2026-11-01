@@ -1,4 +1,8 @@
+import io
+import json
 import os
+
+import pytest
 
 from boltons.jsonutils import (JSONLIterator,
                                DEFAULT_BLOCKSIZE,
@@ -146,3 +150,111 @@ def test_jsonl_iterator_text_cur_byte_pos(tmp_path):
         assert next(jsonl_iter) == {'1': 1}
         assert jsonl_iter.cur_byte_pos == len('{"1": 1}\n')
         assert list(jsonl_iter) == [{'2': 2}]
+
+
+def _jsonl_stream(data, stream_kind, tmp_path):
+    if stream_kind == 'stringio':
+        return io.StringIO(data)
+    if stream_kind == 'bytesio':
+        return io.BytesIO(data.encode('utf-8'))
+    path = tmp_path / 'unicode.jsonl'
+    path.write_bytes(data.encode('utf-8'))
+    if stream_kind == 'binary':
+        return path.open('rb')
+    return path.open(encoding='utf-8', newline='')
+
+
+@pytest.mark.parametrize('stream_kind', ['stringio', 'bytesio', 'text', 'binary'])
+@pytest.mark.parametrize('reverse', [False, True])
+@pytest.mark.parametrize('ignore_errors', [False, True])
+@pytest.mark.parametrize('ensure_ascii', [False, True])
+@pytest.mark.parametrize('newline', ['\n', '\r\n'])
+@pytest.mark.parametrize('trailing_newline', [False, True])
+def test_jsonl_unicode_records(tmp_path, stream_kind, reverse, ignore_errors,
+                              ensure_ascii, newline, trailing_newline):
+    # These are legal JSON string contents, not JSONL record boundaries.
+    value = 'left\u0085middle\u2028more\u2029right'
+    records = [{value: value}, {'n': 2}, value]
+    data = newline.join(json.dumps(obj, ensure_ascii=ensure_ascii) for obj in records)
+    if trailing_newline:
+        data += newline
+    expected = records[::-1] if reverse else records
+    with _jsonl_stream(data, stream_kind, tmp_path) as stream:
+        assert list(JSONLIterator(stream, reverse=reverse,
+                                  ignore_errors=ignore_errors)) == expected
+
+
+@pytest.mark.parametrize('newline', ['\n', '\r', '\r\n'])
+@pytest.mark.parametrize('offset', [-1, 0, 1])
+@pytest.mark.parametrize('trailing_newline', [False, True])
+def test_jsonl_unicode_block_boundaries(newline, offset, trailing_newline):
+    # Put U+2029 immediately before, at, and after the first backward read
+    # boundary, with a record spanning multiple blocks.
+    tail = newline if trailing_newline else ''
+    suffix_size = DEFAULT_BLOCKSIZE - 2 - len(tail) + offset
+    value = 'x' * DEFAULT_BLOCKSIZE + '\u0085\u2028\u2029' + 'y' * suffix_size
+    records = [value, {'n': 2}, value]
+    data = newline.join(json.dumps(obj, ensure_ascii=False) for obj in records)
+    if trailing_newline:
+        data += newline
+    assert list(JSONLIterator(io.StringIO(data), reverse=True)) == records[::-1]
+
+
+def test_jsonl_unicode_crlf_block_boundary():
+    # The first backward block begins at LF, splitting the CRLF pair.
+    records = [{'text': '\u0085\u2028\u2029'}, 'y' * (DEFAULT_BLOCKSIZE - 6) + '\u0085\u2028\u2029']
+    data = '\r\n'.join(json.dumps(obj, ensure_ascii=False) for obj in records)
+    assert data[-DEFAULT_BLOCKSIZE] == '\n'
+    assert list(JSONLIterator(io.StringIO(data), reverse=True)) == records[::-1]
+
+
+@pytest.mark.parametrize('stream_kind', ['stringio', 'bytesio', 'text', 'binary'])
+@pytest.mark.parametrize('trailing_newline', [False, True])
+@pytest.mark.parametrize('ensure_ascii', [False, True])
+def test_jsonl_reverse_cr_records(tmp_path, stream_kind, trailing_newline, ensure_ascii):
+    records = [{'text': '\u0085\u2028\u2029'}, {'n': 2}]
+    data = '\r'.join(json.dumps(obj, ensure_ascii=ensure_ascii) for obj in records)
+    if trailing_newline:
+        data += '\r'
+    with _jsonl_stream(data, stream_kind, tmp_path) as stream:
+        assert list(JSONLIterator(stream, reverse=True)) == records[::-1]
+
+
+@pytest.mark.parametrize('stream_kind', ['stringio', 'bytesio', 'text', 'binary'])
+@pytest.mark.parametrize('reverse', [False, True])
+@pytest.mark.parametrize('newline', ['\n', '\r\n'])
+def test_jsonl_unicode_and_invalid_records(tmp_path, stream_kind, reverse, newline):
+    records = [{'text': '\u0085\u2028\u2029'}, {'n': 2}]
+    data = newline.join(['', json.dumps(records[0], ensure_ascii=False),
+                         'not json', '', json.dumps(records[1]), ''])
+    with _jsonl_stream(data, stream_kind, tmp_path) as stream:
+        with pytest.raises(ValueError):
+            list(JSONLIterator(stream, reverse=reverse))
+    with _jsonl_stream(data, stream_kind, tmp_path) as stream:
+        assert list(JSONLIterator(stream, reverse=reverse, ignore_errors=True)) == (
+            records[::-1] if reverse else records)
+
+
+@pytest.mark.parametrize('separator', ['\u0085', '\u2028', '\u2029'])
+@pytest.mark.parametrize('reverse', [False, True])
+def test_jsonl_unicode_outside_strings_is_invalid(separator, reverse):
+    data = '1' + separator + '2\n3\n'
+    with pytest.raises(ValueError):
+        list(JSONLIterator(io.StringIO(data), reverse=reverse))
+    assert list(JSONLIterator(io.StringIO(data), reverse=reverse,
+                              ignore_errors=True)) == [3]
+
+
+@pytest.mark.parametrize('separator', ['\v', '\f', '\x1c', '\x1d', '\x1e',
+                                      '\u0085', '\u2028', '\u2029'])
+@pytest.mark.parametrize('blocksize', [2, 7, DEFAULT_BLOCKSIZE])
+def test_reverse_iter_lines_unicode_separators(separator, blocksize):
+    # The generic helper retains its broader, public str.splitlines behavior.
+    data = 'alpha' + separator + 'beta\n'
+    assert list(reverse_iter_lines(io.StringIO(data), blocksize=blocksize)) == [
+        '', 'beta', 'alpha']
+
+
+@pytest.mark.parametrize('data', ['', '\n', '\r', '\r\n', '\n\n\r\n\r'])
+def test_jsonl_reverse_empty_records(data):
+    assert list(JSONLIterator(io.StringIO(data), reverse=True)) == []
