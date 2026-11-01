@@ -190,3 +190,11 @@ def test_us_timezone_fromutc_sets_fold():
     assert second.replace(tzinfo=None) == datetime(2011, 11, 6, 1, 30)
     assert second.fold == 1
     assert second.tzname() == 'EST'
+
+def test_parse_timedelta_compact_values():
+    # a value written right after a unit used to be swallowed by the unit
+    # word: '1h30m' came back as one hour, and '1d2h' as one day
+    assert parse_timedelta('1h30m') == timedelta(hours=1, minutes=30)
+    assert parse_timedelta('1d2h') == timedelta(days=1, hours=2)
+    assert parse_timedelta('2hours30min') == timedelta(hours=2, minutes=30)
+    assert parse_timedelta('1m30s') == timedelta(minutes=1, seconds=30)
