@@ -226,7 +226,9 @@ class LRI(dict):
                     self._set_key_and_add_to_front_of_ll(key, value)
                 else:
                     evicted = self._set_key_and_evict_last_in_ll(key, value)
-                    super().__delitem__(evicted)
+                    # Keep the value alive until the insertion is complete, so
+                    # its finalizer cannot clear a partially updated cache.
+                    _evicted_value = super().pop(evicted)
             else:
                 link[VALUE] = value
             super().__setitem__(key, value)

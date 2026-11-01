@@ -1,5 +1,7 @@
+import gc
 import string
 import sys
+import weakref
 from abc import abstractmethod, ABCMeta
 
 import pytest
@@ -238,6 +240,93 @@ def _test_linkage(dll, max_count=10000, prev_idx=0, next_idx=1):
         i += 1
 
     return True
+
+
+def _assert_cache_consistent(cache):
+    assert len(cache) <= cache.max_size
+    assert _test_linkage(cache._anchor, len(cache) + 1)
+    entries = cache._get_flattened_ll()[1:]
+    assert len(entries) == len(cache)
+    assert dict(entries) == dict(cache)
+    assert set(cache._link_lookup) == set(cache)
+    for key, value in list(dict.items(cache)):
+        assert cache._link_lookup[key][3] is value
+        assert cache[key] is value
+
+
+@pytest.mark.parametrize('cache_type', [LRI, LRU])
+@pytest.mark.parametrize('max_size', [1, 2, 3])
+@pytest.mark.parametrize('keep_reference', [False, True])
+def test_cache_eviction_value_finalizer_clear(cache_type, max_size,
+                                            keep_reference):
+    cache = cache_type(max_size=max_size)
+    finalized = []
+
+    class ClearingValue:
+        def __init__(self):
+            self.cache_ref = weakref.ref(cache)
+
+        def __del__(self):
+            target = self.cache_ref()
+            if target is not None:
+                finalized.append((set(target), set(target._link_lookup),
+                                  {key for key, _ in
+                                   target._get_flattened_ll()[1:]}))
+                target.clear()
+
+    value = ClearingValue()
+    value_ref = weakref.ref(value)
+    cache['old'] = value
+    if not keep_reference:
+        del value
+    for i in range(max_size - 1):
+        cache['filler%s' % i] = i
+
+    cache['new'] = 'new value'
+    # Also exercise collection on implementations without immediate finalization.
+    gc.collect()
+    if keep_reference:
+        assert not finalized
+        assert value_ref() is value
+        assert cache['new'] == 'new value'
+        assert 'old' not in cache
+        _assert_cache_consistent(cache)
+        del value
+        gc.collect()
+
+    assert value_ref() is None
+    assert len(finalized) == 1
+    dict_keys, lookup_keys, linked_keys = finalized[0]
+    assert dict_keys == lookup_keys == linked_keys
+    assert not cache
+    _assert_cache_consistent(cache)
+
+    # Clearing during eviction must leave the cache usable, including eviction.
+    for i in range(max_size + 2):
+        key = 'next%s' % i
+        cache[key] = i
+        assert cache[key] == i
+        _assert_cache_consistent(cache)
+    cache['next%s' % (max_size + 1)] = 'replacement'
+    _assert_cache_consistent(cache)
+    assert cache.pop('next%s' % (max_size + 1)) == 'replacement'
+    cache.update({'updated': 'value'})
+    assert cache['updated'] == 'value'
+    _assert_cache_consistent(cache)
+    cache.clear()
+    _assert_cache_consistent(cache)
+
+
+@pytest.mark.parametrize('cache_type', [LRI, LRU])
+def test_cache_read_eviction_order(cache_type):
+    cache = cache_type(max_size=2)
+    cache.update({'a': 1, 'b': 2})
+    assert cache['a'] == 1
+    cache['c'] = 3
+    assert set(cache) == ({'a', 'c'} if cache_type is LRU else {'b', 'c'})
+    assert cache.hit_count == 1
+    assert cache.miss_count == cache.soft_miss_count == 0
+    _assert_cache_consistent(cache)
 
 
 def test_cached_dec():
