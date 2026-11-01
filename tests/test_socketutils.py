@@ -174,10 +174,9 @@ def test_basic_nonblocking():
     x, y = socket.socketpair()
     bs = BufferedSocket(x)
 
-    try:
+    with pytest.raises(OSError) as excinfo:
         bs.recv_until(delim, timeout=0)
-    except OSError as se:
-        assert se.errno == errno.EWOULDBLOCK
+    assert excinfo.value.errno == errno.EWOULDBLOCK
     y.sendall(delim)  # sending an empty message, effectively
     assert bs.recv_until(delim) == b''
 
