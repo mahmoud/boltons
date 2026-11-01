@@ -126,18 +126,18 @@ def test_omd_copy_module():
 
 
 
-def test_clear():
-    for itemset in _ITEMSETS:
-        omd = OMD(itemset)
-        omd.clear()
-        assert len(omd) == 0
-        assert not omd
-        omd.clear()
-        assert not omd
-        omd['a'] = 22
-        assert omd
-        omd.clear()
-        assert not omd
+@pytest.mark.parametrize("itemset", _ITEMSETS)
+def test_clear(itemset):
+    omd = OMD(itemset)
+    omd.clear()
+    assert len(omd) == 0
+    assert not omd
+    omd.clear()
+    assert not omd
+    omd['a'] = 22
+    assert omd
+    omd.clear()
+    assert not omd
 
 
 def test_types():
