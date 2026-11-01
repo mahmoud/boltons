@@ -284,7 +284,6 @@ def test_socketutils_netstring():
     """A holistic feature test of BufferedSocket via the NetstringSocket
     wrapper. Runs
     """
-    print("running self tests")
 
     # Set up server
     server_socket = socket.socket()
