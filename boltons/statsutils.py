@@ -353,9 +353,23 @@ class Stats:
         Variance is the average of the squares of the difference between
         each value and the mean.
 
+        Integer differences are preserved even when the mean cannot be
+        represented exactly as a float.
+
         >>> variance(range(97))
         784.0
+        >>> variance([10**20, 10**20 + 1])
+        0.25
         """
+        total = sum(self.data)
+        if isinstance(total, int):
+            count = len(self.data)
+            origin = next(iter(self.data))
+            diffs = [value - origin for value in self.data]
+            total -= count * origin
+            total_sq = sum(diff * diff for diff in diffs)
+            # Keep both sums and the cancellation exact until division.
+            return (count * total_sq - total * total) / (count * count)
         global mean  # defined elsewhere in this file
         return mean(self._get_pow_diffs(2))
     variance = _StatsProperty('variance', _calc_variance)
