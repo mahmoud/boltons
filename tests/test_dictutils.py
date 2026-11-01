@@ -613,6 +613,7 @@ def test_frozendict_ior():
 
     with pytest.raises(TypeError, match=".*FrozenDict.*immutable.*"):
         fd |= fd
+    assert fd == data, "a failed in-place update must leave the FrozenDict unchanged"
 
 
 def test_frozendict_api():
