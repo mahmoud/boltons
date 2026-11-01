@@ -46,8 +46,9 @@ def test_empty_type_name_raises_value_error(factory):
 
 @pytest.mark.parametrize("factory", [namedtuple, namedlist])
 def test_invalid_character_still_raises_value_error(factory):
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError) as excinfo:
         factory('Point', ['x', 'y-z'])
+    assert str(excinfo.value).endswith(': ' + repr('y-z'))
 
 
 @pytest.mark.parametrize("factory", [namedtuple, namedlist])
