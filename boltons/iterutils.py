@@ -46,6 +46,7 @@ import codecs
 import random
 import itertools
 from itertools import zip_longest
+from collections import defaultdict, deque
 from collections.abc import Mapping, Sequence, Set, ItemsView, Iterable
 
 
@@ -1105,8 +1106,12 @@ def default_enter(path, key, value):
     # print('enter(%r, %r)' % (key, value))
     if isinstance(value, (str, bytes)):
         return value, False
+    elif isinstance(value, defaultdict):
+        return value.__class__(value.default_factory), ItemsView(value)
     elif isinstance(value, Mapping):
         return value.__class__(), ItemsView(value)
+    elif isinstance(value, deque):
+        return value.__class__(maxlen=value.maxlen), enumerate(value)
     elif isinstance(value, Sequence):
         try:
             new_parent = value.__class__()

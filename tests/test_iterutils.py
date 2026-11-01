@@ -780,3 +780,33 @@ def test_frange_xfrange_zero_step():
         frange(10, step=0)
     with pytest.raises(ValueError):
         list(xfrange(10, step=0))
+
+
+@pytest.mark.parametrize("factory", [list, int, None])
+def test_remap_preserves_defaultdict_factory(factory):
+    from collections import defaultdict
+    from boltons.iterutils import remap
+
+    original = defaultdict(factory, value=1)
+    result = remap({"nested": original})["nested"]
+    assert isinstance(result, defaultdict)
+    assert result.default_factory is factory
+    assert result == {"value": 1}
+    assert result is not original
+    if factory is None:
+        with pytest.raises(KeyError):
+            result["missing"]
+    else:
+        assert result["missing"] == factory()
+    assert dict(original) == {"value": 1}
+
+
+def test_remap_preserves_deque_maxlen():
+    from collections import deque
+
+    original = deque([1, 2], maxlen=2)
+    result = remap(original)
+    assert result.maxlen == 2
+    result.append(3)
+    assert list(result) == [2, 3]
+    assert list(original) == [1, 2]
