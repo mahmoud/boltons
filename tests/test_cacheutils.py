@@ -30,12 +30,9 @@ def test_lri():
     for idx, char in enumerate(string.ascii_letters):
         x = bc[char]
         assert x == char.upper()
-        least_recent_insert_index = idx - cache_size
-        if least_recent_insert_index >= 0:
-            # least recently inserted object evicted
-            assert len(bc) == cache_size
-            for char in string.ascii_letters[least_recent_insert_index+1:idx]:
-                assert char in bc
+        # the cache holds exactly the cache_size most recently inserted keys
+        oldest_kept_index = max(0, idx - cache_size + 1)
+        assert set(bc) == set(string.ascii_letters[oldest_kept_index:idx + 1])
 
     # test that reinserting an existing key changes eviction behavior
     bc[string.ascii_letters[-cache_size+1]] = "new value"
