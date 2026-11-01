@@ -40,6 +40,7 @@ of working with `JSON Lines`_-formatted files.
 import io
 import os
 import json
+import re
 
 
 DEFAULT_BLOCKSIZE = 4096
@@ -73,6 +74,12 @@ def reverse_iter_lines(file_obj, blocksize=DEFAULT_BLOCKSIZE, preseek=True, enco
             file's encoding, or returns bytes when neither is specified.
 
     """
+    yield from _reverse_iter_lines(file_obj, blocksize, preseek, encoding)
+
+
+def _reverse_iter_lines(file_obj, blocksize=DEFAULT_BLOCKSIZE, preseek=True,
+                        encoding=None, newline_only=False):
+    """Shared reverse reader with an optional JSONL newline policy."""
     # This function is a bit of a pain because it attempts to be byte/text agnostic
     encoding = encoding or getattr(file_obj, 'encoding', None)
 
@@ -101,7 +108,15 @@ def reverse_iter_lines(file_obj, blocksize=DEFAULT_BLOCKSIZE, preseek=True, enco
         file_obj.seek(cur_pos, os.SEEK_SET)
         cur = file_obj.read(read_size)
         buff = cur + buff
-        lines = buff.splitlines()
+        if newline_only and is_text:
+            # Unlike str.splitlines(), JSONL must not split Unicode characters
+            # that can occur unescaped inside a valid JSON string. Keep CR
+            # support for compatibility with the existing reverse reader.
+            lines = re.split(r'\r\n?|\n', buff)
+            if lines[-1] == empty:
+                lines.pop()
+        else:
+            lines = buff.splitlines()
 
         # until the start of the file, the first line may be partial
         if cur_pos and (len(lines) < 2 or lines[0] == empty):
@@ -165,9 +180,10 @@ class JSONLIterator:
         if rel_seek is not None:
             self._init_rel_seek()
         if self._reverse:
-            self._line_iter = reverse_iter_lines(self._file_obj,
-                                                 blocksize=self._blocksize,
-                                                 preseek=False)
+            self._line_iter = _reverse_iter_lines(self._file_obj,
+                                                  blocksize=self._blocksize,
+                                                  preseek=False,
+                                                  newline_only=True)
         else:
             # readline() (unlike next()) keeps tell() usable on text files
             self._line_iter = iter(self._file_obj.readline,
