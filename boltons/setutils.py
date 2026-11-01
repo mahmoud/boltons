@@ -287,6 +287,7 @@ class IndexedSet(MutableSet):
 
     def issubset(self, other):
         "issubset(other) -> return True if other contains this set"
+        other = self._as_container(other)
         if len(other) < len(self):
             return False
         for k in self.item_index_map:
@@ -296,6 +297,7 @@ class IndexedSet(MutableSet):
 
     def issuperset(self, other):
         "issuperset(other) -> return True if set contains other"
+        other = self._as_container(other)
         if len(other) > len(self):
             return False
         iim = self.item_index_map
@@ -313,7 +315,7 @@ class IndexedSet(MutableSet):
         # consumed by repeated ``in`` checks, and lists are O(n) lookups
         if isinstance(other, (set, frozenset, IndexedSet, dict)):
             return other
-        return self.from_iterable(other)
+        return self.from_iterable(chain(other))
 
     def iter_intersection(self, *others):
         "iter_intersection(*others) -> iterate over elements also in others"

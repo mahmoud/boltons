@@ -50,6 +50,62 @@ def test_indexed_set_update_multiple_iterables_with_tuple_items():
     assert list(items) == [(1, 2), (3, 4)]
 
 
+@mark.parametrize('method', ['issubset', 'issuperset'])
+@mark.parametrize('iterable_type', [list, tuple, iter])
+@mark.parametrize('values, other_values', [
+    ([], []),
+    ([], [1, 1]),
+    ([1], [1, 1]),
+    ([1, 2], [1, 1]),
+    ([1], [1, 2, 1]),
+    ([1, 2], [2, 3, 2]),
+])
+def test_indexed_set_comparison_iterables(method, iterable_type,
+                                        values, other_values):
+    items = IndexedSet(values)
+    expected = getattr(set(values), method)(other_values)
+
+    assert getattr(items, method)(iterable_type(other_values)) == expected
+    assert list(items) == values
+
+
+@mark.parametrize('method', [
+    'issubset', 'issuperset', 'intersection', 'difference',
+    'symmetric_difference', 'intersection_update', 'difference_update',
+    'symmetric_difference_update',
+])
+@mark.parametrize('other', [None, 0, False])
+def test_indexed_set_operations_reject_noniterables(method, other):
+    items = IndexedSet([1])
+    with raises(TypeError):
+        getattr(items, method)(other)
+    assert list(items) == [1]
+
+
+def test_indexed_set_falsy_iterator_operands():
+    class FalsyIterator:
+        def __init__(self):
+            self.iterator = iter([1, 2])
+
+        def __iter__(self):
+            return self
+
+        def __next__(self):
+            return next(self.iterator)
+
+        def __bool__(self):
+            return False
+
+    class Iterable:
+        def __iter__(self):
+            return FalsyIterator()
+
+    for make_other in (FalsyIterator, Iterable):
+        assert IndexedSet([1]).issubset(make_other())
+        assert not IndexedSet([1]).issuperset(make_other())
+        assert list(IndexedSet([1]).intersection(make_other())) == [1]
+
+
 def test_indexed_set_mutate():
     thou = IndexedSet(range(1000))
     assert (thou.pop(), thou.pop()) == (999, 998)
