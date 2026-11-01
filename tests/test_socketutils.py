@@ -305,11 +305,8 @@ def test_socketutils_netstring():
 
     # tell the server to close the socket and then try a failure case
     client.write_ns(b'close')
-    try:
+    with pytest.raises(ConnectionClosed):
         client.read_ns()
-        raise Exception('read from closed socket')
-    except ConnectionClosed:
-        pass
 
     # test big messages
     client = client_connect()
