@@ -170,7 +170,7 @@ _BOUNDS = [(b[0] * b[1], b[1], b[2]) for b in _BOUNDS]
 _BOUND_DELTAS = [b[0] for b in _BOUNDS]
 
 _FLOAT_PATTERN = r'[+-]?\ *(\d+(\.\d*)?|\.\d+)([eE][+-]?\d+)?'
-_PARSE_TD_RE = re.compile(r"((?P<value>%s)\s*(?P<unit>\w)\w*)" % _FLOAT_PATTERN)
+_PARSE_TD_RE = re.compile(r"((?P<value>%s)\s*(?P<unit>\w)(?:[^\W\d_])*)" % _FLOAT_PATTERN)
 _PARSE_TD_KW_MAP = {unit[0]: unit + 's'
                          for _, _, unit in reversed(_BOUNDS[:-2])}
 
@@ -192,9 +192,12 @@ def parse_timedelta(text):
     >>> parse_td('1d 2h 3.5m 0s') == timedelta(days=1, seconds=7410)
     True
 
-    Also supports full words and whitespace.
+    Also supports full words and whitespace, and values written back to
+    back, with or without a separator:
 
     >>> parse_td('2 weeks 1 day') == timedelta(days=15)
+    True
+    >>> parse_td('1h30m') == timedelta(hours=1, minutes=30)
     True
 
     Negative times are supported, too:
