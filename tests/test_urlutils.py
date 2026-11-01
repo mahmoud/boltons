@@ -179,7 +179,8 @@ def test_not_equal():
     assert bono != u
 
 
-def _test_bad_utf8():  # not part of the API
+@pytest.mark.xfail(strict=True, reason="to_text() decodifica %00/%FF em vez de mantê-los codificados")
+def test_bad_utf8():  # not part of the API
     bad_bin_url = 'http://xn--9ca.com/%00%FF/%C3%A9'
     url = URL(bad_bin_url)
 
