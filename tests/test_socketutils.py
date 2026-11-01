@@ -27,12 +27,8 @@ def test_short_lines():
         y.close()
         assert bs.recv_close(maxsize=ms) == b'3\n'
 
-        try:
+        with pytest.raises(ConnectionClosed):
             bs.recv_size(1)
-        except ConnectionClosed:
-            pass
-        else:
-            assert False, 'expected ConnectionClosed'
 
         bs.close()
     return
