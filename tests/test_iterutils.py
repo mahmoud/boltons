@@ -105,12 +105,15 @@ class TestRemap:
         assert even_items == [0, 2, 4, 6, 8]
 
     def test_noncallables(self):
-        with pytest.raises(TypeError):
+        with pytest.raises(TypeError) as visit_exc:
             remap([], visit='test')
-        with pytest.raises(TypeError):
+        assert 'visit expected callable' in str(visit_exc.value)
+        with pytest.raises(TypeError) as enter_exc:
             remap([], enter='test')
-        with pytest.raises(TypeError):
+        assert 'enter expected callable' in str(enter_exc.value)
+        with pytest.raises(TypeError) as exit_exc:
             remap([], exit='test')
+        assert 'exit expected callable' in str(exit_exc.value)
 
     def test_sub_selfref(self):
         coll = [0, 1, 2, 3]
