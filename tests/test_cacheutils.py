@@ -24,15 +24,20 @@ def test_lru_add():
     assert 0 not in cache
 
 
+@pytest.mark.parametrize("lookup_count", range(1, len(string.ascii_letters) + 1))
+def test_lri_on_miss_keeps_most_recent_inserts(lookup_count):
+    cache_size = 10
+    bc = LRI(cache_size, on_miss=lambda k: k.upper())
+    looked_up = string.ascii_letters[:lookup_count]
+    assert [bc[char] for char in looked_up] == list(looked_up.upper())
+    # the cache holds exactly the cache_size most recently inserted keys
+    assert set(bc) == set(looked_up[-cache_size:])
+
+
 def test_lri():
     cache_size = 10
     bc = LRI(cache_size, on_miss=lambda k: k.upper())
-    for idx, char in enumerate(string.ascii_letters):
-        x = bc[char]
-        assert x == char.upper()
-        # the cache holds exactly the cache_size most recently inserted keys
-        oldest_kept_index = max(0, idx - cache_size + 1)
-        assert set(bc) == set(string.ascii_letters[oldest_kept_index:idx + 1])
+    assert [bc[char] for char in string.ascii_letters] == list(string.ascii_letters.upper())
 
     # test that reinserting an existing key changes eviction behavior
     bc[string.ascii_letters[-cache_size+1]] = "new value"
