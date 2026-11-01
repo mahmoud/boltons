@@ -129,6 +129,7 @@ system instrumentation package.
 import bisect
 from math import floor, ceil
 from collections import Counter
+from statistics import pvariance
 
 
 class _StatsProperty:
@@ -356,6 +357,10 @@ class Stats:
         >>> variance(range(97))
         784.0
         """
+        # Keep integer differences exact before converting the result to float.
+        # A floating mean can round distinct large integers to the same value.
+        if all(isinstance(value, int) for value in self.data):
+            return float(pvariance(self.data))
         global mean  # defined elsewhere in this file
         return mean(self._get_pow_diffs(2))
     variance = _StatsProperty('variance', _calc_variance)

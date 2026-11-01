@@ -1,3 +1,5 @@
+import pytest
+
 from boltons.statsutils import Stats, mode
 
 
@@ -68,3 +70,16 @@ def test_format_histogram_counts_all_zero():
     from boltons.statsutils import format_histogram_counts
 
     assert format_histogram_counts([(0.0, 0), (1.0, 0)]) == '0.0: 0 |\n1.0: 0 |'
+
+
+@pytest.mark.parametrize('base', [10 ** 20, -(10 ** 20), 10 ** 100])
+def test_variance_of_nearby_large_integers(base):
+    stats = Stats([base, base + 1])
+    assert stats.variance == 0.25
+    assert stats.std_dev == 0.5
+
+
+def test_variance_is_independent_of_integer_translation():
+    values = [0, 2, 4, 6]
+    assert Stats(values).variance == 5.0
+    assert Stats([10 ** 20 + value for value in values]).variance == 5.0
