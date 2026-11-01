@@ -786,7 +786,7 @@ class _ComplementSet:
             if inc is None:  # + -
                 self._included &= exc
             else:  # + +
-                self._included.discard(inc)
+                self._included.difference_update(inc)
 
     def symmetric_difference(self, other):
         try:
