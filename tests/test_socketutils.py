@@ -117,12 +117,8 @@ def test_client_disconnecting():
     bx.close()
     assert bx.getrecvbuffer() == b''
 
-    try:
+    with pytest.raises(OSError):
         bx.recv(1)
-    except OSError:
-        pass
-    else:
-        assert False, 'expected socket.error on closed recv'
 
     assert bx.fileno() == -1
 
