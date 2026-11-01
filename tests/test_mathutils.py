@@ -50,8 +50,9 @@ def test_ceil_oor_lower():
 
 
 def test_ceil_oor_upper():
-    with raises(ValueError):
+    with raises(ValueError) as exc_info:
         ceil(OUT_OF_RANGE_UPPER, OPTIONS)
+    assert 'no ceil options greater than or equal to' in str(exc_info.value)
 
 
 def test_floor_basic():
