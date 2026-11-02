@@ -633,6 +633,52 @@ def test_chunked_filter():
         list(chunked_filter(range(4), 2, key='nope'))
 
 
+@pytest.mark.parametrize('src', ['abcde', b'abcde', bytearray(b'abcde'),
+                                 list('abcde'), tuple('abcde')])
+@pytest.mark.parametrize('size', [2, 3])
+def test_chunked_filter_list_batches(src, size):
+    from boltons.iterutils import chunked_filter
+
+    batches = []
+
+    def keep_first(batch):
+        assert isinstance(batch, list)
+        batches.append(batch.copy())
+        return [True] + [False] * (len(batch) - 1)
+
+    assert list(chunked_filter(src, size, key=keep_first)) == list(src)[::size]
+    assert batches == [list(src)[i:i + size] for i in range(0, len(src), size)]
+
+
+def test_chunked_filter_lazy_list_batches():
+    from boltons.iterutils import chunked_filter
+
+    items = [object() for _ in range(5)]
+    consumed = []
+    batches = []
+
+    def source():
+        for item in items:
+            consumed.append(item)
+            yield item
+
+    def keep_all(batch):
+        assert isinstance(batch, list)
+        batches.append(batch.copy())
+        return (True for _ in batch)
+
+    filtered = chunked_filter(source(), 2, key=keep_all)
+    assert not consumed
+    assert not batches
+    assert next(filtered) is items[0]
+    assert consumed == items[:2]
+    assert batches == [items[:2]]
+    assert next(filtered) is items[1]
+    assert consumed == items[:2]
+    assert list(filtered) == items[2:]
+    assert batches == [items[:2], items[2:4], items[4:]]
+
+
 def test_bucketize_iterator_with_key_list():
     # see #563
     from boltons.iterutils import bucketize
