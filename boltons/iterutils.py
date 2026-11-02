@@ -384,6 +384,8 @@ def chunked_filter(src, size, key=None):
     if key is not None and not callable(key):
         raise TypeError('expected key to be callable or None, not: %r' % key)
     for chunk in chunked_iter(src, size):
+        if isinstance(chunk, (str, bytes)):
+            chunk = list(chunk)
         allowed = chunk if key is None else list(key(chunk))
         if len(allowed) != len(chunk):
             raise ValueError('expected key to return %d flags, got %d'
