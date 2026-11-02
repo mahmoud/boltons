@@ -138,6 +138,53 @@ class TestRemap:
         assert remapped[0] is remapped[1]
         assert remapped[0] is not duperef[0]
 
+    @pytest.mark.parametrize('cache', [False, True])
+    @pytest.mark.parametrize('container', [list, dict])
+    def test_cycle_with_cache_disabled(self, cache, container):
+        root = container()
+        if container is list:
+            root.append(root)
+            key = 0
+        else:
+            root['self'] = root
+            key = 'self'
+        entered = []
+
+        def enter(path, key, value):
+            entered.append(value)
+            assert len(entered) <= 2, 'cycle traversed repeatedly'
+            return default_enter(path, key, value)
+
+        result = remap(root, enter=enter, cache=cache)
+        assert result is not root
+        assert result[key] is result
+        assert len(entered) == 1
+
+    @pytest.mark.parametrize('cache', [False, True])
+    def test_shared_cycles_with_cache_disabled(self, cache):
+        child = ['hello']
+        child.append(child)
+        root = {'left': child, 'right': child}
+        entered = []
+        visited = []
+
+        def enter(path, key, value):
+            entered.append(path + (key,))
+            assert len(entered) <= 6, 'cycle traversed repeatedly'
+            return default_enter(path, key, value)
+
+        def visit(path, key, value):
+            visited.append(path + (key,))
+            return key, value.upper() if isinstance(value, str) else value
+
+        result = remap(root, visit=visit, enter=enter, cache=cache)
+        assert result['left'][0] == result['right'][0] == 'HELLO'
+        assert result['left'][1] is result['left']
+        assert result['right'][1] is result['right']
+        assert (result['left'] is result['right']) is cache
+        assert ('left', 1) in visited
+        assert (('right', 1) in visited) is (not cache)
+
     def test_namedtuple(self):
         # see #585
         Point = namedtuple('Point', 'x y')
@@ -444,6 +491,21 @@ def test_research_custom_enter():
     with pytest.raises(TypeError):
         research(root, query)
     assert research(root, query, enter=custom_enter) == [(('a',), 'a'), (('c', 'aa'), 'aa')]
+
+
+def test_research_shared_cycles():
+    child = ['target']
+    root = {'left': child, 'right': child}
+    child.append(root)
+    entered = []
+
+    def enter(path, key, value):
+        entered.append(path + (key,))
+        assert len(entered) <= 6, 'cycle traversed repeatedly'
+        return default_enter(path, key, value)
+
+    result = research(root, query=lambda p, k, v: isinstance(v, str), enter=enter)
+    assert result == [(('left', 0), 'target'), (('right', 0), 'target')]
 
 
 
