@@ -837,6 +837,20 @@ def test_cache_shallow_copy_uses_setitem(cache_type):
 
 
 @pytest.mark.parametrize('cache_type', [LRI, LRU])
+def test_cache_shallow_copy_uses_stored_keys(cache_type):
+    class HiddenKeysCache(cache_type):
+        def __contains__(self, key):
+            return False
+
+    cache = HiddenKeysCache(values={'a': 1})
+    copied = copy.copy(cache)
+    assert dict(copied) == {'a': 1}
+    assert copied['a'] == cache['a'] == 1
+    copied.clear()
+    assert cache['a'] == 1
+
+
+@pytest.mark.parametrize('cache_type', [LRI, LRU])
 def test_cache_ior(cache_type):
     cache = cache_type(max_size=2)
     cache |= {'a': 1, 'b': 2, 'c': 3}

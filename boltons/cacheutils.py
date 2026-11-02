@@ -324,7 +324,7 @@ class LRI(dict):
                 ret._lock = RLock()
                 ret._init_ll()
                 for key, _ in order + list(dict.items(ret)):
-                    if key in ret and key not in ret._link_lookup:
+                    if dict.__contains__(ret, key) and key not in ret._link_lookup:
                         ret._set_key_and_add_to_front_of_ll(key, dict.__getitem__(ret, key))
             if listiter is not None:
                 for item in listiter:
@@ -338,7 +338,7 @@ class LRI(dict):
                 order += ret._get_flattened_ll()[1:]
                 ret._init_ll()
                 for key, _ in order:
-                    if key in ret and key not in ret._link_lookup:
+                    if dict.__contains__(ret, key) and key not in ret._link_lookup:
                         ret._set_key_and_add_to_front_of_ll(key, dict.__getitem__(ret, key))
             return ret
 
