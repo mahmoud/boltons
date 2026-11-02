@@ -303,6 +303,7 @@ class LRI(dict):
                 return self
             factory, args = reduced[:2]
             state = reduced[2] if len(reduced) > 2 else None
+            has_state = state is not None
             listiter = reduced[3] if len(reduced) > 3 else None
             dictiter = reduced[4] if len(reduced) > 4 else None
             ret = factory(*args)
@@ -317,7 +318,9 @@ class LRI(dict):
                 if slot_state is not None:
                     for key, value in slot_state.items():
                         setattr(ret, key, value)
-            is_cache = isinstance(ret, LRI) and ret is not self
+            is_cache = (isinstance(ret, LRI) and ret is not self and has_state
+                        and any(getattr(ret, attr, None) is getattr(self, attr)
+                                for attr in ('_lock', '_anchor', '_link_lookup')))
             if is_cache:
                 shared_order = getattr(ret, '_anchor', None) is self._anchor
                 order = ret._get_flattened_ll()[1:] if hasattr(ret, '_anchor') else []

@@ -851,6 +851,27 @@ def test_cache_shallow_copy_uses_stored_keys(cache_type):
 
 
 @pytest.mark.parametrize('cache_type', [LRI, LRU])
+@pytest.mark.parametrize('same_object', [False, True])
+def test_cache_shallow_copy_factory_existing_cache(cache_type, same_object):
+    class ExistingCache(cache_type):
+        def __reduce_ex__(self, protocol):
+            return lambda: target, ()
+
+    cache = ExistingCache(values={'source': 1})
+    target = cache if same_object else cache_type(values={'target': 2})
+    lock, anchor, lookup = target._lock, target._anchor, target._link_lookup
+    expected = dict(target)
+    copied = copy.copy(cache)
+    assert copied is target
+    assert copied._lock is lock
+    assert copied._anchor is anchor
+    assert copied._link_lookup is lookup
+    assert dict(copied) == expected
+    for key, value in expected.items():
+        assert copied[key] == value
+
+
+@pytest.mark.parametrize('cache_type', [LRI, LRU])
 def test_cache_ior(cache_type):
     cache = cache_type(max_size=2)
     cache |= {'a': 1, 'b': 2, 'c': 3}
