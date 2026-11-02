@@ -105,6 +105,74 @@ def test_parse_qsl_encoding():
     assert urlutils.parse_qsl('%E9=v', encoding='latin-1') == [('\xe9', 'v')]
 
 
+@pytest.mark.parametrize('full_quote', [False, True])
+@pytest.mark.parametrize('kind', ['params', 'url'])
+@pytest.mark.parametrize('text, expected', [
+    ('q=a%3Bb', [('q', 'a;b')]),
+    ('a%3Bb=value', [('a;b', 'value')]),
+    ('q=first%3Bvalue&other=x&q=last%3Bvalue',
+     [('q', 'first;value'), ('other', 'x'), ('q', 'last;value')]),
+    ('a%3Bb=one&a%3Bb=two%3Bthree', [('a;b', 'one'), ('a;b', 'two;three')]),
+    ('%3B=%3B%3B&flag%3B', [(';', ';;'), ('flag;', None)]),
+    ('=a%3Bb', [('', 'a;b')]),
+])
+def test_query_semicolon_roundtrip(text, expected, full_quote, kind):
+    if kind == 'params':
+        params = QueryParamDict.from_text(text)
+        assert params.items(multi=True) == expected
+        rendered = params.to_text(full_quote=full_quote)
+        assert rendered == text
+        assert QueryParamDict.from_text(rendered).items(multi=True) == expected
+    else:
+        url = URL('https://example.com/?' + text)
+        assert url.query_params.items(multi=True) == expected
+        rendered = url.to_text(full_quote=full_quote)
+        assert rendered == 'https://example.com/?' + text
+        assert URL(rendered).query_params.items(multi=True) == expected
+
+
+@pytest.mark.parametrize('full_quote', [False, True])
+def test_query_semicolon_from_pairs(full_quote):
+    pairs = [('a;b', 'c;d'), ('other', 'x'), ('a;b', 'e;f')]
+    params = QueryParamDict(pairs)
+    rendered = params.to_text(full_quote=full_quote)
+    assert rendered == 'a%3Bb=c%3Bd&other=x&a%3Bb=e%3Bf'
+    assert QueryParamDict.from_text(rendered).items(multi=True) == pairs
+
+
+@pytest.mark.parametrize('full_quote', [False, True])
+def test_query_semicolon_separators(full_quote):
+    text = 'q=one;q=two%3Bthree&flag;last=end'
+    expected = [('q', 'one'), ('q', 'two;three'), ('flag', None), ('last', 'end')]
+    assert urlutils.parse_qsl(text) == expected
+    params = QueryParamDict.from_text(text)
+    rendered = params.to_text(full_quote=full_quote)
+    assert rendered == 'q=one&q=two%3Bthree&flag&last=end'
+    assert QueryParamDict.from_text(rendered).items(multi=True) == expected
+    assert urlutils.parse_qsl(text, keep_blank_values=False) == [
+        ('q', 'one'), ('q', 'two;three'), ('last', 'end')]
+
+
+@pytest.mark.parametrize('full_quote', [False, True])
+@pytest.mark.parametrize('text, readable, quoted', [
+    ('a;b', 'a%3Bb', 'a%3Bb'),
+    ('&=+', '%26%3D%2B', '%26%3D%2B'),
+    ("!$'()*,/:?@", "!$'()*,/:?@", "!$'()*,/:?@"),
+    ('a b', 'a b', 'a%20b'),
+    ('caf\u00e9', 'caf\u00e9', 'caf%C3%A9'),
+    ('%3B', '%3B', '%253B'),
+])
+def test_query_part_quoting(text, readable, quoted, full_quote):
+    assert urlutils.quote_query_part(text, full_quote=full_quote) == (
+        quoted if full_quote else readable)
+
+
+@pytest.mark.parametrize('full_quote', [False, True])
+def test_semicolons_outside_query(full_quote):
+    text = 'https://user;name:pass;word@example.com/path;part?q=x#frag;ment'
+    assert URL(text).to_text(full_quote=full_quote) == text
+
+
 def test_query_param_dict_eq_with_dict():
     qpd = QueryParamDict([('a', '1'), ('b', '2')])
     assert qpd == {'a': '1', 'b': '2'}
