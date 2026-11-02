@@ -127,8 +127,8 @@ def split_iter(src, sep=None, maxsplit=None):
       * a single-argument callable that returns True when a separator is
         encountered
 
-    ``split_iter()`` yields lists of non-separator values. A separator will
-    never appear in the output.
+    ``split_iter()`` yields lists of non-separator values. Separators in
+    the unsplit remainder after *maxsplit* is reached are preserved.
 
     >>> list(split_iter(['hi', 'hello', None, None, 'sup', None, 'soap', None]))
     [['hi', 'hello'], ['sup'], ['soap']]
@@ -142,6 +142,8 @@ def split_iter(src, sep=None, maxsplit=None):
     [['hi', 'hello'], ['sup']]
     >>> list(split_iter(['hi', 'hello', None, None, 'sup', None], sep=[None]))
     [['hi', 'hello'], [], ['sup'], []]
+    >>> list(split_iter([1, None, None, 2, None, 3], maxsplit=1))
+    [[1], [2, None, 3]]
 
     Using a callable separator:
 
@@ -174,7 +176,8 @@ def split_iter(src, sep=None, maxsplit=None):
     cur_group = []
     split_count = 0
     for s in src:
-        if maxsplit is not None and split_count >= maxsplit:
+        if (maxsplit is not None and split_count >= maxsplit
+                and (sep is not None or cur_group)):
             def sep_func(x): return False
         if sep_func(s):
             if sep is None and not cur_group:
