@@ -772,6 +772,71 @@ def test_cache_shallow_copy_global_reduction(cache_type, method):
 
 
 @pytest.mark.parametrize('cache_type', [LRI, LRU])
+@pytest.mark.parametrize('output_type', [dict, list])
+def test_cache_shallow_copy_reduction_output(cache_type, output_type):
+    seed, value = object(), object()
+
+    class ExportCache(cache_type):
+        def __reduce_ex__(self, protocol):
+            if output_type is dict:
+                return dict, ({'factory': seed},), None, None, iter([('keep', value)])
+            return list, ([seed],), None, iter([value])
+
+    cache = ExportCache(values={'omit': object()})
+    copied = copy.copy(cache)
+    assert type(copied) is output_type
+    assert copied == ({'factory': seed, 'keep': value} if output_type is dict
+                      else [seed, value])
+    assert list(cache) == ['omit']
+
+
+@pytest.mark.parametrize('cache_type', [LRI, LRU])
+@pytest.mark.parametrize('mode', ['filter', 'transform', 'factory_items'])
+def test_cache_shallow_copy_reduction_dictiter(cache_type, mode):
+    kept, transformed, seed = object(), object(), object()
+
+    class ReducedCache(cache_type):
+        def __reduce_ex__(self, protocol):
+            initial = {'factory': seed} if mode == 'factory_items' else {}
+            state = dict(self.__dict__) if mode == 'filter' else None
+            pairs = [('changed', transformed)] if mode == 'transform' else [('keep', kept)]
+            return type(self), (3, initial), state, None, iter(pairs)
+
+    cache = ReducedCache(3, {'keep': kept, 'omit': object()})
+    original = dict(cache)
+    copied = copy.copy(cache)
+    expected = {'changed': transformed} if mode == 'transform' else {'keep': kept}
+    if mode == 'factory_items':
+        expected = {'factory': seed, **expected}
+    assert dict(copied) == expected
+    assert set(copied._link_lookup) == set(expected)
+    assert copied._lock is not cache._lock
+    copied.clear()
+    assert dict(cache) == original
+    assert cache['keep'] is kept
+    cache['new'] = 1
+    assert set(cache._link_lookup) == set(cache)
+
+
+@pytest.mark.parametrize('cache_type', [LRI, LRU])
+def test_cache_shallow_copy_uses_setitem(cache_type):
+    calls = []
+
+    class RecordingCache(cache_type):
+        def __setitem__(self, key, value):
+            calls.append((self, key, value))
+            super().__setitem__(key, value)
+
+    cache = RecordingCache(values={'a': 1})
+    calls.clear()
+    copied = copy.copy(cache)
+    assert len(calls) == 1
+    assert calls[0][0] is copied
+    assert calls[0][1:] == ('a', 1)
+    assert cache == copied == {'a': 1}
+
+
+@pytest.mark.parametrize('cache_type', [LRI, LRU])
 def test_cache_ior(cache_type):
     cache = cache_type(max_size=2)
     cache |= {'a': 1, 'b': 2, 'c': 3}
