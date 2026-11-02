@@ -184,9 +184,11 @@ class BarrelList(list):
     def iter_slice(self, start, stop, step=None):
         length = len(self)
         start, stop, step = slice(start, stop, step).indices(length)
+        # islice requires a machine-sized stride, unlike slice.indices().
+        stride = min(abs(step), max(length, 1))
         if step < 0:
-            return islice(reversed(self), length - 1 - start, length - 1 - stop, -step)
-        return islice(self, start, stop, step)
+            return islice(reversed(self), length - 1 - start, length - 1 - stop, stride)
+        return islice(self, start, stop, stride)
 
     def del_slice(self, start, stop, step=None):
         step = 1 if step is None else operator.index(step)
