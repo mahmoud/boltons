@@ -288,6 +288,33 @@ class LRI(dict):
                                   values=self._get_flattened_ll()[1:],
                                   on_miss=self.on_miss)
 
+    def __copy__(self):
+        with self._lock:
+            # Reconstruct instance state without invoking a subclass's
+            # constructor, as the default shallow-copy protocol does.
+            reduced = super().__reduce_ex__(4)
+            factory, args = reduced[:2]
+            state = reduced[2] if len(reduced) > 2 else None
+            ret = factory(*args)
+            if state is not None and hasattr(ret, '__setstate__'):
+                ret.__setstate__(state)
+            else:
+                slot_state = None
+                if isinstance(state, tuple):
+                    state, slot_state = state
+                if state is not None:
+                    ret.__dict__.update(state)
+                if slot_state is not None:
+                    for key, value in slot_state.items():
+                        setattr(ret, key, value)
+            ret._lock = RLock()
+            ret._init_ll()
+            for key, value in dict.items(self):
+                dict.__setitem__(ret, key, value)
+            for key, value in self._get_flattened_ll()[1:]:
+                ret._set_key_and_add_to_front_of_ll(key, value)
+            return ret
+
     def setdefault(self, key, default=None):
         with self._lock:
             try:

@@ -1,3 +1,4 @@
+import copy
 import string
 import sys
 from abc import abstractmethod, ABCMeta
@@ -571,18 +572,106 @@ def test_cachedmethod_bound_unbound_share_key():
 
 
 @pytest.mark.parametrize('cache_type', [LRI, LRU])
-def test_cache_copy(cache_type):
+@pytest.mark.parametrize('copy_func', [lambda cache: cache.copy(), copy.copy])
+def test_cache_copy(cache_type, copy_func):
     on_miss = lambda k: k.upper()
     cache = cache_type(max_size=2, on_miss=on_miss)
     cache['a'] = 1
     cache['b'] = 2
-    copied = cache.copy()
+    copied = copy_func(cache)
     assert cache.hit_count == 0
     assert copied.on_miss is on_miss
     assert copied == {'a': 1, 'b': 2}
     # insertion/access order is preserved: 'a' is evicted first
     copied['c'] = 3
     assert dict(copied) == {'b': 2, 'c': 3}
+    assert dict(cache) == {'a': 1, 'b': 2}
+    assert cache['a'] == 1
+    assert cache['b'] == 2
+
+
+@pytest.mark.parametrize('cache_type', [LRI, LRU])
+def test_cache_shallow_copy_preserves_eviction_order(cache_type):
+    cache = cache_type(max_size=2, values=[('a', 1), ('b', 2)])
+    # Refresh 'a' without changing the dictionary's insertion order.
+    cache['a'] = 1
+    assert cache['a'] == 1
+    copied = copy.copy(cache)
+    assert cache.hit_count == 1
+    assert copied.hit_count == 1
+    copied['c'] = 3
+    cache['d'] = 4
+    assert dict(copied) == {'a': 1, 'c': 3}
+    assert dict(cache) == {'a': 1, 'd': 4}
+
+
+@pytest.mark.parametrize('cache_type', [LRI, LRU])
+def test_cache_shallow_copy_shares_values_not_cache_state(cache_type):
+    value = []
+    cache = cache_type(max_size=2, values={'a': value, 'b': 2})
+    copied = copy.copy(cache)
+    assert copied['a'] is value
+    copied['a'].append(1)
+    assert cache['a'] == [1]
+    del copied['b']
+    assert cache['b'] == 2
+    copied['a'] = []
+    assert cache['a'] is value
+
+
+@pytest.mark.parametrize('cache_type', [LRI, LRU])
+@pytest.mark.parametrize('populated', [False, True])
+def test_cache_shallow_copy_preserves_subclass_state(cache_type, populated):
+    class NamedCache(cache_type):
+        __slots__ = ('slot_value',)
+
+        def __init__(self, name, **kwargs):
+            super().__init__(**kwargs)
+            self.name = name
+            self.slot_value = []
+
+    on_miss = lambda key: key.upper()
+    cache = NamedCache('source', max_size=2, on_miss=on_miss)
+    cache.metadata = []
+    cache.hit_count, cache.miss_count, cache.soft_miss_count = 3, 2, 1
+    if populated:
+        cache.update(a=1, b=2)
+        cache['a'] = 1
+    copied = copy.copy(cache)
+    assert type(copied) is NamedCache
+    assert copied.name == 'source'
+    assert copied.metadata is cache.metadata
+    assert copied.slot_value is cache.slot_value
+    assert copied.on_miss is on_miss
+    assert (copied.hit_count, copied.miss_count, copied.soft_miss_count) == (3, 2, 1)
+    assert copied.max_size == 2
+    assert copied._lock is not cache._lock
+    assert list(copied) == list(cache)
+    copied['c'] = 3
+    assert 'c' not in cache
+    if populated:
+        assert list(copied) == ['a', 'c']
+        assert list(cache) == ['a', 'b']
+        assert cache['a'] == 1
+        assert cache['b'] == 2
+
+
+@pytest.mark.parametrize('cache_type', [LRI, LRU])
+def test_cache_shallow_copy_custom_state(cache_type):
+    class StatefulCache(cache_type):
+        def __getstate__(self):
+            return self.__dict__, 'extra state'
+
+        def __setstate__(self, state):
+            instance_state, extra = state
+            self.__dict__.update(instance_state)
+            self.extra = extra
+
+    cache = StatefulCache(values={'a': 1})
+    copied = copy.copy(cache)
+    assert copied.extra == 'extra state'
+    copied['a'] = 2
+    assert cache['a'] == 1
 
 
 @pytest.mark.parametrize('cache_type', [LRI, LRU])
