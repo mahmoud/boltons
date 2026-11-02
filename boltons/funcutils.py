@@ -955,13 +955,19 @@ class FunctionBuilder:
     def add_arg(self, arg_name, default=NO_DEFAULT, kwonly=False):
         """Add an argument with optional *default* (defaults to
         ``funcutils.NO_DEFAULT``). Pass *kwonly=True* to add a
-        keyword-only argument
+        keyword-only argument. Required positional arguments must be
+        added before positional arguments with defaults; otherwise a
+        :exc:`ValueError` is raised without modifying the builder.
         """
         if arg_name in self.args:
             raise ExistingArgument(f'arg {arg_name!r} already in func {self.name} arg list')
         if arg_name in self.kwonlyargs:
             raise ExistingArgument(f'arg {arg_name!r} already in func {self.name} kwonly arg list')
         if not kwonly:
+            if default is NO_DEFAULT and self.defaults:
+                raise ValueError('cannot add required positional argument after'
+                                 ' arguments with defaults; use kwonly=True or'
+                                 ' add required arguments first')
             self.args.append(arg_name)
             if default is not NO_DEFAULT:
                 self.defaults = (self.defaults or ()) + (default,)

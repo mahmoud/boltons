@@ -206,6 +206,33 @@ def test_FunctionBuilder_add_arg():
     assert better_func(val='keyword') == 'keyword'
 
 
+@pytest.mark.parametrize('args, defaults', [
+    (['a'], (10,)),
+    (['a', 'b'], (10,)),
+    (['a', 'b'], (10, 20)),
+])
+def test_FunctionBuilder_required_arg_after_defaults(args, defaults):
+    fb = FunctionBuilder('example', args=list(args), defaults=defaults)
+    expected_defaults = fb.get_defaults_dict()
+    with pytest.raises(ValueError, match='required positional argument'):
+        fb.add_arg('required')
+    # Reject the invalid ordering without moving defaults to other names.
+    assert fb.args == args
+    assert fb.defaults == defaults
+    assert fb.get_defaults_dict() == expected_defaults
+    fb.add_arg('optional', default=30)
+    assert fb.get_defaults_dict() == dict(expected_defaults, optional=30)
+
+
+def test_wraps_required_expected_arg_after_defaults():
+    def original(optional=10):
+        return optional
+
+    with pytest.raises(ValueError, match='required positional argument'):
+        wraps(original, expected='required')(lambda *args, **kwargs: None)
+    assert original() == 10
+
+
 def test_wraps_expected():
     def expect_string(func):
         @wraps(func, expected="c")
