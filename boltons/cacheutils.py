@@ -67,6 +67,7 @@ import heapq
 import math
 import weakref
 import itertools
+from copyreg import dispatch_table
 from operator import attrgetter
 
 try:
@@ -287,6 +288,62 @@ class LRI(dict):
             return self.__class__(max_size=self.max_size,
                                   values=self._get_flattened_ll()[1:],
                                   on_miss=self.on_miss)
+
+    def __copy__(self):
+        with self._lock:
+            # Follow shallow-copy reduction dispatch, including subclass
+            # hooks and registered reducers, before rebuilding cache state.
+            reducer = dispatch_table.get(type(self))
+            if reducer is not None:
+                reduced = reducer(self)
+            else:
+                reduce_ex = getattr(self, '__reduce_ex__', None)
+                reduced = reduce_ex(4) if reduce_ex is not None else self.__reduce__()
+            if isinstance(reduced, str):
+                return self
+            factory, args = reduced[:2]
+            state = reduced[2] if len(reduced) > 2 else None
+            has_state = state is not None
+            listiter = reduced[3] if len(reduced) > 3 else None
+            dictiter = reduced[4] if len(reduced) > 4 else None
+            ret = factory(*args)
+            if state is not None and hasattr(ret, '__setstate__'):
+                ret.__setstate__(state)
+            else:
+                slot_state = None
+                if isinstance(state, tuple) and len(state) == 2:
+                    state, slot_state = state
+                if state is not None:
+                    ret.__dict__.update(state)
+                if slot_state is not None:
+                    for key, value in slot_state.items():
+                        setattr(ret, key, value)
+            is_cache = (isinstance(ret, LRI) and ret is not self and has_state
+                        and any(getattr(ret, attr, None) is getattr(self, attr)
+                                for attr in ('_lock', '_anchor', '_link_lookup')))
+            if is_cache:
+                shared_order = getattr(ret, '_anchor', None) is self._anchor
+                order = ret._get_flattened_ll()[1:] if hasattr(ret, '_anchor') else []
+                ret._lock = RLock()
+                ret._init_ll()
+                for key, _ in order + list(dict.items(ret)):
+                    if dict.__contains__(ret, key) and key not in ret._link_lookup:
+                        ret._set_key_and_add_to_front_of_ll(key, dict.__getitem__(ret, key))
+            if listiter is not None:
+                for item in listiter:
+                    ret.append(item)
+            if dictiter is not None:
+                for key, value in dictiter:
+                    ret[key] = value
+            if is_cache and shared_order and order:
+                # Keep the saved eviction order for surviving entries, while
+                # retaining any additional entries produced by the reducer.
+                order += ret._get_flattened_ll()[1:]
+                ret._init_ll()
+                for key, _ in order:
+                    if dict.__contains__(ret, key) and key not in ret._link_lookup:
+                        ret._set_key_and_add_to_front_of_ll(key, dict.__getitem__(ret, key))
+            return ret
 
     def setdefault(self, key, default=None):
         with self._lock:
