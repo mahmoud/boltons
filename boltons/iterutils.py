@@ -1234,7 +1234,10 @@ def remap(
         cache (bool): Controls whether to cache transformed
             objects. Uses object identity for the cache. For example
             this is turned off for applications like `research` which
-            need to traverse all trees.
+            need to traverse all trees. When disabled, shared objects
+            are traversed again at each path, except references to an
+            object already being traversed, which reuse its new parent
+            without descending into it again.
         reraise_visit (bool): A pragmatic convenience for the *visit*
             callable. When set to ``False``, remap ignores any errors
             raised by the *visit* callback. Items causing exceptions
@@ -1297,10 +1300,13 @@ def remap(
             value = exit(path, key, old_parent, new_parent, new_items)
             if trace_exit:
                 print(' .. remap exit result:', value)
-            registry[id_value] = value
+            if cache:
+                registry[id_value] = value
+            else:
+                del registry[id_value]
             if not new_items_stack:
                 continue
-        elif cache and id_value in registry:
+        elif id_value in registry:
             value = registry[id_value]
         else:
             if trace_enter:
@@ -1476,6 +1482,10 @@ def research(root, query=lambda p, k, v: True, reraise=False, enter=default_ente
     ``len(p)``) and much more. If more advanced functionality is
     needed, check out the code and make your own :func:`remap`
     wrapper, and consider `submitting a patch`_!
+
+    Shared objects are searched at each path. Objects already on the
+    current traversal path are not searched again, so reference cycles
+    terminate without repeating their contents indefinitely.
 
     .. _submitting a patch: https://github.com/mahmoud/boltons/pulls
     """
