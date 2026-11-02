@@ -202,8 +202,7 @@ def test_iset_index_method():
 
     indexed_list = IndexedSet()
 
-    for i in original_list:
-        indexed_list.add(i)
+    indexed_list.update(original_list)
 
     for i in original_list:
         index = indexed_list.index(i)

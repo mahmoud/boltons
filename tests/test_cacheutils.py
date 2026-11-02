@@ -24,18 +24,20 @@ def test_lru_add():
     assert 0 not in cache
 
 
+@pytest.mark.parametrize("lookup_count", range(1, len(string.ascii_letters) + 1))
+def test_lri_on_miss_keeps_most_recent_inserts(lookup_count):
+    cache_size = 10
+    bc = LRI(cache_size, on_miss=lambda k: k.upper())
+    looked_up = string.ascii_letters[:lookup_count]
+    assert [bc[char] for char in looked_up] == list(looked_up.upper())
+    # the cache holds exactly the cache_size most recently inserted keys
+    assert set(bc) == set(looked_up[-cache_size:])
+
+
 def test_lri():
     cache_size = 10
     bc = LRI(cache_size, on_miss=lambda k: k.upper())
-    for idx, char in enumerate(string.ascii_letters):
-        x = bc[char]
-        assert x == char.upper()
-        least_recent_insert_index = idx - cache_size
-        if least_recent_insert_index >= 0:
-            # least recently inserted object evicted
-            assert len(bc) == cache_size
-            for char in string.ascii_letters[least_recent_insert_index+1:idx]:
-                assert char in bc
+    assert [bc[char] for char in string.ascii_letters] == list(string.ascii_letters.upper())
 
     # test that reinserting an existing key changes eviction behavior
     bc[string.ascii_letters[-cache_size+1]] = "new value"
@@ -74,6 +76,8 @@ def test_lri_cache_eviction():
     # will error here since we evict key1 from the cache and it doesn't
     # exist in the dict anymore
     test_cache["key3"] = "value3"
+    assert dict(test_cache) == {"key2": "value2", "key3": "value3"}, \
+        "LRI(2) should evict key1 and keep only the two newest keys"
 
 
 def test_cache_sizes_on_repeat_insertions():
@@ -114,22 +118,14 @@ def test_lru_basic():
     assert len(lru) == 0
     assert not lru
 
-    try:
+    with pytest.raises(KeyError):
         lru.pop('bye')
-    except KeyError:
-        pass
-    else:
-        assert False
 
     default = object()
     assert lru.pop('bye', default) is default
 
-    try:
+    with pytest.raises(KeyError):
         lru.popitem()
-    except KeyError:
-        pass
-    else:
-        assert False
 
     lru['another'] = 1
     assert lru.popitem() == ('another', 1)
@@ -311,7 +307,7 @@ def test_callable_cached_dec():
     func()
     assert inner_func.call_count == 2
 
-    print(repr(func))
+    assert repr(func) == f'CachedFunction(func={inner_func!r})'
 
     return
 
@@ -370,8 +366,10 @@ def test_cachedmethod():
     Car.door(Car(), 'bob')
 
     # always check the repr
-    print(repr(car_two.door))
-    print(repr(Car.door))
+    assert repr(car_two.door) == ('<CachedMethod func=%r scoped=False typed=False bound_to=%r>'
+                                  % (Car.door.func, car_two))
+    assert repr(Car.door) == ('CachedMethod(func=%r, scoped=False, typed=False)'
+                              % Car.door.func)
     return
 
 

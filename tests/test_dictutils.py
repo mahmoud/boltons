@@ -126,18 +126,18 @@ def test_omd_copy_module():
 
 
 
-def test_clear():
-    for itemset in _ITEMSETS:
-        omd = OMD(itemset)
-        omd.clear()
-        assert len(omd) == 0
-        assert not omd
-        omd.clear()
-        assert not omd
-        omd['a'] = 22
-        assert omd
-        omd.clear()
-        assert not omd
+@pytest.mark.parametrize("itemset", _ITEMSETS)
+def test_clear(itemset):
+    omd = OMD(itemset)
+    omd.clear()
+    assert len(omd) == 0
+    assert not omd
+    omd.clear()
+    assert not omd
+    omd['a'] = 22
+    assert omd
+    omd.clear()
+    assert not omd
 
 
 def test_types():
@@ -256,11 +256,8 @@ def test_pop():
 
     assert omd.pop('odd') == 1
     assert omd.pop('odd', 99) == 99
-    try:
+    with pytest.raises(KeyError):
         omd.pop('odd')
-        assert False
-    except KeyError:
-        pass
 
     assert len(omd) == 1
     assert len(omd.items(multi=True)) == 2
@@ -308,11 +305,8 @@ def test_pop_all():
 
     assert omd.popall('odd') == [1]
     assert len(omd) == 1
-    try:
+    with pytest.raises(KeyError):
         omd.popall('odd')
-        assert False
-    except KeyError:
-        pass
     assert omd.popall('odd', None) is None
 
     assert omd.popall('even') == [0, 2]
@@ -413,49 +407,65 @@ def test_subdict_keep_type():
     assert type(subdict(omd)) is OMD
 
 
-def test_one_to_one():
+def test_one_to_one_setitem():
     e = OneToOne({1:2})
-    def ck(val, inv):
-        assert (e, e.inv) == (val, inv)
-    ck({1:2}, {2:1})
+    assert (e, e.inv) == ({1:2}, {2:1})
     e[2] = 3
-    ck({1:2, 2:3}, {3:2, 2:1})
+    assert (e, e.inv) == ({1:2, 2:3}, {3:2, 2:1})
     e.clear()
-    ck({}, {})
+    assert (e, e.inv) == ({}, {})
     e[1] = 1
-    ck({1:1}, {1:1})
+    assert (e, e.inv) == ({1:1}, {1:1})
     e[1] = 2
-    ck({1:2}, {2:1})
+    assert (e, e.inv) == ({1:2}, {2:1})
     e[3] = 2
-    ck({3:2}, {2:3})
+    assert (e, e.inv) == ({3:2}, {2:3})
+
+
+def test_one_to_one_delitem():
+    e = OneToOne({3:2})
     del e[3]
-    ck({}, {})
+    assert (e, e.inv) == ({}, {})
     e[1] = 2
     e.inv[2] = 3
-    ck({3:2}, {2:3})
+    assert (e, e.inv) == ({3:2}, {2:3})
     del e.inv[2]
-    ck({}, {})
+    assert (e, e.inv) == ({}, {})
+
+
+def test_one_to_one_copy():
     assert OneToOne({1:2, 3:4}).copy().inv == {2:1, 4:3}
-    e[1] = 2
+
+
+def test_one_to_one_pop():
+    e = OneToOne({1:2})
     e.pop(1)
-    ck({}, {})
+    assert (e, e.inv) == ({}, {})
     e[1] = 2
     e.inv.pop(2)
-    ck({}, {})
+    assert (e, e.inv) == ({}, {})
     e[1] = 2
     e.popitem()
-    ck({}, {})
-    e.setdefault(1)
-    ck({1: None}, {None: 1})
-    e.inv.setdefault(2)
-    ck({1: None, None: 2}, {None: 1, 2: None})
-    e.clear()
-    e.update({})
-    ck({}, {})
-    e.update({1: 2}, cat="dog")
-    ck({1:2, "cat":"dog"}, {2: 1, "dog":"cat"})
+    assert (e, e.inv) == ({}, {})
 
-    # try various overlapping values
+
+def test_one_to_one_setdefault():
+    e = OneToOne()
+    e.setdefault(1)
+    assert (e, e.inv) == ({1: None}, {None: 1})
+    e.inv.setdefault(2)
+    assert (e, e.inv) == ({1: None, None: 2}, {None: 1, 2: None})
+
+
+def test_one_to_one_update():
+    e = OneToOne()
+    e.update({})
+    assert (e, e.inv) == ({}, {})
+    e.update({1: 2}, cat="dog")
+    assert (e, e.inv) == ({1:2, "cat":"dog"}, {2: 1, "dog":"cat"})
+
+
+def test_one_to_one_overlapping_values():
     oto = OneToOne({'a': 0, 'b': 0})
     assert len(oto) == len(oto.inv) == 1
 
@@ -466,11 +476,11 @@ def test_one_to_one():
     oto.update({'z': 0, 'y': 0})
     assert len(oto) == len(oto.inv) == 1
 
-    # test out unique classmethod
-    with pytest.raises(ValueError):
-        OneToOne.unique({'a': 0, 'b': 0})
 
-    return
+def test_one_to_one_unique():
+    with pytest.raises(ValueError) as exc_info:
+        OneToOne.unique({'a': 0, 'b': 0})
+    assert 'expected unique values' in str(exc_info.value)
 
 
 def test_one_to_one_update_iterator():
@@ -619,6 +629,7 @@ def test_frozendict_ior():
 
     with pytest.raises(TypeError, match=".*FrozenDict.*immutable.*"):
         fd |= fd
+    assert fd == data, "a failed in-place update must leave the FrozenDict unchanged"
 
 
 def test_frozendict_api():

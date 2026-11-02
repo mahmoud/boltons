@@ -1,6 +1,7 @@
 import sys
 import time
 import errno
+import contextlib
 import socket
 import threading
 from boltons.socketutils import (BufferedSocket,
@@ -27,51 +28,45 @@ def test_short_lines():
         y.close()
         assert bs.recv_close(maxsize=ms) == b'3\n'
 
-        try:
+        with pytest.raises(ConnectionClosed):
             bs.recv_size(1)
-        except ConnectionClosed:
-            pass
-        else:
-            assert False, 'expected ConnectionClosed'
 
         bs.close()
     return
 
 
-def test_multibyte_delim():
+@pytest.mark.parametrize('with_delim, cond_delim',
+                         [(True, b'\r\n'), (False, b'')],
+                         ids=['True', 'False'])
+def test_multibyte_delim(with_delim, cond_delim):
     """Primarily tests recv_until with various maxsizes and True/False
     for with_delimiter.
     """
 
     delim = b'\r\n'
-    for with_delim in (True, False):
-        if with_delim:
-            cond_delim = b'\r\n'
+
+    empty = b''
+    small_one = b'1'
+    big_two = b'2' * 2048
+    for ms in (3, 5, 1024, None):
+        x, y = socket.socketpair()
+        bs = BufferedSocket(x)
+
+        y.sendall(empty + delim)
+        y.sendall(small_one + delim)
+        y.sendall(big_two + delim)
+
+        kwargs = {'maxsize': ms, 'with_delimiter': with_delim}
+        assert bs.recv_until(delim, **kwargs) == empty + cond_delim
+        assert bs.recv_until(delim, **kwargs) == small_one + cond_delim
+        try:
+            assert bs.recv_until(delim, **kwargs) == big_two + cond_delim
+        except MessageTooLong:
+            if ms is None:
+                assert False, 'unexpected MessageTooLong'
         else:
-            cond_delim = b''
-
-        empty = b''
-        small_one = b'1'
-        big_two = b'2' * 2048
-        for ms in (3, 5, 1024, None):
-            x, y = socket.socketpair()
-            bs = BufferedSocket(x)
-
-            y.sendall(empty + delim)
-            y.sendall(small_one + delim)
-            y.sendall(big_two + delim)
-
-            kwargs = {'maxsize': ms, 'with_delimiter': with_delim}
-            assert bs.recv_until(delim, **kwargs) == empty + cond_delim
-            assert bs.recv_until(delim, **kwargs) == small_one + cond_delim
-            try:
-                assert bs.recv_until(delim, **kwargs) == big_two + cond_delim
-            except MessageTooLong:
-                if ms is None:
-                    assert False, 'unexpected MessageTooLong'
-            else:
-                if ms is not None:
-                    assert False, 'expected MessageTooLong'
+            if ms is not None:
+                assert False, 'expected MessageTooLong'
 
     return
 
@@ -121,12 +116,8 @@ def test_client_disconnecting():
     bx.close()
     assert bx.getrecvbuffer() == b''
 
-    try:
+    with pytest.raises(OSError):
         bx.recv(1)
-    except OSError:
-        pass
-    else:
-        assert False, 'expected socket.error on closed recv'
 
     assert bx.fileno() == -1
 
@@ -150,12 +141,8 @@ def test_client_disconnecting():
     by.close()
     assert not by.getsendbuffer()
 
-    try:
+    with pytest.raises(OSError):
         by.send(b'123')
-    except OSError:
-        pass
-    else:
-        assert False, 'expected socket.error on closed send'
 
     return
 
@@ -169,10 +156,8 @@ def test_split_delim():
     bs = BufferedSocket(x)
 
     y.sendall(first)
-    try:
+    with contextlib.suppress(Timeout):
         bs.recv_until(delim, timeout=0.0001)
-    except Timeout:
-        pass
     y.sendall(second)
 
     assert bs.recv_until(delim, with_delimiter=True) == b'1234\r\n'
@@ -187,10 +172,9 @@ def test_basic_nonblocking():
     x, y = socket.socketpair()
     bs = BufferedSocket(x)
 
-    try:
+    with pytest.raises(OSError) as excinfo:
         bs.recv_until(delim, timeout=0)
-    except OSError as se:
-        assert se.errno == errno.EWOULDBLOCK
+    assert excinfo.value.errno == errno.EWOULDBLOCK
     y.sendall(delim)  # sending an empty message, effectively
     assert bs.recv_until(delim) == b''
 
@@ -198,10 +182,9 @@ def test_basic_nonblocking():
     x, y = socket.socketpair()
     bs = BufferedSocket(x, timeout=0)
 
-    try:
+    with pytest.raises(OSError) as excinfo:
         bs.recv_until(delim)
-    except OSError as se:
-        assert se.errno == errno.EWOULDBLOCK
+    assert excinfo.value.errno == errno.EWOULDBLOCK
     y.sendall(delim)
     assert bs.recv_until(delim) == b''
 
@@ -284,7 +267,6 @@ def test_socketutils_netstring():
     """A holistic feature test of BufferedSocket via the NetstringSocket
     wrapper. Runs
     """
-    print("running self tests")
 
     # Set up server
     server_socket = socket.socket()
@@ -309,7 +291,6 @@ def test_socketutils_netstring():
         client.write_ns(b'ping')
         assert client.read_ns() == b'pong'
     dur = time.time() - s
-    print("netstring ping-pong latency", dur, "ms")
 
     s = time.time()
     for i in range(1000):
@@ -321,15 +302,11 @@ def test_socketutils_netstring():
     assert all([r == b'pong' for r in resps])
     assert client.bsock.getrecvbuffer() == b''
     dur = e - s
-    print("netstring pipelined ping-pong latency", dur, "ms")
 
     # tell the server to close the socket and then try a failure case
     client.write_ns(b'close')
-    try:
+    with pytest.raises(ConnectionClosed):
         client.read_ns()
-        raise Exception('read from closed socket')
-    except ConnectionClosed:
-        print("raised ConnectionClosed correctly")
 
     # test big messages
     client = client_connect()
@@ -429,7 +406,8 @@ def test_socketutils_netstring_timeout():
 
     # connect, ping-pong
     client = client_connect()
-    time.sleep(0.02)
+    with pytest.raises(Timeout):
+        client.read_ns(timeout=0.02)
     client.write_ns(b'ping')
     assert client.read_ns() == b'pong'
 

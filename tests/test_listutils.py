@@ -146,9 +146,14 @@ def _multi_sublist_bl(n=30000):
     bl = BarrelList(range(n))
     bl.pop(0)
     bl.insert(0, 0)
+    return bl
+
+
+def test_multi_sublist_bl_splits_and_keeps_order():
+    n = 30000
+    bl = _multi_sublist_bl(n)
     assert len(bl.lists) > 1
     assert list(bl) == list(range(n))
-    return bl
 
 
 def test_barrel_list_getitem_past_end():
