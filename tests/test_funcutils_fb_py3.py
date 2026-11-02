@@ -10,6 +10,30 @@ from boltons.funcutils import wraps, FunctionBuilder, update_wrapper, copy_funct
 import boltons.funcutils as funcutils
 
 
+def test_FunctionBuilder_required_kwonly_after_defaults():
+    fb = FunctionBuilder('example', args=['optional'], defaults=(10,),
+                         body='return optional, required')
+    fb.add_arg('required', kwonly=True)
+    func = fb.get_func()
+    assert func(required=20) == (10, 20)
+    assert func(30, required=20) == (30, 20)
+    with pytest.raises(TypeError):
+        func()
+
+
+def test_wraps_required_kwonly_after_defaults():
+    def original(optional=10):
+        return optional
+
+    @wraps(original, expected=[('required', funcutils.NO_DEFAULT, True)])
+    def wrapped(optional=10, *, required):
+        return original(optional), required
+
+    assert wrapped(required=20) == (10, 20)
+    with pytest.raises(TypeError):
+        wrapped()
+
+
 def wrappable_func(a, b):
     return a, b
 
