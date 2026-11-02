@@ -5,6 +5,7 @@ import pytest
 from boltons.dictutils import OMD
 from boltons.iterutils import (first,
                                split,
+                               split_iter,
                                pairwise,
                                pairwise_iter,
                                windowed,
@@ -35,6 +36,36 @@ class TestSplit:
     def test_negative_maxsplit_is_unlimited(self):
         # see #502
         assert split([1, None, 2, None, 3], maxsplit=-1) == [[1], [2], [3]]
+
+    @pytest.mark.parametrize('values, limit, expected', [
+        ([1, None, None, 2], 1, [[1], [2]]),
+        ([1, None, None], 1, [[1]]),
+        ([None, 1, None, None, 2], 1, [[1], [2]]),
+        ([1, None, None, 2, None, 3], 1, [[1], [2, None, 3]]),
+        ([1, None, 2, None, None, 3], 2, [[1], [2], [3]]),
+        ([1, None, None, 0, None, 3], 1, [[1], [0, None, 3]]),
+    ])
+    def test_grouped_separators_at_maxsplit(self, values, limit, expected):
+        assert split(values, maxsplit=limit) == expected
+        assert list(split_iter(iter(values), maxsplit=limit)) == expected
+
+    @pytest.mark.parametrize('sep', [[None], lambda value: value is None])
+    def test_explicit_separators_at_maxsplit(self, sep):
+        values = [1, None, None, 2]
+        assert split(values, sep=sep, maxsplit=1) == [[1], [None, 2]]
+
+    def test_grouped_maxsplit_consumes_lazily(self):
+        consumed = []
+
+        def source():
+            for value in [1, None, None, 2, None, 3]:
+                consumed.append(value)
+                yield value
+
+        groups = split_iter(source(), maxsplit=1)
+        assert next(groups) == [1]
+        assert consumed == [1, None]
+        assert list(groups) == [[2, None, 3]]
 
 
 class TestFirst:
