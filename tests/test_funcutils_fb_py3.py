@@ -73,6 +73,50 @@ def test_update_wrapper_partial(partial_kind):
     assert fully_wrapped(1) == (1, 1)
 
 
+@pytest.mark.skipif(sys.version_info < (3, 8),
+                    reason='positional-only params require 3.8+')
+@pytest.mark.parametrize('bound_args', [(), (1,), (1, 2)])
+@pytest.mark.parametrize('copy_metadata', [False, True])
+def test_update_wrapper_partial_posonly(bound_args, copy_metadata):
+    ns = {}
+    exec('def original(a, b=2, /, c=3):\n    return a, b, c', ns)
+    original = ns['original']
+    wrapper = functools.partial(original, *bound_args)
+    if copy_metadata:
+        functools.update_wrapper(wrapper, original)
+
+    fully_wrapped = update_wrapper(wrapper, original)
+    assert inspect.signature(fully_wrapped, follow_wrapped=False) == inspect.signature(
+        wrapper, follow_wrapped=False)
+    remaining_args = (4, 5)[len(bound_args):]
+    assert fully_wrapped(*remaining_args) == wrapper(*remaining_args)
+    assert fully_wrapped(*remaining_args, c=6) == wrapper(*remaining_args, c=6)
+
+
+@pytest.mark.skipif(sys.version_info < (3, 8),
+                    reason='positional-only params require 3.8+')
+def test_update_wrapper_partial_posonly_varkw():
+    ns = {}
+    exec('def original(a, b=2, /, **kw):\n    return a, b, kw', ns)
+    original = ns['original']
+    wrapper = functools.partial(original, 1)
+    fully_wrapped = update_wrapper(wrapper, original)
+
+    assert fully_wrapped() == wrapper() == (1, 2, {})
+    assert fully_wrapped(4) == wrapper(4) == (1, 4, {})
+    assert fully_wrapped(4, b=5) == wrapper(4, b=5) == (1, 4, {'b': 5})
+
+
+def test_update_wrapper_partial_builtin_posonly():
+    wrapper = functools.partial(divmod, 10)
+    fully_wrapped = update_wrapper(wrapper, divmod)
+    assert fully_wrapped(3) == wrapper(3) == (3, 1)
+    if sys.version_info >= (3, 8):
+        assert inspect.signature(fully_wrapped, follow_wrapped=False) == inspect.signature(wrapper)
+        with pytest.raises(TypeError):
+            fully_wrapped(y=3)
+
+
 def test_remove_kwonly_arg():
     # example adapted from https://github.com/mahmoud/boltons/issues/123
 

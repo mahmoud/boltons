@@ -869,14 +869,19 @@ class FunctionBuilder:
 
         kwargs.update(cls._argspec_to_dict(func))
 
-        # getfullargspec merges positional-only params into args; recover
-        # them from the code object so they are never keyword-forwarded.
-        # (functools.partial objects have no __code__; posonly detection
-        # is skipped for them, preserving today's behavior.)
-        n_posonly = getattr(getattr(func, '__code__', None),
-                            'co_posonlyargcount', 0)
-        if n_posonly:
-            kwargs['posonlyargs'] = list(kwargs['args'][:n_posonly])
+        # getfullargspec merges positional-only params into args. Partials
+        # have no __code__, so recover their remaining parameters from the
+        # signature without following __wrapped__, just like getfullargspec.
+        # Python 3.7 cannot compile the positional-only marker.
+        if isinstance(func, functools.partial) and sys.version_info >= (3, 8):
+            signature = inspect.signature(func, follow_wrapped=False)
+            kwargs['posonlyargs'] = [p.name for p in signature.parameters.values()
+                                     if p.kind is inspect.Parameter.POSITIONAL_ONLY]
+        else:
+            n_posonly = getattr(getattr(func, '__code__', None),
+                                'co_posonlyargcount', 0)
+            if n_posonly:
+                kwargs['posonlyargs'] = list(kwargs['args'][:n_posonly])
 
         if inspect.iscoroutinefunction(func):
             kwargs['is_async'] = True
