@@ -90,7 +90,10 @@ def to_text(obj, maxlen=None):
         except Exception:
             text = str(object.__repr__(obj))
     if maxlen and len(text) > maxlen:
-        text = text[:maxlen - 3] + '...'
+        if 0 < maxlen < 3:
+            text = '...'[:maxlen]
+        else:
+            text = text[:maxlen - 3] + '...'
         # TODO: inverse of ljust/rjust/center
     return text
 
@@ -563,7 +566,9 @@ class Table:
 
         Args:
             with_headers (bool): Whether to include a header row at the top.
-            maxlen (int): Max length of data in each cell.
+            maxlen (int): Max length of each header and data cell.
+                ``None`` or ``0`` leaves text unlimited. Positive limits
+                shorter than the omission marker use a shortened marker.
         """
         lines = []
         widths = []
