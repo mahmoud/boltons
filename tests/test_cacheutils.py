@@ -675,6 +675,103 @@ def test_cache_shallow_copy_custom_state(cache_type):
 
 
 @pytest.mark.parametrize('cache_type', [LRI, LRU])
+@pytest.mark.parametrize('populated', [False, True])
+def test_cache_shallow_copy_custom_reduce_ex(cache_type, populated):
+    protocols = []
+
+    class LabelCache(cache_type):
+        def __new__(cls, label):
+            return dict.__new__(cls)
+
+        def __init__(self, label):
+            super().__init__(max_size=2)
+            self.label = label
+
+        def __reduce_ex__(self, protocol):
+            protocols.append(protocol)
+            state = dict(self.__dict__, reduced_state='from reducer')
+            return (type(self), (self.label,), state,
+                    None, iter(dict.items(self)))
+
+    cache = LabelCache('example')
+    cache.reduced_state = 'original'
+    if populated:
+        cache.update(a=1, b=2)
+    expected = dict(cache)
+    copied = copy.copy(cache)
+
+    assert protocols == [4]
+    assert type(copied) is LabelCache
+    assert copied.label == cache.label == 'example'
+    assert copied.reduced_state == 'from reducer'
+    assert dict(copied) == expected
+    assert copied._lock is not cache._lock
+    assert copied._anchor is not cache._anchor
+    copied.clear()
+    assert dict(cache) == expected
+    for key, value in expected.items():
+        assert cache[key] == value
+
+
+@pytest.mark.parametrize('cache_type', [LRI, LRU])
+def test_cache_shallow_copy_registered_reducer(cache_type, monkeypatch):
+    import copyreg
+
+    class LabelCache(cache_type):
+        def __new__(cls, label):
+            return dict.__new__(cls)
+
+        def __init__(self, label):
+            super().__init__(max_size=2)
+            self.label = label
+
+        def __reduce_ex__(self, protocol):
+            raise AssertionError('registered reducer takes precedence')
+
+    def reduce_cache(cache):
+        return (type(cache), (cache.label,), dict(cache.__dict__),
+                None, iter(dict.items(cache)))
+
+    monkeypatch.setitem(copyreg.dispatch_table, LabelCache, reduce_cache)
+    cache = LabelCache('registered')
+    cache['a'] = 1
+    copied = copy.copy(cache)
+    assert type(copied) is LabelCache
+    assert copied.label == 'registered'
+    assert dict(copied) == {'a': 1}
+    copied.clear()
+    assert cache['a'] == 1
+
+
+@pytest.mark.parametrize('cache_type', [LRI, LRU])
+def test_cache_shallow_copy_reduce_fallback(cache_type):
+    class ReducedCache(cache_type):
+        __reduce_ex__ = None
+
+        def __reduce__(self):
+            return (type(self), (), dict(self.__dict__, reduced=True),
+                    None, iter(dict.items(self)))
+
+    cache = ReducedCache(values={'a': 1})
+    copied = copy.copy(cache)
+    assert copied.reduced is True
+    assert dict(copied) == {'a': 1}
+    copied['a'] = 2
+    assert cache['a'] == 1
+
+
+@pytest.mark.parametrize('cache_type', [LRI, LRU])
+@pytest.mark.parametrize('method', ['__reduce__', '__reduce_ex__'])
+def test_cache_shallow_copy_global_reduction(cache_type, method):
+    class SingletonCache(cache_type):
+        pass
+
+    setattr(SingletonCache, method, lambda *args: 'singleton_cache')
+    cache = SingletonCache(values={'a': 1})
+    assert copy.copy(cache) is cache
+
+
+@pytest.mark.parametrize('cache_type', [LRI, LRU])
 def test_cache_ior(cache_type):
     cache = cache_type(max_size=2)
     cache |= {'a': 1, 'b': 2, 'c': 3}

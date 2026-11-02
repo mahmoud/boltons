@@ -67,6 +67,7 @@ import heapq
 import math
 import weakref
 import itertools
+from copyreg import dispatch_table
 from operator import attrgetter
 
 try:
@@ -290,9 +291,16 @@ class LRI(dict):
 
     def __copy__(self):
         with self._lock:
-            # Reconstruct instance state without invoking a subclass's
-            # constructor, as the default shallow-copy protocol does.
-            reduced = super().__reduce_ex__(4)
+            # Follow shallow-copy reduction dispatch, including subclass
+            # hooks and registered reducers, before rebuilding cache state.
+            reducer = dispatch_table.get(type(self))
+            if reducer is not None:
+                reduced = reducer(self)
+            else:
+                reduce_ex = getattr(self, '__reduce_ex__', None)
+                reduced = reduce_ex(4) if reduce_ex is not None else self.__reduce__()
+            if isinstance(reduced, str):
+                return self
             factory, args = reduced[:2]
             state = reduced[2] if len(reduced) > 2 else None
             ret = factory(*args)
