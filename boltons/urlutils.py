@@ -874,14 +874,21 @@ def parse_host(host):
             inet_pton(socket.AF_INET6, host)
         except OSError as se:
             raise URLParseError(f'invalid IPv6 host: {host!r} ({se!r})')
-        except UnicodeEncodeError:
+        except (UnicodeEncodeError, ValueError):
+            # ``inet_pton`` rejects a string carrying an embedded NUL with ``ValueError``
+            # before it ever reaches the resolver, and that is not an ``OSError`` -- so
+            # without this the host escapes ``parse_host`` as a bare ``ValueError``, which
+            # ``find_all_links``'s ``except URLParseError`` cannot catch.
             pass  # TODO: this can't be a real host right?
         else:
             family = socket.AF_INET6
             return family, host
     try:
         inet_pton(socket.AF_INET, host)
-    except (OSError, UnicodeEncodeError):
+    except (OSError, UnicodeEncodeError, ValueError):
+        # ``ValueError`` is what ``inet_pton`` raises for a string with an embedded NUL;
+        # it is not an ``OSError``, so it would otherwise escape as a parse failure that is
+        # not a ``URLParseError``.  A host this function cannot encode is simply not an IP.
         family = None  # not an IP
     else:
         family = socket.AF_INET
