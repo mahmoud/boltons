@@ -91,6 +91,21 @@ def test_parse_int_list():
     assert strutils.parse_int_list("5-8") == [5, 6, 7, 8]
     assert strutils.parse_int_list("8-5") == [5, 6, 7, 8]
 
+
+def test_parse_int_list_oversized_range():
+    huge = 2 ** 64
+    huge_range = f'1-{huge}'
+    with pytest.raises(ValueError):
+        strutils.parse_int_list(huge_range)
+    with pytest.raises(ValueError):
+        strutils.complement_int_list(huge_range)
+    with pytest.raises(ValueError):
+        strutils.int_ranges_from_int_list(huge_range)
+    assert strutils.parse_int_list(str(huge)) == [huge]
+    assert strutils.parse_int_list(f'{huge}-{huge + 2}') == [huge, huge + 1, huge + 2]
+    with pytest.raises(ValueError):
+        strutils.parse_int_list('1-')
+
 def test_format_int_list():
     assert strutils.format_int_list([1, 3, 5, 6, 7, 8, 10, 11, 15]) == '1,3,5-8,10-11,15'
     assert strutils.format_int_list([5, 6, 7, 8]) == '5-8'
