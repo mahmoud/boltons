@@ -1147,6 +1147,12 @@ class MultiReplace:
     on very large strings. In addition to simple replace, it also allows for
     replacing based on regular expressions.
 
+    Patterns containing capture groups are matched independently to preserve
+    their group names, backreferences, and conditionals. This can be slower
+    than the combined expression used for patterns without capture groups.
+    Replacements still apply only to the original text, with the leftmost
+    match winning and input order breaking ties.
+
     Keyword Arguments:
 
     :type regex: bool
@@ -1204,6 +1210,7 @@ class MultiReplace:
         options.update(kwargs)
         self.group_map = {}
         regex_values = []
+        patterns = []
 
         if isinstance(sub_map, Mapping):
             sub_map = sub_map.items()
@@ -1229,9 +1236,16 @@ class MultiReplace:
                         exp += '\n'
                     exp = f'(?{flag_letters}:{exp})'
 
+            patterns.append((re.compile(exp, options['flags']), vals[1]))
             regex_values.append(f'(?P<{group_name}>{exp})')
             self.group_map[group_name] = vals[1]
 
+        # Captures must retain their own numbering and namespace. Combining
+        # them changes backreferences, conditionals, and duplicate names.
+        self._independent_patterns = patterns if any(p.groups for p, _ in patterns) else None
+        if self._independent_patterns is not None:
+            self.combined_pattern = None
+            return
         self.combined_pattern = re.compile(
             '|'.join(regex_values),
             flags=options['flags']
@@ -1250,7 +1264,40 @@ class MultiReplace:
         """
         if not self.group_map:
             return text
+        if self._independent_patterns is not None:
+            return self._sub_independent(text)
         return self.combined_pattern.sub(self._get_value, text)
+
+    def _sub_independent(self, text):
+        pieces = []
+        pos = 0
+        after_empty = False
+        candidates = []
+        for pattern, value in self._independent_patterns:
+            iterator = pattern.finditer(text)
+            candidates.append([pattern, value, iterator, next(iterator, None)])
+        while True:
+            best = None
+            replacement = None
+            winner = None
+            for candidate in candidates:
+                pattern, value, iterator, match = candidate
+                if match is not None and match.start() < pos:
+                    iterator = pattern.finditer(text, pos)
+                    match = next(iterator, None)
+                if match is not None and after_empty and match.start() == match.end() == pos:
+                    match = next(iterator, None)
+                candidate[2:] = iterator, match
+                if match is not None and (best is None or match.start() < best.start()):
+                    best, replacement, winner = match, value, candidate
+            if best is None:
+                pieces.append(text[pos:])
+                return ''.join(pieces)
+            pieces.append(text[pos:best.start()])
+            pieces.append('' if replacement is None else replacement)
+            pos = best.end()
+            after_empty = best.start() == best.end()
+            winner[3] = next(winner[2], None)
 
 
 def multi_replace(text, sub_map, **kwargs):
