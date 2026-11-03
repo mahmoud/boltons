@@ -907,7 +907,12 @@ def parse_int_list(range_string, delim=',', range_delim='-'):
         # Range
         if range_delim in x:
             range_limits = list(map(int, x.split(range_delim)))
-            output += list(range(min(range_limits), max(range_limits)+1))
+            start, stop = min(range_limits), max(range_limits)
+            # list(range(...)) raises OverflowError once the range has more
+            # than sys.maxsize elements; treat that as a parse error.
+            if stop - start + 1 > sys.maxsize:
+                raise ValueError('integer range too large to expand: %r' % x)
+            output += list(range(start, stop + 1))
 
         # Empty String
         elif not x:
