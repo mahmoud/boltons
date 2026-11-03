@@ -74,11 +74,6 @@ __all__ = ['DeferredValue', 'get_format_args', 'tokenize_format_str',
            'BaseFormatField']
 
 
-_pos_farg_re = re.compile('({{)|'         # escaped open-brace
-                          '(}})|'         # escaped close-brace
-                          r'({[:!.\[}])')  # anon positional format arg
-
-
 def construct_format_field_str(fname, fspec, conv):
     """
     Constructs a format field string from the field name, spec, and
@@ -119,22 +114,23 @@ def infer_positional_format_args(fstr):
 
     Returns a string with the inferred positional arguments.
     """
-    # TODO: memoize
-    ret, max_anon = '', 0
-    # look for {: or {! or {. or {[ or {}
-    start, end, prev_end = 0, 0, 0
-    for match in _pos_farg_re.finditer(fstr):
-        start, end, group = match.start(), match.end(), match.group()
-        if prev_end < start:
-            ret += fstr[prev_end:start]
-        prev_end = end
-        if group == '{{' or group == '}}':
-            ret += group
-            continue
-        ret += f'{{{max_anon}{group[1:]}'
-        max_anon += 1
-    ret += fstr[prev_end:]
-    return ret
+    max_anon = 0
+
+    def _infer(template):
+        nonlocal max_anon
+        ret = []
+        for lit, fname, fspec, conv in Formatter().parse(template):
+            ret.append(lit.replace('{', '{{').replace('}', '}}'))
+            if fname is None:
+                continue
+            # Braces inside a lookup key belong to the key, not another field.
+            if not fname or fname.startswith(('.', '[')):
+                fname = str(max_anon) + fname
+                max_anon += 1
+            ret.append(construct_format_field_str(fname, _infer(fspec), conv))
+        return ''.join(ret)
+
+    return _infer(fstr)
 
 
 # This approach is hardly exhaustive but it works for most builtins

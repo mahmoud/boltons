@@ -1,6 +1,8 @@
 import re
 from collections import namedtuple
 
+import pytest
+
 from boltons.formatutils import (get_format_args,
                                  split_format_str,
                                  tokenize_format_str,
@@ -21,6 +23,26 @@ def test_pos_infer():
     for i, (tmpl, args, res) in enumerate(_PFATS):
         converted = infer_positional_format_args(tmpl)
         assert converted.format(*args) == res
+
+
+@pytest.mark.parametrize('key', ['{}', '{:}', '{!r}', '{.}', '{['])
+@pytest.mark.parametrize('field', ['[{key}]', 'lookup[{key}]', '0[{key}]'])
+def test_pos_infer_preserves_braces_in_lookup_keys(key, field):
+    mapping = {key: 'found'}
+    field = field.format(key=key)
+    template = '{' + field + '}'
+    if field.startswith('['):
+        template += ' {}'
+    inferred = infer_positional_format_args(template)
+    expected = template.format(mapping, 'tail', lookup=mapping)
+    assert inferred.format(mapping, 'tail', lookup=mapping) == expected
+
+
+def test_pos_infer_nested_specs_and_escaped_literals():
+    template = '{{literal}} {:{}} {!r} {{}}'
+    inferred = infer_positional_format_args(template)
+    assert inferred == '{{literal}} {0:{1}} {2!r} {{}}'
+    assert inferred.format(12, 5, 'tail') == template.format(12, 5, 'tail')
 
 
 _TEST_TMPLS = ["example 1: {hello}",
