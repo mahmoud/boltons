@@ -170,9 +170,13 @@ _BOUNDS = [(b[0] * b[1], b[1], b[2]) for b in _BOUNDS]
 _BOUND_DELTAS = [b[0] for b in _BOUNDS]
 
 _FLOAT_PATTERN = r'[+-]?\ *(\d+(\.\d*)?|\.\d+)([eE][+-]?\d+)?'
-_PARSE_TD_RE = re.compile(r"((?P<value>%s)\s*(?P<unit>\w)\w*)" % _FLOAT_PATTERN)
-_PARSE_TD_KW_MAP = {unit[0]: unit + 's'
-                         for _, _, unit in reversed(_BOUNDS[:-2])}
+_PARSE_TD_RE = re.compile(r"(?<![\d.])((?P<value>%s)\s*(?P<unit>[A-Za-z]+))" % _FLOAT_PATTERN)
+_PARSE_TD_KW_MAP = {}
+for _, _, _unit in reversed(_BOUNDS[:-2]):
+    _PARSE_TD_KW_MAP[_unit[0]] = _unit + 's'
+    _PARSE_TD_KW_MAP[_unit] = _unit + 's'
+    _PARSE_TD_KW_MAP[_unit + 's'] = _unit + 's'
+del _unit
 
 
 def parse_timedelta(text):
@@ -203,7 +207,12 @@ def parse_timedelta(text):
     True
     """
     td_kwargs = {}
+    matched_end = 0
     for match in _PARSE_TD_RE.finditer(text):
+        if text[matched_end:match.start()].strip():
+            raise ValueError('unexpected text between duration values: %r'
+                             % (text[matched_end:match.start()],))
+        matched_end = match.end()
         value, unit = match.group('value'), match.group('unit')
         try:
             unit_key = _PARSE_TD_KW_MAP[unit]
@@ -216,6 +225,9 @@ def parse_timedelta(text):
             raise ValueError('invalid time value for unit %r: %r'
                              % (unit, value))
         td_kwargs[unit_key] = value
+    if text[matched_end:].strip():
+        raise ValueError('unexpected trailing text in duration: %r'
+                         % (text[matched_end:],))
     if not td_kwargs and text.strip():
         raise ValueError('no time value and unit found in %r' % (text,))
     return timedelta(**td_kwargs)

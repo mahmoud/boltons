@@ -113,6 +113,24 @@ def test_parse_timedelta_rejects_garbage():
     assert parse_timedelta('  ') == timedelta(0)
 
 
+def test_parse_timedelta_adjacent_values():
+    # adjacent units are valid without whitespace and must not be lost
+    assert parse_timedelta('1s2m') == timedelta(minutes=2, seconds=1)
+    assert parse_timedelta('1h2m3s') == timedelta(hours=1, minutes=2, seconds=3)
+    assert parse_timedelta('1h30m15s') == timedelta(hours=1, minutes=30, seconds=15)
+    assert parse_timedelta('1hour1minute') == timedelta(hours=1, minutes=1)
+    assert parse_timedelta('1day2hours') == timedelta(days=1, hours=2)
+    assert parse_timedelta('2weeks1day') == timedelta(weeks=2, days=1)
+    assert parse_timedelta('1m30s') == timedelta(minutes=1, seconds=30)
+
+    # decimal values in an adjacent run are preserved too
+    assert parse_timedelta('1h30m45.5s') == timedelta(hours=1, minutes=30, seconds=45.5)
+
+    # malformed numeric runs still fail instead of being partially parsed
+    with pytest.raises(ValueError):
+        parse_timedelta('1h30m45.5.5s')
+
+
 def test_daterange_month_step_clamps_day():
     # issue #500: stepping by months from the 31st clamps to month end
     res = list(daterange(date(2020, 1, 31), date(2020, 4, 1), step=(0, 1, 0)))
