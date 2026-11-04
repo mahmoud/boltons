@@ -159,10 +159,11 @@ def get_all_subclasses(cls):
     seen, ret = set(), []
     while to_check:
         cur = to_check.popleft()
-        if cur in seen:
+        class_id = id(cur)
+        if class_id in seen:
             continue
+        seen.add(class_id)
         ret.append(cur)
-        seen.add(cur)
         to_check.extend(type.__subclasses__(cur))
     return ret
 
