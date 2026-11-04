@@ -1,3 +1,6 @@
+import asyncio
+import functools
+
 import pytest
 from boltons.funcutils import wraps, FunctionBuilder
 
@@ -270,6 +273,157 @@ def test_get_arg_names():
     assert 'test' in fb_example.args
     assert fb_example.get_arg_names() == ('req', 'test')
     assert fb_example.get_arg_names(only_required=True) == ('req',)
+
+
+def test_from_func_copies_body():
+    # the example from #301
+    def foo(a, b=2):
+        return a / b
+
+    fb = FunctionBuilder.from_func(foo)
+    assert fb.body == 'return a / b'
+
+    f = fb.get_func()
+    assert f(20) == foo(20) == 10.0
+    assert f(20, b=4) == foo(20, b=4) == 5.0
+
+
+def test_from_func_body_multiline_signature():
+    def multi(a,
+              b=5):
+        total = a + b
+        return total * 2
+
+    f = FunctionBuilder.from_func(multi).get_func()
+    assert f(1) == multi(1) == 12
+    assert f(1, b=1) == multi(1, b=1) == 4
+
+
+def test_from_func_body_oneline():
+    def one(x): return x + 1
+
+    f = FunctionBuilder.from_func(one).get_func()
+    assert f(1) == one(1) == 2
+
+
+def test_from_func_body_oneline_non_ascii():
+    # ast col_offsets count UTF-8 bytes, not characters, so a
+    # non-ASCII parameter name must not throw off the extraction
+    def uni(é): return é
+
+    fb = FunctionBuilder.from_func(uni)
+    assert fb.body == 'return é'
+    assert fb.get_func()(3) == 3
+
+
+def test_from_func_body_docstring_and_branches():
+    def branchy(x):
+        """Docstring."""
+        if x > 0:
+            return 'pos'
+        return 'neg'
+
+    f = FunctionBuilder.from_func(branchy).get_func()
+    assert f(1) == 'pos'
+    assert f(-1) == 'neg'
+    assert f.__doc__ == 'Docstring.'
+
+
+def test_from_func_body_async():
+    async def afunc(x):
+        return x + 10
+
+    fb = FunctionBuilder.from_func(afunc)
+    assert fb.is_async
+    assert fb.body == 'return x + 10'
+    assert asyncio.run(fb.get_func()(5)) == 15
+
+
+def test_from_func_body_partial():
+    # the signature generated for a partial does not line up with
+    # the wrapped function's parameters, so the body is not copied
+    # and the builder keeps the previous default body
+    def base(a, b=2):
+        return a / b
+
+    fb = FunctionBuilder.from_func(functools.partial(base, 10))
+    assert fb.body == 'pass'
+    assert fb.get_func()(4) is None
+
+
+def test_from_func_body_multiline_string():
+    # the continuation line of the string literal is unindented, and
+    # must not throw off the dedentation of the rest of the body
+    def with_str(x):
+        s = """line1
+line2"""
+        return s + str(x)
+
+    fb = FunctionBuilder.from_func(with_str)
+    assert fb.body == 's = """line1\nline2"""\nreturn s + str(x)'
+
+    f = fb.get_func()
+    assert f(9) == with_str(9)
+
+
+def test_from_func_no_source_falls_back():
+    # functions defined via exec have no retrievable source, so the
+    # builder keeps the previous default body
+    namespace = {}
+    exec("def dyn(x):\n    return x - 1\n", namespace)
+    fb = FunctionBuilder.from_func(namespace['dyn'])
+    assert fb.body == 'pass'
+
+
+def test_from_func_lambda_falls_back():
+    # lambdas have no def statement to extract a body from, so the
+    # builder keeps the previous default body
+    fb = FunctionBuilder.from_func(lambda x: x + 1)
+    assert fb.body == 'pass'
+    assert callable(fb.get_func())
+
+
+def test_from_func_closure_falls_back():
+    # free variables cannot be captured from source alone, so the
+    # builder keeps the previous default body
+    def outer():
+        factor = 3
+
+        def inner(x):
+            return x * factor
+        return inner
+
+    fb = FunctionBuilder.from_func(outer())
+    assert fb.body == 'pass'
+
+
+def test_from_func_nonlocal_falls_back():
+    def outer():
+        count = 0
+
+        def inc():
+            nonlocal count
+            count += 1
+            return count
+        return inc
+
+    fb = FunctionBuilder.from_func(outer())
+    assert fb.body == 'pass'
+
+
+def test_from_func_zero_arg_super_falls_back():
+    # zero-argument super() relies on the implicit __class__ cell,
+    # which is a free variable, so such methods fall back as well
+    class A:
+        def who(self):
+            return 'A'
+
+    class B(A):
+        def who(self):
+            return 'B>' + super().who()
+
+    fb = FunctionBuilder.from_func(B().who)
+    assert fb.body == 'pass'
 
 
 @pytest.mark.parametrize(

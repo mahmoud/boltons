@@ -34,11 +34,14 @@ support. ``funcutils`` generally stays in the same vein, adding to and
 correcting Python's standard metaprogramming facilities.
 """
 
+import ast
+import io
 import sys
 import inspect
 import functools
 import itertools
 import threading
+import tokenize
 from inspect import formatannotation
 from types import FunctionType, MethodType
 
@@ -672,6 +675,119 @@ def _parse_wraps_expected(expected):
     return expected_items
 
 
+def _dedent_lines(lines, base_indent, skip_rows=frozenset()):
+    """Remove up to *base_indent* characters of leading whitespace from
+    each line in *lines*. Lines in *skip_rows* (0-based), and lines
+    with less leading whitespace than *base_indent*, are left with
+    their content intact, so the continuation lines of multi-line
+    string literals survive dedentation. (textwrap.dedent cannot be
+    used for this; its common-prefix computation is defeated by a
+    single unindented line.)
+    """
+    dedented = []
+    for row, line in enumerate(lines):
+        if row in skip_rows:
+            dedented.append(line)
+            continue
+        cut = 0
+        while (cut < base_indent and cut < len(line)
+               and line[cut] in ' \t'):
+            cut += 1
+        dedented.append(line[cut:])
+    return dedented
+
+
+def _string_content_rows(source):
+    """Return the set of 0-based rows of *source* which begin inside a
+    multi-line string literal, from the line after the string opens
+    through the line on which it closes. The leading whitespace of
+    these rows is string content, not indentation. Returns an empty
+    set if the source cannot be tokenized.
+    """
+    rows = set()
+    try:
+        tokens = tokenize.generate_tokens(io.StringIO(source).readline)
+        fstring_start = getattr(tokenize, 'FSTRING_START', None)
+        fstring_end = getattr(tokenize, 'FSTRING_END', None)
+        fstring_stack = []
+        for tok in tokens:
+            if tok.type == tokenize.STRING and tok.end[0] > tok.start[0]:
+                rows.update(range(tok.start[0], tok.end[0]))
+            elif fstring_start is not None and tok.type == fstring_start:
+                fstring_stack.append(tok.start[0])
+            elif fstring_end is not None and tok.type == fstring_end \
+                    and fstring_stack:
+                start_row = fstring_stack.pop()
+                if tok.end[0] > start_row:
+                    rows.update(range(start_row, tok.end[0]))
+    except Exception:
+        return set()
+    return rows
+
+
+def _get_function_body(func):
+    """Extract the body of *func* from its source code, returned as a
+    dedented string of statements suitable for
+    :attr:`FunctionBuilder.body`.
+
+    Returns None when the body cannot be determined: the source is
+    unavailable (e.g., builtins and functions defined interactively),
+    the source does not hold a plain function definition (e.g.,
+    lambdas and classes), or the function has free variables (e.g.,
+    closures and the implicit ``__class__`` cell of zero-argument
+    ``super()``), whose names would not resolve in the rebuilt
+    function's scope. Callers are expected to fall back to their
+    previous behavior when None is returned.
+    """
+    # free variables are bound by the enclosing scope, which the
+    # rebuilt function does not share, so such bodies cannot be
+    # copied as-is
+    target = func.__func__ if inspect.ismethod(func) else func
+    code = getattr(target, '__code__', None)
+    if code is not None and code.co_freevars:
+        return None
+    try:
+        raw_lines = inspect.getsource(func).splitlines()
+    except (OSError, TypeError):
+        return None
+    if not raw_lines:
+        return None
+    string_rows = _string_content_rows('\n'.join(raw_lines))
+    # normalize the block's own indentation (methods and nested
+    # functions are indented) so the source parses standalone
+    block_indent = len(raw_lines[0]) - len(raw_lines[0].lstrip())
+    lines = _dedent_lines(raw_lines, block_indent, skip_rows=string_rows)
+    try:
+        tree = ast.parse('\n'.join(lines))
+    except (SyntaxError, ValueError):
+        return None
+    if not tree.body or not isinstance(tree.body[0], (ast.FunctionDef,
+                                                      ast.AsyncFunctionDef)):
+        return None
+    if not tree.body[0].body:
+        return None
+    first_stmt = tree.body[0].body[0]
+    body_start = first_stmt.lineno - 1
+    first_line = lines[body_start]
+    # ast col_offsets count UTF-8 bytes, not characters; convert to
+    # a character offset before slicing (the two only differ when
+    # non-ASCII text precedes the statement on the same line)
+    col_offset = len(first_line.encode('utf-8')
+                     [:first_stmt.col_offset].decode('utf-8'))
+    if first_line[:col_offset].strip():
+        # the body starts on the same line as the end of the def
+        # header, e.g., "def f(x): return x"
+        body_lines = [first_line[col_offset:]] \
+            + lines[body_start + 1:]
+    else:
+        base_indent = len(first_line) - len(first_line.lstrip())
+        skip_rows = {row - body_start for row in string_rows
+                     if row > body_start}
+        body_lines = _dedent_lines(lines[body_start:], base_indent,
+                                   skip_rows=skip_rows)
+    return '\n'.join(body_lines).strip() or None
+
+
 class FunctionBuilder:
     """The FunctionBuilder type provides an interface for programmatically
     creating new functions, either based on existing functions or from
@@ -849,7 +965,6 @@ class FunctionBuilder:
         function. The original function will not be stored or
         modified.
         """
-        # TODO: copy_body? gonna need a good signature regex.
         # TODO: might worry about __closure__?
         if not callable(func):
             raise TypeError(f'expected callable object, not {func!r}')
@@ -866,6 +981,14 @@ class FunctionBuilder:
                       'module': getattr(func, '__module__', None),  # e.g., method_descriptor
                       'annotations': getattr(func, "__annotations__", {}),
                       'dict': getattr(func, '__dict__', {})}
+
+        # the signature generated for a functools.partial does not
+        # line up with the wrapped function's parameters (bound
+        # arguments are already consumed), so its body is not copied
+        if not isinstance(func, functools.partial):
+            body = _get_function_body(func)
+            if body is not None:
+                kwargs['body'] = body
 
         kwargs.update(cls._argspec_to_dict(func))
 
@@ -910,7 +1033,21 @@ class FunctionBuilder:
         if self.is_async:
             tmpl = 'async ' + tmpl
 
-        body = _indent(self.body, ' ' * self.indent)
+        # lines which begin inside a multi-line string literal hold
+        # string content in their leading whitespace, not
+        # indentation, so indenting them would change the string;
+        # they are exempted, as in _get_function_body
+        string_rows = _string_content_rows(self.body)
+        if string_rows:
+            row = [-1]
+
+            def _indent_key(line):
+                row[0] += 1
+                return bool(line) and row[0] not in string_rows
+
+            body = _indent(self.body, ' ' * self.indent, key=_indent_key)
+        else:
+            body = _indent(self.body, ' ' * self.indent)
 
         name = self.name.replace('<', '_').replace('>', '_')  # lambdas
         src = tmpl.format(name=name, sig_str=self.get_sig_str(with_annotations=False),
