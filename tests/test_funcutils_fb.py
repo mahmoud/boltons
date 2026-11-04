@@ -1,3 +1,4 @@
+import asyncio
 import functools
 
 import pytest
@@ -305,6 +306,16 @@ def test_from_func_body_oneline():
     assert f(1) == one(1) == 2
 
 
+def test_from_func_body_oneline_non_ascii():
+    # ast col_offsets count UTF-8 bytes, not characters, so a
+    # non-ASCII parameter name must not throw off the extraction
+    def uni(é): return é
+
+    fb = FunctionBuilder.from_func(uni)
+    assert fb.body == 'return é'
+    assert fb.get_func()(3) == 3
+
+
 def test_from_func_body_docstring_and_branches():
     def branchy(x):
         """Docstring."""
@@ -325,14 +336,19 @@ def test_from_func_body_async():
     fb = FunctionBuilder.from_func(afunc)
     assert fb.is_async
     assert fb.body == 'return x + 10'
+    assert asyncio.run(fb.get_func()(5)) == 15
 
 
 def test_from_func_body_partial():
+    # the signature generated for a partial does not line up with
+    # the wrapped function's parameters, so the body is not copied
+    # and the builder keeps the previous default body
     def base(a, b=2):
         return a / b
 
     fb = FunctionBuilder.from_func(functools.partial(base, 10))
-    assert fb.body == 'return a / b'
+    assert fb.body == 'pass'
+    assert fb.get_func()(4) is None
 
 
 def test_from_func_body_multiline_string():
@@ -347,9 +363,7 @@ line2"""
     assert fb.body == 's = """line1\nline2"""\nreturn s + str(x)'
 
     f = fb.get_func()
-    lines = f(9).splitlines()
-    assert lines[0] == 'line1'
-    assert lines[1].strip() == 'line2' + '9'
+    assert f(9) == with_str(9)
 
 
 def test_from_func_no_source_falls_back():
@@ -367,6 +381,49 @@ def test_from_func_lambda_falls_back():
     fb = FunctionBuilder.from_func(lambda x: x + 1)
     assert fb.body == 'pass'
     assert callable(fb.get_func())
+
+
+def test_from_func_closure_falls_back():
+    # free variables cannot be captured from source alone, so the
+    # builder keeps the previous default body
+    def outer():
+        factor = 3
+
+        def inner(x):
+            return x * factor
+        return inner
+
+    fb = FunctionBuilder.from_func(outer())
+    assert fb.body == 'pass'
+
+
+def test_from_func_nonlocal_falls_back():
+    def outer():
+        count = 0
+
+        def inc():
+            nonlocal count
+            count += 1
+            return count
+        return inc
+
+    fb = FunctionBuilder.from_func(outer())
+    assert fb.body == 'pass'
+
+
+def test_from_func_zero_arg_super_falls_back():
+    # zero-argument super() relies on the implicit __class__ cell,
+    # which is a free variable, so such methods fall back as well
+    class A:
+        def who(self):
+            return 'A'
+
+    class B(A):
+        def who(self):
+            return 'B>' + super().who()
+
+    fb = FunctionBuilder.from_func(B().who)
+    assert fb.body == 'pass'
 
 
 @pytest.mark.parametrize(

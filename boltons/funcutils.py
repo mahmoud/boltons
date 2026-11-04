@@ -732,10 +732,20 @@ def _get_function_body(func):
 
     Returns None when the body cannot be determined: the source is
     unavailable (e.g., builtins and functions defined interactively),
-    or the source does not hold a plain function definition (e.g.,
-    lambdas and classes). Callers are expected to fall back to their
+    the source does not hold a plain function definition (e.g.,
+    lambdas and classes), or the function has free variables (e.g.,
+    closures and the implicit ``__class__`` cell of zero-argument
+    ``super()``), whose names would not resolve in the rebuilt
+    function's scope. Callers are expected to fall back to their
     previous behavior when None is returned.
     """
+    # free variables are bound by the enclosing scope, which the
+    # rebuilt function does not share, so such bodies cannot be
+    # copied as-is
+    target = func.__func__ if inspect.ismethod(func) else func
+    code = getattr(target, '__code__', None)
+    if code is not None and code.co_freevars:
+        return None
     try:
         raw_lines = inspect.getsource(func).splitlines()
     except (OSError, TypeError):
@@ -759,10 +769,15 @@ def _get_function_body(func):
     first_stmt = tree.body[0].body[0]
     body_start = first_stmt.lineno - 1
     first_line = lines[body_start]
-    if first_line[:first_stmt.col_offset].strip():
+    # ast col_offsets count UTF-8 bytes, not characters; convert to
+    # a character offset before slicing (the two only differ when
+    # non-ASCII text precedes the statement on the same line)
+    col_offset = len(first_line.encode('utf-8')
+                     [:first_stmt.col_offset].decode('utf-8'))
+    if first_line[:col_offset].strip():
         # the body starts on the same line as the end of the def
         # header, e.g., "def f(x): return x"
-        body_lines = [first_line[first_stmt.col_offset:]] \
+        body_lines = [first_line[col_offset:]] \
             + lines[body_start + 1:]
     else:
         base_indent = len(first_line) - len(first_line.lstrip())
@@ -967,11 +982,13 @@ class FunctionBuilder:
                       'annotations': getattr(func, "__annotations__", {}),
                       'dict': getattr(func, '__dict__', {})}
 
-        body = _get_function_body(func.func
-                                  if isinstance(func, functools.partial)
-                                  else func)
-        if body is not None:
-            kwargs['body'] = body
+        # the signature generated for a functools.partial does not
+        # line up with the wrapped function's parameters (bound
+        # arguments are already consumed), so its body is not copied
+        if not isinstance(func, functools.partial):
+            body = _get_function_body(func)
+            if body is not None:
+                kwargs['body'] = body
 
         kwargs.update(cls._argspec_to_dict(func))
 
@@ -1016,7 +1033,21 @@ class FunctionBuilder:
         if self.is_async:
             tmpl = 'async ' + tmpl
 
-        body = _indent(self.body, ' ' * self.indent)
+        # lines which begin inside a multi-line string literal hold
+        # string content in their leading whitespace, not
+        # indentation, so indenting them would change the string;
+        # they are exempted, as in _get_function_body
+        string_rows = _string_content_rows(self.body)
+        if string_rows:
+            row = [-1]
+
+            def _indent_key(line):
+                row[0] += 1
+                return bool(line) and row[0] not in string_rows
+
+            body = _indent(self.body, ' ' * self.indent, key=_indent_key)
+        else:
+            body = _indent(self.body, ' ' * self.indent)
 
         name = self.name.replace('<', '_').replace('>', '_')  # lambdas
         src = tmpl.format(name=name, sig_str=self.get_sig_str(with_annotations=False),
