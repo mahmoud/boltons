@@ -1,3 +1,5 @@
+import functools
+
 import pytest
 from boltons.funcutils import wraps, FunctionBuilder
 
@@ -270,6 +272,101 @@ def test_get_arg_names():
     assert 'test' in fb_example.args
     assert fb_example.get_arg_names() == ('req', 'test')
     assert fb_example.get_arg_names(only_required=True) == ('req',)
+
+
+def test_from_func_copies_body():
+    # the example from #301
+    def foo(a, b=2):
+        return a / b
+
+    fb = FunctionBuilder.from_func(foo)
+    assert fb.body == 'return a / b'
+
+    f = fb.get_func()
+    assert f(20) == foo(20) == 10.0
+    assert f(20, b=4) == foo(20, b=4) == 5.0
+
+
+def test_from_func_body_multiline_signature():
+    def multi(a,
+              b=5):
+        total = a + b
+        return total * 2
+
+    f = FunctionBuilder.from_func(multi).get_func()
+    assert f(1) == multi(1) == 12
+    assert f(1, b=1) == multi(1, b=1) == 4
+
+
+def test_from_func_body_oneline():
+    def one(x): return x + 1
+
+    f = FunctionBuilder.from_func(one).get_func()
+    assert f(1) == one(1) == 2
+
+
+def test_from_func_body_docstring_and_branches():
+    def branchy(x):
+        """Docstring."""
+        if x > 0:
+            return 'pos'
+        return 'neg'
+
+    f = FunctionBuilder.from_func(branchy).get_func()
+    assert f(1) == 'pos'
+    assert f(-1) == 'neg'
+    assert f.__doc__ == 'Docstring.'
+
+
+def test_from_func_body_async():
+    async def afunc(x):
+        return x + 10
+
+    fb = FunctionBuilder.from_func(afunc)
+    assert fb.is_async
+    assert fb.body == 'return x + 10'
+
+
+def test_from_func_body_partial():
+    def base(a, b=2):
+        return a / b
+
+    fb = FunctionBuilder.from_func(functools.partial(base, 10))
+    assert fb.body == 'return a / b'
+
+
+def test_from_func_body_multiline_string():
+    # the continuation line of the string literal is unindented, and
+    # must not throw off the dedentation of the rest of the body
+    def with_str(x):
+        s = """line1
+line2"""
+        return s + str(x)
+
+    fb = FunctionBuilder.from_func(with_str)
+    assert fb.body == 's = """line1\nline2"""\nreturn s + str(x)'
+
+    f = fb.get_func()
+    lines = f(9).splitlines()
+    assert lines[0] == 'line1'
+    assert lines[1].strip() == 'line2' + '9'
+
+
+def test_from_func_no_source_falls_back():
+    # functions defined via exec have no retrievable source, so the
+    # builder keeps the previous default body
+    namespace = {}
+    exec("def dyn(x):\n    return x - 1\n", namespace)
+    fb = FunctionBuilder.from_func(namespace['dyn'])
+    assert fb.body == 'pass'
+
+
+def test_from_func_lambda_falls_back():
+    # lambdas have no def statement to extract a body from, so the
+    # builder keeps the previous default body
+    fb = FunctionBuilder.from_func(lambda x: x + 1)
+    assert fb.body == 'pass'
+    assert callable(fb.get_func())
 
 
 @pytest.mark.parametrize(
