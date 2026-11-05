@@ -1,7 +1,8 @@
 import os.path
 import pathlib
+from shutil import Error, copyfile
 
-
+import pytest
 
 from boltons import fileutils
 from boltons.fileutils import FilePerms, iter_find_files
@@ -9,6 +10,23 @@ from boltons.strutils import removeprefix
 
 
 BOLTONS_PATH = os.path.dirname(os.path.abspath(fileutils.__file__))
+
+
+@pytest.mark.parametrize('relative_path', ['data.txt', 'nested/data.txt'])
+def test_copy_tree_same_file_error(tmp_path, relative_path, monkeypatch):
+    # The Windows copy2 fast path can raise a sharing violation instead.
+    monkeypatch.setattr(fileutils, 'copy2', copyfile)
+    source = tmp_path / relative_path
+    source.parent.mkdir(parents=True, exist_ok=True)
+    source.write_bytes(b'original data')
+
+    with pytest.raises(Error) as exc_info:
+        fileutils.copy_tree(tmp_path, tmp_path)
+
+    [(src, dst, message)] = exc_info.value.args[0]
+    assert pathlib.Path(src) == pathlib.Path(dst) == source
+    assert 'same file' in message
+    assert source.read_bytes() == b'original data'
 
 
 def test_fileperms():
