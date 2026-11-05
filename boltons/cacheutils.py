@@ -850,7 +850,6 @@ class MinIDMap:
         heapq.heappush(self.free, freed)
 
     def _clean(self, ref):
-        print(self.ref_map[ref])
         heapq.heappush(self.free, self.ref_map[ref])
         del self.ref_map[ref]
 
