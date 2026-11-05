@@ -439,6 +439,31 @@ def test_cachedproperty_maintains_func_abstraction():
         AbstractExpensiveCalculator()
 
 
+def test_min_id_map_no_stray_output_on_gc(capsys):
+    """Regression test: MinIDMap._clean (the weakref GC callback) must not
+    write to stdout. A leftover debug ``print`` previously polluted the
+    consumer's output every time a tracked object was collected.
+    """
+    import gc
+
+    midm = MinIDMap()
+
+    class Foo:
+        pass
+
+    # Acquire an id so a weakref + callback is registered, then drop the
+    # only strong reference and force collection.
+    foo = Foo()
+    midm.get(foo)
+    del foo
+    gc.collect()
+
+    captured = capsys.readouterr()
+    assert captured.out == "", (
+        "MinIDMap._clean must not print to stdout on GC, got: %r" % captured.out
+    )
+
+
 def test_min_id_map():
     import sys
     if '__pypy__' in sys.builtin_module_names:
