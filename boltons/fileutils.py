@@ -40,7 +40,7 @@ import sys
 import stat
 import errno
 import fnmatch
-from shutil import copy2, copystat, Error
+from shutil import copy2, copystat, Error, SameFileError
 
 
 __all__ = ['mkdir_p', 'atomic_save', 'AtomicSaver', 'FilePerms',
@@ -597,10 +597,12 @@ def copy_tree(src, dst, symlinks=False, ignore=None):
             else:
                 # Will raise a SpecialFileError for unsupported file types
                 copy2(srcname, dstname)
-        # catch the Error from the recursive copytree so that we can
-        # continue with other files
         except Error as e:
-            errors.extend(e.args[0])
+            if isinstance(e, SameFileError):
+                errors.append((srcname, dstname, str(e)))
+            else:
+                # A recursive copytree reports a list of error triples.
+                errors.extend(e.args[0])
         except OSError as why:
             errors.append((srcname, dstname, str(why)))
     try:
