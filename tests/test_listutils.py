@@ -63,6 +63,41 @@ def test_barrel_list_insert_before_start_matches_list():
 
 
 def test_sort_barrel_list():
+    bl = BarrelList(range(20))
+    bl.sort()
+    assert list(bl) == list(range(20))
+
+
+def test_barrel_list_falsy_iterable():
+    # Constructor must iterate, not truth-test, the input iterable.
+    class _FalsyIterable:
+        def __iter__(self):
+            return iter([1, 2, 3])
+
+        def __bool__(self):
+            return False
+
+    assert list(BarrelList(_FalsyIterable())) == [1, 2, 3]
+
+    class _AmbiguousIterable:
+        def __iter__(self):
+            return iter([1, 2])
+
+        def __bool__(self):
+            raise ValueError("ambiguous truth value")
+
+    assert list(BarrelList(_AmbiguousIterable())) == [1, 2]
+    # None keeps its empty-list meaning; false non-iterables raise like list()
+    assert list(BarrelList(None)) == []
+    try:
+        BarrelList(0)
+    except TypeError:
+        pass
+    else:
+        raise AssertionError("BarrelList(0) should raise TypeError")
+
+
+def test_sort_barrel_list_old():
     bl = BarrelList(reversed(range(100000)))
     bl.pop(50000)
     assert len(bl.lists) > 1
