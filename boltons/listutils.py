@@ -96,7 +96,7 @@ class BarrelList(list):
 
     def __init__(self, iterable=None):
         self.lists = [[]]
-        if iterable:
+        if iterable is not None:
             self.extend(iterable)
 
     @property
