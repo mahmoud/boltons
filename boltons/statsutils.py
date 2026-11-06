@@ -579,7 +579,7 @@ class Stats:
             q25, q75 = self.get_quantile(0.25), self.get_quantile(0.75)
             dx = 2 * (q75 - q25) / (len_data ** (1 / 3.0))
             if dx == 0:
-                return [float(min_data), float(max_data)] if with_max else [float(min_data)]
+                return [min_data, max_data] if with_max else [min_data]
             bin_count = max(1, int(ceil((max_data - min_data) / dx)))
             bins = [min_data + (dx * i) for i in range(bin_count + 1)]
             bins = [b for b in bins if b < max_data]
@@ -587,6 +587,9 @@ class Stats:
             dx = (max_data - min_data) / float(count)
             bins = [min_data + (dx * i) for i in range(count)]
 
+        if bins:
+            # Adding a float step, even zero, can round a large integer up.
+            bins[0] = min_data
         if with_max:
             bins.append(float(max_data))
 
@@ -632,8 +635,19 @@ class Stats:
 
         # floor and ceil really should have taken ndigits, like round()
         round_factor = 10.0 ** bin_digits
-        bins = [floor(b * round_factor) / round_factor for b in bins]
-        bins = sorted(set(bins))
+
+        def round_down(bound):
+            result = floor(bound * round_factor) / round_factor
+            if result <= bound:
+                return result
+            # Scaling can round a value just below a boundary up to it.
+            # Keep an exact integer minimum when it cannot fit in a float.
+            result = round(bound, bin_digits)
+            if result > bound:
+                result = round(result - 10 ** -bin_digits, bin_digits)
+            return result
+
+        bins = sorted({round_down(b) for b in bins})
 
         idxs = [bisect.bisect(bins, d) - 1 for d in self.data]
         count_map = Counter(idxs)
