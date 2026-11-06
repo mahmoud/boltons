@@ -101,11 +101,12 @@ class ExceptionCauseMixin(Exception):
 
     def get_str(self):
         """
-        Get formatted the formatted traceback and exception
-        message. This function exists separately from __str__()
-        because __str__() is somewhat specialized for the built-in
-        traceback module's particular usage.
+        Format the exception with its captured traceback and cause, if
+        available. A standalone exception is formatted as its type and
+        message.
         """
+        if self.cause is None:
+            return _format_exc(self)
         ret = []
         trace_str = self._get_trace_str()
         if trace_str:
