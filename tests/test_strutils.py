@@ -443,3 +443,49 @@ def test_args2cmd_sep():
     assert strutils.args2cmd(['aa', 'bb']) == 'aa bb'
     assert strutils.args2cmd(['aa', 'bb'], sep='|') == 'aa|bb'
     assert strutils.args2cmd(['a a', 'bb'], sep='|') == '"a a"|bb'
+
+
+@pytest.mark.parametrize('text_type', [str, bytes, bytearray])
+@pytest.mark.parametrize(('text', 'expected'), [
+    ('a\x1b]title\x07b', 'ab'),
+    ('a\x1b]title\x1b\\b', 'ab'),
+    ('a\x1b]line1\nline2\x07b', 'ab'),
+    ('a\x1b]line1\n\x1b[31mline2\x1b\\b', 'ab'),
+    ('a\x1b[31m\x1b]open\n\x1b[0m', 'a\x1b]open\n\x1b[0m'),
+    ('a\x1b]open\x1b', 'a\x1b]open\x1b'),
+    ('\x1b]', '\x1b]'),
+    ('\x1b(B\x1b[31mred\x1b[0m', '\x1b(Bred'),
+    ('\xff\x1b]title\x07\x1b[31m\xfe\x1b[0m', '\xff\xfe'),
+])
+def test_strip_ansi_osc(text_type, text, expected):
+    if text_type is not str:
+        text = text_type(text, 'latin-1')
+        expected = text_type(expected, 'latin-1')
+    result = strutils.strip_ansi(text)
+    assert result == expected
+    assert type(result) is text_type
+
+
+@pytest.mark.parametrize('text_type', [str, bytes, bytearray])
+@pytest.mark.parametrize(('text', 'expected'), [
+    ('\x1b]8;;https://example.com\x07link\x1b]8;;\x07', 'link'),
+    ('\x1b]8;;https://example.com\x1b\\link\x1b]8;;\x1b\\', 'link'),
+    ('a\x1b]\x07\x1b]0;title\x1b\\b', 'ab'),
+    ('a\x1b]title\x07b\x1b\\c', 'abc'),
+    ('a\x1b]title\x1b\\b\x07c', 'ab\x07c'),
+    ('a\x1b]x\x1bXy\x07b', 'ab'),
+    ('\x1b]open\x1b[31mtext', '\x1b]open\x1b[31mtext'),
+    ('\x1b[31mred\x1b[0m\x1b]open', 'red\x1b]open'),
+    ('a\x1b]one\x07b\x1b]open', 'ab\x1b]open'),
+])
+def test_strip_ansi_osc_boundaries(text_type, text, expected):
+    if text_type is not str:
+        text = text_type(text, 'latin-1')
+        expected = text_type(expected, 'latin-1')
+    result = strutils.strip_ansi(text)
+    assert result == expected
+    assert type(result) is text_type
+
+
+def test_strip_ansi_osc_unicode():
+    assert strutils.strip_ansi('雪\x1b]0;窗口\x07Ü') == '雪Ü'
