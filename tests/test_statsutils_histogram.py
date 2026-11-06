@@ -34,7 +34,7 @@ def test_check_sum():
         for bin_size in [0, 1, 10, 99]:
             # bin_size=0 tests freedman
             stats = Stats(data)
-            hist_counts = stats.get_histogram_counts()
+            hist_counts = stats.get_histogram_counts(bin_size)
             hist_counts_sum = sum([c for _, c in hist_counts])
             assert len(data) == hist_counts_sum
             if not data:
@@ -43,6 +43,17 @@ def test_check_sum():
             assert min(data) >= hist_counts[0][0]
             assert max(data) >= hist_counts[-1][0]
     return
+
+
+def test_histogram_does_not_round_past_the_minimum():
+    for minimum, lower in [(-29.900000000000002, -30.0),
+                           (10**16 + 3, 10**16 + 3)]:
+        for data in ([minimum], [minimum] * 5):
+            stats = Stats(data)
+            for bins in (None, 1, [minimum]):
+                counts = stats.get_histogram_counts(bins)
+                assert counts[0][0] == lower
+                assert sum(count for _, count in counts) == len(data)
 
 
 def test_norm_regression():
