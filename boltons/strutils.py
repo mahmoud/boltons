@@ -362,6 +362,9 @@ def a10n(string):
 ANSI_SEQUENCES = re.compile(r'''
     \x1B            # Sequence starts with ESC, i.e. hex 0x1B
     (?:
+        \] [\s\S]*? (?: \x07 | \x1B\\ | (?P<unterminated_osc>\Z) )
+                    # OSC ends at BEL, ST, or end of unterminated input
+    |               # Or
         [@-Z\\-_]   # Second byte:
                     #   all 0x40–0x5F range but CSI char, i.e ASCII @A–Z\]^_
     |               # Or
@@ -405,7 +408,10 @@ def strip_ansi(text):
         target_type = type(text)
         text = text.decode('latin-1')
 
-    cleaned = ANSI_SEQUENCES.sub('', text)
+    cleaned = ANSI_SEQUENCES.sub(
+        lambda match: match.group(0) if match.group('unterminated_osc') is not None else '',
+        text,
+    )
 
     # Transform back the result to the same bytearray type provided by the user.
     if target_type and target_type != type(cleaned):
