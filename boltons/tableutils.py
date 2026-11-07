@@ -344,8 +344,9 @@ class Table:
                 imported to the Table.
 
             headers (iterable): An iterable of headers to be matched
-                to the data. If not explicitly passed, headers will be
-                guessed for certain datatypes.
+                to the data. If omitted, headers are inferred for certain
+                datatypes. Pass None to omit displayed headers while
+                still inferring the fields needed to extract row values.
 
             max_depth (int): The level to which nested Tables should
                 be created (default: 1).
@@ -396,10 +397,14 @@ class Table:
                                       % type(data))
         if headers is _MISSING:
             headers = _data_type.guess_headers(to_check)
+        fields = headers
+        if headers is None and isinstance(
+                _data_type, (DictInputType, ObjectInputType, NamedTupleInputType)):
+            fields = _data_type.guess_headers(to_check)
         if is_seq:
-            entries = _data_type.get_entry_seq(data, headers)
+            entries = _data_type.get_entry_seq(data, fields)
         else:
-            entries = [_data_type.get_entry(data, headers)]
+            entries = [_data_type.get_entry(data, fields)]
         if max_depth > 1:
             new_max_depth = max_depth - 1
             for i, entry in enumerate(entries):

@@ -1,4 +1,9 @@
-from boltons.tableutils import Table
+from collections import namedtuple
+from types import SimpleNamespace
+
+import pytest
+
+from boltons.tableutils import InputType, Table
 
 
 def test_table_lists():
@@ -85,6 +90,49 @@ def test_to_text_short_headers_padded():
     lines = t.to_text().splitlines()
     header_cells = [c.strip() for c in lines[0].split(' | ')]
     assert header_cells == ['a', 'None']
+
+
+@pytest.mark.parametrize('factory, data, rows', [
+    (Table.from_dict, {'b': 2, 'a': 1}, [[1, 2]]),
+    (Table.from_dict, [{'b': 2, 'a': 1}, {'b': 4}], [[1, 2], [None, 4]]),
+    (Table.from_data, namedtuple('Row', ['b', 'a'])(2, 1), [[2, 1]]),
+    (Table.from_list, [[1, 2]], [[1, 2]]),
+])
+def test_headerless_factory_keeps_fields(factory, data, rows):
+    table = factory(data, headers=None)
+
+    assert table.headers == []
+    assert list(table) == rows
+    assert '<th>' not in table.to_html()
+    assert len(table.to_text().splitlines()) == len(rows)
+
+
+def test_headerless_factory_keeps_object_fields():
+    data = SimpleNamespace(b=2, a=1)
+    inferred = Table.from_object(data)
+    table = Table.from_object(data, headers=None)
+
+    assert table.headers == []
+    assert list(table) == list(inferred)
+    assert '<th>' not in table.to_html()
+
+
+def test_headerless_factory_preserves_custom_adapter():
+    class CustomInput(InputType):
+        def get_entry(self, obj, headers):
+            assert headers is None
+            return [obj.value]
+
+    data = SimpleNamespace(value=42)
+    table = Table.from_data(data, headers=None, _data_type=CustomInput())
+    assert table.headers == []
+    assert list(table) == [[42]]
+
+
+def test_factory_preserves_explicit_field_selection():
+    table = Table.from_dict({'a': 1, 'b': 2}, headers=['b'])
+    assert table.headers == ['b']
+    assert list(table) == [[2]]
 
 
 def test_iterator_headers():
