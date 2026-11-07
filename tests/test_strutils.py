@@ -443,3 +443,15 @@ def test_args2cmd_sep():
     assert strutils.args2cmd(['aa', 'bb']) == 'aa bb'
     assert strutils.args2cmd(['aa', 'bb'], sep='|') == 'aa|bb'
     assert strutils.args2cmd(['a a', 'bb'], sep='|') == '"a a"|bb'
+
+
+def test_complement_int_list_high_window(monkeypatch):
+    # Guard the test against allocating a set of a billion integers.
+    def bounded_range(*args):
+        result = range(*args)
+        assert len(result) <= 10
+        return result
+
+    monkeypatch.setattr(strutils, 'range', bounded_range, raising=False)
+    assert strutils.complement_int_list('1000000001', 10**9, 10**9 + 4) == (
+        '1000000000,1000000002-1000000003')

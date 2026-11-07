@@ -1093,8 +1093,8 @@ def complement_int_list(
             range_end = max(int_list) + 1
         else:
             range_end = range_start
-    complement_values = set(
-        range(range_end)) - int_list - set(range(range_start))
+    complement_values = (value for value in range(max(0, range_start), range_end)
+                         if value not in int_list)
     return format_int_list(complement_values, delim, range_delim)
 
 
