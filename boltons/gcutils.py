@@ -175,6 +175,8 @@ class GCToggler:
     def __exit__(self, exc_type, exc_val, exc_tb):
         if self._was_enabled.pop():
             gc.enable()
+        else:
+            gc.disable()
         if self.postcollect:
             gc.collect()
 

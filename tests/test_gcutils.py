@@ -52,6 +52,23 @@ if '__pypy__' not in sys.builtin_module_names:
             else:
                 gc.disable()
 
+    def test_toggle_gc_restores_disabled_state_after_exception():
+        was_enabled = gc.isenabled()
+        try:
+            gc.disable()
+            try:
+                with toggle_gc:
+                    gc.enable()
+                    raise RuntimeError('test exception')
+            except RuntimeError:
+                pass
+            assert not gc.isenabled()
+        finally:
+            if was_enabled:
+                gc.enable()
+            else:
+                gc.disable()
+
     def test_toggle_gc_postcollect():
         COUNT = int(1e6)
 
