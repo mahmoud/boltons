@@ -72,3 +72,39 @@ def test_deferredvalue():
     assert myfunc.called == 2
     assert str(dv) == '123'
     assert myfunc.called == 3
+
+
+def _deferred_copy_value():
+    return [123]
+
+
+def test_deferredvalue_copy_and_pickle():
+    import copy
+    import pickle
+
+    transforms = (copy.copy, copy.deepcopy,
+                  lambda value: pickle.loads(pickle.dumps(value)))
+    for cache_value in (False, True):
+        for evaluated in (False, True):
+            for transform in transforms:
+                original = DV(_deferred_copy_value, cache_value=cache_value)
+                original.extra = {'kept': True}
+                if evaluated:
+                    original.get_value()
+                restored = transform(original)
+                assert restored is not original
+                assert restored.extra == {'kept': True}
+                assert restored.get_value() == [123]
+                assert str(restored) == '[123]'
+                if cache_value:
+                    assert restored.get_value() is restored.get_value()
+
+
+def test_deferredvalue_deepcopied_log_record():
+    import copy
+    import logging
+
+    record = logging.LogRecord('test', logging.INFO, '', 0, 'value=%s',
+                               (DV(_deferred_copy_value),), None)
+    assert copy.deepcopy(record).getMessage() == 'value=[123]'
+    assert record.getMessage() == 'value=[123]'
