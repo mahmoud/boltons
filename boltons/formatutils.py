@@ -312,6 +312,16 @@ class DeferredValue:
         self.cache_value = cache_value
         self._value = _UNSET
 
+    def __getstate__(self):
+        state = self.__dict__.copy()
+        if self._value is _UNSET:
+            del state['_value']
+        return state
+
+    def __setstate__(self, state):
+        self._value = _UNSET
+        self.__dict__.update(state)
+
     def get_value(self):
         """Computes, optionally caches, and returns the value of the
         *func*. If ``get_value()`` has been called before, a cached
