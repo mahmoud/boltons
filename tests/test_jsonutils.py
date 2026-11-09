@@ -1,4 +1,6 @@
 import os
+import subprocess
+import sys
 
 from boltons.jsonutils import (JSONLIterator,
                                DEFAULT_BLOCKSIZE,
@@ -37,6 +39,22 @@ def test_jsonl_iterator():
     jsonl_iter = JSONLIterator(open(JSONL_DATA_PATH), reverse=True)
     jsonl_list = list(jsonl_iter)
     assert jsonl_list == ref
+
+
+def test_jsonl_cli_exit_status(tmp_path):
+    path = tmp_path / 'records.jsonl'
+    command = [sys.executable, '-m', 'boltons.jsonutils', '--verbose', str(path)]
+
+    path.write_bytes(b'{"first": 1}\n')
+    valid = subprocess.run(command, capture_output=True, text=True, timeout=10)
+    assert valid.returncode == 0
+    assert 'objects loaded: 1' in valid.stdout
+
+    path.write_bytes(b'{"first": 1}\n{bad}\n')
+    invalid = subprocess.run(command, capture_output=True, text=True, timeout=10)
+    assert invalid.returncode == 1
+    assert 'error reading object #2' in invalid.stdout
+    assert str(path) in invalid.stdout
 
 
 class _CappedReadFile:

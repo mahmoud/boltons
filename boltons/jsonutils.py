@@ -258,7 +258,7 @@ if __name__ == '__main__':
                     except ValueError:
                         print('error reading object #%s around byte %s in %s'
                               % (cur_obj_count + 1, iterator.cur_byte_pos, filename))
-                        return
+                        return 1
                     except StopIteration:
                         break
                     obj_count += 1
@@ -272,4 +272,4 @@ if __name__ == '__main__':
             print('objects loaded: %s' % obj_count)
         return
 
-    _main()
+    raise SystemExit(_main())
