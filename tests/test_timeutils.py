@@ -97,6 +97,15 @@ def test_isoparse_timezone_suffix():
         isoparse('2020-01-02T03:04:05+25:00')
 
 
+def test_isoparse_hour_only_offset():
+    # issue #749: '+05' used to fall into the body and become fractional time
+    assert isoparse('2020-01-02T03:04:05+05') == datetime(
+        2020, 1, 2, 3, 4, 5, tzinfo=timezone(timedelta(hours=5)))
+    assert isoparse('2020-01-02T03:04:05-05').utcoffset() == timedelta(hours=-5)
+    assert isoparse('2020-01-02T03:04:05.250+05') == datetime(
+        2020, 1, 2, 3, 4, 5, 250000, tzinfo=timezone(timedelta(hours=5)))
+
+
 def test_dt_to_timestamp_naive_tzinfo():
     # a tzinfo whose utcoffset() is None makes the datetime naive (PEP 495)
     class NaiveTZ(tzinfo):
