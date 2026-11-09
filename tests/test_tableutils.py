@@ -3,7 +3,7 @@ from types import SimpleNamespace
 
 import pytest
 
-from boltons.tableutils import InputType, Table
+from boltons.tableutils import DictInputType, InputType, Table
 
 
 def test_table_lists():
@@ -127,6 +127,18 @@ def test_headerless_factory_preserves_custom_adapter():
     table = Table.from_data(data, headers=None, _data_type=CustomInput())
     assert table.headers == []
     assert list(table) == [[42]]
+
+
+def test_headerless_factory_preserves_custom_dict_adapter_order():
+    class ValuesInOrder(DictInputType):
+        def get_entry(self, obj, headers):
+            if headers is None:
+                return list(obj.values())
+            return super().get_entry(obj, headers)
+
+    table = Table.from_data({'b': 2, 'a': 1}, headers=None, _data_type=ValuesInOrder())
+    assert table.headers == []
+    assert list(table) == [[2, 1]]
 
 
 def test_factory_preserves_explicit_field_selection():

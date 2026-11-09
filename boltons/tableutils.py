@@ -398,8 +398,9 @@ class Table:
         if headers is _MISSING:
             headers = _data_type.guess_headers(to_check)
         fields = headers
-        if headers is None and isinstance(
-                _data_type, (DictInputType, ObjectInputType, NamedTupleInputType)):
+        # Custom adapters can interpret None themselves.
+        if headers is None and type(_data_type) in (
+                DictInputType, ObjectInputType, NamedTupleInputType):
             fields = _data_type.guess_headers(to_check)
         if is_seq:
             entries = _data_type.get_entry_seq(data, fields)
