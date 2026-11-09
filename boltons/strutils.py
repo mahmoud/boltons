@@ -225,6 +225,19 @@ def singularize(word):
         singular = word[:-1]  # or just return word?
     elif word.endswith('ies') and word[-4:-3] not in 'aeiou':
         singular = word[:-3] + 'y'
+    elif word.endswith('xes') and len(word) > 3:
+        # 'box' -> 'boxes'; a consonant before the 'z' marks 'z' -> 'zes'
+        # (waltz/chintz) while a vowel marks 'ze' -> 'zes' (size)
+        singular = word[:-2]
+    elif word.endswith('zes') and len(word) > 3 and word[-4] not in 'aeiou':
+        singular = word[:-2]
+    elif word.endswith('shes') and len(word) > 4:
+        # 'dish' -> 'dishes'
+        singular = word[:-2]
+    elif word.endswith('ches') and len(word) >= 5 and word[-5] not in 'aeiou':
+        # 'church' -> 'churches'; a vowel before 'ch' marks 'che' -> 'ches'
+        # (niche/cache), which keep the plain -s strip below
+        singular = word[:-2]
     elif word.endswith('es') and word[-3] == 's':
         singular = word[:-2]
     elif word.endswith('ss'):

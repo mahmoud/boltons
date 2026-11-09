@@ -443,3 +443,30 @@ def test_args2cmd_sep():
     assert strutils.args2cmd(['aa', 'bb']) == 'aa bb'
     assert strutils.args2cmd(['aa', 'bb'], sep='|') == 'aa|bb'
     assert strutils.args2cmd(['a a', 'bb'], sep='|') == '"a a"|bb'
+
+
+def test_singularize_sibilant_plurals():
+    singularize = strutils.singularize
+    pluralize = strutils.pluralize
+    # issue #750: -x/-ch/-sh/-z plurals kept a trailing 'e' ('boxe',
+    # 'churche', 'dishe') because only the -ses class was handled
+    assert singularize('boxes') == 'box'
+    assert singularize('churches') == 'church'
+    assert singularize('dishes') == 'dish'
+    assert singularize('buzzes') == 'buzz'
+    assert singularize('waltzes') == 'waltz'
+    assert singularize('matches') == 'match'
+    assert singularize('taxes') == 'tax'
+    # case pattern is preserved like the rest of singularize()
+    assert singularize('Churches') == 'Church'
+    assert singularize('BOXES') == 'BOX'
+    # round-trip: pluralize then singularize returns the original
+    for word in ['box', 'church', 'dish', 'buzz', 'waltz', 'match', 'fox']:
+        assert singularize(pluralize(word)) == word
+    # vowel before the sibilant marks a plain '-s' plural: 'size' -> 'sizes',
+    # 'niche' -> 'niches' must keep the plain strip
+    assert singularize('sizes') == 'size'
+    assert singularize('niches') == 'niche'
+    assert singularize('caches') == 'cache'
+    assert singularize('gases') == 'gas'
+    assert singularize('buses') == 'bus'
