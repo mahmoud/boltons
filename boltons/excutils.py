@@ -198,7 +198,7 @@ class _DeferredLine:
         if line:
             line = line.strip()
         else:
-            line = None
+            line = ''
         self._line = line
         return line
 
