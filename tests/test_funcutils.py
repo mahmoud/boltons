@@ -1,8 +1,12 @@
 import threading
 import time
+from types import SimpleNamespace
+
 from boltons.funcutils import (copy_function,
                                total_ordering,
+                               format_exp_repr,
                                format_invocation,
+                               format_nonexp_repr,
                                InstancePartial,
                                CachedInstancePartial,
                                noop,
@@ -80,6 +84,19 @@ def test_format_invocation():
     assert format_invocation('f', ('a', 'b')) == "f('a', 'b')"
     assert format_invocation('g', (), {'x': 'y'})  == "g(x='y')"
     assert format_invocation('h', ('a', 'b'), {'x': 'y', 'z': 'zz'}) == "h('a', 'b', x='y', z='zz')"
+
+def test_format_exp_repr_keeps_required_fields_listed_as_optional():
+    obj = SimpleNamespace(value=None, omitted=None, visible=1)
+    text = format_exp_repr(obj, [], ['value'], ['value', 'omitted', 'visible'])
+    assert text == 'SimpleNamespace(value=None, visible=1)'
+
+
+def test_format_nonexp_repr_keeps_required_fields_listed_as_optional():
+    obj = SimpleNamespace(value=0, omitted=0, visible=1)
+    text = format_nonexp_repr(
+        obj, ['value'], ['value', 'omitted', 'visible'], opt_key=lambda value: value == 0)
+    assert text == '<SimpleNamespace value=0 visible=1>'
+
 
 def test_noop():
     assert noop() is None
