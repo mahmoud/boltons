@@ -96,7 +96,7 @@ def dt_to_timestamp(dt):
 
 
 _NONDIGIT_RE = re.compile(r'\D')
-_ISO_TZ_RE = re.compile(r'(Z|[+-]\d{2}(?::?\d{2}(?::?\d{2}(?:\.\d+)?)?)?)$')
+_ISO_TZ_RE = re.compile(r'(Z|[+-]\d{2}(?::?\d{2}(?::?\d{2}(?:\.\d+)?)?)?)
 
 
 def isoparse(iso_str):
@@ -664,6 +664,7 @@ Eastern = USTimeZone(-5, "Eastern",  "EST", "EDT")
 Central = USTimeZone(-6, "Central",  "CST", "CDT")
 Mountain = USTimeZone(-7, "Mountain", "MST", "MDT")
 Pacific = USTimeZone(-8, "Pacific",  "PST", "PDT")
+)
 
 
 def isoparse(iso_str):
@@ -711,7 +712,7 @@ def isoparse(iso_str):
             tzinfo = timezone.utc
         else:
             digits = tz[1:].replace(':', '').split('.')[0]
-            hh, mm = int(digits[0:2]), int(digits[2:4] or 0)
+            hh, mm = int(digits[0:2]), int(digits[2:4])
             ss = int(digits[4:6] or 0)
             sign = -1 if tz[0] == '-' else 1
             tzinfo = timezone(sign * timedelta(hours=hh, minutes=mm,
