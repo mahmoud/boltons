@@ -90,13 +90,18 @@ def test_isoparse_timezone_suffix():
         hours=5, minutes=30)
     assert isoparse('2020-01-02T03:04:05.250-0800').utcoffset() == timedelta(
         hours=-8)
+    assert isoparse('2020-01-02T03:04:05+05').utcoffset() == timedelta(
+        hours=5)
+    assert isoparse('2020-01-02T03:04:05-08').utcoffset() == timedelta(
+        hours=-8)
+    fractional = isoparse('2020-01-02T03:04:05.5+05')
+    assert fractional.microsecond == 500000
+    assert fractional.utcoffset() == timedelta(hours=5)
     dt = datetime(2020, 1, 2, 3, 4, 5, 6,
                   tzinfo=timezone(timedelta(hours=-3, minutes=-30)))
     assert isoparse(dt.isoformat()) == dt
     with pytest.raises(ValueError):
         isoparse('2020-01-02T03:04:05+25:00')
-
-
 def test_dt_to_timestamp_naive_tzinfo():
     # a tzinfo whose utcoffset() is None makes the datetime naive (PEP 495)
     class NaiveTZ(tzinfo):
