@@ -374,9 +374,9 @@ def format_exp_repr(obj, pos_names, req_names=None, opt_names=None, opt_key=None
        opt_names (list): List of attribute names which may appear in
           the keyword arguments in the output repr, provided they pass
           the *opt_key* check. Defaults to None.
-       opt_key (callable): A function or callable which checks whether
-          an opt_name should be in the repr. Defaults to a
-          ``None``-check.
+       opt_key (callable): Return true to omit an optional attribute.
+          Defaults to omitting optional attributes with value ``None``.
+          Required attributes are always included.
 
     """
     cn = type(obj).__name__
@@ -397,7 +397,7 @@ def format_exp_repr(obj, pos_names, req_names=None, opt_names=None, opt_key=None
 
     kw_items = [(name, getattr(obj, name, None)) for name in all_names]
     kw_items = [(name, val) for name, val in kw_items
-                if not (name in opt_names and opt_key(val))]
+                if name in req_names or not opt_key(val)]
 
     return format_invocation(cn, args, kw_items)
 
@@ -424,6 +424,7 @@ def format_nonexp_repr(obj, req_names=None, opt_names=None, opt_key=None):
     >>> print(format_nonexp_repr(flag, ['length', 'width'], ['depth']))
     <Flag length=5 width=10>
 
+    Required attributes are included even when also listed as optional.
     If no attributes are specified or set, utilizes the id, not unlike Python's
     built-in behavior.
 
@@ -446,7 +447,7 @@ def format_nonexp_repr(obj, req_names=None, opt_names=None, opt_key=None):
 
     items = [(name, getattr(obj, name, None)) for name in all_names]
     labels = [f'{name}={val!r}' for name, val in items
-              if not (name in opt_names and opt_key(val))]
+              if name in req_names or not opt_key(val)]
     if not labels:
         labels = ['id=%s' % id(obj)]
     ret = '<{} {}>'.format(cn, ' '.join(labels))
