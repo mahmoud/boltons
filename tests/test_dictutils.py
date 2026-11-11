@@ -545,6 +545,29 @@ def test_many_to_many_copy_independent():
     assert copied.inv[1] == frozenset(['a'])
 
 
+class DerivedManyToMany(ManyToMany):
+    pass
+
+
+@pytest.mark.parametrize('source_type, target_type', [
+    (DerivedManyToMany, ManyToMany),
+    (ManyToMany, DerivedManyToMany),
+])
+def test_many_to_many_update_between_types(source_type, target_type):
+    source = source_type([('a', 1), ('a', 2)])
+    target = target_type([('a', 0)])
+    target.update(source)
+
+    assert target['a'] == frozenset([0, 1, 2])
+    assert target.inv[1] == frozenset(['a'])
+    assert target.inv[2] == frozenset(['a'])
+    assert target_type(source)['a'] == frozenset([1, 2])
+    target.add('a', 3)
+    source.remove('a', 1)
+    assert source['a'] == frozenset([2])
+    assert target['a'] == frozenset([0, 1, 2, 3])
+
+
 def test_many_to_many_replace_existing_key():
     m2m = ManyToMany([('a', 1), ('new', 2)])
     m2m.replace('a', 'new')

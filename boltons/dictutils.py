@@ -954,7 +954,7 @@ class ManyToMany:
                 del self.inv.data[val]
 
     def update(self, iterable):
-        """given an iterable of (key, val), add them all"""
+        """Add relationships from pairs, a mapping or a ManyToMany."""
         if type(iterable) is type(self):
             other = iterable
             for k in other.data:
@@ -967,7 +967,10 @@ class ManyToMany:
                     self.inv.data[k] = other.inv.data[k].copy()
                 else:
                     self.inv.data[k].update(other.inv.data[k])
-        elif callable(getattr(iterable, 'keys', None)):
+            return
+        if isinstance(iterable, ManyToMany):
+            iterable = iterable.iteritems()
+        if callable(getattr(iterable, 'keys', None)):
             for k in iterable.keys():
                 self.add(k, iterable[k])
         else:
