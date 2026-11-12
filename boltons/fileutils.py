@@ -40,6 +40,7 @@ import sys
 import stat
 import errno
 import fnmatch
+from operator import index
 from shutil import copy2, copystat, Error
 
 
@@ -657,10 +658,20 @@ class DummyFile:
             raise ValueError('I/O operation on a closed file')
         return []
 
-    def seek(self):
+    def seek(self, offset=None, whence=os.SEEK_SET):
+        """Accept a seek request without moving the dummy stream.
+
+        An explicit offset returns the position (always zero). Omitting
+        the offset retains the legacy return value of None.
+        """
         if self.closed:
             raise ValueError('I/O operation on a closed file')
-        return
+        if index(whence) not in (os.SEEK_SET, os.SEEK_CUR, os.SEEK_END):
+            raise ValueError('invalid whence')
+        if offset is None:
+            return None
+        index(offset)
+        return 0
 
     def tell(self):
         if self.closed:

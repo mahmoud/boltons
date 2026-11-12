@@ -1,7 +1,7 @@
 import os.path
 import pathlib
 
-
+import pytest
 
 from boltons import fileutils
 from boltons.fileutils import FilePerms, iter_find_files
@@ -182,3 +182,23 @@ def test_rotate_file_keep_one(tmp_path):
         assert sorted(p.name for p in tmp_path.iterdir()) == ['log.1.txt']
         assert (tmp_path / 'log.1.txt').read_text() == f'gen {gen}'
 
+
+def test_dummyfile_seek_rewinds_an_empty_stream():
+    stream = fileutils.DummyFile('unused')
+    assert stream.seek(0) == stream.tell() == 0
+    assert stream.seek(0, os.SEEK_CUR) == 0
+    assert stream.seek(0, os.SEEK_END) == 0
+    assert stream.seek(10) == stream.tell() == 0
+    assert stream.seek() is None
+    assert stream.read() == ''
+    with pytest.raises(ValueError, match='invalid whence'):
+        stream.seek(0, 99)
+    with pytest.raises(TypeError):
+        stream.seek(0.5)
+
+
+def test_dummyfile_seek_on_closed_stream():
+    stream = fileutils.DummyFile('unused')
+    stream.close()
+    with pytest.raises(ValueError, match='closed file'):
+        stream.seek(0)
