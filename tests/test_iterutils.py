@@ -677,6 +677,45 @@ def test_untyped_sorted_key_called_once_per_item():
         untyped_sorted([1], key=bad_key)
 
 
+@pytest.mark.parametrize('priority_name', ['first', 'last'])
+def test_soft_sorted_priority_lookup_cost(priority_name):
+    from boltons.iterutils import soft_sorted
+
+    class CountedInt(int):
+        comparisons = 0
+        __hash__ = int.__hash__
+
+        def __eq__(self, other):
+            type(self).comparisons += 1
+            return int.__eq__(self, other)
+
+    size = 128
+    values = [CountedInt(i) for i in reversed(range(size))]
+    result = soft_sorted(values, **{priority_name: list(range(size))})
+    comparisons = CountedInt.comparisons
+    assert result == list(range(size))
+    assert comparisons < size * 8
+
+
+@pytest.mark.parametrize('priority_name', ['first', 'last'])
+def test_soft_sorted_priority_compatibility(priority_name):
+    from boltons.iterutils import soft_sorted
+
+    # Repeated priorities retain their first position, and equal keys are stable.
+    values = [('b', 1), ('a', 2), ('b', 3), ('c', 4)]
+    result = soft_sorted(values, key=lambda x: x[0],
+                         **{priority_name: ['b', 'a', 'b']})
+    ordered = [('b', 1), ('b', 3), ('a', 2)]
+    assert result == (ordered + [('c', 4)] if priority_name == 'first'
+                      else [('c', 4)] + ordered)
+    assert soft_sorted([[2], [1], [3]], **{priority_name: [[2], [1]]}) == (
+        [[2], [1], [3]] if priority_name == 'first' else [[3], [2], [1]])
+    assert soft_sorted([[2], 1], **{priority_name: [1]}) == (
+        [1, [2]] if priority_name == 'first' else [[2], 1])
+    # String priorities use substring positions rather than character indexes.
+    assert soft_sorted(['bc', 'a'], **{priority_name: 'abc'}) == ['a', 'bc']
+
+
 def test_lstrip():
     from boltons.iterutils import lstrip
 

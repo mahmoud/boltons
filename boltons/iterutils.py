@@ -1631,23 +1631,53 @@ def soft_sorted(iterable, first=None, last=None, key=None, reverse=False):
        reverse (bool): Whether or not elements not explicitly ordered
           by *first* and *last* should be in reverse order or not.
 
-    Returns a new list in sorted order.
+    Returns a new list in sorted order. Priority lookups for hashable
+    keys and priorities take expected constant time. Unhashable values
+    and string priorities retain sequence lookup semantics.
     """
     first = first or []
     last = last or []
     key = key or (lambda x: x)
-    seq = list(iterable)
-    other = [x for x in seq if not (
-        (first and key(x) in first) or (last and key(x) in last))]
-    other.sort(key=key, reverse=reverse)
 
-    if first:
-        first = sorted([x for x in seq if key(x) in first],
-                       key=lambda x: first.index(key(x)))
-    if last:
-        last = sorted([x for x in seq if key(x) in last],
-                      key=lambda x: last.index(key(x)))
-    return first + other + last
+    def make_rank(priorities):
+        ranks = None
+        if not isinstance(priorities, (str, bytes)):
+            try:
+                ranks = {}
+                for index, value in enumerate(priorities):
+                    ranks.setdefault(value, index)
+            except TypeError:
+                ranks = None
+
+        def rank(value):
+            if ranks is not None:
+                try:
+                    return ranks.get(value, -1)
+                except TypeError:
+                    pass  # An unhashable key can still match a sequence entry.
+            try:
+                return priorities.index(value)
+            except ValueError:
+                return -1
+
+        return rank
+
+    first_rank, last_rank = make_rank(first), make_rank(last)
+    first_items, other, last_items = [], [], []
+    for item in iterable:
+        value = key(item)
+        first_index, last_index = first_rank(value), last_rank(value)
+        if first_index >= 0:
+            first_items.append((first_index, item))
+        if last_index >= 0:
+            last_items.append((last_index, item))
+        if first_index < 0 and last_index < 0:
+            other.append(item)
+    other.sort(key=key, reverse=reverse)
+    first_items.sort(key=lambda pair: pair[0])
+    last_items.sort(key=lambda pair: pair[0])
+    return ([item for _, item in first_items] + other
+            + [item for _, item in last_items])
 
 
 def untyped_sorted(iterable, key=None, reverse=False):
