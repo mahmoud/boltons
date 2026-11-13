@@ -700,11 +700,13 @@ def rotate_file(filename, *, keep: int = 5):
     with all conflicting filenames being moved up by one, dropping any files beyond *keep*.
 
     After rotation, *filename* will be available for creation as a new file.
+    *filename* accepts a string, bytes, or a path-like object.
 
     Fails if *filename* is not a file or if *keep* is not > 0.
     """
     if keep < 1:
         raise ValueError(f'expected "keep" to be >=1, not {keep}')
+    filename = os.fspath(filename)
     if not os.path.exists(filename):
         return
     if not os.path.isfile(filename):
@@ -713,10 +715,10 @@ def rotate_file(filename, *, keep: int = 5):
     fn_root, fn_ext = os.path.splitext(filename)
     kept_names = []
     for i in range(1, keep + 1):
-        if fn_ext:
-            kept_names.append(f'{fn_root}.{i}{fn_ext}')
-        else:
-            kept_names.append(f'{fn_root}.{i}')
+        suffix = f'.{i}'
+        if isinstance(filename, bytes):
+            suffix = suffix.encode('ascii')
+        kept_names.append(fn_root + suffix + fn_ext)
 
     if os.path.exists(kept_names[-1]):
         os.remove(kept_names[-1])  # make room for the new last generation

@@ -1,7 +1,7 @@
 import os.path
 import pathlib
 
-
+import pytest
 
 from boltons import fileutils
 from boltons.fileutils import FilePerms, iter_find_files
@@ -120,6 +120,22 @@ def test_iter_find_files_trailing_sep(tmp_path):
 
     assert _names(str(tmp_path)) == ['a.txt', 'b.txt']
     assert _names(str(tmp_path) + os.path.sep) == ['a.txt', 'b.txt']
+
+
+@pytest.mark.parametrize('extension', ['', '.txt'])
+def test_rotate_file_preserves_bytes_paths(tmp_path, extension):
+    current = tmp_path / ('app' + extension)
+    older = tmp_path / ('app.1' + extension)
+    oldest = tmp_path / ('app.2' + extension)
+    current.write_bytes(b'current')
+    older.write_bytes(b'older')
+    oldest.write_bytes(b'expired')
+
+    fileutils.rotate_file(os.fsencode(current), keep=2)
+
+    assert not current.exists()
+    assert older.read_bytes() == b'current'
+    assert oldest.read_bytes() == b'older'
 
 
 def test_rotate_file_no_rotation(tmp_path):
