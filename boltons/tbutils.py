@@ -723,12 +723,16 @@ class ParsedException:
            3.13+), the rows after the first source/anchor pair are kept
            in ``source_line_continuations``, in display order.
         """
-        lines = ['Traceback (most recent call last):']
+        lines = []
+        if not self.frames or self.frames[0].get('funcname') is not None:
+            lines.append('Traceback (most recent call last):')
 
         for frame in self.frames:
-            lines.append('  File "{}", line {}, in {}'.format(frame['filepath'],
-                                                           frame['lineno'],
-                                                           frame['funcname']))
+            header = '  File "{}", line {}'.format(frame['filepath'], frame['lineno'])
+            funcname = frame.get('funcname')
+            if funcname is not None:
+                header += f', in {funcname}'
+            lines.append(header)
             source_line = frame.get('source_line')
             if source_line:
                 lines.append(f'    {source_line}')
