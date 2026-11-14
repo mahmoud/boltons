@@ -480,8 +480,10 @@ class URL:
         # percent-encoding is always utf8 for IRIs, but can be Latin-1
         # for other usage schemes.
         ud = DEFAULT_PARSED_URL
+        explicit_empty_query = False
         if url:
             if isinstance(url, URL):
+                explicit_empty_query = getattr(url, '_explicit_empty_query', False)
                 url = url.to_text()  # better way to copy URLs?
             elif isinstance(url, bytes):
                 try:
@@ -516,6 +518,7 @@ class URL:
         self.path_parts = tuple([unquote(p) if '%' in p else p for p
                                  in (ud['path'] or _e).split('/')])
         self._query = ud['query'] or _e
+        self._explicit_empty_query = explicit_empty_query or ud['query'] == ''
         self.fragment = (unquote(ud['fragment'])
                          if '%' in (ud['fragment'] or _e) else ud['fragment'] or _e)
         # TODO: possibly use None as marker for empty vs missing
@@ -687,7 +690,7 @@ class URL:
                                + list(dest.path_parts)
         else:
             new_path_parts = list(self.path_parts)
-            if not query_params:
+            if not query_params and not getattr(dest, '_explicit_empty_query', False):
                 query_params = self.query_params
 
         ret = self.from_parts(scheme=dest.scheme or self.scheme,
