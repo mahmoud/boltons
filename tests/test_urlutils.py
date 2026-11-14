@@ -330,6 +330,19 @@ def test_navigate():
     assert navd.to_text() == _dest_text
 
 
+@pytest.mark.parametrize('dest, fragment', [
+    ('?', ''), (b'?', ''), ('?#section', 'section'), (URL('?'), ''),
+    (URL('?#section'), 'section'), (URL(URL('?')), ''),
+])
+def test_navigate_explicit_empty_query(dest, fragment):
+    base = URL('https://example.com/page?mode=old')
+    result = base.navigate(dest)
+    assert result.path == '/page'
+    assert result.fragment == fragment
+    assert not result.query_params
+    assert base.query_params['mode'] == 'old'
+
+
 def test_navigate_absolute_normalizes():
     url = URL('http://x.com')
     navd = url.navigate('HTTPS://EXAMPLE.ORG/a/./b/../c')
