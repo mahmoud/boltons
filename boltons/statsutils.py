@@ -446,7 +446,7 @@ class Stats:
             return (sum(self._get_pow_diffs(4)) /
                     float((len(data) - 1) * (s_dev ** 4)))
         else:
-            return 0.0
+            return self.default
     kurtosis = _StatsProperty('kurtosis', _calc_kurtosis)
 
     def _calc_pearson_type(self):

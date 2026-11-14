@@ -1,4 +1,4 @@
-from boltons.statsutils import Stats, mode
+from boltons.statsutils import Stats, kurtosis, mode
 
 
 def test_stats_basic():
@@ -9,6 +9,13 @@ def test_stats_basic():
     assert da.skewness == 0
     assert round(da.kurtosis, 1) == 1.9
     assert da.median == 9.5
+
+
+def test_kurtosis_undefined_uses_default():
+    for sample in ([], [1], [2, 2, 2]):
+        assert Stats(sample, default=99.0).kurtosis == 99.0
+        assert kurtosis(sample, default=99.0) == 99.0
+        assert kurtosis(sample) == 0.0
 
 
 def test_pearson_type_covers_kappa_ge_zero():
