@@ -814,12 +814,17 @@ def format_histogram_counts(bin_counts, width=None, format_bin=None):
     them to this function.
 
     Args:
-        bin_counts (list): A list of bin values to counts.
+        bin_counts (list): A list of bin values to counts. An empty list
+            produces an empty string.
         width (int): Number of character columns in the text output,
             defaults to 80 or console width in Python 3.3+.
         format_bin (callable): Used to convert bin values into string
             labels.
     """
+    bins = [b for b, _ in bin_counts]
+    if not bins:
+        return ''
+
     lines = []
     if not format_bin:
         format_bin = lambda v: v
@@ -830,7 +835,6 @@ def format_histogram_counts(bin_counts, width=None, format_bin=None):
         except Exception:
             width = 80
 
-    bins = [b for b, _ in bin_counts]
     count_max = max([count for _, count in bin_counts])
     count_cols = len(str(count_max))
 

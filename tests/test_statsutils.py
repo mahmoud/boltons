@@ -1,4 +1,4 @@
-from boltons.statsutils import Stats, mode
+from boltons.statsutils import Stats, format_histogram_counts, mode
 
 
 def test_stats_basic():
@@ -65,6 +65,10 @@ def test_clear_cache_resets_is_sorted():
 
 def test_format_histogram_counts_all_zero():
     # see #529
-    from boltons.statsutils import format_histogram_counts
-
     assert format_histogram_counts([(0.0, 0), (1.0, 0)]) == '0.0: 0 |\n1.0: 0 |'
+
+
+def test_format_histogram_counts_after_filtering_out_all_bins():
+    counts = Stats([1, 2, 3]).get_histogram_counts()
+    filtered_counts = [(boundary, count) for boundary, count in counts if count >= 4]
+    assert format_histogram_counts(filtered_counts) == ''
