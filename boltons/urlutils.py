@@ -549,6 +549,13 @@ class URL:
 
         ret.scheme = scheme
         ret.host = host
+        if host and ':' in host:
+            try:
+                inet_pton(socket.AF_INET6, host)
+            except (OSError, ValueError):
+                pass
+            else:
+                ret.family = socket.AF_INET6
         ret.path_parts = tuple(path_parts) or ('',)
         ret.query_params.update(query_params)
         ret.fragment = fragment
