@@ -1,4 +1,42 @@
 from boltons.statsutils import Stats, mode
+from boltons import statsutils
+
+
+def test_convenience_functions_accept_iterables():
+    class UnsizedIterable:
+        def __iter__(self):
+            return iter(data)
+
+    class SizedIterator:
+        def __init__(self):
+            self.values = iter(data)
+
+        def __iter__(self):
+            return self
+
+        def __next__(self):
+            return next(self.values)
+
+        def __len__(self):
+            return len(data)
+
+    data = [1, 2, 2, 4, 7]
+    names = ('mean', 'median', 'mode', 'iqr', 'trimean', 'variance',
+             'std_dev', 'rel_std_dev', 'skewness', 'kurtosis',
+             'median_abs_dev', 'pearson_type')
+    for name in names:
+        func = getattr(statsutils, name)
+        expected = func(data)
+        assert func(iter(data)) == expected
+        assert func(value for value in data) == expected
+        assert func(tuple(data)) == expected
+        assert func(UnsizedIterable()) == expected
+        assert func(SizedIterator()) == expected
+        assert func(range(1, 6)) == func(list(range(1, 6)))
+        assert func({1, 2, 3}) == func(list({1, 2, 3}))
+        assert func(iter([]), default=None) is None
+        assert func(iter([])) == 0.0
+    assert data == [1, 2, 2, 4, 7]
 
 
 def test_stats_basic():
