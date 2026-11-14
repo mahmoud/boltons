@@ -1,4 +1,22 @@
-from boltons.statsutils import Stats, mode
+import pytest
+
+from boltons.statsutils import Stats, median_abs_dev, mode
+
+
+@pytest.mark.parametrize('values, expected', [
+    ([3, 1, 2], 1.0),
+    ([5, 1, 4, 2], 1.5),
+    ([2.5, 0.5, 1.5], 1.0),
+    ([5.5, 0.5, 4.5, 1.5], 2.0),
+    ([10 ** 16 + 2, 10 ** 16, 10 ** 16 + 1], 1.0),
+    ([-10 ** 16 - 2, -10 ** 16, -10 ** 16 - 1], 1.0),
+    ([10 ** 100 + 2, 10 ** 100, 10 ** 100 + 1], 1.0),
+])
+def test_median_abs_dev_preserves_center_precision(values, expected):
+    stats = Stats(values)
+    for result in (median_abs_dev(values), stats.median_abs_dev, stats.mad):
+        assert result == expected
+        assert isinstance(result, float)
 
 
 def test_stats_basic():

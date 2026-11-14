@@ -377,11 +377,13 @@ class Stats:
 
         >>> median_abs_dev(range(97))
         24.0
+        >>> median_abs_dev([10 ** 16, 10 ** 16 + 1, 10 ** 16 + 2])
+        1.0
         """
         global median  # defined elsewhere in this file
         sorted_vals = self._get_sorted_data()
-        x = float(median(sorted_vals))
-        return median([abs(x - v) for v in sorted_vals])
+        x = median(sorted_vals)
+        return float(median([abs(x - v) for v in sorted_vals]))
     median_abs_dev = _StatsProperty('median_abs_dev', _calc_median_abs_dev)
     mad = median_abs_dev  # convenience
 
