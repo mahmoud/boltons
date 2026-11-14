@@ -1,4 +1,18 @@
+import traceback
+
+import pytest
+
 from boltons.tbutils import ParsedException
+
+
+def test_parsed_syntax_error_round_trip():
+    with pytest.raises(SyntaxError) as caught:
+        compile('x =\n', 'example.py', 'exec')
+
+    exc = caught.value
+    text = ''.join(traceback.format_exception_only(type(exc), exc)).rstrip('\n')
+    parsed = ParsedException.from_string(text)
+    assert parsed.to_string() == text
 
 
 def test_parsed_exc_basic():
