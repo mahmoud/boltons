@@ -59,6 +59,34 @@ def test_exception_info():
         assert new_exc_hook_res == builtin_exc_hook_res
 
 
+def test_contextual_without_context():
+    point = ContextualCallpoint('example', 'example.py', 'f', 1, 0)
+    result = point.to_dict()
+    assert result['pre_lines'] == []
+    assert result['post_lines'] == []
+
+
+def test_contextual_line_numbers():
+    point = ContextualCallpoint('example', 'example.py', 'f', 10, 0,
+                                line='current', pre_lines=['', 'before'],
+                                post_lines=['after', '', 'later', ''])
+    result = point.to_dict()
+    assert result['pre_lines'] == [{'lineno': 9, 'line': 'before'}]
+    assert result['post_lines'] == [
+        {'lineno': 11, 'line': 'after'},
+        {'lineno': 12, 'line': ''},
+        {'lineno': 13, 'line': 'later'},
+    ]
+
+
+def test_contextual_blank_context():
+    point = ContextualCallpoint('example', 'example.py', 'f', 10, 0,
+                                pre_lines=['', ''], post_lines=['', ''])
+    result = point.to_dict()
+    assert result['pre_lines'] == []
+    assert result['post_lines'] == []
+
+
 def test_contextual():
     def func1():
         return func2()

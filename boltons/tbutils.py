@@ -526,19 +526,17 @@ class ContextualCallpoint(Callpoint):
         # trim off leading empty lines
         for i, item in enumerate(pre_lines):
             if item['line']:
+                pre_lines = pre_lines[i:]
                 break
-        if i:
-            pre_lines = pre_lines[i:]
+        else:
+            pre_lines = []
         ret['pre_lines'] = pre_lines
 
         # now post_lines
         post_lines = [{'lineno': self.lineno + i, 'line': str(l)}
-                      for i, l in enumerate(self.post_lines)]
-        _last = 0
-        for i, item in enumerate(post_lines):
-            if item['line']:
-                _last = i
-        post_lines = post_lines[:_last + 1]
+                      for i, l in enumerate(self.post_lines, 1)]
+        while post_lines and not post_lines[-1]['line']:
+            post_lines.pop()
         ret['post_lines'] = post_lines
         return ret
 
