@@ -32,7 +32,7 @@
 built-in :mod:`math` module.
 """
 
-from math import ceil as _ceil, floor as _floor
+from math import ceil as _ceil, floor as _floor, isnan
 import bisect
 import binascii
 
@@ -87,6 +87,8 @@ def ceil(x, options=None):
     """
     if options is None:
         return _ceil(x)
+    if isinstance(x, float) and isnan(x):
+        raise ValueError('cannot round NaN to an option')
     options = sorted(options)
     i = bisect.bisect_left(options, x)
     if i == len(options):
@@ -113,6 +115,8 @@ def floor(x, options=None):
     """
     if options is None:
         return _floor(x)
+    if isinstance(x, float) and isnan(x):
+        raise ValueError('cannot round NaN to an option')
     options = sorted(options)
 
     i = bisect.bisect_right(options, x)
