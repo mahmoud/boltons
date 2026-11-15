@@ -541,6 +541,24 @@ def test_find_all_links_rejected_without_text():
     assert tokens[-1] == URL('https://example.org')
 
 
+@pytest.mark.parametrize('scheme', ['https', 'HTTPS', 'HtTpS'])
+@pytest.mark.parametrize('accepted_scheme', ['https', 'HTTPS', 'HtTpS'])
+@pytest.mark.parametrize('with_text', [False, True])
+def test_find_all_links_scheme_filter_is_case_insensitive(
+        scheme, accepted_scheme, with_text):
+    target = scheme + '://example.org/a'
+    text = 'http://example.com then ' + target + '!'
+    schemes = [accepted_scheme]
+    tokens = find_all_links(text, schemes=schemes, with_text=with_text)
+    links = [token for token in tokens if isinstance(token, URL)]
+    assert links == [URL(target)]
+    assert links[0].scheme == scheme
+    assert schemes == [accepted_scheme]
+    if with_text:
+        assert ''.join(token if isinstance(token, str) else target
+                       for token in tokens) == text
+
+
 def test_unicodey():
     unicodey = ('http://\N{LATIN SMALL LETTER E WITH ACUTE}.com/'
                 '\N{LATIN SMALL LETTER E}\N{COMBINING ACUTE ACCENT}'

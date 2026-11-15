@@ -159,7 +159,7 @@ def find_all_links(text, with_text=False, default_scheme='https', schemes=()):
           ``'https'``.
 
        schemes (list): A list of strings that a URL's scheme must
-          match in order to be included in the results. Defaults to
+          match, ignoring case, in order to be included in the results. Defaults to
           empty, which matches all schemes.
 
     .. note:: Currently this function does not support finding IPv6
@@ -167,6 +167,7 @@ def find_all_links(text, with_text=False, default_scheme='https', schemes=()):
 
     """
     text = to_unicode(text)
+    schemes = {scheme.lower() for scheme in schemes}
     prev_end, start, end = 0, None, None
     ret = []
     _add = ret.append
@@ -192,7 +193,7 @@ def find_all_links(text, with_text=False, default_scheme='https', schemes=()):
                     if with_text:
                         _add_text(text[start:end])
                     continue
-            if schemes and cur_url.scheme not in schemes:
+            if schemes and cur_url.scheme.lower() not in schemes:
                 if with_text:
                     _add_text(text[start:end])
             else:
