@@ -40,6 +40,8 @@ of working with `JSON Lines`_-formatted files.
 import io
 import os
 import json
+import codecs
+import re
 
 
 DEFAULT_BLOCKSIZE = 4096
@@ -71,6 +73,9 @@ def reverse_iter_lines(file_obj, blocksize=DEFAULT_BLOCKSIZE, preseek=True, enco
             generation.
         encoding (str): Text encoding used to decode lines. Defaults to the
             file's encoding, or returns bytes when neither is specified.
+            UTF-16/32 blocks are aligned to complete code points before
+            decoding. Generic UTF-16/32 consume a leading byte-order mark,
+            or use native byte order when no mark is present.
 
     """
     # This function is a bit of a pain because it attempts to be byte/text agnostic
@@ -93,24 +98,63 @@ def reverse_iter_lines(file_obj, blocksize=DEFAULT_BLOCKSIZE, preseek=True, enco
 
     if preseek:
         file_obj.seek(0, os.SEEK_END)
-    buff = empty
     cur_pos = file_obj.tell()
-    while 0 < cur_pos:
-        read_size = min(blocksize, cur_pos)
+    content_start = unit_size = 0
+    if decode and cur_pos:
+        codec = codecs.lookup(encoding).name
+        if codec in ('utf-16', 'utf-16-le', 'utf-16-be',
+                     'utf-32', 'utf-32-le', 'utf-32-be'):
+            unit_size = 2 if codec.startswith('utf-16') else 4
+            if codec in ('utf-16', 'utf-32') and cur_pos:
+                file_obj.seek(0)
+                mark = file_obj.read(unit_size)
+                file_obj.seek(cur_pos)
+                little = codecs.BOM_UTF16_LE if unit_size == 2 else codecs.BOM_UTF32_LE
+                big = codecs.BOM_UTF16_BE if unit_size == 2 else codecs.BOM_UTF32_BE
+                if mark in (little, big):
+                    content_start = unit_size if cur_pos >= unit_size else 0
+                    codec += '-le' if mark == little else '-be'
+                else:
+                    codec += '-le' if codecs.BOM_UTF16 == codecs.BOM_UTF16_LE else '-be'
+            encoding = codec
+            empty, newline, decode = '', '\n', False
+    buff = empty
+    while content_start < cur_pos:
+        read_size = blocksize
+        if unit_size:
+            read_size = (read_size + unit_size - 1) // unit_size * unit_size
+        read_size = min(read_size, cur_pos - content_start)
         cur_pos -= read_size
         file_obj.seek(cur_pos, os.SEEK_SET)
         cur = file_obj.read(read_size)
+        if unit_size:
+            # A UTF-16 block beginning with a low surrogate needs the preceding
+            # high surrogate, which belongs to this same Unicode code point.
+            byteorder = 'little' if encoding.endswith('-le') else 'big'
+            if (unit_size == 2 and cur_pos > content_start
+                    and 0xdc00 <= int.from_bytes(cur[:2], byteorder) <= 0xdfff):
+                cur_pos -= 2
+                file_obj.seek(cur_pos, os.SEEK_SET)
+                cur = file_obj.read(2) + cur
+            cur = cur.decode(encoding)
         buff = cur + buff
-        lines = buff.splitlines()
+        if unit_size:
+            # Preserve bytes.splitlines' CR/LF delimiters, rather than adding
+            # the extra Unicode separators recognized by str.splitlines.
+            lines = re.split(r'\r\n|\r|\n', buff)
+            if not lines[-1]:
+                lines.pop()
+        else:
+            lines = buff.splitlines()
 
         # until the start of the file, the first line may be partial
-        if cur_pos and (len(lines) < 2 or lines[0] == empty):
+        if cur_pos > content_start and (len(lines) < 2 or lines[0] == empty):
             continue
         if buff[-1:] == newline:
             yield empty_line
-        for line in reversed(lines[1:] if cur_pos else lines):
+        for line in reversed(lines[1:] if cur_pos > content_start else lines):
             yield line.decode(encoding) if decode else line
-        buff = lines[0] if cur_pos else empty
+        buff = lines[0] if cur_pos > content_start else empty
     if buff:
         yield buff.decode(encoding) if decode else buff
 
