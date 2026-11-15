@@ -57,7 +57,10 @@ class DeprecatableModule(ModuleType):
 
 def deprecate_module_member(mod_name, name, message):
     module = sys.modules[mod_name]
-    if not isinstance(module, DeprecatableModule):
+    if type(module) is ModuleType:
+        # Keep existing functions and module attributes on the same globals.
+        module.__class__ = DeprecatableModule
+    elif not isinstance(module, DeprecatableModule):
         sys.modules[mod_name] = module = DeprecatableModule(module)
     module._deprecated_members[name] = message
     return
