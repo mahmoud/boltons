@@ -1,4 +1,4 @@
-from pytest import raises
+from pytest import mark, raises
 from boltons.mathutils import clamp, ceil, floor, Bits
 import math
 
@@ -73,6 +73,20 @@ def test_floor_oor_upper():
 def test_floor_oor_lower():
     with raises(ValueError):
         floor(OUT_OF_RANGE_LOWER, OPTIONS)
+
+
+@mark.parametrize('round_to_option', [ceil, floor])
+def test_round_to_options_rejects_nan(round_to_option):
+    with raises(ValueError):
+        round_to_option(NAN, [2.5, 1, 4])
+
+
+def test_round_to_options_keeps_infinity_and_large_integer_ordering():
+    assert ceil(-INF, [4, 1]) == 1
+    assert floor(INF, [4, 1]) == 4
+    large = 10**400
+    assert ceil(large, [large + 1, large - 1]) == large + 1
+    assert floor(large, [large + 1, large - 1]) == large - 1
 
 
 def test_bits():
