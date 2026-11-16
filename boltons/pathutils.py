@@ -76,7 +76,7 @@ def augpath(path, suffix='', prefix='', ext=None, base=None, dpath=None,
         multidot (bool, default=False): Allows extensions to contain multiple
             dots. Specifically, if False, everything after the last dot in the
             basename is the extension. If True, everything after the first dot
-            in the basename is the extension.
+            after any leading dots in the basename is the extension.
 
     Returns:
         str: augmented path
@@ -111,10 +111,13 @@ def augpath(path, suffix='', prefix='', ext=None, base=None, dpath=None,
     # Breakup path
     orig_dpath, fname = split(path)
     if multidot:
-        # The first dot defines the extension
-        parts = fname.split('.', 1)
-        orig_base = parts[0]
-        orig_ext = '' if len(parts) == 1 else '.' + parts[1]
+        # Keep leading dots in the basename, as splitext does.
+        first_non_dot = len(fname) - len(fname.lstrip('.'))
+        ext_start = fname.find('.', first_non_dot)
+        if ext_start == -1:
+            orig_base, orig_ext = fname, ''
+        else:
+            orig_base, orig_ext = fname[:ext_start], fname[ext_start:]
     else:
         # The last dot defines the extension
         orig_base, orig_ext = splitext(fname)

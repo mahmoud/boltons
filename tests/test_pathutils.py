@@ -26,6 +26,19 @@ def test_augpath_multidot():
     assert augpath('foo.tar.gz', ext='.zip', multidot=False) == 'foo.tar.zip'
 
 
+@pytest.mark.parametrize('name, expected', [
+    ('.env', '.env_old'),
+    ('.config.local.json', '.config_old.local.json'),
+    ('..data.tar.gz', '..data_old.tar.gz'),
+])
+def test_augpath_multidot_keeps_leading_dots_in_the_basename(name, expected):
+    assert augpath(name, suffix='_old', multidot=True) == expected
+
+
+def test_augpath_multidot_replaces_extension_on_a_hidden_file():
+    assert augpath('.config.local.json', ext='.yaml', multidot=True) == '.config.yaml'
+
+
 def test_shrinkuser():
     home = expanduser('~')
     assert shrinkuser(home) == '~'
