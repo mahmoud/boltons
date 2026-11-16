@@ -395,9 +395,47 @@ class SpooledStringIO(SpooledIOBase):
                 type(s).__name__
             ))
         current_pos = self.tell()
-        if self.buffer.tell() + len(s.encode('utf-8')) >= self._max_size:
+        encoded = s.encode('utf-8')
+        if not encoded:
+            return 0
+
+        reader = self.buffer.reader
+        # Fold any cached lines into charbuffer without consuming text.
+        reader.read(0, 0)
+        byte_start = (self.buffer.tell() - len(reader.bytebuffer)
+                      - len(reader.charbuffer.encode('utf-8')))
+        replaced = reader.read(len(s), len(s))
+        byte_end = byte_start + len(replaced.encode('utf-8'))
+        self.buffer.seek(0, os.SEEK_END)
+        old_size = self.buffer.tell()
+        shift = len(encoded) - (byte_end - byte_start)
+
+        if old_size + shift >= self._max_size:
             self.rollover()
-        self.buffer.write(s.encode('utf-8'))
+
+        raw = self.buffer.stream
+        if shift > 0:
+            # Move backwards so expanding a character cannot overwrite tail data.
+            end = old_size
+            while end > byte_end:
+                start = max(byte_end, end - READ_CHUNK_SIZE)
+                raw.seek(start)
+                chunk = raw.read(end - start)
+                raw.seek(start + shift)
+                raw.write(chunk)
+                end = start
+        elif shift < 0:
+            start = byte_end
+            while start < old_size:
+                raw.seek(start)
+                chunk = raw.read(min(READ_CHUNK_SIZE, old_size - start))
+                raw.seek(start + shift)
+                raw.write(chunk)
+                start += len(chunk)
+            raw.truncate(old_size + shift)
+
+        self.buffer.seek(byte_start)
+        self.buffer.write(encoded)
         self._tell = current_pos + len(s)
         return len(s)
 
