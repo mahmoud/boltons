@@ -231,6 +231,18 @@ def test_update_extend_self(cls):
     assert omd.items(multi=True) == items + items
 
 
+@pytest.mark.parametrize('cls', [OMD, QueryParamDict])
+def test_update_extend_kwargs(cls):
+    # the docstring promises keyword arguments, and/or an iterable
+    omd = cls([('a', 1)])
+    omd.update_extend({'b': 2}, c=3)
+    assert omd.todict() == {'a': 1, 'b': 2, 'c': 3}
+
+    omd = cls([('a', 1)])
+    omd.update_extend(c=3)
+    assert omd.todict() == {'a': 1, 'c': 3}
+
+
 def test_invert():
     for items in _ITEMSETS:
         omd = OMD(items)
