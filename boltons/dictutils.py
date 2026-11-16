@@ -315,7 +315,7 @@ class OrderedMultiDict(dict):
             self[k] = F[k]
         return
 
-    def update_extend(self, E, **F):
+    def update_extend(self, E=(), **F):
         """Add items from a dictionary, iterable, and/or keyword
         arguments without overwriting existing items present in the
         dictionary. Like :meth:`update`, but adds to existing keys
@@ -333,6 +333,8 @@ class OrderedMultiDict(dict):
         self_add = self.add
         for k, v in iterator:
             self_add(k, v)
+        for k in F:
+            self_add(k, F[k])
 
     def __setitem__(self, k, v):
         if super().__contains__(k):
