@@ -462,6 +462,10 @@ class IndexedSet(MutableSet):
             index = operator.index(index)
         item_index_map = self.item_index_map
         len_self = len(item_index_map)
+        if index is None and not len_self:
+            # MutableSet.pop() raises KeyError on an empty set; keep that
+            # contract for the no-argument (set-like) call.
+            raise KeyError("pop from an empty IndexedSet")
         if index is None or index == -1 or index == len_self - 1:
             ret = self.item_list.pop()
             del item_index_map[ret]
