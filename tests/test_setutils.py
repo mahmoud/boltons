@@ -50,6 +50,21 @@ def test_indexed_set_update_multiple_iterables_with_tuple_items():
     assert list(items) == [(1, 2), (3, 4)]
 
 
+def test_indexed_set_pop_empty_raises_keyerror():
+    # MutableSet.pop() raises KeyError on an empty set; IndexedSet must match.
+    from collections.abc import MutableSet
+    assert isinstance(IndexedSet(), MutableSet)
+    with raises(KeyError):
+        IndexedSet().pop()
+    # Non-empty no-arg pop is unchanged.
+    assert IndexedSet(['a']).pop() == 'a'
+    # The explicit-index path keeps its list-like IndexError contract.
+    with raises(IndexError):
+        IndexedSet().pop(0)
+    with raises(IndexError):
+        IndexedSet().pop(-1)
+
+
 def test_indexed_set_mutate():
     thou = IndexedSet(range(1000))
     assert (thou.pop(), thou.pop()) == (999, 998)
