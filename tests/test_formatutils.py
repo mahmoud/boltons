@@ -1,4 +1,7 @@
+import os
 import re
+import subprocess
+import sys
 from collections import namedtuple
 
 from boltons.formatutils import (get_format_args,
@@ -37,6 +40,23 @@ def test_get_fstr_args():
         inferred_t = infer_positional_format_args(t)
         res = get_format_args(inferred_t)
         assert res
+
+
+def test_get_format_args_rejects_anonymous_fields_under_optimization():
+    script = """
+from boltons.formatutils import get_format_args
+try:
+    get_format_args('{}')
+except ValueError as exc:
+    if 'anonymous positional argument' not in str(exc):
+        raise
+else:
+    raise RuntimeError('anonymous field was accepted')
+if get_format_args('{name} {0:d}') != ([(0, int)], [('name', str)]):
+    raise RuntimeError('explicit fields did not parse')
+"""
+    repo = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    subprocess.run([sys.executable, '-O', '-c', script], cwd=repo, check=True)
 
 
 def test_split_fstr():

@@ -179,10 +179,7 @@ def get_format_args(fstr):
             fname_list = re.split('[.[]', fname)
             if len(fname_list) > 1:
                 raise ValueError('encountered compound format arg: %r' % fname)
-            try:
-                base_fname = fname_list[0]
-                assert base_fname
-            except (IndexError, AssertionError):
+            if not fname:
                 raise ValueError('encountered anonymous positional argument')
             _add_arg(fname, type_char)
             for sublit, subfname, _, _ in formatter.parse(fspec):
