@@ -469,6 +469,8 @@ class SpooledStringIO(SpooledIOBase):
         return ret
 
     def readlines(self, sizehint=0):
+        if sizehint is not None and sizehint > 0:
+            return IOBase.readlines(self, sizehint)
         ret = [x.decode('utf-8') for x in self.buffer.readlines(sizehint)]
         self._tell = self.tell() + sum(len(x) for x in ret)
         return ret

@@ -358,6 +358,19 @@ class TestSpooledBytesIO(TestCase, BaseTestMixin, AssertionsMixin):
 
 
 class TestSpooledStringIO(TestCase, BaseTestMixin, AssertionsMixin):
+    def test_readlines_positive_hint(self):
+        text = 'éé\nsecond\nthird\n'
+        for max_size in (1, 1024):
+            for hint in (1, 3, 4):
+                with self.subTest(max_size=max_size, hint=hint):
+                    with ioutils.SpooledStringIO(max_size=max_size) as stream:
+                        stream.write(text)
+                        stream.seek(0)
+                        reference = io.StringIO(text)
+                        self.assertEqual(stream.readlines(hint), reference.readlines(hint))
+                        self.assertEqual(stream.tell(), reference.tell())
+                        self.assertEqual(stream.read(), reference.read())
+
     linesep = os.linesep
 
     def setUp(self):
