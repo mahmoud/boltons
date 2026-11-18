@@ -38,6 +38,7 @@ are useful when dealing with input, output, and bytestreams in a variety of
 ways.
 """
 import os
+from operator import index
 from io import BytesIO, IOBase
 from abc import (
     ABCMeta,
@@ -430,6 +431,7 @@ class SpooledStringIO(SpooledIOBase):
     def seek(self, pos, mode=0):
         """Traverse from offset to the specified codepoint"""
         self._checkClosed()
+        pos = index(pos)
         # Seek to position from the start of the file
         if mode == os.SEEK_SET:
             if pos < 0:
