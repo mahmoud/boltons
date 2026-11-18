@@ -48,6 +48,7 @@ from errno import EINVAL
 from codecs import EncodedFile
 from tempfile import TemporaryFile
 from itertools import zip_longest
+from operator import index
 
 READ_CHUNK_SIZE = 21333
 """
@@ -469,9 +470,28 @@ class SpooledStringIO(SpooledIOBase):
         return ret
 
     def readlines(self, sizehint=0):
-        ret = [x.decode('utf-8') for x in self.buffer.readlines(sizehint)]
-        self._tell = self.tell() + sum(len(x) for x in ret)
-        return ret
+        sizehint = 0 if sizehint is None else index(sizehint)
+        if sizehint <= 0:
+            ret = [x.decode('utf-8') for x in self.buffer.readlines(sizehint)]
+            self._tell = self.tell() + sum(len(x) for x in ret)
+            return ret
+
+        lines = []
+        parts = []
+        total = 0
+        for part in self:
+            parts.append(part)
+            total += len(part)
+            # The codec's readline also splits on Unicode separators. Keep the
+            # CR/LF boundaries used by its bulk readlines path.
+            if part.endswith(('\r', '\n')):
+                lines.append(''.join(parts))
+                if total > sizehint:
+                    return lines
+                parts.clear()
+        if parts:
+            lines.append(''.join(parts))
+        return lines
 
     @property
     def buffer(self):
