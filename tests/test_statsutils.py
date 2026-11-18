@@ -1,4 +1,38 @@
-from boltons.statsutils import Stats, mode
+import math
+import statistics
+
+import pytest
+
+from boltons.statsutils import Stats, mean, mode
+
+
+@pytest.mark.parametrize('data', [
+    [1e308, 1e308],
+    [-1e308, -1e308],
+    [1e308, 1e308, -1e308],
+    [1e308, 1e308, -1e308, -1e308],
+    [1e308, 1e308, 0],
+    [1e308, 1e308, True],
+    [10 ** 308, 10 ** 308],
+])
+def test_mean_avoids_intermediate_overflow(data):
+    expected = float(statistics.mean(data))
+    assert Stats(data).mean == expected
+    assert mean(data) == expected
+
+
+def test_constant_large_float_variance():
+    stats = Stats([1e308, 1e308])
+    assert stats.variance == 0.0
+    assert stats.std_dev == 0.0
+
+
+def test_mean_nonfinite_and_complex_controls():
+    assert mean([float('inf'), 1.0]) == float('inf')
+    assert mean([float('-inf'), 1.0]) == float('-inf')
+    assert math.isnan(mean([float('inf'), float('-inf')]))
+    assert math.isnan(mean([float('nan'), 1.0]))
+    assert mean([1 + 2j, 3 + 4j]) == 2 + 3j
 
 
 def test_stats_basic():
