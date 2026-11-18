@@ -458,6 +458,39 @@ class TestSpooledStringIO(TestCase, BaseTestMixin, AssertionsMixin):
                         self.assertEqual(stream.tell(), 2)
                         self.assertEqual(stream.read(), 'bc')
 
+    def test_invalid_seek_offset_preserves_position(self):
+        for rolled in (False, True):
+            for text in ('abcdef', 'a\u2603bcde'):
+                for mode in (os.SEEK_SET, os.SEEK_CUR, os.SEEK_END):
+                    for offset in (1.5, 1.0, None, '2'):
+                        with self.subTest(rolled=rolled, text=text,
+                                          mode=mode, offset=offset):
+                            with ioutils.SpooledStringIO() as stream:
+                                stream.write(text)
+                                if rolled:
+                                    stream.rollover()
+                                stream.seek(1)
+                                self.assertEqual(stream.read(1), text[1])
+                                with self.assertRaises(TypeError):
+                                    stream.seek(offset, mode)
+                                self.assertEqual(stream.tell(), 2)
+                                self.assertEqual(stream.read(), text[2:])
+                                self.assertEqual(stream.tell(), len(text))
+
+    def test_seek_accepts_index_offset(self):
+        class Offset:
+            def __index__(self):
+                return 1
+
+        for rolled in (False, True):
+            with self.subTest(rolled=rolled):
+                with ioutils.SpooledStringIO() as stream:
+                    stream.write('a\u2603bc')
+                    if rolled:
+                        stream.rollover()
+                    self.assertEqual(stream.seek(Offset()), 1)
+                    self.assertEqual(stream.read(), '\u2603bc')
+
     def test_len_keeps_position(self):
         for rolled in (False, True):
             with self.subTest(rolled=rolled):
