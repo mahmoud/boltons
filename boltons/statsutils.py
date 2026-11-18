@@ -127,8 +127,9 @@ system instrumentation package.
 
 
 import bisect
-from math import floor, ceil
+from math import floor, ceil, isfinite
 from collections import Counter
+from statistics import mean as _mean
 
 
 class _StatsProperty:
@@ -252,7 +253,12 @@ class Stats:
         >>> mean(list(range(19)) + [949])  # 949 is an arbitrary outlier
         56.0
         """
-        return sum(self.data, 0.0) / len(self.data)
+        result = sum(self.data, 0.0) / len(self.data)
+        if (isinstance(result, float) and not isfinite(result)
+                and all(type(value) in (int, float, bool) for value in self.data)):
+            # The sum can overflow even when its average is representable.
+            return float(_mean(self.data))
+        return result
     mean = _StatsProperty('mean', _calc_mean)
 
     def _calc_max(self):
