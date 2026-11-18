@@ -386,6 +386,40 @@ class TestSpooledStringIO(TestCase, BaseTestMixin, AssertionsMixin):
                 self.assertEqual(flo.tell(), 0)
                 self.assertEqual(flo.readline(), "a\n")
 
+    def test_readlines_hints(self):
+        class Hint:
+            def __index__(self):
+                return 2
+
+        contents = 'skip\n\u2603\n\u754c\nlast'
+        hints = (1, 2, 100, Hint(), True, False, 0, -1, None)
+        for rolled in (False, True):
+            for hint in hints:
+                with self.subTest(rolled=rolled, hint=hint):
+                    with ioutils.SpooledStringIO() as stream, io.StringIO(contents) as reference:
+                        stream.write(contents)
+                        if rolled:
+                            stream.rollover()
+                        stream.seek(5)
+                        reference.seek(5)
+                        self.assertEqual(stream.readlines(hint), reference.readlines(hint))
+                        self.assertEqual(stream.tell(), reference.tell())
+                        self.assertEqual(stream.read(), reference.read())
+
+    def test_readlines_hint_preserves_line_boundaries(self):
+        lines = ['\u2603\u2028text\r\n', '\r\n', 'next\r', 'last']
+        for rolled in (False, True):
+            with self.subTest(rolled=rolled):
+                with ioutils.SpooledStringIO() as stream:
+                    stream.write(''.join(lines))
+                    if rolled:
+                        stream.rollover()
+                    stream.seek(0)
+                    for expected in lines:
+                        self.assertEqual(stream.readlines(1), [expected])
+                    self.assertEqual(stream.readlines(1), [])
+                    self.assertEqual(stream.tell(), sum(map(len, lines)))
+
     def test_compare_two_equal_instances(self):
         """Make sure we can compare instances"""
         a = ioutils.SpooledStringIO()
