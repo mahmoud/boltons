@@ -964,12 +964,12 @@ def parse_qsl(qs, keep_blank_values=True, encoding=DEFAULT_ENCODING):
     for pair in pairs:
         if not pair:
             continue
-        key, _, value = pair.partition('=')
+        key, separator, value = pair.partition('=')
         if not value:
-            if keep_blank_values:
-                value = None
-            else:
+            if not keep_blank_values:
                 continue
+            if not separator:
+                value = None
         key = unquote(key.replace('+', ' '), encoding=encoding)
         if value:
             value = unquote(value.replace('+', ' '), encoding=encoding)
