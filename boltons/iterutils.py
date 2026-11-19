@@ -1394,8 +1394,8 @@ def get_path(root, path, default=_UNSET):
     ``IndexError: list index out of range``
 
     What went out of range where? get_path currently raises
-    ``PathAccessError: could not access 2 from path ('a', 'b', 'c', 2,
-    1), got error: IndexError('list index out of range',)``, a
+    ``PathAccessError: could not access 1 from path ('a', 'b', 'c', 2,
+    1), got error: IndexError('list index out of range')``, a
     subclass of IndexError and KeyError.
 
     You can also pass a default that covers the entire operation,
@@ -1425,7 +1425,9 @@ def get_path(root, path, default=_UNSET):
                 try:
                     seg = int(seg)
                     cur = cur[seg]
-                except (ValueError, KeyError, IndexError, TypeError):
+                except (KeyError, IndexError) as lookup_exc:
+                    raise PathAccessError(lookup_exc, seg, path)
+                except (ValueError, TypeError):
                     if not is_iterable(cur):
                         exc = TypeError('%r object is not indexable'
                                         % type(cur).__name__)

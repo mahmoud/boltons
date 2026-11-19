@@ -13,7 +13,8 @@ from boltons.iterutils import (first,
                                research,
                                default_enter,
                                default_exit,
-                               get_path)
+                               get_path,
+                               PathAccessError)
 from boltons.namedutils import namedtuple
 
 CUR_PATH = os.path.abspath(__file__)
@@ -384,6 +385,16 @@ class TestGetPath:
         root = {'key': ['test']}
         assert get_path(root, ('key', 0)) == 'test'
         assert get_path(root, 'key.0') == 'test'
+
+    @pytest.mark.parametrize('index', [1, -2])
+    def test_dotted_path_index_out_of_range(self, index):
+        root = {'items': ['apple']}
+        path = f'items.{index}'
+        with pytest.raises(PathAccessError) as caught:
+            get_path(root, path)
+        assert isinstance(caught.value.exc, IndexError)
+        assert caught.value.seg == index
+        assert get_path(root, path, default=None) is None
 
 
 def test_research():
