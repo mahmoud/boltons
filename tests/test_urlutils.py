@@ -556,3 +556,19 @@ def test_unicodey():
 
 def test_str_repr():
     assert str(URL("http://googlewebsite.com/e-shops.aspx")) == "http://googlewebsite.com/e-shops.aspx"
+
+
+@pytest.mark.parametrize('query,expected', [
+    ('value=', [('value', '')]),
+    ('flag&value=&value=text', [('flag', None), ('value', ''), ('value', 'text')]),
+    ('=', [('', '')]),
+])
+def test_query_explicit_empty_values_round_trip(query, expected):
+    parsed = QueryParamDict.from_text(query)
+    assert parsed.items(multi=True) == expected
+    assert parsed.to_text(full_quote=True) == query
+    assert URL('https://example.com/?' + query).to_text(full_quote=True) == 'https://example.com/?' + query
+
+
+def test_parse_qsl_drops_blank_values_when_requested():
+    assert urlutils.parse_qsl('flag&empty=&value=text', keep_blank_values=False) == [('value', 'text')]
