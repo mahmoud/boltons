@@ -1,4 +1,26 @@
-from boltons.statsutils import Stats, mode
+import math
+
+import pytest
+
+from boltons.statsutils import Stats, mode, trimean
+
+
+@pytest.mark.parametrize('data, expected', [
+    ([1e308], 1e308),
+    ([1e308] * 4, 1e308),
+    ([-1e308] * 4, -1e308),
+    ([0, 1e308, 1e308], 8.75e307),
+    ([0, 1e308, 1e308, 1e308], 9.375e307),
+])
+def test_trimean_avoids_intermediate_overflow(data, expected):
+    assert Stats(data).trimean == expected
+    assert trimean(data) == expected
+
+
+def test_trimean_preserves_nonfinite_inputs():
+    assert trimean([float('inf')]) == float('inf')
+    assert trimean([float('-inf')]) == float('-inf')
+    assert math.isnan(trimean([float('nan')]))
 
 
 def test_stats_basic():

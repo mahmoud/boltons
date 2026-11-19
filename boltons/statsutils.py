@@ -127,8 +127,9 @@ system instrumentation package.
 
 
 import bisect
-from math import floor, ceil
+from math import floor, ceil, isfinite
 from collections import Counter
+from statistics import mean as _mean
 
 
 class _StatsProperty:
@@ -345,7 +346,14 @@ class Stats:
         """
         sorted_data = self._get_sorted_data()
         gq = lambda q: self._get_quantile(sorted_data, q)
-        return (gq(0.25) + (2 * gq(0.5)) + gq(0.75)) / 4.0
+        lower, middle, upper = gq(0.25), gq(0.5), gq(0.75)
+        result = (lower + (2 * middle) + upper) / 4.0
+        if (isinstance(result, float) and not isfinite(result)
+                and all(type(value) in (int, float, bool)
+                        for value in (lower, middle, upper))):
+            # Weight the quartiles without overflowing their intermediate sum.
+            return float(_mean((lower, middle, middle, upper)))
+        return result
     trimean = _StatsProperty('trimean', _calc_trimean)
 
     def _calc_variance(self):
