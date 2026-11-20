@@ -1,4 +1,4 @@
-from pytest import raises
+from pytest import raises, mark
 from boltons.mathutils import clamp, ceil, floor, Bits
 import math
 
@@ -13,6 +13,31 @@ OUT_OF_RANGE_UPPER = 2500
 VALID_LOWER = 247
 VALID_UPPER = 2314
 VALID_BETWEEN = 248.5
+
+
+@mark.parametrize('factory', [Bits, Bits.from_hex])
+@mark.parametrize('value, expected, width', [
+    ('0X0', 0, 4),
+    ('0XfF', 255, 8),
+    ('0X00F', 15, 12),
+    (b'0X0f', 15, 8),
+])
+def test_bits_uppercase_hex_prefix(factory, value, expected, width):
+    result = factory(value)
+    assert result.as_int() == expected
+    assert len(result) == width
+
+
+def test_bits_uppercase_hex_explicit_width():
+    assert Bits('0Xf', len_=8) == Bits(15, 8)
+    with raises(ValueError):
+        Bits('0Xf', len_=3)
+
+
+def test_bits_hex_prefix_controls():
+    assert Bits.from_hex('0f') == Bits(15, 8)
+    assert Bits('0x0f') == Bits(15, 8)
+    assert Bits('1111') == Bits(15, 4)
 
 def test_clamp_examples():
     """some examples for clamp()"""

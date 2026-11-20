@@ -134,6 +134,8 @@ class Bits:
     * list of bools -- good for iterating over or treating as flags
     * hex/bin string -- good for human readability
 
+    Hexadecimal input accepts both ``0x`` and ``0X`` prefixes.
+
     '''
     __slots__ = ('val', 'len')
 
@@ -146,9 +148,9 @@ class Bits:
             if type(val) is str:
                 if len_ is None:
                     len_ = len(val)
-                    if val.startswith('0x'):
+                    if val.startswith(('0x', '0X')):
                         len_ = (len_ - 2) * 4
-                if val.startswith('0x'):
+                if val.startswith(('0x', '0X')):
                     val = int(val, 16)
                 else:
                     if val:
@@ -242,7 +244,7 @@ class Bits:
             hex = hex.decode('ascii')
         if hex == '':
             return cls('')
-        if not hex.startswith('0x'):
+        if not hex.startswith(('0x', '0X')):
             hex = '0x' + hex
         return cls(hex)
 
