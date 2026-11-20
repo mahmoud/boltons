@@ -113,6 +113,22 @@ def test_parse_timedelta_rejects_garbage():
     assert parse_timedelta('  ') == timedelta(0)
 
 
+def test_parse_timedelta_compact_multi_unit():
+    # issue #814: compact multi-unit strings used to silently drop every
+    # unit after the first (the trailing \w* swallowed the next digits)
+    assert parse_timedelta('1h30m') == timedelta(hours=1, minutes=30)
+    assert parse_timedelta('1h30m15s') == timedelta(hours=1, minutes=30,
+                                                   seconds=15)
+    assert parse_timedelta('2d4h') == timedelta(days=2, hours=4)
+    assert parse_timedelta('1m30s') == timedelta(minutes=1, seconds=30)
+    assert parse_timedelta('1w2d') == timedelta(days=9)
+    assert parse_timedelta('3d12h') == timedelta(days=3, hours=12)
+    # spelled-out units and space-separated forms are unaffected
+    assert parse_timedelta('1 hour 30 minutes') == timedelta(hours=1,
+                                                             minutes=30)
+    assert parse_timedelta('1h 30m') == timedelta(hours=1, minutes=30)
+
+
 def test_daterange_month_step_clamps_day():
     # issue #500: stepping by months from the 31st clamps to month end
     res = list(daterange(date(2020, 1, 31), date(2020, 4, 1), step=(0, 1, 0)))
