@@ -113,6 +113,20 @@ def test_parse_timedelta_rejects_garbage():
     assert parse_timedelta('  ') == timedelta(0)
 
 
+def test_parse_timedelta_compact():
+    # issue #814: compact strings with no spaces were losing every
+    # unit after the first one, "1h30m" parsed as a flat 1 hour.
+    assert parse_timedelta('1h30m') == timedelta(hours=1, minutes=30)
+    assert parse_timedelta('1h30m15s') == timedelta(hours=1, minutes=30, seconds=15)
+    assert parse_timedelta('2d4h') == timedelta(days=2, hours=4)
+    assert parse_timedelta('1m30s') == timedelta(minutes=1, seconds=30)
+    assert parse_timedelta('1w2d') == timedelta(weeks=1, days=2)
+    assert parse_timedelta('1.5h45m') == timedelta(minutes=135)
+    # spelled-out units, compact or spaced, still work
+    assert parse_timedelta('2days3hours') == timedelta(days=2, hours=3)
+    assert parse_timedelta('1h 30m') == timedelta(hours=1, minutes=30)
+
+
 def test_daterange_month_step_clamps_day():
     # issue #500: stepping by months from the 31st clamps to month end
     res = list(daterange(date(2020, 1, 31), date(2020, 4, 1), step=(0, 1, 0)))
