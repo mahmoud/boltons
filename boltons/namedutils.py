@@ -239,8 +239,8 @@ class {typename}(list):
         'Create new instance of {typename}({arg_list})'
         return _list.__new__(_cls, ({arg_list}))
 
-    def __init__(self, {arg_list}):  # tuple didn't need this but list does
-        return _list.__init__(self, ({arg_list}))
+    def __init__(_self, {arg_list}):  # tuple didn't need this but list does
+        return _list.__init__(_self, ({arg_list}))
 
     @classmethod
     def _make(cls, iterable, new=_list, len=len):

@@ -8,6 +8,28 @@ Point = namedtuple('Point', 'x, y', rename=True)
 MutablePoint = namedlist('MutablePoint', 'x, y', rename=True)
 
 
+@pytest.mark.parametrize('fields', ['self', 'self value', 'value self'])
+@pytest.mark.parametrize('rename', [False, True])
+def test_namedlist_self_field(fields, rename):
+    record_type = namedlist('Record', fields, rename=rename)
+    values = dict((field, i) for i, field in enumerate(fields.split()))
+    record = record_type(**values)
+    assert list(record) == list(values.values())
+    assert record._asdict() == values
+    assert record.self == values['self']
+    record.self = 10
+    assert record._asdict()['self'] == 10
+    assert record._replace(self=20).self == 20
+    assert record_type._make(record).self == 10
+    assert 'self=10' in repr(record)
+
+
+def test_namedlist_internal_receiver_field_is_renamed():
+    record_type = namedlist('Record', ['_self', 'value'], rename=True)
+    assert record_type._fields == ('_0', 'value')
+    assert record_type(1, value=2) == [1, 2]
+
+
 def test_namedlist():
     p = MutablePoint(x=10, y=20)
 
