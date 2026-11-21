@@ -384,6 +384,10 @@ class SpooledStringIO(SpooledIOBase):
 
     def read(self, n=-1):
         self._checkClosed()
+        if n is None:
+            # StringIO treats read(None) as read to EOF, but the codecs
+            # reader under this class blows up comparing None with 0
+            n = -1
         ret = self.buffer.reader.read(n, n)
         self._tell = self.tell() + len(ret)
         return ret

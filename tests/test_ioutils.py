@@ -386,6 +386,18 @@ class TestSpooledStringIO(TestCase, BaseTestMixin, AssertionsMixin):
                 self.assertEqual(flo.tell(), 0)
                 self.assertEqual(flo.readline(), "a\n")
 
+    def test_read_none_size(self):
+        # read(None) should behave like read() on a plain StringIO
+        for rolled in (False, True):
+            with self.subTest(rolled=rolled):
+                flo = ioutils.SpooledStringIO()
+                flo.write("αβγ")
+                if rolled:
+                    flo.rollover()
+                flo.seek(1)
+                self.assertEqual(flo.read(None), "βγ")
+                self.assertEqual(flo.tell(), 3)
+
     def test_compare_two_equal_instances(self):
         """Make sure we can compare instances"""
         a = ioutils.SpooledStringIO()
