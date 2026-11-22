@@ -1,4 +1,7 @@
+from functools import partial
+
 import pytest
+
 from boltons.funcutils import wraps, FunctionBuilder
 
 
@@ -19,6 +22,36 @@ def wrappable_func(a, b):
 
 def wrappable_varkw_func(a, b, **kw):
     return a, b
+
+
+@pytest.mark.parametrize('use_partial', [False, True])
+def test_from_func_metadata_is_independent(use_partial):
+    def original(value=1):
+        return value
+
+    shared = []
+    original.label = 'original'
+    original.shared = shared
+    source = partial(original, 2) if use_partial else original
+    first = FunctionBuilder.from_func(source)
+    second = FunctionBuilder.from_func(source)
+    first.dict['label'] = 'rebuilt'
+    first.dict['added'] = True
+    del first.dict['shared']
+
+    assert original.__dict__ == {'label': 'original', 'shared': shared}
+    assert second.dict == {'label': 'original', 'shared': shared}
+    assert second.dict['shared'] is shared
+    original.label = 'later'
+    assert second.dict['label'] == 'original'
+
+    first.body = 'return 3'
+    rebuilt = first.get_func()
+    assert rebuilt() == 3
+    assert rebuilt.__dict__['label'] == 'rebuilt'
+    assert rebuilt.added is True
+    assert 'shared' not in rebuilt.__dict__
+    assert original() == 1
 
 
 def test_wraps_basic():
