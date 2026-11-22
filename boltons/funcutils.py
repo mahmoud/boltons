@@ -847,7 +847,7 @@ class FunctionBuilder:
     def from_func(cls, func):
         """Create a new FunctionBuilder instance based on an existing
         function. The original function will not be stored or
-        modified.
+        modified. Custom function attributes are copied shallowly.
         """
         # TODO: copy_body? gonna need a good signature regex.
         # TODO: might worry about __closure__?
@@ -868,6 +868,7 @@ class FunctionBuilder:
                       'dict': getattr(func, '__dict__', {})}
 
         kwargs.update(cls._argspec_to_dict(func))
+        kwargs['dict'] = dict(kwargs['dict'])
 
         # getfullargspec merges positional-only params into args; recover
         # them from the code object so they are never keyword-forwarded.
