@@ -137,7 +137,9 @@ class Bits:
     '''
     __slots__ = ('val', 'len')
 
-    def __init__(self, val=0, len_=None):
+    @staticmethod
+    def _normalize_input(val, len_):
+        """Convert list/bytes/str input to ``(int, length)``. Logic unchanged."""
         if type(val) is not int:
             if type(val) is list:
                 val = ''.join(['1' if e else '0' for e in val])
@@ -157,6 +159,10 @@ class Bits:
                         val = 0
             if type(val) is not int:
                 raise TypeError(f'initialized with bad type: {type(val).__name__}')
+        return val, len_
+
+    def __init__(self, val=0, len_=None):
+        val, len_ = self._normalize_input(val, len_)
         if val < 0:
             raise ValueError('Bits cannot represent negative values')
         if len_ is None:
