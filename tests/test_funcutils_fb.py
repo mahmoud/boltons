@@ -1,4 +1,7 @@
+from typing import get_type_hints
+
 import pytest
+
 from boltons.funcutils import wraps, FunctionBuilder
 
 
@@ -19,6 +22,50 @@ def wrappable_func(a, b):
 
 def wrappable_varkw_func(a, b, **kw):
     return a, b
+
+
+@pytest.mark.parametrize('kwonly', [False, True])
+def test_remove_arg_removes_annotation(kwonly):
+    fb = FunctionBuilder('demo', args=['value'] if kwonly else ['hidden', 'value'],
+                         kwonlyargs=['hidden'] if kwonly else [],
+                         annotations={'hidden': int, 'value': str, 'return': str},
+                         body='return value')
+    fb.remove_arg('hidden')
+    func = fb.get_func()
+    assert func('ok') == 'ok'
+    assert fb.annotations == {'value': str, 'return': str}
+    assert get_type_hints(func) == {'value': str, 'return': str}
+
+
+@pytest.mark.parametrize('kwonly', [False, True])
+def test_wraps_injected_arg_removes_annotation(kwonly):
+    if kwonly:
+        def original(value: str, *, hidden: int) -> str:
+            return value * hidden
+    else:
+        def original(hidden: int, value: str) -> str:
+            return value * hidden
+
+    @wraps(original, injected='hidden')
+    def wrapped(value):
+        return original(value, hidden=2) if kwonly else original(2, value)
+
+    assert wrapped('ok') == 'okok'
+    assert get_type_hints(wrapped) == {'value': str, 'return': str}
+
+
+def test_remove_arg_without_annotation():
+    fb = FunctionBuilder('demo', args=['hidden', 'value'], annotations={'value': str})
+    fb.remove_arg('hidden')
+    assert fb.annotations == {'value': str}
+
+
+def test_remove_missing_arg_preserves_annotations():
+    fb = FunctionBuilder('demo', args=['value'], annotations={'ghost': int, 'value': str})
+    with pytest.raises(ValueError):
+        fb.remove_arg('ghost')
+    assert fb.args == ['value']
+    assert fb.annotations == {'ghost': int, 'value': str}
 
 
 def test_wraps_basic():

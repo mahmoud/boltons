@@ -973,7 +973,7 @@ class FunctionBuilder:
     def remove_arg(self, arg_name):
         """Remove an argument from this FunctionBuilder's argument list. The
         resulting function will have one less argument per call to
-        this function.
+        this function. Any annotation for the removed argument is also removed.
 
         Args:
             arg_name (str): The name of the argument to remove.
@@ -1001,6 +1001,7 @@ class FunctionBuilder:
             self.defaults = tuple([d_dict[a] for a in args if a in d_dict])
             if arg_name in self.posonlyargs:
                 self.posonlyargs.remove(arg_name)
+        self.annotations.pop(arg_name, None)
         return
 
     def _compile(self, src, execdict):
