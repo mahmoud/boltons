@@ -6,6 +6,79 @@ from pytest import mark, raises
 from boltons.setutils import IndexedSet, _MISSING, complement
 
 
+@mark.parametrize('left_complemented', [False, True])
+@mark.parametrize('right_kind', ['set', 'frozenset', 'finite', 'complemented'])
+def test_complement_inplace_xor_preserves_alias(left_complemented, right_kind):
+    universe = set(range(6)) | {1000}
+    left_values, right_values = {1, 2}, {2, 3}
+    left = complement(left_values)
+    if not left_complemented:
+        left = complement(left)
+    if right_kind == 'set':
+        right = right_values
+    elif right_kind == 'frozenset':
+        right = frozenset(right_values)
+    elif right_kind == 'finite':
+        right = complement(complement(right_values))
+    else:
+        right = complement(right_values)
+    before_left = {value for value in universe if value in left}
+    before_right = {value for value in universe if value in right}
+    alias = left
+    left ^= right
+    assert left is alias
+    assert {value for value in universe if value in alias} == before_left ^ before_right
+    assert {value for value in universe if value in right} == before_right
+
+
+@mark.parametrize('complemented', [False, True])
+def test_complement_inplace_xor_self(complemented):
+    value = complement({1, 2})
+    if not complemented:
+        value = complement(value)
+    alias = value
+    value ^= value
+    assert value is alias
+    assert value == set()
+
+
+@mark.parametrize('complemented', [False, True])
+def test_complement_inplace_xor_frozen_backing(complemented):
+    value = complement(frozenset({1, 2}))
+    if not complemented:
+        value = complement(value)
+    alias = value
+    before = repr(alias), hash(alias)
+    expected = value ^ {2, 3}
+    value ^= {2, 3}
+    assert value is not alias
+    assert value == expected
+    assert (repr(alias), hash(alias)) == before
+
+
+def test_complement_inplace_xor_reflected_fallback():
+    marker = object()
+
+    class Reflected:
+        def __rxor__(self, other):
+            return marker
+
+    value = complement({1, 2})
+    alias = value
+    value ^= Reflected()
+    assert value is marker
+    assert alias == complement({1, 2})
+
+
+def test_complement_inplace_xor_invalid_operand():
+    value = complement({1, 2})
+    alias = value
+    with raises(TypeError):
+        value ^= 1
+    assert value is alias
+    assert alias == complement({1, 2})
+
+
 def test_indexed_set_basic():
     zero2nine = IndexedSet(range(10))
     five2nine = zero2nine & IndexedSet(range(5, 15))
