@@ -46,6 +46,12 @@ def test_asciify():
     assert b[-1:].decode('ascii') == 'e'
 
 
+@pytest.mark.parametrize('ignore', [False, True])
+def test_asciify_precomposed_diaeresis(ignore):
+    text = 'ËëÏï äöü ËëÏï'
+    assert strutils.asciify(text, ignore=ignore) == b'EeIi aeoeue EeIi'
+
+
 def test_indent():
     to_indent = '\nabc\ndef\n\nxyz\n'
     ref = '\n  abc\n  def\n\n  xyz\n'

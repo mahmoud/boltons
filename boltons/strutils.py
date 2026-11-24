@@ -476,12 +476,9 @@ class DeaccenterDict(dict):
         if ch is not None:
             return ch
         try:
-            de = unicodedata.decomposition(chr(key))
-            p1, _, p2 = de.rpartition(' ')
-            if int(p2, 16) == 0x308:
-                ch = self.get(key)
-            else:
-                ch = int(p1, 16)
+            decomposition = unicodedata.decomposition(chr(key))
+            base, _, _ = decomposition.rpartition(' ')
+            ch = int(base, 16)
         except (IndexError, ValueError):
             ch = self.get(key, key)
         self[key] = ch
