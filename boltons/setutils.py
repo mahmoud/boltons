@@ -813,6 +813,15 @@ class _ComplementSet:
 
     __rxor__ = __xor__
 
+    def __ixor__(self, other):
+        result = self.__xor__(other)
+        if result is NotImplemented:
+            return NotImplemented
+        if type(self._included) is frozenset or type(self._excluded) is frozenset:
+            return result
+        self._included, self._excluded = result._included, result._excluded
+        return self
+
     def symmetric_difference_update(self, other):
         inc, exc = _norm_args_typeerror(other)
         if self._included is None:
