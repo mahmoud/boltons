@@ -1054,13 +1054,20 @@ def subdict(d, keep=None, drop=None):
 
     """
     if keep is None:
-        keep = d.keys()
-    if drop is None:
-        drop = []
+        if drop is None:
+            return type(d)(d)
+        drop = set(drop)
+        if type(d) is dict:
+            return {k: v for k, v in d.items() if k not in drop}
+        return type(d)((k, v) for k, v in d.items() if k not in drop)
 
-    keys = set(keep) - set(drop)
+    keys = set(keep)
+    if drop is not None:
+        keys.difference_update(drop)
 
-    return type(d)([(k, v) for k, v in d.items() if k in keys])
+    if type(d) is dict:
+        return {k: v for k, v in d.items() if k in keys}
+    return type(d)((k, v) for k, v in d.items() if k in keys)
 
 
 class FrozenHashError(TypeError):
