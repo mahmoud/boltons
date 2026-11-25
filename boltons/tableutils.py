@@ -123,7 +123,12 @@ class DictInputType(InputType):
         return isinstance(obj, Mapping)
 
     def guess_headers(self, obj):
-        return sorted(obj.keys())
+        headers = list(obj.keys())
+        try:
+            return sorted(headers)
+        except TypeError:
+            # Valid mapping keys need not be comparable with one another.
+            return headers
 
     def get_entry(self, obj, headers):
         return [obj.get(h) for h in headers]
