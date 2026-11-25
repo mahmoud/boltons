@@ -290,7 +290,7 @@ _IRR_S2P = {'addendum': 'addenda', 'alga': 'algae', 'alumna': 'alumnae',
             'echo': 'echoes', 'elf': 'elves', 'ellipsis': 'ellipses',
             'embargo': 'embargoes', 'emphasis': 'emphases', 'erratum': 'errata',
             'fireman': 'firemen', 'fish': 'fish', 'focus': 'foci',
-            'foot': 'feet', 'formula': 'formulae', 'formula': 'formulas',
+            'foot': 'feet', 'formula': 'formulas',
             'fungus': 'fungi', 'genus': 'genera', 'goose': 'geese',
             'half': 'halves', 'hero': 'heroes', 'hippopotamus': 'hippopotami',
             'hoof': 'hooves', 'hypothesis': 'hypotheses', 'index': 'indices',
@@ -318,6 +318,7 @@ _IRR_S2P = {'addendum': 'addenda', 'alga': 'algae', 'alumna': 'alumnae',
 
 # Reverse index of the above
 _IRR_P2S = {v: k for k, v in _IRR_S2P.items()}
+_IRR_P2S['formulae'] = 'formula'
 
 HASHTAG_RE = re.compile(r"(?:^|\s)[＃#]{1}(\w+)", re.UNICODE)
 
