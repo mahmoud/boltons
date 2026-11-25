@@ -366,6 +366,10 @@ class Table:
         if max_depth < 1:
             # return data instead?
             return cls(headers=headers, metadata=metadata)
+        if type(data) in _DNR:
+            if headers is _MISSING:
+                headers = None
+            return cls([[data]], headers=headers, metadata=metadata)
         is_seq = isinstance(data, Sequence)
         if is_seq:
             if not data:
@@ -381,10 +385,6 @@ class Table:
                     is_seq = False
                     to_check = data
         else:
-            if type(data) in _DNR:
-                # hmm, got scalar data.
-                # raise an exception or make an exception, nahmsayn?
-                return cls([[data]], headers=headers, metadata=metadata)
             to_check = data
         if not _data_type:
             for it in cls._input_types:
