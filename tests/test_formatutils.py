@@ -1,5 +1,9 @@
 import re
+import subprocess
+import sys
 from collections import namedtuple
+
+import pytest
 
 from boltons.formatutils import (get_format_args,
                                  split_format_str,
@@ -72,3 +76,23 @@ def test_deferredvalue():
     assert myfunc.called == 2
     assert str(dv) == '123'
     assert myfunc.called == 3
+
+
+def test_get_format_args_anonymous_raises():
+    with pytest.raises(ValueError, match='anonymous positional argument'):
+        get_format_args('{}')
+
+
+def test_get_format_args_anonymous_raises_under_optimization():
+    # the validation must survive assert stripping in an optimized
+    # interpreter (#798)
+    script = (
+        'from boltons.formatutils import get_format_args\n'
+        'try:\n'
+        '    get_format_args("{}")\n'
+        'except ValueError:\n'
+        '    pass\n'
+        'else:\n'
+        '    raise SystemExit("no ValueError raised")\n'
+    )
+    subprocess.check_call([sys.executable, '-O', '-c', script])
