@@ -1,3 +1,4 @@
+import asyncio
 import time
 import sys
 import inspect
@@ -8,6 +9,48 @@ import pytest
 
 from boltons.funcutils import wraps, FunctionBuilder, update_wrapper, copy_function
 import boltons.funcutils as funcutils
+
+
+@pytest.mark.parametrize('is_async', [False, True])
+def test_fb_empty_body(is_async):
+    builder = FunctionBuilder('empty', body='', args=['value'], defaults=(42,), is_async=is_async)
+    function = builder.get_func()
+    result = function()
+    assert (asyncio.run(result) if is_async else result) is None
+    assert builder.body == ''
+    assert '    pass' in function.__source__
+
+
+@pytest.mark.parametrize('is_async', [False, True])
+@pytest.mark.parametrize('body', ['', None])
+def test_fb_cleared_body(is_async, body):
+    builder = FunctionBuilder('cleared', body='return 42', is_async=is_async)
+    original = builder.get_func()
+    builder.body = body
+    function = builder.get_func()
+    result = function()
+    assert (asyncio.run(result) if is_async else result) is None
+    original_result = original()
+    assert (asyncio.run(original_result) if is_async else original_result) == 42
+    assert builder.body is body
+
+
+@pytest.mark.parametrize('is_async', [False, True])
+def test_fb_empty_body_custom_default(is_async):
+    class CustomBuilder(FunctionBuilder):
+        _defaults = dict(FunctionBuilder._defaults, body=lambda: 'return 42')
+
+    function = CustomBuilder('custom', body='', is_async=is_async).get_func()
+    result = function()
+    assert (asyncio.run(result) if is_async else result) == 42
+
+
+@pytest.mark.parametrize('is_async', [False, True])
+@pytest.mark.parametrize('body,expected', [(None, None), ('return 42', 42)])
+def test_fb_nonempty_body_controls(is_async, body, expected):
+    function = FunctionBuilder('control', body=body, is_async=is_async).get_func()
+    result = function()
+    assert (asyncio.run(result) if is_async else result) == expected
 
 
 def wrappable_func(a, b):
