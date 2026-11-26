@@ -46,6 +46,18 @@ def test_asciify():
     assert b[-1:].decode('ascii') == 'e'
 
 
+def test_asciify_diaeresis_letters_not_in_deaccent_map():
+    # https://github.com/mahmoud/boltons/issues/832
+    # Ë, ë, Ï, ï have no entry in DEACCENT_MAP; they used to be
+    # silently dropped instead of deaccented to their base letter.
+    assert strutils.asciify('Ëa Éb ëc') == b'Ea Eb ec'
+    assert strutils.asciify('Ï') == b'I'
+    assert strutils.asciify('ë') == b'e'
+    assert strutils.asciify('ï') == b'i'
+    # letters with their own map entry keep their special mapping
+    assert strutils.asciify('ä ö ü Ä Ö Ü') == b'ae oe ue Ae Oe Ue'
+
+
 def test_indent():
     to_indent = '\nabc\ndef\n\nxyz\n'
     ref = '\n  abc\n  def\n\n  xyz\n'
