@@ -902,7 +902,7 @@ class FunctionBuilder:
         """
         if execdict is None:
             execdict = {}
-        body = self.body or self._default_body
+        body = self.body or self._defaults['body']()
 
         tmpl = 'def {name}{sig_str}:'
         tmpl += '\n{body}'
@@ -910,7 +910,7 @@ class FunctionBuilder:
         if self.is_async:
             tmpl = 'async ' + tmpl
 
-        body = _indent(self.body, ' ' * self.indent)
+        body = _indent(body, ' ' * self.indent)
 
         name = self.name.replace('<', '_').replace('>', '_')  # lambdas
         src = tmpl.format(name=name, sig_str=self.get_sig_str(with_annotations=False),
