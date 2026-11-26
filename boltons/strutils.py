@@ -477,11 +477,15 @@ class DeaccenterDict(dict):
             return ch
         try:
             de = unicodedata.decomposition(chr(key))
-            p1, _, p2 = de.rpartition(' ')
-            if int(p2, 16) == 0x308:
-                ch = self.get(key)
-            else:
-                ch = int(p1, 16)
+            p1 = de.rpartition(' ')[0]
+            # Letters with a diaeresis (0x308) fall back to the base
+            # letter, just like any other accent. (Letters with their
+            # own map entry, e.g. Ä -> 'Ae', never reach __missing__.)
+            # Previously this branch did self.get(key), which is None
+            # here -- that's why __missing__ ran -- and str.translate
+            # deletes characters mapped to None, so e.g. Ë, ë, Ï, ï
+            # were silently dropped by asciify().
+            ch = int(p1, 16)
         except (IndexError, ValueError):
             ch = self.get(key, key)
         self[key] = ch
