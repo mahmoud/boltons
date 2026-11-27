@@ -1,4 +1,58 @@
-from boltons.statsutils import Stats, mode
+import math
+
+import pytest
+
+from boltons.statsutils import Stats, median, mode
+
+
+_MIN_SUBNORMAL = float.fromhex('0x0.0000000000001p-1022')
+
+
+@pytest.mark.parametrize('left,right,expected_quartiles', [
+    (1, 1, (1, 1, 1)),
+    (1, 2, (1, 2, 2)),
+    (2, 3, (2, 2, 3)),
+    (-3, -3, (-3, -3, -3)),
+    (-2, -1, (-2, -2, -1)),
+    (-1, 1, (0, 0, 0)),
+    (2**52 + 1, 2**52 + 2, (2**52 + 1, 2**52 + 2, 2**52 + 2)),
+    (-2**52 - 2, -2**52 - 1, (-2**52 - 2, -2**52 - 2, -2**52 - 1)),
+])
+@pytest.mark.parametrize('index,q', list(enumerate((0.25, 0.5, 0.75))))
+def test_subnormal_quantiles(left, right, expected_quartiles, index, q):
+    data = [left * _MIN_SUBNORMAL, right * _MIN_SUBNORMAL]
+    assert Stats(data).get_quantile(q) == expected_quartiles[index] * _MIN_SUBNORMAL
+
+
+@pytest.mark.parametrize('left,right,expected', [
+    (1, 1, 1), (1, 2, 2), (2, 3, 2), (-3, -3, -3), (-2, -1, -2),
+    (2**52 + 1, 2**52 + 2, 2**52 + 2),
+    (-2**52 - 2, -2**52 - 1, -2**52 - 2),
+])
+def test_subnormal_medians(left, right, expected):
+    data = [left * _MIN_SUBNORMAL, right * _MIN_SUBNORMAL]
+    assert Stats(data).median == expected * _MIN_SUBNORMAL
+    assert median(data) == expected * _MIN_SUBNORMAL
+
+
+@pytest.mark.parametrize('q,index', [(0.0, 0), (1.0, 1)])
+def test_subnormal_quantile_endpoints(q, index):
+    data = [_MIN_SUBNORMAL, 2 * _MIN_SUBNORMAL]
+    assert Stats(data).get_quantile(q) == data[index]
+
+
+@pytest.mark.parametrize('data,expected', [
+    ([_MIN_SUBNORMAL, float('inf')], float('inf')),
+    ([float('-inf'), -_MIN_SUBNORMAL], float('-inf')),
+    ([0.0, 2.0], 1.0),
+])
+def test_quantile_nonfinite_and_normal_controls(data, expected):
+    assert Stats(data).get_quantile(0.5) == expected
+
+
+def test_quantile_nan_and_negative_zero_controls():
+    assert math.isnan(Stats([float('nan'), _MIN_SUBNORMAL]).get_quantile(0.5))
+    assert math.copysign(1.0, Stats([-0.0, -0.0]).get_quantile(0.5)) == -1.0
 
 
 def test_stats_basic():
