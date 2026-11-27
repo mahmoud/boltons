@@ -270,6 +270,11 @@ def decimal_relative_time(d, other=None, ndigits=0, cardinalize=True):
         else:
             other = datetime.now(d.tzinfo)
     diff = other - d
+    # datetime subtraction ignores offset changes when the tzinfo objects are identical.
+    if d.tzinfo is not None and d.tzinfo is other.tzinfo:
+        start_offset, end_offset = d.utcoffset(), other.utcoffset()
+        if start_offset is not None and end_offset is not None:
+            diff += start_offset - end_offset
     diff_seconds = timedelta.total_seconds(diff)
     abs_diff = abs(diff)
     b_idx = bisect.bisect(_BOUND_DELTAS, abs_diff) - 1
