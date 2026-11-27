@@ -39,6 +39,15 @@ def test_get_fstr_args():
         assert res
 
 
+def test_get_fstr_args_nested_anon():
+    # https://github.com/mahmoud/boltons/issues/846
+    # nested anonymous arg should raise, like a top-level "{}" does
+    import pytest
+    with pytest.raises(ValueError):
+        get_format_args("{x:{}}")
+    assert get_format_args("{x:{width}}") == ([], [('x', str), ('width', str)])
+
+
 def test_split_fstr():
     results = []
     for t in _TEST_TMPLS:
