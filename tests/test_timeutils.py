@@ -170,6 +170,20 @@ def test_relative_time_defaults_to_matching_timezone():
         assert relative_time(now) == '0 seconds ago'
 
 
+def test_relative_time_across_daylight_saving_changes():
+    from boltons.timeutils import decimal_relative_time, relative_time
+
+    first = datetime(2024, 11, 3, 1, 30, tzinfo=Eastern, fold=0)
+    second = first.replace(fold=1)
+    assert relative_time(first, second) == '1 hour ago'
+    assert relative_time(second, first) == '1 hour from now'
+
+    before = datetime(2024, 3, 10, 1, 45, tzinfo=Eastern)
+    after = datetime(2024, 3, 10, 3, 15, tzinfo=Eastern)
+    assert decimal_relative_time(before, after) == (30.0, 'minutes')
+    assert decimal_relative_time(before, after.astimezone(timezone.utc)) == (30.0, 'minutes')
+
+
 def test_us_timezone_dst_fold():
     unfolded = datetime(2011, 11, 6, 1, 30, tzinfo=Eastern, fold=0)
     folded = datetime(2011, 11, 6, 1, 30, tzinfo=Eastern, fold=1)
