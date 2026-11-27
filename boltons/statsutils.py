@@ -127,8 +127,10 @@ system instrumentation package.
 
 
 import bisect
-from math import floor, ceil
+from math import floor, ceil, isfinite
 from collections import Counter
+from fractions import Fraction
+from sys import float_info
 
 
 class _StatsProperty:
@@ -496,7 +498,17 @@ class Stats:
         idx_f, idx_c = int(floor(idx)), int(ceil(idx))
         if idx_f == idx_c:
             return data[idx_f]
-        return (data[idx_f] * (idx_c - idx)) + (data[idx_c] * (idx - idx_f))
+        left, right = data[idx_f], data[idx_c]
+        left_term = left * (idx_c - idx)
+        right_term = right * (idx - idx_f)
+        if (type(left) is float and type(right) is float
+                and isfinite(left) and isfinite(right)
+                and ((left != 0 and abs(left_term) < float_info.min)
+                     or (right != 0 and abs(right_term) < float_info.min))):
+            # Keep subnormal products from rounding before the interpolation is added.
+            exact_left = Fraction(left)
+            return float(exact_left + (Fraction(right) - exact_left) * Fraction(idx - idx_f))
+        return left_term + right_term
 
     def get_quantile(self, q):
         """Get a quantile from the dataset. Quantiles are floating point
