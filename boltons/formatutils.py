@@ -188,6 +188,8 @@ def get_format_args(fstr):
             for sublit, subfname, _, _ in formatter.parse(fspec):
                 # TODO: positional and anon args not allowed here.
                 if subfname is not None:
+                    if not subfname:
+                        raise ValueError('encountered anonymous positional argument')
                     _add_arg(subfname)
     return fargs, fkwargs
 
