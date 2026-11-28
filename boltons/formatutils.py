@@ -312,6 +312,44 @@ class DeferredValue:
         self.cache_value = cache_value
         self._value = _UNSET
 
+    def __getstate__(self):
+        state = self.__dict__.copy()
+        if self._value is _UNSET:
+            del state['_value']
+        # Mirror the default copy protocol and carry subclass __slots__
+        # state alongside the instance dict, returning the (dict, slots)
+        # tuple form only when a subclass actually declares slots.
+        slots = {}
+        for cls in type(self).__mro__:
+            cls_slots = cls.__dict__.get('__slots__', ())
+            if isinstance(cls_slots, str):
+                cls_slots = (cls_slots,)
+            for slot in cls_slots:
+                if slot in ('__dict__', '__weakref__') or slot in slots:
+                    continue
+                # A slot declared with a private name (``__label``) is
+                # stored under its mangled form (``_ClassName__label``) on
+                # the class that declared it.
+                if slot.startswith('__') and not slot.endswith('__'):
+                    cls_name = cls.__name__.lstrip('_')
+                    if cls_name:
+                        slot = '_%s%s' % (cls_name, slot)
+                if hasattr(self, slot):
+                    slots[slot] = getattr(self, slot)
+        if slots:
+            return state, slots
+        return state
+
+    def __setstate__(self, state):
+        if isinstance(state, tuple):
+            state, slots = state
+        else:
+            slots = {}
+        self._value = _UNSET
+        self.__dict__.update(state)
+        for slot, value in slots.items():
+            setattr(self, slot, value)
+
     def get_value(self):
         """Computes, optionally caches, and returns the value of the
         *func*. If ``get_value()`` has been called before, a cached
