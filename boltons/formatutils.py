@@ -168,9 +168,9 @@ def get_format_args(fstr):
         if argname not in _dedup:
             _dedup.add(argname)
             argtype = _TYPE_MAP.get(type_char, str)  # TODO: unicode
-            try:
+            if argname.isdecimal():
                 fargs.append((int(argname), argtype))
-            except ValueError:
+            else:
                 fkwargs.append((argname, argtype))
 
     for lit, fname, fspec, conv in formatter.parse(fstr):
@@ -235,7 +235,7 @@ class BaseFormatField:
         self.base_name = path_list[0]
         self.fname = fname
         self.subpath = path_list[1:]
-        self.is_positional = not self.base_name or self.base_name.isdigit()
+        self.is_positional = not self.base_name or self.base_name.isdecimal()
 
     def set_fspec(self, fspec):
         "Set the field spec."

@@ -1,11 +1,63 @@
 import re
 from collections import namedtuple
 
+import pytest
+
 from boltons.formatutils import (get_format_args,
+                                 BaseFormatField,
                                  split_format_str,
                                  tokenize_format_str,
                                  infer_positional_format_args,
                                  DeferredValue as DV)
+
+
+@pytest.mark.parametrize('name', ['+1', '-1', '1_0', ' 1', '1 ', '²', '①', '₁', 'name'])
+def test_numeric_looking_keyword_format_args(name):
+    template = '{' + name + '}'
+    assert template.format(**{name: 'value'}) == 'value'
+    assert get_format_args(template) == ([], [(name, str)])
+
+
+@pytest.mark.parametrize('name', ['+1', '-1', '1_0', ' 1', '1 '])
+def test_numeric_looking_keyword_format_types(name):
+    template = '{' + name + ':d}'
+    assert template.format(**{name: 7}) == '7'
+    assert get_format_args(template) == ([], [(name, int)])
+
+
+@pytest.mark.parametrize('name', ['0', '01', '٢', '１２', '𝟙'])
+def test_decimal_positional_format_controls(name):
+    index = int(name)
+    values = ['value'] * (index + 1)
+    assert ('{' + name + '}').format(*values) == 'value'
+    assert get_format_args('{' + name + '}') == ([(index, str)], [])
+    assert BaseFormatField(name).is_positional
+
+
+@pytest.mark.parametrize('name', ['+1', '-1', '1_0', ' 1', '1 ', '²', '①', '₁', 'name'])
+def test_keyword_format_field_classification(name):
+    field = BaseFormatField(name)
+    assert field.fstr.format(**{name: 'value'}) == 'value'
+    assert not field.is_positional
+
+
+def test_nested_numeric_looking_keyword_format_args():
+    template = '{value:{1_0}}'
+    assert template.format(**{'value': 'x', '1_0': 3}) == 'x  '
+    assert get_format_args(template) == ([], [('value', str), ('1_0', str)])
+
+
+def test_format_field_classification_updates_and_subpaths():
+    field = BaseFormatField('0')
+    assert field.is_positional
+    field.set_fname('²[0]')
+    assert not field.is_positional
+    assert field.fstr.format(**{'²': ['value']}) == 'value'
+    field.set_fname('١[0]')
+    assert field.is_positional
+    assert field.fstr.format('unused', ['value']) == 'value'
+    field.set_fname('')
+    assert field.is_positional
 
 
 PFAT = namedtuple("PositionalFormatArgTest", "fstr arg_vals res")
