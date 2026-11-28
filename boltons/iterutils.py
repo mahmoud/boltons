@@ -873,10 +873,9 @@ def unique(src, key=None):
     See :func:`unique_iter` docs for more details.
     """
     if key is None:
-        try:
-            return list(dict.fromkeys(src))
-        except TypeError:
-            pass
+        if not is_iterable(src):
+            raise TypeError('expected an iterable, not %r' % type(src))
+        return list(dict.fromkeys(src))
     return list(unique_iter(src, key))
 
 
