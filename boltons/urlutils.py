@@ -656,6 +656,8 @@ class URL:
         links with ease.
 
         The newly created :class:`URL` is normalized before being returned.
+        A reference with a host replaces the path and query, even when
+        those components are empty.
 
         >>> url = URL('http://boltons.readthedocs.io')
         >>> url.navigate('en/latest/')
@@ -679,7 +681,9 @@ class URL:
             return ret
         query_params = dest.query_params
 
-        if dest.path:
+        if dest.host:
+            new_path_parts = list(dest.path_parts)
+        elif dest.path:
             if dest.path.startswith('/'):   # absolute path
                 new_path_parts = list(dest.path_parts)
             else:  # relative path
