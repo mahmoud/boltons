@@ -237,6 +237,7 @@ REL_URL_TEST_CASES = [
     ('./g', 'http://a/b/c/g'),
     ('g/', 'http://a/b/c/g/'),
     ('/g', 'http://a/g'),
+    ('//g', 'http://g'),
     (';x', 'http://a/b/c/;x'),
     ('g;x', 'http://a/b/c/g;x'),
     ('', 'http://a/b/c/d;p?q'),
@@ -316,9 +317,9 @@ def test_navigate():
     navd = orig.navigate('https:')
     assert navd.to_text() == 'https://a.b/c/d?e'
 
-    # another odd one, host only
+    # a host reference replaces the path and query, even when empty
     navd = orig.navigate('//newhost')
-    assert navd.to_text() == 'http://newhost/c/d?e'
+    assert navd.to_text() == 'http://newhost'
 
     # absolute URLs (with scheme + host) replace everything
     _dest_text = 'http://hatnote.com'
@@ -339,6 +340,33 @@ def test_navigate_absolute_normalizes():
     navd = url.navigate(dest)
     assert navd.to_text() == 'https://example.org/a/c'
     assert dest.to_text() == 'HTTPS://EXAMPLE.ORG/a/./b/../c'  # input not mutated
+
+
+@pytest.mark.parametrize('as_url', [False, True])
+@pytest.mark.parametrize('reference, expected', [
+    ('//new.example', 'https://new.example'),
+    ('//old.example', 'https://old.example'),
+    ('//new.example?new=2', 'https://new.example?new=2'),
+    ('//new.example#section', 'https://new.example#section'),
+    ('//new.example?new=2#section', 'https://new.example?new=2#section'),
+    ('//[::1]', 'https://[::1]'),
+    ('//new.example/', 'https://new.example/'),
+    ('//new.example/a/../b?new=2', 'https://new.example/b?new=2'),
+    ('?new=2', 'https://old.example/dir/page?new=2'),
+    ('#section', 'https://old.example/dir/page?old=1#section'),
+])
+def test_navigate_network_reference_path_and_query(reference, expected, as_url):
+    base_text = 'https://old.example/dir/page?old=1#original'
+    base = URL(base_text)
+    dest = URL(reference) if as_url else reference
+
+    result = base.navigate(dest)
+
+    assert result.to_text() == expected
+    assert base.to_text() == base_text
+    if as_url:
+        assert dest.to_text() == reference
+        assert result is not dest
 
 
 def test_navigate_ipv6_keeps_brackets():
