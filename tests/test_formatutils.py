@@ -108,3 +108,25 @@ def test_deferredvalue_deepcopied_log_record():
                                (DV(_deferred_copy_value),), None)
     assert copy.deepcopy(record).getMessage() == 'value=[123]'
     assert record.getMessage() == 'value=[123]'
+
+
+class _LabeledDeferredValue(DV):
+    __slots__ = ('label',)
+
+
+def test_deferredvalue_copy_and_pickle_preserve_subclass_slots():
+    import copy
+    import pickle
+
+    transforms = (copy.copy, copy.deepcopy,
+                  lambda value: pickle.loads(pickle.dumps(value)))
+    for evaluated in (False, True):
+        for transform in transforms:
+            original = _LabeledDeferredValue(_deferred_copy_value)
+            original.label = 'diagnostic'
+            if evaluated:
+                original.get_value()
+            restored = transform(original)
+            assert restored is not original
+            assert restored.label == 'diagnostic'
+            assert restored.get_value() == [123]
