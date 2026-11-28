@@ -127,8 +127,9 @@ system instrumentation package.
 
 
 import bisect
-from math import floor, ceil
+from math import floor, ceil, isfinite
 from collections import Counter
+from sys import float_info
 
 
 class _StatsProperty:
@@ -419,8 +420,7 @@ class Stats:
         """
         data, s_dev = self.data, self.std_dev
         if len(data) > 1 and s_dev > 0:
-            return (sum(self._get_pow_diffs(3)) /
-                    float((len(data) - 1) * (s_dev ** 3)))
+            return self._get_moment_ratio(3, s_dev)
         else:
             return self.default
     skewness = _StatsProperty('skewness', _calc_skewness)
@@ -443,8 +443,7 @@ class Stats:
         """
         data, s_dev = self.data, self.std_dev
         if len(data) > 1 and s_dev > 0:
-            return (sum(self._get_pow_diffs(4)) /
-                    float((len(data) - 1) * (s_dev ** 4)))
+            return self._get_moment_ratio(4, s_dev)
         else:
             return 0.0
     kurtosis = _StatsProperty('kurtosis', _calc_kurtosis)
@@ -554,6 +553,34 @@ class Stats:
             return
         self.data = self._get_sorted_data()[size_diff:-size_diff]
         self.clear_cache()
+
+    def _can_standardize_moment(self, s_dev):
+        if type(s_dev) is not float or not isfinite(s_dev):
+            return False
+        mean = self.mean
+        return (type(mean) is float and isfinite(mean)
+                and all(type(value) in (int, float, bool)
+                        and (type(value) is not float or isfinite(value))
+                        for value in self.data))
+
+    def _get_moment_ratio(self, power, s_dev):
+        try:
+            numerator = sum(self._get_pow_diffs(power))
+            std_power = s_dev ** power
+            denominator = float((len(self.data) - 1) * std_power)
+            result = numerator / denominator
+        except (OverflowError, ZeroDivisionError):
+            if not self._can_standardize_moment(s_dev):
+                raise
+        else:
+            lost_range = (not isfinite(denominator)
+                          or (type(result) is float and not isfinite(result))
+                          or (type(std_power) is float and 0 < std_power < float_info.min))
+            if not lost_range or not self._can_standardize_moment(s_dev):
+                return result
+        # Normalize before taking powers when finite built-in samples lose float range.
+        mean = self.mean
+        return sum(((value - mean) / s_dev) ** power for value in self.data) / float(len(self.data) - 1)
 
     def _get_pow_diffs(self, power):
         """
