@@ -780,3 +780,20 @@ def test_frange_xfrange_zero_step():
         frange(10, step=0)
     with pytest.raises(ValueError):
         list(xfrange(10, step=0))
+
+
+def test_unique_iterator_type_error():
+    from boltons.iterutils import unique
+
+    def source():
+        yield 1
+        raise TypeError("source failed")
+
+    with pytest.raises(TypeError, match="source failed"):
+        unique(source())
+
+    with pytest.raises(TypeError):
+        unique(iter([1, [], 2, 2, 3]))
+
+    with pytest.raises(TypeError, match="expected an iterable"):
+        unique(123)

@@ -218,8 +218,7 @@ def lstrip_iter(iterable, strip_value=None):
         if i != strip_value:
             yield i
             break
-    for i in iterator:
-        yield i
+    yield from iterator
 
 
 def rstrip(iterable, strip_value=None):
@@ -873,6 +872,10 @@ def unique(src, key=None):
 
     See :func:`unique_iter` docs for more details.
     """
+    if key is None:
+        if not is_iterable(src):
+            raise TypeError('expected an iterable, not %r' % type(src))
+        return list(dict.fromkeys(src))
     return list(unique_iter(src, key))
 
 
@@ -895,19 +898,24 @@ def unique_iter(src, key=None):
     """
     if not is_iterable(src):
         raise TypeError('expected an iterable, not %r' % type(src))
+    seen = set()
+    seen_add = seen.add
     if key is None:
-        def key_func(x): return x
+        for i in src:
+            if i not in seen:
+                seen_add(i)
+                yield i
+        return
     elif callable(key):
         key_func = key
     elif isinstance(key, str):
         def key_func(x): return getattr(x, key, x)
     else:
         raise TypeError('"key" expected a string or callable, not %r' % key)
-    seen = set()
     for i in src:
         k = key_func(i)
         if k not in seen:
-            seen.add(k)
+            seen_add(k)
             yield i
     return
 
@@ -1089,7 +1097,10 @@ def same(iterable, ref=_UNSET):
     iterator = iter(iterable)
     if ref is _UNSET:
         ref = next(iterator, ref)
-    return all(val == ref for val in iterator)
+    for val in iterator:
+        if val != ref:
+            return False
+    return True
 
 
 def default_visit(path, key, value):
